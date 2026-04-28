@@ -466,18 +466,8 @@ if(isTouchingAny(m)){
 
     ctx.restore();
   });
-
-  let elapsed = (Date.now()-startTime)/1000;
-
-  ctx.fillStyle="white";
-  ctx.font="20px Arial";
-
-  if(!suddenDeath){
-    ctx.fillText("Time: "+Math.max(0, ROUND_TIME - Math.floor(elapsed)),20,30);
-  } else {
-    ctx.fillStyle="red";
-    ctx.fillText("SUDDEN DEATH: "+Math.max(0, TOTAL_TIME - Math.floor(elapsed)),20,30);
   }
+
 
   ctx.fillStyle="white";
   ctx.fillText("Score: "+totalScore,20,60);
