@@ -429,11 +429,26 @@ ctx.textBaseline = "top";
     ctx.translate(m.x,m.y);
     ctx.rotate(m.rotation);
 
-    ctx.shadowColor = "red";
-    ctx.shadowBlur = 15;
+    if(isTouchingAny(m)){
+  ctx.shadowColor = "lime";
+  ctx.shadowBlur = 25;
 
-    ctx.fillStyle = m.color;
-    ctx.fillRect(-10,-m.length/2,20,m.length);
+  // small spark effect (you had this before, bringing it back)
+  for(let i = 0; i < 3; i++){
+    ctx.fillRect(
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 20,
+      3, 3
+    );
+  }
+
+} else {
+  ctx.shadowColor = "red";
+  ctx.shadowBlur = 15;
+}
+
+ctx.fillStyle = m.color;
+ctx.fillRect(-10,-m.length/2,20,m.length);
 
     ctx.restore();
   });
