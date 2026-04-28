@@ -231,9 +231,9 @@ function update(){
       m.spinVelocity = 0;
     }
 
-    // COLLISION WITH CHAIR (1 IN 700)
+    // COLLISION WITH CHAIR (1 IN 400)
     if(suddenDeath && !m.chairBoost){
-      if(Math.random() < 1/700){
+      if(Math.random() < 1/400){
         m.vy -= 8; // launch upward boost
         m.chairBoost = true;
       }
