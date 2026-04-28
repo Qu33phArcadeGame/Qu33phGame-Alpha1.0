@@ -287,7 +287,12 @@ function randomizeSky(){
     });
   }
 }
-
+function isMarkerDone(m){
+  return m.fallen || (
+    Math.abs(m.vx) < 0.05 &&
+    Math.abs(m.vy) < 0.05
+  );
+}
 // UPDATE
 function update(){
 
@@ -317,11 +322,28 @@ function update(){
   const roundReady =
     current === 3 &&
     markers.length === 3 &&
-    markers.every(m => m.fallen || m.stopped);
+    markers.every(isMarkerDone)
 
   if(roundReady){
     roundLocked = true;
     tryAdvanceRound();
+    if(gameState === "playing" && !roundLocked){
+
+  const roundReady =
+    current === 3 &&
+    markers.length === 3 &&
+    markers.every(isMarkerDone);
+
+  if(roundReady){
+    roundLocked = true;
+
+    tryAdvanceRound();
+
+    setTimeout(() => {
+      roundLocked = false;
+    }, 0);
+  }
+    }
 
     // unlock immediately for next round
     setTimeout(() => {
