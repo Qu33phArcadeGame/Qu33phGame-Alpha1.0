@@ -19,12 +19,24 @@ canvas { display:block; touch-action:none; }
   background:#222;
   color:white;
 }
+  #skipBtn {
+  position:absolute;
+  bottom:20px;
+  right:20px;
+  padding:12px 20px;
+  border-radius:10px;
+  border:none;
+  font-size:16px;
+  background:#444;
+  color:white;
+  }
 </style>
 </head>
 <body>
 
 <canvas id="game"></canvas>
 <button id="rotateBtn">Orientation: vertical</button>
+  <button id="skipBtn">⏩ Skip</button>
 
 <script>
 const canvas = document.getElementById("game");
@@ -39,6 +51,7 @@ const RIGHT_WALL = canvas.width * 0.75;
 const END_LINE_Y = canvas.height * 0.2;
 
 // STATE
+  let speedMultiplier = 1;
 let gameState = "playing";
 let markers = [];
 let current = 0;
@@ -62,6 +75,20 @@ document.getElementById("rotateBtn").onclick = () => {
   currentOrientation = orientations[orientationIndex];
   document.getElementById("rotateBtn").innerText =
     "Orientation: " + currentOrientation;
+};
+  const skipBtn = document.getElementById("skipBtn");
+
+skipBtn.onpointerdown = () => {
+  speedMultiplier = 3; // speed up
+};
+
+skipBtn.onpointerup = () => {
+  speedMultiplier = 1; // back to normal
+};
+
+// for safety (finger slides off)
+skipBtn.onpointerleave = () => {
+  speedMultiplier = 1;
 };
 
 // INPUT
@@ -220,14 +247,14 @@ function update(){
     if(m.stopped||m.fallen) return;
 
     m.vx += m.curve;
-    m.x += m.vx;
-    m.y += m.vy;
+    m.x += m.vx * speedMultiplier;
+    m.y += m.vy * speedMultiplier;
 
     m.vx *= 0.94;
     m.vy *= 0.94;
 
     // spin + friction
-    m.rotation += m.spinVelocity;
+    m.rotation += m.spinVelocity * speedMultiplier;
     m.spinVelocity *= 0.96;
 
     if(Math.abs(m.spinVelocity) < 0.001){
