@@ -205,10 +205,14 @@ function tryAdvanceRound(){
 
   if(current === 3 && markers.every(m => m.stopped || m.fallen)){
 
+    let g = markers[0];
+    let r = markers[1];
+    let b = markers[2];
+
     let roundScore = calculateScore();
     totalScore += roundScore;
 
-    // 🔥 popup for ALL modes
+    // 🔥 POPUP
     scorePopups.push({
       x: canvas.width / 2,
       y: canvas.height / 2,
@@ -216,11 +220,25 @@ function tryAdvanceRound(){
       life: 40
     });
 
+    // 💥 QU33PH CHECK (RESTORED)
+    if(g && r && b &&
+       touching(g,r) &&
+       touching(r,b) &&
+       touching(g,b)){
+
+      explosions.push({
+        x: (g.x + r.x + b.x) / 3,
+        y: (g.y + r.y + b.y) / 3,
+        radius: 10,
+        life: 20,
+        text: "QU33PH"
+      });
+    }
+
     markers = [];
     current = 0;
   }
 }
-
 // CLICK CONTROL
 canvas.addEventListener("click", ()=>{
 
