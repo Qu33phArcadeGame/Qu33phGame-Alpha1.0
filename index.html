@@ -237,7 +237,6 @@ function tryAdvanceRound(){
     markers = [];
     current = 0;
   }
-}
 // CLICK CONTROL
 canvas.addEventListener("click", ()=>{
 
@@ -284,8 +283,6 @@ function randomizeSky(){
       x: wx + Math.random()*ww,
       y: END_LINE_Y + 40 + Math.random()*200
     });
-  }
-}
 
 // UPDATE
 function update(){
@@ -326,8 +323,6 @@ function update(){
       setTimeout(() => {
         tryAdvanceRound();
       }, 300);
-    }
-  }
     }
 
     // 🔥 MEGA QU33PH
