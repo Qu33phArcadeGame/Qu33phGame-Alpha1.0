@@ -521,41 +521,51 @@ ctx.fillText("Score: " + totalScore, 20, 50);
 function calculateScore(){
   if(markers.length < 3) return 0;
 
-  let [g, r, b] = markers;
+  let g = markers[0];
+  let r = markers[1];
+  let b = markers[2];
+
+  if(!g || !r || !b) return 0;
 
   let s = 0;
 
-  if(!suddenDeath){
-    // normal scoring (keep whatever you had before)
-    if(touching(g,r)) s += 0.5;
-    if(touching(r,b)) s += 2;
-    if(touching(g,b)) s += 2;
+  if(suddenDeath){
+    // ONLY ONE outcome in sudden death
+
+    if(touching(g,r) && touching(r,b) && touching(g,b)){
+      return 10; // 🔥 full triple override
+
+    } else if(touching(r,b)){
+      return 5;
+
+    } else if(touching(g,b)){
+      return 5;
+
+    } else if(touching(g,r)){
+      return 3;
+
+    } else {
+      return 0;
+    }
 
   } else {
-    // 🔥 sudden death scoring (your rules)
-    if(touching(g,r)) s += 3;  // green + red = 3
-    if(touching(r,b)) s += 5;  // red + blue = 5
-    if(touching(g,b)) s += 5;  // green + blue = 5
-  }
+    // NORMAL MODE (also non-stacking)
 
-  // 💥 triple touch (ALL THREE)
-  if(touching(g,r) && touching(r,b) && touching(g,b)){
-    explosions.push({
-      x: (g.x + r.x + b.x) / 3,
-      y: (g.y + r.y + b.y) / 3,
-      radius: 10,
-      life: 20,
-      text: "QU33PH"
-    });
+    if(touching(g,r) && touching(r,b) && touching(g,b)){
+      return 3;
 
-    if(suddenDeath){
-      s = 10; // 🔥 EXACTLY 10 (overrides everything)
+    } else if(touching(r,b)){
+      return 2;
+
+    } else if(touching(g,b)){
+      return 2;
+
+    } else if(touching(g,r)){
+      return 0.5;
+
+    } else {
+      return 0;
     }
-  }
-
-  return s;
-}
-
 // END
 function endGame(){
   if(totalScore > highScore){
