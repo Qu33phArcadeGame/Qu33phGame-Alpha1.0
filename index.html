@@ -484,28 +484,42 @@ if(!suddenDeath){
 ctx.fillStyle="white";
 ctx.fillText("Score: " + totalScore, 20, 50);
 }
-
-// SCORE (UNCHANGED)
 function calculateScore(){
-  if(markers.length<3) return 0;
+  if(markers.length < 3) return 0;
 
-  let [g,r,b] = markers;
+  let [g, r, b] = markers;
 
   let s = 0;
 
-if(!suddenDeath){
-  // normal scoring
-  if(touching(g,r)) s += 0.5;
-  if(touching(r,b)) s += 2;
-  if(touching(g,b)) s += 2;
+  if(!suddenDeath){
+    // normal scoring
+    if(touching(g,r)) s += 0.5;
+    if(touching(r,b)) s += 2;
+    if(touching(g,b)) s += 2;
 
-} else {
-  // 🔥 sudden death scoring (CUSTOMIZE THESE NUMBERS)
-  if(touching(g,r)) s += 3;   // green + red
-  if(touching(r,b)) s += 5;   // red + blue
-  if(touching(g,b)) s += 5;   // green + blue
+  } else {
+    // sudden death scoring (you can tweak numbers here)
+    if(touching(g,r)) s += 2;
+    if(touching(r,b)) s += 4;
+    if(touching(g,b)) s += 6;
+  }
+
+  // explosion + triple combo bonus (optional)
+  if(touching(g,r) && touching(r,b) && touching(g,b)){
+    explosions.push({
+      x: (g.x + r.x + b.x) / 3,
+      y: (g.y + r.y + b.y) / 3,
+      radius: 10,
+      life: 20,
+      text: "QU33PH"
+    });
+
+    // optional bonus points
+    s += suddenDeath ? 10 : 3;
+  }
+
+  return s;
 }
-
   if(touching(g,r) && touching(r,b) && touching(g,b)){
     explosions.push({
       s += 10; // 🔥 bonus for all 3 touching
