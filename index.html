@@ -372,7 +372,19 @@ ctx.textBaseline = "top";
 
   ctx.fillStyle="#6ec6ff";
   ctx.fillRect(RIGHT_WALL+5, END_LINE_Y, canvas.width-RIGHT_WALL-10, canvas.height-END_LINE_Y);
+scorePopups.forEach(p => {
+  ctx.save();
 
+  ctx.globalAlpha = p.life / 40;
+  ctx.fillStyle = "white";
+  ctx.font = "bold 30px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(p.text, p.x, p.y);
+
+  ctx.restore();
+});
   // SUN
   ctx.fillStyle="yellow";
   ctx.beginPath();
