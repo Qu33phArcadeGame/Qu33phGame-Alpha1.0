@@ -65,10 +65,14 @@ canvas.height = window.innerHeight;
 const LEFT_EDGE = canvas.width * 0.2;
 const RIGHT_WALL = canvas.width * 0.75;
 const END_LINE_Y = canvas.height * 0.2;
+const START_LINE_Y = END_LINE_Y + 60; // ~1 inch-ish depending on screen scale
 
 // 🔥 ADDED: red dot + chair positions
 const redDot = { x: RIGHT_WALL+10, y: END_LINE_Y+40 };
 const chair = { x:(LEFT_EDGE+RIGHT_WALL)/2, y:END_LINE_Y+90, radius:35 };
+// START LINE (entry gate)
+ctx.fillStyle = "rgba(255,255,255,0.4)";
+ctx.fillRect(LEFT_EDGE, START_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
 
 // STATE
 let speedMultiplier = 1;
@@ -193,6 +197,7 @@ canvas.addEventListener("pointerup", ()=>{
 
     // 🔥 ADDED
     megaTriggered:false
+    armed:false,
   });
 
   current++;
@@ -305,6 +310,11 @@ function update(){
     m.vx += m.curve;
     m.x += m.vx * speedMultiplier;
     m.y += m.vy * speedMultiplier;
+
+    // ARMING SYSTEM (must enter playfield first)
+if(!m.armed && m.y < START_LINE_Y){
+  m.armed = true;
+}
 
     m.vx *= 0.94;
     m.vy *= 0.94;
@@ -514,6 +524,10 @@ scorePopups.forEach(p => {
   ctx.shadowBlur = 15;
 }
 
+if(m.armed){
+  ctx.shadowColor = "cyan";
+}
+
 ctx.fillStyle = m.color;
 ctx.fillRect(-10,-m.length/2,20,m.length);
 
@@ -559,6 +573,9 @@ function calculateScore(){
   let b = markers[2];
 
   if(!g || !r || !b) return 0;
+
+// 🔒 NEW RULE: must enter playfield first
+if(!g.armed || !r.armed || !b.armed) return 0;
 
   let s = 0;
 
