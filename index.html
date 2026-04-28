@@ -491,13 +491,24 @@ function calculateScore(){
 
   let [g,r,b] = markers;
 
-  let s=0;
-  if(touching(g,r)) s+=0.5;
-  if(touching(r,b)) s+=2;
-  if(touching(g,b)) s+=2;
+  let s = 0;
+
+if(!suddenDeath){
+  // normal scoring
+  if(touching(g,r)) s += 0.5;
+  if(touching(r,b)) s += 2;
+  if(touching(g,b)) s += 2;
+
+} else {
+  // 🔥 sudden death scoring (CUSTOMIZE THESE NUMBERS)
+  if(touching(g,r)) s += 3;   // green + red
+  if(touching(r,b)) s += 5;   // red + blue
+  if(touching(g,b)) s += 5;   // green + blue
+}
 
   if(touching(g,r) && touching(r,b) && touching(g,b)){
     explosions.push({
+      s += 10; // 🔥 bonus for all 3 touching
       x: (g.x + r.x + b.x) / 3,
       y: (g.y + r.y + b.y) / 3,
       radius: 10,
@@ -506,8 +517,6 @@ function calculateScore(){
     });
   }
 
-  return suddenDeath ? s*2 : s;
-}
 
 // END
 function endGame(){
