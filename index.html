@@ -83,7 +83,6 @@ let suddenDeath = false;
 let explosions = [];
 let scorePopups = [];
 let lastRoundScore = 0;
-let roundLocked = false;
 
 const ROUND_TIME = 30;
 const TOTAL_TIME = 45;
@@ -287,12 +286,7 @@ function randomizeSky(){
     });
   }
 }
-function isMarkerDone(m){
-  return m.fallen || (
-    Math.abs(m.vx) < 0.05 &&
-    Math.abs(m.vy) < 0.05
-  );
-}
+
 // UPDATE
 function update(){
 
@@ -317,40 +311,6 @@ function update(){
 
     m.rotation += m.spinVelocity * speedMultiplier;
     m.spinVelocity *= 0.96;
-    if(gameState === "playing" && !roundLocked){
-
-  const roundReady =
-    current === 3 &&
-    markers.length === 3 &&
-    markers.every(isMarkerDone)
-
-  if(roundReady){
-    roundLocked = true;
-    tryAdvanceRound();
-    if(gameState === "playing" && !roundLocked){
-
-  const roundReady =
-    current === 3 &&
-    markers.length === 3 &&
-    markers.every(isMarkerDone);
-
-  if(roundReady){
-    roundLocked = true;
-
-    tryAdvanceRound();
-
-    setTimeout(() => {
-      roundLocked = false;
-    }, 0);
-  }
-    }
-
-    // unlock immediately for next round
-    setTimeout(() => {
-      roundLocked = false;
-    }, 0);
-  }
-    }
 
     // 🔥 MEGA QU33PH
     if(suddenDeath && !m.megaTriggered && touchingChair(m)){
@@ -397,6 +357,11 @@ scorePopups.forEach(p => {
 
 // remove expired popups
 scorePopups = scorePopups.filter(p => p.life > 0);
+}
+if(gameState === "playing"){
+  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+    tryAdvanceRound();
+  }
 }
 // DRAW (ONLY EXPLOSION TEXT MODIFIED)
 function draw(){
