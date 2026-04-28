@@ -237,6 +237,7 @@ function tryAdvanceRound(){
     markers = [];
     current = 0;
   }
+}
 // CLICK CONTROL
 canvas.addEventListener("click", ()=>{
 
@@ -283,6 +284,8 @@ function randomizeSky(){
       x: wx + Math.random()*ww,
       y: END_LINE_Y + 40 + Math.random()*200
     });
+  }
+}
 
 // UPDATE
 function update(){
@@ -308,22 +311,6 @@ function update(){
 
     m.rotation += m.spinVelocity * speedMultiplier;
     m.spinVelocity *= 0.96;
-    if(gameState === "playing"){
-
-  // only check when 3 markers exist
-  if(current === 3){
-
-    let allDone = markers.every(m => m.stopped || m.fallen);
-
-    if(allDone){
-
-      // prevent multiple triggers per frame
-      current = 99; // temporary lock so it doesn't spam
-
-      setTimeout(() => {
-        tryAdvanceRound();
-      }, 300);
-    }
 
     // 🔥 MEGA QU33PH
     if(suddenDeath && !m.megaTriggered && touchingChair(m)){
@@ -371,6 +358,10 @@ scorePopups.forEach(p => {
 // remove expired popups
 scorePopups = scorePopups.filter(p => p.life > 0);
 }
+if(gameState === "playing"){
+  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+    tryAdvanceRound();
+  }
 }
 // DRAW (ONLY EXPLOSION TEXT MODIFIED)
 function draw(){
