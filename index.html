@@ -142,16 +142,7 @@ function triggerMegaQu33ph(m){
 }
 
 // THROW
-canvas.addEventListener("pointerdown", e=>{
-  if(gameState !== "playing") return;
-  if(current >= 3) return;
 
-  dragging=true;
-  startX=e.clientX;
-  startY=e.clientY;
-  currentX=startX;
-  currentY=startY;
-});
 
 canvas.addEventListener("pointermove", e=>{
   if(!dragging) return;
@@ -359,7 +350,11 @@ scorePopups.forEach(p => {
 // remove expired popups
 scorePopups = scorePopups.filter(p => p.life > 0);
 }
-
+if(gameState === "playing"){
+  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+    tryAdvanceRound();
+  }
+}
 // DRAW (ONLY EXPLOSION TEXT MODIFIED)
 function draw(){
 
