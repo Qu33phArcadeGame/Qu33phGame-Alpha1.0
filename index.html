@@ -1,33 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 body { margin:0; overflow:hidden; background:#111; }
 canvas { display:block; touch-action:none; }
 
-#rotateBtn, #skipBtn {
+#rotateBtn {
   position:absolute;
   bottom:20px;
-  padding:12px 18px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:12px 20px;
   border-radius:10px;
   border:none;
-  font-size:14px;
+  font-size:16px;
+  background:#222;
   color:white;
 }
-
-#rotateBtn {
-  left:20px;
-  background:#222;
-}
-
-#skipBtn {
+  #skipBtn {
+  position:absolute;
+  bottom:20px;
   right:20px;
+  padding:12px 20px;
+  border-radius:10px;
+  border:none;
+  font-size:16px;
   background:#444;
-}
-
-#timeline {
+  color:white;
+  }
+   #timeline {
   position:absolute;
   top:10px;
   left:10%;
@@ -45,15 +48,14 @@ canvas { display:block; touch-action:none; }
 }
 </style>
 </head>
-
 <body>
 
 <canvas id="game"></canvas>
-
-<button id="rotateBtn">Rotate</button>
-<button id="skipBtn">⏩ Skip</button>
-
-<div id="timeline"><div id="progress"></div></div>
+<button id="rotateBtn">Orientation: vertical</button>
+  <button id="skipBtn">⏩ Skip</button>
+  <div id="timeline">
+  <div id="progress"></div>
+  </div>
 
 <script>
 const canvas = document.getElementById("game");
@@ -62,99 +64,82 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// =====================
 // LAYOUT
-// =====================
 const LEFT_EDGE = canvas.width * 0.2;
 const RIGHT_WALL = canvas.width * 0.75;
 const END_LINE_Y = canvas.height * 0.2;
 
-// =====================
 // STATE
-// =====================
+  let speedMultiplier = 1;
+let gameState = "playing";
 let markers = [];
 let current = 0;
-
-let startTime = Date.now();
-let suddenDeath = false;
-
-let speedMultiplier = 1;
-
 let totalScore = 0;
 let highScore = localStorage.getItem("qu33phHigh") || 0;
 
-let megaPop = 0;
+let startTime = Date.now();
+let suddenDeath = false;
+  let explosions = [];
 
-// =====================
-// GAME SETTINGS
-// =====================
 const ROUND_TIME = 30;
 const TOTAL_TIME = 45;
+
+// ORIENTATION
+const orientations = ["vertical","angled","horizontal"];
+let orientationIndex = 0;
+let currentOrientation = "vertical";
+
+document.getElementById("rotateBtn").onclick = () => {
+  orientationIndex = (orientationIndex + 1) % orientations.length;
+  currentOrientation = orientations[orientationIndex];
+  document.getElementById("rotateBtn").innerText =
+    "Orientation: " + currentOrientation;
+  const skipBtn = document.getElementById("skipBtn");
+
+skipBtn.onpointerdown = () => {
+  speedMultiplier = 4;
+};
+
+skipBtn.onpointerup = () => {
+  speedMultiplier = 1;
+};
+
+skipBtn.onpointerleave = () => {
+  speedMultiplier = 1;
+};
+};
+  const skipBtn = document.getElementById("skipBtn");
+
+skipBtn.onpointerdown = () => {
+  speedMultiplier = 3; // speed up
+};
+
+skipBtn.onpointerup = () => {
+  speedMultiplier = 1; // back to normal
+};
+
+// for safety (finger slides off)
+skipBtn.onpointerleave = () => {
+  speedMultiplier = 1;
+};
+
+// INPUT
+let dragging=false,startX,startY,currentX,currentY;
 
 const colors = ["lime","red","blue"];
 const lengths = [60,60,90];
 
-// =====================
-// SKY SYSTEM
-// =====================
-let sunPos = {x:0,y:0};
-let clouds = [];
-
-function randomizeSky(){
-  let wx = RIGHT_WALL + 10;
-  let ww = canvas.width - RIGHT_WALL - 20;
-
-  sunPos = {
-    x: wx + Math.random()*ww,
-    y: END_LINE_Y + 40 + Math.random()*80
-  };
-
-  clouds = [];
-  for(let i=0;i<5;i++){
-    clouds.push({
-      x: wx + Math.random()*ww,
-      y: END_LINE_Y + 30 + Math.random()*200
-    });
-  }
-}
-
-// =====================
-// ROTATION
-// =====================
-const orientations = ["vertical","angled","horizontal"];
-let index = 0;
-let currentOrientation = "vertical";
-
-document.getElementById("rotateBtn").onclick = () => {
-  index = (index + 1) % orientations.length;
-  currentOrientation = orientations[index];
-};
-
-// =====================
-// SKIP
-// =====================
-const skipBtn = document.getElementById("skipBtn");
-
-skipBtn.onpointerdown = () => speedMultiplier = 4;
-skipBtn.onpointerup = () => speedMultiplier = 1;
-skipBtn.onpointerleave = () => speedMultiplier = 1;
-
-// =====================
-// INPUT
-// =====================
-let dragging=false,startX,startY,currentX,currentY;
-
-// =====================
-// HELPERS
-// =====================
 function touching(a,b){
   return Math.hypot(a.x-b.x,a.y-b.y) < 45;
 }
-
+function isTouchingAny(marker){
+  return markers.some(m => m !== marker && !m.fallen && touching(marker, m));
+}
 // =====================
 // THROW
 // =====================
 canvas.addEventListener("pointerdown", e=>{
+  if(gameState !== "playing") return;
   if(current >= 3) return;
 
   dragging=true;
@@ -190,9 +175,12 @@ canvas.addEventListener("pointerup", ()=>{
     vx:dx*0.2,
     vy:dy*0.2,
     curve:dx*0.0003,
-
+    angleType:currentOrientation,
     color:colors[current],
     length:lengths[current],
+    stopped:false,
+    fallen:false,
+    trail:[],
 
     rotation: baseRot,
     spinVelocity:
@@ -200,8 +188,7 @@ canvas.addEventListener("pointerup", ()=>{
       currentOrientation === "angled" ? 0.12 :
       0.18,
 
-    stopped:false,
-    fallen:false,
+    // 🪑 CHAIR INTERACTION FLAG
     chairBoost:false
   });
 
@@ -209,24 +196,69 @@ canvas.addEventListener("pointerup", ()=>{
 });
 
 // =====================
-// SCORE
+// ROUND SYSTEM
 // =====================
-function calculateScore(){
-  if(markers.length < 3) return 0;
+function tryAdvanceRound(){
+  if(gameState !== "playing") return;
 
-  let [g,r,b] = markers;
+  if(current === 3 && markers.every(m=>m.stopped || m.fallen)){
+    totalScore += calculateScore();
+    markers = [];
+    current = 0;
+  }
+}
 
-  let s = 0;
+// =====================
+// CLICK CONTROL
+// =====================
+canvas.addEventListener("click", ()=>{
 
-  if(touching(g,r)) s += 0.5;
-  if(touching(r,b)) s += 2;
-  if(touching(g,b)) s += 2;
-
-  if(touching(g,r) && touching(r,b) && touching(g,b)){
-    s += 3;
+  if(gameState === "end"){
+    gameState = "playing";
+    markers = [];
+    current = 0;
+    totalScore = 0;
+    startTime = Date.now();
+    suddenDeath = false;
+    randomizeSky();
+    return;
   }
 
-  return suddenDeath ? s * 2 : s;
+  tryAdvanceRound();
+});
+
+// =====================
+// SKY
+// =====================
+let sunPos={x:0,y:0};
+let clouds=[];
+let skyWindows=[];
+
+function randomizeSky(){
+  let wx = RIGHT_WALL + 10;
+  let ww = canvas.width - RIGHT_WALL - 20;
+
+  sunPos = {
+    x: wx + Math.random()*ww,
+    y: END_LINE_Y + 40 + Math.random()*80
+  };
+
+  clouds=[];
+  skyWindows=[];
+
+  for(let i=0;i<4;i++){
+    clouds.push({
+      x: wx + Math.random()*ww,
+      y: END_LINE_Y + 40 + Math.random()*200
+    });
+  }
+
+  for(let i=0;i<6;i++){
+    skyWindows.push({
+      x: wx + Math.random()*ww,
+      y: END_LINE_Y + 40 + Math.random()*200
+    });
+  }
 }
 
 // =====================
@@ -239,25 +271,12 @@ function update(){
   if(elapsed > ROUND_TIME && elapsed <= TOTAL_TIME){
     suddenDeath = true;
   }
-
   if(elapsed > TOTAL_TIME){
-    totalScore += calculateScore();
-
-    if(totalScore > highScore){
-      highScore = totalScore;
-      localStorage.setItem("qu33phHigh", highScore);
-    }
-
-    markers = [];
-    current = 0;
-    startTime = Date.now();
-    suddenDeath = false;
-    randomizeSky();
+    endGame();
   }
 
   markers.forEach(m=>{
-
-    if(m.fallen) return;
+    if(m.stopped||m.fallen) return;
 
     m.vx += m.curve;
     m.x += m.vx * speedMultiplier;
@@ -266,8 +285,38 @@ function update(){
     m.vx *= 0.94;
     m.vy *= 0.94;
 
+    // spin + friction
     m.rotation += m.spinVelocity * speedMultiplier;
     m.spinVelocity *= 0.96;
+
+    if(Math.abs(m.spinVelocity) < 0.001){
+      m.spinVelocity = 0;
+    }
+
+    // COLLISION WITH CHAIR (1 IN 7)
+    if (suddenDeath && !m.chairBoost && !m.stopped && !m.fallen) {
+  if (Math.random() < 1/7) {
+
+    const targetX = RIGHT_WALL + 10;
+    const targetY = END_LINE_Y + 40;
+
+    let dx = targetX - m.x;
+    let dy = targetY - m.y;
+
+    const dist = Math.max(1, Math.sqrt(dx*dx + dy*dy));
+
+    dx /= dist;
+    dy /= dist;
+
+    m.vx += dx * 6;
+    m.vy += dy * 6;
+
+    m.chairBoost = true;
+  }
+    }
+
+    m.trail.push({x:m.x,y:m.y});
+    if(m.trail.length > 20) m.trail.shift();
 
     if(m.x < LEFT_EDGE) m.fallen = true;
 
@@ -281,46 +330,24 @@ function update(){
       m.vy *= -0.2;
     }
 
-    // =====================
-    // CHAIR (1 IN 3)
-    // =====================
-    if(suddenDeath && !m.chairBoost && !m.fallen){
-
-      if(Math.random() < 1/3){
-
-        let tx = RIGHT_WALL + 10;
-        let ty = END_LINE_Y + 40;
-
-        let dx = tx - m.x;
-        let dy = ty - m.y;
-
-        let d = Math.max(1, Math.sqrt(dx*dx+dy*dy));
-
-        m.vx += (dx/d)*6;
-        m.vy += (dy/d)*6;
-
-        m.chairBoost = true;
-      }
+    if(Math.abs(m.vx)<0.05 && Math.abs(m.vy)<0.05){
+      m.stopped = true;
     }
+    let elapsed = (Date.now() - startTime) / 1000;
+let progress = Math.min(elapsed / TOTAL_TIME, 1);
 
-    // =====================
-    // MEGA QU33PH
-    // =====================
-    let dx = (RIGHT_WALL+10) - m.x;
-    let dy = (END_LINE_Y+40) - m.y;
-
-    if(Math.hypot(dx,dy) < 15 && m.chairBoost){
-      megaPop = 60;
-      canvas.style.transform =
-        `translate(${Math.random()*6-3}px,${Math.random()*6-3}px)`;
-
-      setTimeout(()=>canvas.style.transform="none",100);
-      m.chairBoost = false;
-    }
+document.getElementById("progress").style.width = (progress * 100) + "%";
   });
 
-  let progress = Math.min(((Date.now()-startTime)/1000)/TOTAL_TIME,1);
-  document.getElementById("progress").style.width = (progress*100)+"%";
+  tryAdvanceRound();
+  explosions.forEach(e => {
+  e.radius += 4;   // expand
+  e.life--;
+    console.log(progress);
+});
+
+// remove dead ones
+explosions = explosions.filter(e => e.life > 0);
 }
 
 // =====================
@@ -328,23 +355,38 @@ function update(){
 // =====================
 function draw(){
 
+  if(gameState === "end"){
+    ctx.fillStyle="black";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle="white";
+    ctx.font="60px Arial";
+    ctx.fillText("Qu33ph", canvas.width/2-120, 150);
+
+    ctx.font="30px Arial";
+    ctx.fillText("High Score: " + highScore, canvas.width/2-150, 220);
+
+    ctx.font="20px Arial";
+    ctx.fillText("Tap anywhere to restart", canvas.width/2-140, 300);
+    return;
+  }
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   // WALL
   ctx.fillStyle="#222";
-  ctx.fillRect(RIGHT_WALL,0,canvas.width,canvas.height);
+  ctx.fillRect(RIGHT_WALL,0,canvas.width-RIGHT_WALL,canvas.height);
 
   // SKY
   ctx.fillStyle="#6ec6ff";
-  ctx.fillRect(RIGHT_WALL,END_LINE_Y,canvas.width,canvas.height);
+  ctx.fillRect(RIGHT_WALL+5, END_LINE_Y, canvas.width-RIGHT_WALL-10, canvas.height-END_LINE_Y);
 
-  // SUN
+  // SUN + CLOUDS
   ctx.fillStyle="yellow";
   ctx.beginPath();
   ctx.arc(sunPos.x,sunPos.y,20,0,Math.PI*2);
   ctx.fill();
 
-  // CLOUDS
   ctx.fillStyle="white";
   clouds.forEach(c=>{
     ctx.beginPath();
@@ -353,69 +395,149 @@ function draw(){
     ctx.fill();
   });
 
+  // WINDOWS
+  ctx.fillStyle="rgba(255,255,255,0.25)";
+  skyWindows.forEach(w=>{
+    ctx.fillRect(w.x,w.y,30,20);
+  });
+
+  // WINDOWSILL
+  ctx.fillStyle="#000";
+  ctx.fillRect(RIGHT_WALL, END_LINE_Y, 35, canvas.height-END_LINE_Y);
+
   // RED DOT
   ctx.fillStyle="red";
   ctx.beginPath();
-  ctx.arc(RIGHT_WALL+10, END_LINE_Y+40, 10,0,Math.PI*2);
+  ctx.arc(RIGHT_WALL+10, END_LINE_Y+40, 10, 0, Math.PI*2);
   ctx.fill();
 
+  ctx.fillStyle="white";
+  ctx.fillRect(LEFT_EDGE, END_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
+
+  // 🪑 CHAIR (RESTORED)
+  if(suddenDeath){
+    ctx.save();
+    ctx.translate((LEFT_EDGE+RIGHT_WALL)/2, END_LINE_Y + 90);
+    ctx.rotate(Math.PI);
+    ctx.font="30px Arial";
+    ctx.fillText("🪑", -15, 10);
+    ctx.restore();
+  }
+  explosions.forEach(e => {
+  ctx.beginPath();
+  ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 4;
+  ctx.globalAlpha = e.life / 20;
+
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+});
   // MARKERS
   markers.forEach(m=>{
     if(m.fallen) return;
+    // 🔥 TRAIL DRAWING
+m.trail.forEach((p,i)=>{
+  ctx.fillStyle = m.color;
+  ctx.globalAlpha = i / m.trail.length; // fade out
+  ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+});
+ctx.globalAlpha = 1;
 
     ctx.save();
     ctx.translate(m.x,m.y);
     ctx.rotate(m.rotation);
+    if(isTouchingAny(m)){
+  ctx.shadowColor = "lime";
+  ctx.shadowBlur = 25;
 
-    ctx.fillStyle=m.color;
-    ctx.shadowColor = m.chairBoost ? "lime" : "red";
-    ctx.shadowBlur = 15;
+  // 💥 IMPACT SPARKS
+  for(let i = 0; i < 3; i++){
+    ctx.fillRect(
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 20,
+      3, 3
+    );
+  }
+
+} else {
+  ctx.shadowColor = "red";
+  ctx.shadowBlur = 15;
+    }
+
+    ctx.fillStyle = m.color;
+
+if(isTouchingAny(m)){
+  ctx.shadowColor = "lime";   // touching = green
+  ctx.shadowBlur = 25;
+} else {
+  ctx.shadowColor = "red";    // not touching = red
+  ctx.shadowBlur = 15;
+}
 
     ctx.fillRect(-10,-m.length/2,20,m.length);
 
     ctx.restore();
   });
 
-  // MEGA TEXT
-  if(megaPop > 0){
-    ctx.save();
-    ctx.textAlign="center";
-    ctx.fillStyle="white";
-    ctx.font="bold 70px Arial";
-    ctx.shadowColor="lime";
-    ctx.shadowBlur=40;
+  let elapsed = (Date.now()-startTime)/1000;
 
-    ctx.fillText("MEGA QU33PH", canvas.width/2, canvas.height/2);
-    ctx.restore();
-
-    megaPop--;
-  }
-
-  // UI
   ctx.fillStyle="white";
   ctx.font="20px Arial";
-  ctx.fillText("Score: " + totalScore, 20, 40);
 
-  ctx.fillText("High: " + highScore, 20, 70);
-
-  if(suddenDeath){
+  if(!suddenDeath){
+    ctx.fillText("Time: "+Math.max(0, ROUND_TIME - Math.floor(elapsed)),20,30);
+  } else {
     ctx.fillStyle="red";
-    ctx.fillText("SUDDEN DEATH", 20, 100);
+    ctx.fillText("SUDDEN DEATH: "+Math.max(0, TOTAL_TIME - Math.floor(elapsed)),20,30);
   }
+
+  ctx.fillStyle="white";
+  ctx.fillText("Score: "+totalScore,20,60);
 }
 
-// =====================
-// LOOP
-// =====================
+// SCORE
+function calculateScore(){
+  if(markers.length<3) return 0;
+
+  let [g,r,b] = markers;
+
+  let s=0;
+  if(touching(g,r)) s+=0.5;
+  if(touching(r,b)) s+=2;
+  if(touching(g,b)) s+=2;
+if(touching(g,r) && touching(r,b) && touching(g,b)){
+  // 💥 CREATE RING EXPLOSION
+  explosions.push({
+    x: (g.x + r.x + b.x) / 3,
+    y: (g.y + r.y + b.y) / 3,
+    radius: 10,
+    life: 20
+  });
+}
+  return suddenDeath ? s*2 : s;
+}
+
+// END
+function endGame(){
+  if(totalScore > highScore){
+    highScore = totalScore;
+    localStorage.setItem("qu33phHigh", highScore);
+  }
+  gameState="end";
+}
+
+// INIT
+randomizeSky();
+
 function loop(){
   update();
   draw();
   requestAnimationFrame(loop);
 }
-
-randomizeSky();
 loop();
 
 </script>
 </body>
-</html>
+</html> 
