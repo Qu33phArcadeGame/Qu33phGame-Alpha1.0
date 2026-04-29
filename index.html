@@ -81,6 +81,16 @@ const orientations = ["vertical","angled","horizontal"];
 let orientationIndex = 0;
 let currentOrientation = "vertical";
 
+// Step 1: Load images for markers
+const partyHornGreen = new Image();
+partyHornGreen.src = '';  // Provide the correct path to the image
+
+const partyHornRed = new Image();
+partyHornRed.src = 'partyHornRed.png';  // Provide the correct path to the image
+
+const partyHornBlue = new Image();
+partyHornBlue.src = 'partyHornBlue.png';  // Provide the correct path to the image
+
 document.getElementById("rotateBtn").onclick = () => {
   orientationIndex = (orientationIndex + 1) % orientations.length;
   currentOrientation = orientations[orientationIndex];
@@ -498,7 +508,7 @@ scorePopups.forEach(p => {
   ctx.restore();
 });
 
-  // MARKERS
+  // MARKERS (DRAW IMAGES INSTEAD OF RECTANGLES)
   markers.forEach(m=>{
     if(m.fallen) return;
 
@@ -506,16 +516,14 @@ scorePopups.forEach(p => {
     ctx.translate(m.x,m.y);
     ctx.rotate(m.rotation);
 
-    if(isTouchingAny(m)){
-      ctx.shadowColor = "lime";
-      ctx.shadowBlur = 25;
-    } else {
-      ctx.shadowColor = "red";
-      ctx.shadowBlur = 15;
+    // Use different images based on the marker's color
+    if (m.color === "lime") {
+      ctx.drawImage(partyHornGreen, -10, -m.length / 2, 20, m.length); // Adjust size as needed
+    } else if (m.color === "red") {
+      ctx.drawImage(partyHornRed, -10, -m.length / 2, 20, m.length); // Adjust size as needed
+    } else if (m.color === "blue") {
+      ctx.drawImage(partyHornBlue, -10, -m.length / 2, 20, m.length); // Adjust size as needed
     }
-
-    ctx.fillStyle = m.color;
-    ctx.fillRect(-10,-m.length/2,20,m.length);
 
     ctx.restore();
   });
