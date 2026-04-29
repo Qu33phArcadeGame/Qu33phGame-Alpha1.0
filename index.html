@@ -80,7 +80,13 @@ let startTime = Date.now();
 let suddenDeath = false;
 let explosions = [];
 let scorePopups = [];
+let previewUsed = [false, false, false];
 let lastRoundScore = 0;
+  let previewMarkers = [
+  { color: "green", x: 0, used: false },
+  { color: "red", x: 0, used: false },
+  { color: "blue", x: 0, used: false }
+];
 let shake = 0;
   function addShake(amount){
   shake = Math.max(shake, amount);
@@ -179,6 +185,7 @@ canvas.addEventListener("pointerup", ()=>{
   markers.push({
     x:canvas.width/2,
     y:canvas.height-50,
+    usedPreview: current,
     vx:dx*0.2,
     vy:dy*0.2,
     curve:dx*0.0003,
@@ -203,7 +210,7 @@ canvas.addEventListener("pointerup", ()=>{
   });
 
   current++;
-});
+  previewMarkers[current - 1].used = true;
 
 // ROUND SYSTEM
 function tryAdvanceRound(){
@@ -512,6 +519,22 @@ ctx.translate(shakeX, shakeY);
   ctx.fillStyle = "rgba(255,255,255,0.4)";
   ctx.fillRect(LEFT_EDGE, START_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
 
+  // PREVIEW MARKERS (before throw)
+previewMarkers.forEach((p, i) => {
+  if (p.used) return;
+
+  const img = markerImages[p.color];
+  if (!img || !img.complete) return;
+
+  const spacing = 60;
+  const baseX = (LEFT_EDGE + RIGHT_WALL) / 2;
+
+  const x = baseX + (i - 1) * spacing;
+  const y = START_LINE_Y - 40;
+
+  ctx.drawImage(img, x - 20, y - 20, 40, 40);
+});
+
   // 🔥 SHOW TEXT ONLY WHEN READY
   if(current === 3 && markers.every(m => m.stopped || m.fallen)){
     ctx.fillStyle = "white";
@@ -568,6 +591,21 @@ scorePopups.forEach(p => {
 
   ctx.restore();
 });
+
+  for(let i = 0; i < 3; i++){
+
+  if(previewUsed[i]) continue;
+
+  const img = markerImages[colors[i]];
+  if(!img || !img.complete) continue;
+
+  let x = LEFT_EDGE + (RIGHT_WALL - LEFT_EDGE) / 2;
+  let y = START_LINE_Y - 60 - i * 60;
+
+  ctx.globalAlpha = 0.5;
+  ctx.drawImage(img, x - 25, y - 25, 50, 50);
+  ctx.globalAlpha = 1;
+  }
 
   // MARKERS
 markers.forEach(m => {
