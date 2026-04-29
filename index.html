@@ -65,7 +65,7 @@ canvas.height = window.innerHeight;
 const LEFT_EDGE = canvas.width * 0.2;
 const RIGHT_WALL = canvas.width * 0.75;
 const END_LINE_Y = canvas.height * 0.2;
-const START_LINE_Y = END_LINE_Y + 60; // ~1 inch-ish depending on screen scale
+const START_LINE_Y = canvas.height - 80; // ~1 inch-ish depending on screen scale
 
 // 🔥 ADDED: red dot + chair positions
 const redDot = { x: RIGHT_WALL+10, y: END_LINE_Y+40 };
