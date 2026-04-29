@@ -81,6 +81,7 @@ let suddenDeath = false;
 let explosions = [];
 let scorePopups = [];
 let lastRoundScore = 0;
+let particles = [];
 
 const ROUND_TIME = 30;
 const TOTAL_TIME = 45;
@@ -304,10 +305,29 @@ function update(){
     if(m.stopped||m.fallen) return;
 
     m.life += 1/60; // count seconds (roughly)
-    if(m.life >= 1){
+    if (m.life >= 1 && !m.stopped) {
   m.stopped = true;
   m.vx = 0;
   m.vy = 0;
+
+  // 💥 PARTICLE BURST
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x: m.x,
+      y: m.y,
+      vx: (Math.random() - 0.5) * 4,
+      vy: (Math.random() - 0.5) * 4,
+      life: 30,
+      color: m.color
+      particles.forEach(p => {
+  p.x += p.vx;
+  p.y += p.vy;
+  p.life--;
+});
+
+particles = particles.filter(p => p.life > 0);
+    });
+  }
     }
 
     m.vx += m.curve;
@@ -563,6 +583,17 @@ markers.forEach(m => {
   drawMarker(m);
 
   ctx.shadowBlur = 0;
+});
+
+  particles.forEach(p => {
+  ctx.globalAlpha = p.life / 30;
+  ctx.fillStyle = p.color;
+
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.globalAlpha = 1;
 });
 
   // UI TEXT
