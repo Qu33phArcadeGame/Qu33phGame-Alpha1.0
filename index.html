@@ -2,39 +2,39 @@
 <html>
 <head>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin:0; overflow:hidden; background:#111; }
-    canvas { display:block; touch-action:none; }
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { margin:0; overflow:hidden; background:#111; }
+canvas { display:block; touch-action:none; }
 
-    #rotateBtn {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 20px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-      background: #222;
-      color: white;
-    }
-    #timeline {
-      position: absolute;
-      top: 10px;
-      left: 10%;
-      width: 80%;
-      height: 6px;
-      background: #333;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    #progress {
-      height: 100%;
-      width: 0%;
-      background: lime;
-    }
-  </style>
+#rotateBtn {
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:12px 20px;
+  border-radius:10px;
+  border:none;
+  font-size:16px;
+  background:#222;
+  color:white;
+}
+#timeline {
+  position:absolute;
+  top:10px;
+  left:10%;
+  width:80%;
+  height:6px;
+  background:#333;
+  border-radius:10px;
+  overflow:hidden;
+}
+#progress {
+  height:100%;
+  width:0%;
+  background:lime;
+}
+</style>
 </head>
 <body>
 
@@ -55,24 +55,9 @@ const RIGHT_WALL = canvas.width * 0.75;
 const END_LINE_Y = canvas.height * 0.2;
 const START_LINE_Y = canvas.height - 80; // ~1 inch-ish depending on screen scale
 
-// Load the images (replace with actual image file paths)
-const partyHornBlue = new Image();
-partyHornBlue.src = '1000069192-removebg-preview.png';  // Blue Image
-
-const partyHornGreen = new Image();
-partyHornGreen.src = '1000069191-removebg-preview.png';  // Green Image
-
-const partyHornRed = new Image();
-partyHornRed.src = '1000069189-removebg-preview.png';  // Red Image
-
-// Ensure images are loaded before starting the game
-partyHornBlue.onload = () => {
-  partyHornGreen.onload = () => {
-    partyHornRed.onload = () => {
-      loop();  // Start the game once all images are loaded
-    };
-  };
-};
+// 🔥 ADDED: red dot + chair positions
+const redDot = { x: RIGHT_WALL+10, y: END_LINE_Y+40 };
+const chair = { x:(LEFT_EDGE+RIGHT_WALL)/2, y:END_LINE_Y+90, radius:35 };
 
 // STATE
 let speedMultiplier = 1;
@@ -92,11 +77,10 @@ const ROUND_TIME = 30;
 const TOTAL_TIME = 45;
 
 // ORIENTATION
-const orientations = ["vertical", "angled", "horizontal"];
+const orientations = ["vertical","angled","horizontal"];
 let orientationIndex = 0;
 let currentOrientation = "vertical";
 
-// Rotate button for changing orientation
 document.getElementById("rotateBtn").onclick = () => {
   orientationIndex = (orientationIndex + 1) % orientations.length;
   currentOrientation = orientations[orientationIndex];
@@ -104,11 +88,11 @@ document.getElementById("rotateBtn").onclick = () => {
     "Orientation: " + currentOrientation;
 };
 
-// Marker creation logic
-canvas.addEventListener("pointerdown", e => {
-  if (gameState !== "playing") return;
+canvas.addEventListener("pointerdown", e=>{
+  if(gameState !== "playing") return;
 
-  if (current >= 3 && markers.length === 0) return;
+  // 🔥 SAFE FIX (prevents locked input bug)
+  if(current >= 3 && markers.length === 0) return;
 
   dragging = true;
   startX = e.clientX;
@@ -117,84 +101,204 @@ canvas.addEventListener("pointerdown", e => {
   currentY = startY;
 });
 
-let dragging = false, startX, startY, currentX, currentY;
+// INPUT
+let dragging=false,startX,startY,currentX,currentY;
 
-function touching(a, b) {
-  return Math.hypot(a.x - b.x, a.y - b.y) < 45;
+const colors = ["lime","red","blue"];
+const lengths = [60,60,90];
+
+function touching(a,b){
+  return Math.hypot(a.x-b.x,a.y-b.y) < 45;
 }
-
-function isTouchingAny(marker) {
+function isTouchingAny(marker){
   return markers.some(m => m !== marker && !m.fallen && touching(marker, m));
 }
 
-// ADD GAME LOOP
+// 🔥 ADDED
+function touchingChair(m){
+  return Math.hypot(m.x-chair.x, m.y-chair.y) < chair.radius;
+}
 
-canvas.addEventListener("pointermove", e => {
-  if (!dragging) return;
-  currentX = e.clientX;
-  currentY = e.clientY;
+function triggerMegaQu33ph(m){
+  m.x = redDot.x;
+  m.y = redDot.y;
+  m.vx = 0;
+  m.vy = 0;
+  m.stopped = true;
+
+  totalScore += 10;
+
+  explosions.push({
+    x:redDot.x,
+    y:redDot.y,
+    radius:10,
+    life:30,
+    text:"MEGA QU33PH",
+    mega:true
+  });
+}
+
+// THROW
+
+
+canvas.addEventListener("pointermove", e=>{
+  if(!dragging) return;
+  currentX=e.clientX;
+  currentY=e.clientY;
 });
 
-canvas.addEventListener("pointerup", () => {
-  if (!dragging) return;
-  dragging = false;
+canvas.addEventListener("pointerup", ()=>{
+  if(!dragging) return;
+  dragging=false;
 
-  if (current >= 3) return;
+  if(current >= 3) return;
 
-  let dx = currentX - startX;
-  let dy = currentY - startY;
+  let dx=currentX-startX;
+  let dy=currentY-startY;
 
   let baseRot =
     currentOrientation === "vertical" ? 0 :
-    currentOrientation === "angled" ? Math.PI / 6 :
-    Math.PI / 2;
+    currentOrientation === "angled" ? Math.PI/6 :
+    Math.PI/2;
 
   markers.push({
-    x: canvas.width / 2,
-    y: canvas.height - 50,
-    vx: dx * 0.2,
-    vy: dy * 0.2,
-    curve: dx * 0.0003,
-    angleType: currentOrientation,
-    color: colors[current],
-    length: lengths[current],
-    stopped: false,
-    fallen: false,
-    trail: [],
+    x:canvas.width/2,
+    y:canvas.height-50,
+    vx:dx*0.2,
+    vy:dy*0.2,
+    curve:dx*0.0003,
+    angleType:currentOrientation,
+    color:colors[current],
+    length:lengths[current],
+    stopped:false,
+    fallen:false,
+    trail:[],
     rotation: baseRot,
     spinVelocity:
       currentOrientation === "vertical" ? 0.08 :
       currentOrientation === "angled" ? 0.12 :
       0.18,
-    chairBoost: false,
-    megaTriggered: false,
-    armed: false,
+    chairBoost:false,
+
+    // 🔥 ADDED
+    megaTriggered:false,
+    armed:false,
+
     life: 0,
   });
 
   current++;
 });
 
-// UPDATE GAME AND MARKERS DRAW
+// ROUND SYSTEM
+function tryAdvanceRound(){
+  if(gameState !== "playing") return;
 
-function update() {
-  let elapsed = (Date.now() - startTime) / 1000;
+  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
 
-  if (elapsed > ROUND_TIME && elapsed <= TOTAL_TIME) {
+    let g = markers[0];
+    let r = markers[1];
+    let b = markers[2];
+
+    let roundScore = calculateScore();
+    totalScore += roundScore;
+
+    // 🔥 POPUP
+    scorePopups.push({
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      text: "+" + roundScore,
+      life: 40
+    });
+
+    // 💥 QU33PH CHECK (RESTORED)
+    if(g && r && b &&
+       touching(g,r) &&
+       touching(r,b) &&
+       touching(g,b)){
+
+      explosions.push({
+        x: (g.x + r.x + b.x) / 3,
+        y: (g.y + r.y + b.y) / 3,
+        radius: 10,
+        life: 20,
+        text: "QU33PH"
+      });
+    }
+
+    markers = [];
+    current = 0;
+  }
+}
+// CLICK CONTROL
+canvas.addEventListener("click", ()=>{
+
+  if(gameState === "end"){
+    gameState = "playing";
+    markers = [];
+    current = 0;
+    totalScore = 0;
+    startTime = Date.now();
+    suddenDeath = false;
+    randomizeSky();
+    return;
+  }
+
+  tryAdvanceRound();
+});
+
+// SKY (UNCHANGED)
+let sunPos={x:0,y:0};
+let clouds=[];
+let skyWindows=[];
+
+function randomizeSky(){
+  let wx = RIGHT_WALL + 10;
+  let ww = canvas.width - RIGHT_WALL - 20;
+
+  sunPos = {
+    x: wx + Math.random()*ww,
+    y: END_LINE_Y + 40 + Math.random()*80
+  };
+
+  clouds=[];
+  skyWindows=[];
+
+  for(let i=0;i<4;i++){
+    clouds.push({
+      x: wx + Math.random()*ww,
+      y: END_LINE_Y + 40 + Math.random()*200
+    });
+  }
+
+  for(let i=0;i<6;i++){
+    skyWindows.push({
+      x: wx + Math.random()*ww,
+      y: END_LINE_Y + 40 + Math.random()*200
+    });
+  }
+}
+
+// UPDATE
+function update(){
+
+  let elapsed = (Date.now()-startTime)/1000;
+
+  if(elapsed > ROUND_TIME && elapsed <= TOTAL_TIME){
     suddenDeath = true;
   }
-  if (elapsed > TOTAL_TIME) {
+  if(elapsed > TOTAL_TIME){
     endGame();
   }
 
-  markers.forEach(m => {
-    if (m.stopped || m.fallen) return;
+  markers.forEach(m=>{
+    if(m.stopped||m.fallen) return;
 
-    m.life += 1 / 60; // count seconds (roughly)
-    if (m.life >= 1) {
-      m.stopped = true;
-      m.vx = 0;
-      m.vy = 0;
+    m.life += 1/60; // count seconds (roughly)
+    if(m.life >= 1){
+  m.stopped = true;
+  m.vx = 0;
+  m.vy = 0;
     }
 
     m.vx += m.curve;
@@ -202,9 +306,9 @@ function update() {
     m.y += m.vy * speedMultiplier;
 
     // ARMING SYSTEM (must enter playfield first)
-    if (!m.armed && m.y < START_LINE_Y) {
-      m.armed = true;
-    }
+if(!m.armed && m.y < START_LINE_Y){
+  m.armed = true;
+}
 
     m.vx *= 0.94;
     m.vy *= 0.94;
@@ -212,54 +316,292 @@ function update() {
     m.rotation += m.spinVelocity * speedMultiplier;
     m.spinVelocity *= 0.96;
 
-    m.trail.push({ x: m.x, y: m.y });
-    if (m.trail.length > 20) m.trail.shift();
+    // 🔥 MEGA QU33PH
+    if(suddenDeath && !m.megaTriggered && touchingChair(m)){
+      if(Math.random() < 0.25){
+        triggerMegaQu33ph(m);
+      }
+      m.megaTriggered = true;
+    }
 
-    if (m.x < LEFT_EDGE) m.fallen = true;
+    m.trail.push({x:m.x,y:m.y});
+    if(m.trail.length > 20) m.trail.shift();
 
-    if (m.x > RIGHT_WALL) {
+    if(m.x < LEFT_EDGE) m.fallen = true;
+
+    if(m.x > RIGHT_WALL){
       m.x = RIGHT_WALL;
       m.vx *= -0.4;
     }
 
-    if (m.y < END_LINE_Y) {
+    if(m.y < END_LINE_Y){
       m.y = END_LINE_Y;
       m.vy *= -0.2;
     }
 
-    if (Math.abs(m.vx) < 0.05 && Math.abs(m.vy) < 0.05) {
+    if(Math.abs(m.vx)<0.05 && Math.abs(m.vy)<0.05){
       m.stopped = true;
     }
-  });
-}
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);  // Clear screen
-  markers.forEach(m => {
-    if (m.fallen) return;
+    let progress = Math.min(elapsed / TOTAL_TIME, 1);
+    document.getElementById("progress").style.width = (progress * 100) + "%";
+  });
+
+  explosions.forEach(e=>{
+    e.radius += e.mega ? 6 : 4;
+    e.life--;
+  });
+
+  explosions = explosions.filter(e => e.life > 0);
+  // 🔥 animate score popups
+scorePopups.forEach(p => {
+  p.y -= 1;     // move upward
+  p.life--;     // fade out over time
+});
+
+// remove expired popups
+scorePopups = scorePopups.filter(p => p.life > 0);
+}
+if(gameState === "playing"){
+  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+    tryAdvanceRound();
+  }
+}
+// DRAW (ONLY EXPLOSION TEXT MODIFIED)
+function draw(){
+
+  // END SCREEN
+  if(gameState === "end"){
+    ctx.fillStyle="black";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+
+    ctx.fillStyle="white";
+    ctx.font="60px Arial";
+    ctx.fillText("Qu33ph", canvas.width/2, 150);
+
+    ctx.font="30px Arial";
+    ctx.fillText("High Score: " + highScore, canvas.width/2, 220);
+
+    ctx.font="20px Arial";
+    ctx.fillText("Tap anywhere to restart", canvas.width/2, 300);
+
+    return;
+  }
+
+  // CLEAR SCREEN (correct place)
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // BACKGROUND
+  ctx.fillStyle="#222";
+  ctx.fillRect(RIGHT_WALL,0,canvas.width-RIGHT_WALL,canvas.height);
+
+  ctx.fillStyle="#6ec6ff";
+  ctx.fillRect(RIGHT_WALL+5, END_LINE_Y, canvas.width-RIGHT_WALL-10, canvas.height-END_LINE_Y);
+
+  // SUN
+  ctx.fillStyle="yellow";
+  ctx.beginPath();
+  ctx.arc(sunPos.x,sunPos.y,20,0,Math.PI*2);
+  ctx.fill();
+
+  // CLOUDS
+  ctx.fillStyle="white";
+  clouds.forEach(c=>{
+    ctx.beginPath();
+    ctx.arc(c.x,c.y,15,0,Math.PI*2);
+    ctx.arc(c.x+20,c.y,20,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // WINDOWS
+  ctx.fillStyle="rgba(255,255,255,0.25)";
+  skyWindows.forEach(w=>{
+    ctx.fillRect(w.x,w.y,30,20);
+  });
+
+  // WINDOWSILL
+  ctx.fillStyle="#000";
+  ctx.fillRect(RIGHT_WALL, END_LINE_Y, 35, canvas.height-END_LINE_Y);
+
+  // RED DOT
+  ctx.fillStyle="red";
+  ctx.beginPath();
+  ctx.arc(redDot.x, redDot.y, 10, 0, Math.PI*2);
+  ctx.fill();
+
+  // TOP LINE
+  ctx.fillStyle="white";
+  ctx.fillRect(LEFT_EDGE, END_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
+
+  // START LINE
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillRect(LEFT_EDGE, START_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
+
+  // 🔥 SHOW TEXT ONLY WHEN READY
+  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+    ctx.fillStyle = "white";
+    ctx.font = "bold 24px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+
+    ctx.fillText(
+      "Tap anywhere on field to advance",
+      (LEFT_EDGE + RIGHT_WALL) / 2,
+      END_LINE_Y - 20
+    );
+  }
+
+  // CHAIR
+  if(suddenDeath){
+    ctx.save();
+    ctx.translate(chair.x, chair.y);
+    ctx.rotate(Math.PI);
+    ctx.font="30px Arial";
+    ctx.fillText("🪑", -15, 10);
+    ctx.restore();
+  }
+  // 💥 EXPLOSIONS
+explosions.forEach(e=>{
+  ctx.beginPath();
+  ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 4;
+  ctx.globalAlpha = e.life / 30;
+  ctx.stroke();
+
+  ctx.globalAlpha = e.life / 30;
+  ctx.fillStyle = "white";
+  ctx.font = e.mega ? "bold 50px Arial" : "bold 60px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(e.text || "QU33PH", e.x, e.y);
+
+  ctx.globalAlpha = 1;
+});
+
+// 🔥 SCORE POPUPS (+points)
+scorePopups.forEach(p => {
+  ctx.save();
+
+  ctx.globalAlpha = p.life / 40;
+  ctx.fillStyle = "white";
+  ctx.font = "bold 30px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(p.text, p.x, p.y);
+
+  ctx.restore();
+});
+
+  // MARKERS
+  markers.forEach(m=>{
+    if(m.fallen) return;
 
     ctx.save();
-    ctx.translate(m.x, m.y);
+    ctx.translate(m.x,m.y);
     ctx.rotate(m.rotation);
 
-    if (m.color === "green") {
-      ctx.drawImage(partyHornGreen, -partyHornGreen.width / 2, -partyHornGreen.height / 2);
-    } else if (m.color === "red") {
-      ctx.drawImage(partyHornRed, -partyHornRed.width / 2, -partyHornRed.height / 2);
-    } else if (m.color === "blue") {
-      ctx.drawImage(partyHornBlue, -partyHornBlue.width / 2, -partyHornBlue.height / 2);
+    if(isTouchingAny(m)){
+      ctx.shadowColor = "lime";
+      ctx.shadowBlur = 25;
+    } else {
+      ctx.shadowColor = "red";
+      ctx.shadowBlur = 15;
     }
+
+    ctx.fillStyle = m.color;
+    ctx.fillRect(-10,-m.length/2,20,m.length);
 
     ctx.restore();
   });
+
+  // UI TEXT
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+
+  let elapsed = (Date.now()-startTime)/1000;
+
+  ctx.fillStyle="white";
+  ctx.font="20px Arial";
+
+  if(!suddenDeath){
+    ctx.fillText("Time: " + Math.max(0, ROUND_TIME - Math.floor(elapsed)), 20, 20);
+  } else {
+    ctx.fillStyle="red";
+    ctx.fillText("SUDDEN DEATH: " + Math.max(0, TOTAL_TIME - Math.floor(elapsed)), 20, 20);
+  }
+
+  ctx.fillStyle="white";
+  ctx.fillText("Score: " + totalScore, 20, 50);
+}
+function calculateScore(){
+  if(markers.length < 3) return 0;
+
+  let g = markers[0];
+  let r = markers[1];
+  let b = markers[2];
+
+  if(!g || !r || !b) return 0;
+
+// 🔒 SAFE VERSION (won’t crash)
+if(!(g.armed && r.armed && b.armed)) return 0;
+
+  let s = 0;
+
+  // detect combos FIRST
+  let gr = touching(g,r);
+  let rb = touching(r,b);
+  let gb = touching(g,b);
+
+  if(suddenDeath){
+
+    if(gr && rb && gb){
+      return 10;
+    }
+
+    if(rb) return 5;
+    if(gb) return 5;
+    if(gr) return 3;
+
+    return 0;
+
+  } else {
+
+    if(gr && rb && gb){
+      return 3;
+    }
+
+    if(rb) return 2;
+    if(gb) return 2;
+    if(gr) return 0.5;
+
+    return 0;
+  }
+}
+// END
+function endGame(){
+  if(totalScore > highScore){
+    highScore = totalScore;
+    localStorage.setItem("qu33phHigh", highScore);
+  }
+  gameState="end";
 }
 
-// LOOP FUNCTION
-function loop() {
+// INIT
+randomizeSky();
+
+function loop(){
   update();
   draw();
   requestAnimationFrame(loop);
 }
+loop();
 </script>
 </body>
 </html>
