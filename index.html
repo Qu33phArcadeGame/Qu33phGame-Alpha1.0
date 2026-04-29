@@ -373,56 +373,38 @@ if(gameState === "playing"){
 // DRAW (ONLY EXPLOSION TEXT MODIFIED)
 function draw(){
 
+  // END SCREEN
   if(gameState === "end"){
     ctx.fillStyle="black";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any transforms
-ctx.textAlign = "left";
-ctx.textBaseline = "top";
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
 
     ctx.fillStyle="white";
-ctx.fillRect(LEFT_EDGE, END_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
+    ctx.font="60px Arial";
+    ctx.fillText("Qu33ph", canvas.width/2, 150);
 
-// START LINE
-ctx.fillStyle = "rgba(255,255,255,0.4)";
-ctx.fillRect(LEFT_EDGE, START_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
+    ctx.font="30px Arial";
+    ctx.fillText("High Score: " + highScore, canvas.width/2, 220);
 
-// 🔥 SHOW ONLY WHEN READY
-if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+    ctx.font="20px Arial";
+    ctx.fillText("Tap anywhere to restart", canvas.width/2, 300);
 
-  ctx.fillStyle = "white";
-  ctx.font = "bold 24px Arial";   // bigger + bold
-  ctx.textAlign = "center";
-  ctx.textBaseline = "bottom";
+    return;
+  }
 
-  ctx.fillText(
-    "Tap anywhere on field to advance",
-    (LEFT_EDGE + RIGHT_WALL) / 2,
-    END_LINE_Y - 10
-  );
-}
-
+  // CLEAR SCREEN (correct place)
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // BACKGROUND
   ctx.fillStyle="#222";
   ctx.fillRect(RIGHT_WALL,0,canvas.width-RIGHT_WALL,canvas.height);
 
   ctx.fillStyle="#6ec6ff";
   ctx.fillRect(RIGHT_WALL+5, END_LINE_Y, canvas.width-RIGHT_WALL-10, canvas.height-END_LINE_Y);
-scorePopups.forEach(p => {
-  ctx.save();
 
-  ctx.globalAlpha = p.life / 40;
-  ctx.fillStyle = "white";
-  ctx.font = "bold 30px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  ctx.fillText(p.text, p.x, p.y);
-
-  ctx.restore();
-});
   // SUN
   ctx.fillStyle="yellow";
   ctx.beginPath();
@@ -454,23 +436,27 @@ scorePopups.forEach(p => {
   ctx.arc(redDot.x, redDot.y, 10, 0, Math.PI*2);
   ctx.fill();
 
+  // TOP LINE
   ctx.fillStyle="white";
   ctx.fillRect(LEFT_EDGE, END_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
 
-  ctx.fillStyle = "white";
-ctx.font = "bold 24px Arial";
-ctx.textAlign = "center";
-ctx.textBaseline = "bottom";
+  // START LINE
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillRect(LEFT_EDGE, START_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
 
-ctx.fillText(
-  "Tap anywhere on field to advance",
-  (LEFT_EDGE + RIGHT_WALL) / 2,
-  END_LINE_Y - 8
-);
+  // 🔥 SHOW TEXT ONLY WHEN READY
+  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+    ctx.fillStyle = "white";
+    ctx.font = "bold 24px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
 
-  // START LINE (entry gate)
-ctx.fillStyle = "rgba(255,255,255,0.4)";
-ctx.fillRect(LEFT_EDGE, START_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
+    ctx.fillText(
+      "Tap anywhere on field to advance",
+      (LEFT_EDGE + RIGHT_WALL) / 2,
+      END_LINE_Y - 10
+    );
+  }
 
   // CHAIR
   if(suddenDeath){
@@ -482,106 +468,48 @@ ctx.fillRect(LEFT_EDGE, START_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
     ctx.restore();
   }
 
-  // EXPLOSIONS
-  explosions.forEach(e=>{
-    ctx.beginPath();
-    ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 4;
-    ctx.globalAlpha = e.life / 30;
-    ctx.stroke();
-
-    ctx.globalAlpha = e.life / 30;
-    ctx.fillStyle = "white";
-    ctx.font = e.mega ? "bold 50px Arial" : "bold 60px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(e.text || "QU33PH", e.x, e.y);
-    ctx.globalAlpha = 1;
-    scorePopups.forEach(p => {
-  ctx.save();
-
-  ctx.globalAlpha = p.life / 40;
-  ctx.fillStyle = "white";
-  ctx.font = "bold 30px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  ctx.fillText(p.text, p.x, p.y);
-
-  ctx.restore();
-});
-  });
-
-  // MARKERS (unchanged)
+  // MARKERS
   markers.forEach(m=>{
     if(m.fallen) return;
-
-    m.trail.forEach((p,i)=>{
-      ctx.fillStyle = m.color;
-      ctx.globalAlpha = i / m.trail.length;
-      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
-    });
-    ctx.globalAlpha = 1;
 
     ctx.save();
     ctx.translate(m.x,m.y);
     ctx.rotate(m.rotation);
 
     if(isTouchingAny(m)){
-  ctx.shadowColor = "lime";
-  ctx.shadowBlur = 25;
+      ctx.shadowColor = "lime";
+      ctx.shadowBlur = 25;
+    } else {
+      ctx.shadowColor = "red";
+      ctx.shadowBlur = 15;
+    }
 
-  // small spark effect (you had this before, bringing it back)
-  for(let i = 0; i < 3; i++){
-    ctx.fillRect(
-      (Math.random() - 0.5) * 20,
-      (Math.random() - 0.5) * 20,
-      3, 3
-    );
-  }
-
-} else {
-  ctx.shadowColor = "red";
-  ctx.shadowBlur = 15;
-}
-
-ctx.fillStyle = m.color;
-ctx.fillRect(-10,-m.length/2,20,m.length);
+    ctx.fillStyle = m.color;
+    ctx.fillRect(-10,-m.length/2,20,m.length);
 
     ctx.restore();
   });
+
+  // UI TEXT
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-ctx.textAlign = "left";
-ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
 
   let elapsed = (Date.now()-startTime)/1000;
 
-// 🔒 reset canvas so UI doesn't drift
-ctx.setTransform(1, 0, 0, 1, 0, 0);
-ctx.textAlign = "left";
-ctx.textBaseline = "top";
+  ctx.fillStyle="white";
+  ctx.font="20px Arial";
 
-ctx.fillStyle="white";
-ctx.font="20px Arial";
+  if(!suddenDeath){
+    ctx.fillText("Time: " + Math.max(0, ROUND_TIME - Math.floor(elapsed)), 20, 20);
+  } else {
+    ctx.fillStyle="red";
+    ctx.fillText("SUDDEN DEATH: " + Math.max(0, TOTAL_TIME - Math.floor(elapsed)), 20, 20);
+  }
 
-if(!suddenDeath){
-  ctx.fillText(
-    "Time: " + Math.max(0, ROUND_TIME - Math.floor(elapsed)),
-    20,
-    20
-  );
-} else {
-  ctx.fillStyle="red";
-  ctx.fillText(
-    "SUDDEN DEATH: " + Math.max(0, TOTAL_TIME - Math.floor(elapsed)),
-    20,
-    20
-  );
+  ctx.fillStyle="white";
+  ctx.fillText("Score: " + totalScore, 20, 50);
 }
-
-ctx.fillStyle="white";
-ctx.fillText("Score: " + totalScore, 20, 50);
 }
 function calculateScore(){
   if(markers.length < 3) return 0;
