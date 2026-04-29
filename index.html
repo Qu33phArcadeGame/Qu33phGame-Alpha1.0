@@ -49,6 +49,74 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+let dragging = false;
+let startX = 0;
+let startY = 0;
+let currentX = 0;
+let currentY = 0;
+
+canvas.addEventListener("pointerdown", e => {
+  if (gameState !== "playing") return;
+
+  if (current >= 3) return;
+
+  dragging = true;
+  startX = e.clientX;
+  startY = e.clientY;
+  currentX = startX;
+  currentY = startY;
+});
+
+  canvas.addEventListener("pointermove", e => {
+  if (!dragging) return;
+
+  currentX = e.clientX;
+  currentY = e.clientY;
+});
+
+  canvas.addEventListener("pointerup", () => {
+  if (!dragging) return;
+
+  dragging = false;
+
+  if (current >= 3) return;
+
+  let dx = currentX - startX;
+  let dy = currentY - startY;
+
+  let baseRot =
+    currentOrientation === "vertical" ? 0 :
+    currentOrientation === "angled" ? Math.PI / 6 :
+    Math.PI / 2;
+
+  let base = markers[current];
+  base.waiting = false;
+
+  markers[current] = {
+    x: base.x,
+    y: base.y,
+    vx: dx * 0.2,
+    vy: dy * 0.2,
+    curve: dx * 0.0003,
+    angleType: currentOrientation,
+    color: colors[current],
+    length: lengths[current],
+    stopped: false,
+    fallen: false,
+    trail: [],
+    rotation: baseRot,
+    spinVelocity:
+      currentOrientation === "vertical" ? 0.08 :
+      currentOrientation === "angled" ? 0.12 :
+      0.18,
+    chairBoost: false,
+    megaTriggered: false,
+    armed: false,
+    life: 0
+  };
+
+  current++;
+});
 // LAYOUT
 const LEFT_EDGE = canvas.width * 0.2;
 const RIGHT_WALL = canvas.width * 0.75;
@@ -93,11 +161,7 @@ document.getElementById("rotateBtn").onclick = () => {
   document.getElementById("rotateBtn").innerText =
     "Orientation: " + currentOrientation;
 };
-let dragging = false;
-let startX = 0;
-let startY = 0;
-let currentX = 0;
-let currentY = 0;
+
 canvas.addEventListener("pointerdown", e=>{
   if(gameState !== "playing") return;
 
@@ -112,7 +176,6 @@ canvas.addEventListener("pointerdown", e=>{
 });
 
 // INPUT
-let dragging=false,startX,startY,currentX,currentY;
 
 const colors = ["lime","red","blue"];
 const lengths = [60,60,90];
