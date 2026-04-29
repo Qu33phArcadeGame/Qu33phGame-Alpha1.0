@@ -43,6 +43,15 @@ canvas { display:block; touch-action:none; }
 <div id="timeline"><div id="progress"></div></div>
 
 <script>
+  const markerImages = {
+  red: new Image(),
+  green: new Image(),
+  blue: new Image()
+};
+
+markerImages.red.src = "red.png";
+markerImages.green.src = "green.png";
+markerImages.blue.src = "blue.png";
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -174,6 +183,7 @@ canvas.addEventListener("pointerup", ()=>{
     fallen:false,
     trail:[],
     rotation: baseRot,
+    color: "red",
     spinVelocity:
       currentOrientation === "vertical" ? 0.08 :
       currentOrientation === "angled" ? 0.12 :
@@ -499,7 +509,7 @@ scorePopups.forEach(p => {
 });
 
   // MARKERS
-  markers.forEach(m=>{
+  markers.forEach(drawMarker);
     if(m.fallen) return;
 
     ctx.save();
@@ -514,10 +524,19 @@ scorePopups.forEach(p => {
       ctx.shadowBlur = 15;
     }
 
-    ctx.fillStyle = m.color;
-    ctx.fillRect(-10,-m.length/2,20,m.length);
+    function drawMarker(m) {
+  const img = markerImages[m.color];
 
-    ctx.restore();
+  if (!img || !img.complete) return; // prevents bugs while loading
+
+  ctx.save();
+  ctx.translate(m.x, m.y);
+  ctx.rotate(m.angle);
+
+  ctx.drawImage(img, -25, -25, 50, 50);
+
+  ctx.restore();
+    }
   });
 
   // UI TEXT
