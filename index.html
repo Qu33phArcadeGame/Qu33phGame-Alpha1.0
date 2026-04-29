@@ -93,7 +93,11 @@ document.getElementById("rotateBtn").onclick = () => {
   document.getElementById("rotateBtn").innerText =
     "Orientation: " + currentOrientation;
 };
-
+let dragging = false;
+let startX = 0;
+let startY = 0;
+let currentX = 0;
+let currentY = 0;
 canvas.addEventListener("pointerdown", e=>{
   if(gameState !== "playing") return;
 
