@@ -220,8 +220,6 @@ function tryAdvanceRound(){
 
   if(current === 3 && markers.every(m => m.stopped || m.fallen)){
 
-    gameState = "paused";
-
     let g = markers[0];
     let r = markers[1];
     let b = markers[2];
@@ -265,14 +263,6 @@ function tryAdvanceRound(){
 // CLICK CONTROL
 canvas.addEventListener("click", ()=>{
 
-  // 🔥 NEW: resume from pause screen
-  if(gameState === "paused"){
-    gameState = "playing";
-    tryAdvanceRound();
-    return;
-  }
-
-  // restart game
   if(gameState === "end"){
     gameState = "playing";
     markers = [];
@@ -416,7 +406,6 @@ scorePopups = scorePopups.filter(p => p.life > 0);
 }
 if(gameState === "playing"){
   if(current === 3 && markers.every(m => m.stopped || m.fallen)){
-    gameState = "paused";
     tryAdvanceRound();
   }
 }
