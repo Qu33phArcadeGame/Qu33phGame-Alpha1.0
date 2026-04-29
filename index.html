@@ -62,8 +62,14 @@ const chair = { x:(LEFT_EDGE+RIGHT_WALL)/2, y:END_LINE_Y+90, radius:35 };
 // STATE
 let speedMultiplier = 1;
 let gameState = "playing";
-let markers = [];
+// Starting marker positions sitting behind the START_LINE_Y
+let markers = [
+  { color: "lime", x: canvas.width/2 - 60, y: START_LINE_Y + 40, radius: 20, waiting: true },
+  { color: "red",  x: canvas.width/2,      y: START_LINE_Y + 40, radius: 20, waiting: true },
+  { color: "blue", x: canvas.width/2 + 60, y: START_LINE_Y + 40, radius: 20, waiting: true }
+];
 let current = 0;
+
 let totalScore = 0;
 let highScore = localStorage.getItem("qu33phHigh") || 0;
 
@@ -161,9 +167,14 @@ canvas.addEventListener("pointerup", ()=>{
     currentOrientation === "angled" ? Math.PI/6 :
     Math.PI/2;
 
-  markers.push({
-    x:canvas.width/2,
-    y:canvas.height-50,
+    let base = markers[current];
+base.waiting = false; // remove from waiting group
+
+markers[current] = {
+  x: base.x,
+  y: base.y,
+  ...
+
     vx:dx*0.2,
     vy:dy*0.2,
     curve:dx*0.0003,
@@ -495,6 +506,16 @@ scorePopups.forEach(p => {
 
   ctx.fillText(p.text, p.x, p.y);
 
+  ctx.restore();
+});
+// Draw waiting markers behind the start line
+markers.slice(current).forEach((m, i) => {
+  if(!m.waiting) return;
+  ctx.save();
+  ctx.fillStyle = m.color;
+  ctx.beginPath();
+  ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 });
 
