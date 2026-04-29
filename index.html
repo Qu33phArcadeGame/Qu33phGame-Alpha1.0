@@ -109,9 +109,28 @@ document.getElementById("rotateBtn").onclick = () => {
 };
 
 canvas.addEventListener("pointerdown", e=>{
+
+  // 🔥 restart from end screen
+  if(gameState === "end"){
+    gameState = "playing";
+    markers = [];
+    current = 0;
+    totalScore = 0;
+    startTime = Date.now();
+    suddenDeath = false;
+    randomizeSky();
+    return;
+  }
+
   if(gameState !== "playing") return;
 
-  // 🔥 SAFE FIX (prevents locked input bug)
+  // 🔥 if round is ready → advance immediately
+  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+    tryAdvanceRound();
+    return; // ❗ prevents drag from triggering
+  }
+
+  // normal drag
   if(current >= 3 && markers.length === 0) return;
 
   dragging = true;
@@ -260,22 +279,7 @@ function tryAdvanceRound(){
 ];
   }
 }
-// CLICK CONTROL
-canvas.addEventListener("click", ()=>{
 
-  if(gameState === "end"){
-    gameState = "playing";
-    markers = [];
-    current = 0;
-    totalScore = 0;
-    startTime = Date.now();
-    suddenDeath = false;
-    randomizeSky();
-    return;
-  }
-
-  tryAdvanceRound();
-});
 
 // SKY (UNCHANGED)
 let sunPos={x:0,y:0};
