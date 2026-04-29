@@ -323,7 +323,8 @@ function update(){
   suddenDeath = true;
   chairLocked = true;
   }
-  if(chairLocked){
+  if (!chairLocked && suddenDeath) {
+  chairLocked = true;
   chair.x = (LEFT_EDGE + RIGHT_WALL) / 2;
   chair.y = END_LINE_Y + 90;
   }
