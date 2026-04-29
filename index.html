@@ -574,8 +574,8 @@ function calculateScore(){
 
   if(!g || !r || !b) return 0;
 
-// 🔒 NEW RULE: must enter playfield first
-if(!g.armed || !r.armed || !b.armed) return 0;
+// 🔒 SAFE VERSION (won’t crash)
+if(!(g.armed && r.armed && b.armed)) return 0;
 
   let s = 0;
 
