@@ -377,6 +377,19 @@ if(gameState === "playing"){
   }
 }
 // DRAW (ONLY EXPLOSION TEXT MODIFIED)
+  function drawMarker(m) {
+  const img = markerImages[m.color];
+
+  if (!img || !img.complete) return;
+
+  ctx.save();
+  ctx.translate(m.x, m.y);
+  ctx.rotate(m.rotation);
+
+  ctx.drawImage(img, -25, -25, 50, 50);
+
+  ctx.restore();
+  }
 function draw(){
 
   // END SCREEN
@@ -518,21 +531,6 @@ markers.forEach(m => {
 
   ctx.shadowBlur = 0;
 });
-
-    function drawMarker(m) {
-  const img = markerImages[m.color];
-
-  if (!img || !img.complete) return;
-
-  ctx.save();
-  ctx.translate(m.x, m.y);
-  ctx.rotate(m.rotation);
-
-  ctx.drawImage(img, -25, -25, 50, 50);
-
-  ctx.restore();
-    }
-  });
 
   // UI TEXT
   ctx.setTransform(1, 0, 0, 1, 0, 0);
