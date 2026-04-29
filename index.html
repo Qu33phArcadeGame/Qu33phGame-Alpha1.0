@@ -467,6 +467,39 @@ function draw(){
     ctx.fillText("🪑", -15, 10);
     ctx.restore();
   }
+  // 💥 EXPLOSIONS
+explosions.forEach(e=>{
+  ctx.beginPath();
+  ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 4;
+  ctx.globalAlpha = e.life / 30;
+  ctx.stroke();
+
+  ctx.globalAlpha = e.life / 30;
+  ctx.fillStyle = "white";
+  ctx.font = e.mega ? "bold 50px Arial" : "bold 60px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(e.text || "QU33PH", e.x, e.y);
+
+  ctx.globalAlpha = 1;
+});
+
+// 🔥 SCORE POPUPS (+points)
+scorePopups.forEach(p => {
+  ctx.save();
+
+  ctx.globalAlpha = p.life / 40;
+  ctx.fillStyle = "white";
+  ctx.font = "bold 30px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(p.text, p.x, p.y);
+
+  ctx.restore();
+});
 
   // MARKERS
   markers.forEach(m=>{
