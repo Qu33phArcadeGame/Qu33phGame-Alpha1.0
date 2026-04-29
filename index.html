@@ -252,6 +252,11 @@ function tryAdvanceRound(){
 
     markers = [];
     current = 0;
+    previewMarkers = [
+  { color: "green", x: 0, used: false },
+  { color: "red", x: 0, used: false },
+  { color: "blue", x: 0, used: false }
+];
   }
 }
 // CLICK CONTROL
@@ -593,20 +598,20 @@ scorePopups.forEach(p => {
   ctx.restore();
 });
 
-  for(let i = 0; i < 3; i++){
+  // PREVIEW MARKERS (only show unused ones)
+previewMarkers.forEach((p, i) => {
+  if (p.used) return;
 
-  if(previewUsed[i]) continue;
+  const img = markerImages[p.color];
+  if (!img || !img.complete) return;
 
-  const img = markerImages[colors[i]];
-  if(!img || !img.complete) continue;
-
-  let x = LEFT_EDGE + (RIGHT_WALL - LEFT_EDGE) / 2;
+  let x = (LEFT_EDGE + RIGHT_WALL) / 2;
   let y = START_LINE_Y - 60 - i * 60;
 
   ctx.globalAlpha = 0.5;
   ctx.drawImage(img, x - 25, y - 25, 50, 50);
   ctx.globalAlpha = 1;
-  }
+});
 
   // MARKERS
 markers.forEach(m => {
