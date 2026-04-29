@@ -123,6 +123,18 @@ function touching(a,b){
 function isTouchingAny(marker){
   return markers.some(m => m !== marker && !m.fallen && touching(marker, m));
 }
+  function spawnParticles(m){
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x: m.x,
+      y: m.y,
+      vx: (Math.random() - 0.5) * 4,
+      vy: (Math.random() - 0.5) * 4,
+      life: 30,
+      color: m.color
+    });
+  }
+  }
 
 // 🔥 ADDED
 function touchingChair(m){
@@ -288,39 +300,89 @@ function randomizeSky(){
     });
   }
 }
-
-// UPDATE
 function update(){
 
-  let elapsed = (Date.now()-startTime)/1000;
+  let elapsed = (Date.now() - startTime) / 1000;
 
-  if(elapsed > ROUND_TIME && elapsed <= TOTAL_TIME){
+  // GAME STATE TIMER
+  if (elapsed > ROUND_TIME && elapsed <= TOTAL_TIME) {
     suddenDeath = true;
   }
-  if(elapsed > TOTAL_TIME){
+
+  if (elapsed > TOTAL_TIME) {
     endGame();
   }
 
-  markers.forEach(m=>{
-    if(m.stopped||m.fallen) return;
+  // -------------------------
+  // MARKER UPDATE
+  // -------------------------
+  markers.forEach(m => {
 
-    m.life += 1/60;
+    if (m.stopped || m.fallen) return;
+
+    m.life += 1 / 60;
+
+    // STOP + PARTICLES
     if (m.life >= 1 && !m.stopped) {
-  m.stopped = true;
-  m.vx = 0;
-  m.vy = 0;
+      m.stopped = true;
+      m.vx = 0;
+      m.vy = 0;
 
-  for (let i = 0; i < 10; i++) {
-    particles.push({
-      x: m.x,
-      y: m.y,
-      vx: (Math.random() - 0.5) * 4,
-      vy: (Math.random() - 0.5) * 4,
-      life: 30,
-      color: m.color
-    });
-  }
+      spawnParticles(m);
     }
+
+    // MOVEMENT
+    m.vx += m.curve;
+    m.x += m.vx * speedMultiplier;
+    m.y += m.vy * speedMultiplier;
+
+    m.vx *= 0.94;
+    m.vy *= 0.94;
+
+    // ROTATION
+    m.rotation += m.spinVelocity * speedMultiplier;
+    m.spinVelocity *= 0.96;
+
+    // TRAIL
+    m.trail.push({ x: m.x, y: m.y });
+    if (m.trail.length > 20) m.trail.shift();
+
+    // BOUNDS
+    if (m.x < LEFT_EDGE) m.fallen = true;
+
+    if (m.x > RIGHT_WALL) {
+      m.x = RIGHT_WALL;
+      m.vx *= -0.4;
+    }
+
+    if (m.y < END_LINE_Y) {
+      m.y = END_LINE_Y;
+      m.vy *= -0.2;
+    }
+
+    // AUTO STOP IF VERY SLOW
+    if (Math.abs(m.vx) < 0.05 && Math.abs(m.vy) < 0.05) {
+      m.stopped = true;
+    }
+  });
+
+  // -------------------------
+  // PARTICLES UPDATE
+  // -------------------------
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+  });
+
+  particles = particles.filter(p => p.life > 0);
+
+  // -------------------------
+  // PROGRESS BAR
+  // -------------------------
+  let progress = Math.min(elapsed / TOTAL_TIME, 1);
+  document.getElementById("progress").style.width = (progress * 100) + "%";
+}
 
   // 💥 PARTICLE BURST
 if (m.life >= 1 && !m.stopped) {
