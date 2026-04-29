@@ -46,8 +46,10 @@ canvas { display:block; touch-action:none; }
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
 
 // LAYOUT
 const LEFT_EDGE = canvas.width * 0.2;
@@ -177,16 +179,6 @@ canvas.addEventListener("pointermove", (e) => {
 
   selectedMarker = null; // Deselect marker
 });
-
-  if(current >= 3) return;
-
-  let dx=currentX-startX;
-  let dy=currentY-startY;
-
-  let baseRot =
-    currentOrientation === "vertical" ? 0 :
-    currentOrientation === "angled" ? Math.PI/6 :
-    Math.PI/2;
 
   function createMarker() {
   const newMarker = {
