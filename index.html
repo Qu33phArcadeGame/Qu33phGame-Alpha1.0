@@ -548,15 +548,17 @@ ctx.translate(shakeX, shakeY);
   }
 
   // CHAIR
-  if(suddenDeath){
   ctx.save();
 ctx.setTransform(1,0,0,1,0,0);
-ctx.translate(chair.x, chair.y);
-    ctx.rotate(Math.PI);
-    ctx.font="30px Arial";
-    ctx.fillText("🪑", -15, 10);
-    ctx.restore();
-  }
+
+if(suddenDeath){
+  ctx.translate(chair.x, chair.y);
+  ctx.rotate(Math.PI);
+  ctx.font="30px Arial";
+  ctx.fillText("🪑", -15, 10);
+}
+
+ctx.restore();
   // 💥 EXPLOSIONS
 explosions.forEach(e=>{
   ctx.beginPath();
