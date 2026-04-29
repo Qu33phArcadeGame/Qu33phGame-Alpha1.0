@@ -482,6 +482,7 @@ function draw(){
 
   // CLEAR SCREEN (correct place)
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  if (gameState === "end") shake = 0;
   let shakeX = (Math.random() - 0.5) * shake;
 let shakeY = (Math.random() - 0.5) * shake;
 
