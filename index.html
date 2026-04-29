@@ -195,6 +195,8 @@ canvas.addEventListener("pointerup", ()=>{
     // 🔥 ADDED
     megaTriggered:false,
     armed:false,
+
+    life: 0,
   });
 
   current++;
@@ -303,6 +305,13 @@ function update(){
 
   markers.forEach(m=>{
     if(m.stopped||m.fallen) return;
+
+    m.life += 1/60; // count seconds (roughly)
+    if(m.life >= 1){
+  m.stopped = true;
+  m.vx = 0;
+  m.vy = 0;
+    }
 
     m.vx += m.curve;
     m.x += m.vx * speedMultiplier;
