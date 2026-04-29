@@ -378,6 +378,31 @@ if(gameState === "playing"){
 }
 // DRAW (ONLY EXPLOSION TEXT MODIFIED)
   function drawMarker(m) {
+
+  // 🔥 TRAIL (add this)
+  if (m.trail && m.trail.length > 1) {
+
+    let trailWidth = 2;
+
+    if (m.color === "red") trailWidth = 3;
+    if (m.color === "green") trailWidth = 4;
+    if (m.color === "blue") trailWidth = 6;
+
+    ctx.beginPath();
+    ctx.moveTo(m.trail[0].x, m.trail[0].y);
+
+    for (let i = 1; i < m.trail.length; i++) {
+      ctx.lineTo(m.trail[i].x, m.trail[i].y);
+    }
+
+    ctx.strokeStyle = m.color;
+    ctx.lineWidth = trailWidth;
+    ctx.globalAlpha = 0.6;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // 🖼️ IMAGE (your existing marker code)
   const img = markerImages[m.color];
 
   if (!img || !img.complete) return;
@@ -387,14 +412,14 @@ if(gameState === "playing"){
   ctx.rotate(m.rotation);
 
   let w = 50;
-let h = 50;
+  let h = 50;
 
-if (m.color === "blue") {
-  w = 80;
-  h = 50;
-}
+  if (m.color === "blue") {
+    w = 80;
+    h = 50;
+  }
 
-ctx.drawImage(img, -w/2, -h/2, w, h);
+  ctx.drawImage(img, -w/2, -h/2, w, h);
 
   ctx.restore();
   }
