@@ -2,39 +2,39 @@
 <html>
 <head>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin:0; overflow:hidden; background:#111; }
-    canvas { display:block; touch-action:none; }
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { margin:0; overflow:hidden; background:#111; }
+canvas { display:block; touch-action:none; }
 
-    #rotateBtn {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 20px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-      background: #222;
-      color: white;
-    }
-    #timeline {
-      position: absolute;
-      top: 10px;
-      left: 10%;
-      width: 80%;
-      height: 6px;
-      background: #333;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    #progress {
-      height: 100%;
-      width: 0%;
-      background: lime;
-    }
-  </style>
+#rotateBtn {
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:12px 20px;
+  border-radius:10px;
+  border:none;
+  font-size:16px;
+  background:#222;
+  color:white;
+}
+#timeline {
+  position:absolute;
+  top:10px;
+  left:10%;
+  width:80%;
+  height:6px;
+  background:#333;
+  border-radius:10px;
+  overflow:hidden;
+}
+#progress {
+  height:100%;
+  width:0%;
+  background:lime;
+}
+</style>
 </head>
 <body>
 
@@ -46,7 +46,6 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// Set canvas width and height based on the screen
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -57,8 +56,8 @@ const END_LINE_Y = canvas.height * 0.2;
 const START_LINE_Y = canvas.height - 80; // ~1 inch-ish depending on screen scale
 
 // 🔥 ADDED: red dot + chair positions
-const redDot = { x: RIGHT_WALL + 10, y: END_LINE_Y + 40 };
-const chair = { x: (LEFT_EDGE + RIGHT_WALL) / 2, y: END_LINE_Y + 90, radius: 35 };
+const redDot = { x: RIGHT_WALL+10, y: END_LINE_Y+40 };
+const chair = { x:(LEFT_EDGE+RIGHT_WALL)/2, y:END_LINE_Y+90, radius:35 };
 
 // STATE
 let speedMultiplier = 1;
@@ -78,26 +77,10 @@ const ROUND_TIME = 30;
 const TOTAL_TIME = 45;
 
 // ORIENTATION
-const orientations = ["vertical", "angled", "horizontal"];
+const orientations = ["vertical","angled","horizontal"];
 let orientationIndex = 0;
 let currentOrientation = "vertical";
 
-// Load the images (make sure these file names match your images)
-const partyHornGreen = new Image();
-partyHornGreen.src = '1000069191-removebg-preview.png';  // Replace with actual image path
-
-const partyHornRed = new Image();
-partyHornRed.src = '1000069189-removebg-preview.png';  // Replace with actual image path
-
-const partyHornBlue = new Image();
-partyHornBlue.src = '1000069192-removebg-preview.png';  // Replace with actual image path
-
-// Ensure images are loaded before starting the game
-partyHornGreen.onload = () => {
-  loop();  // Start the game once images are loaded
-};
-
-// Rotate button for changing orientation
 document.getElementById("rotateBtn").onclick = () => {
   orientationIndex = (orientationIndex + 1) % orientations.length;
   currentOrientation = orientations[orientationIndex];
@@ -105,11 +88,11 @@ document.getElementById("rotateBtn").onclick = () => {
     "Orientation: " + currentOrientation;
 };
 
-// Marker creation logic (same as before)
-canvas.addEventListener("pointerdown", e => {
-  if (gameState !== "playing") return;
+canvas.addEventListener("pointerdown", e=>{
+  if(gameState !== "playing") return;
 
-  if (current >= 3 && markers.length === 0) return;
+  // 🔥 SAFE FIX (prevents locked input bug)
+  if(current >= 3 && markers.length === 0) return;
 
   dragging = true;
   startX = e.clientX;
@@ -117,108 +100,6 @@ canvas.addEventListener("pointerdown", e => {
   currentX = startX;
   currentY = startY;
 });
-
-let dragging = false, startX, startY, currentX, currentY;
-const colors = ["lime", "red", "blue"];
-const lengths = [60, 60, 90];
-
-function touching(a, b) {
-  return Math.hypot(a.x - b.x, a.y - b.y) < 45;
-}
-
-function isTouchingAny(marker) {
-  return markers.some(m => m !== marker && !m.fallen && touching(marker, m));
-}
-
-function triggerMegaQu33ph(m) {
-  m.x = redDot.x;
-  m.y = redDot.y;
-  m.vx = 0;
-  m.vy = 0;
-  m.stopped = true;
-
-  totalScore += 10;
-
-  explosions.push({
-    x: redDot.x,
-    y: redDot.y,
-    radius: 10,
-    life: 30,
-    text: "MEGA QU33PH",
-    mega: true
-  });
-}
-
-// Add markers
-canvas.addEventListener("pointerup", () => {
-  if (!dragging) return;
-  dragging = false;
-
-  if (current >= 3) return;
-
-  let dx = currentX - startX;
-  let dy = currentY - startY;
-
-  let baseRot =
-    currentOrientation === "vertical" ? 0 :
-    currentOrientation === "angled" ? Math.PI / 6 :
-    Math.PI / 2;
-
-  markers.push({
-    x: canvas.width / 2,
-    y: canvas.height - 50,
-    vx: dx * 0.2,
-    vy: dy * 0.2,
-    curve: dx * 0.0003,
-    angleType: currentOrientation,
-    color: colors[current],
-    length: lengths[current],
-    stopped: false,
-    fallen: false,
-    trail: [],
-    rotation: baseRot,
-    spinVelocity:
-      currentOrientation === "vertical" ? 0.08 :
-      currentOrientation === "angled" ? 0.12 :
-      0.18,
-    chairBoost: false,
-    megaTriggered: false,
-    armed: false,
-    life: 0,
-  });
-
-  current++;
-});
-
-// REPLACE this part to use images instead of the old rectangle drawing
-markers.forEach(m => {
-  ctx.save();
-  ctx.translate(m.x, m.y);
-  ctx.rotate(m.rotation);
-
-  // Check the marker color and draw the corresponding image
-  if (m.color === "lime") {
-    ctx.drawImage(partyHornGreen, -partyHornGreen.width / 2, -partyHornGreen.height / 2);
-  } else if (m.color === "red") {
-    ctx.drawImage(partyHornRed, -partyHornRed.width / 2, -partyHornRed.height / 2);
-  } else if (m.color === "blue") {
-    ctx.drawImage(partyHornBlue, -partyHornBlue.width / 2, -partyHornBlue.height / 2);
-  }
-
-  ctx.restore();
-});
-
-// Add game loop here (etc., rest of the game code)
-// The loop will automatically start when the images are loaded
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-</script>
-
-</body>
-</html>
 
 // INPUT
 let dragging=false,startX,startY,currentX,currentY;
@@ -617,7 +498,7 @@ scorePopups.forEach(p => {
   ctx.restore();
 });
 
-  // MARKERS (DRAW IMAGES INSTEAD OF RECTANGLES)
+  // MARKERS
   markers.forEach(m=>{
     if(m.fallen) return;
 
@@ -625,14 +506,16 @@ scorePopups.forEach(p => {
     ctx.translate(m.x,m.y);
     ctx.rotate(m.rotation);
 
-    // Use different images based on the marker's color
-    if (m.color === "lime") {
-      ctx.drawImage(partyHornGreen, -10, -m.length / 2, 20, m.length); // Adjust size as needed
-    } else if (m.color === "red") {
-      ctx.drawImage(partyHornRed, -10, -m.length / 2, 20, m.length); // Adjust size as needed
-    } else if (m.color === "blue") {
-      ctx.drawImage(partyHornBlue, -10, -m.length / 2, 20, m.length); // Adjust size as needed
+    if(isTouchingAny(m)){
+      ctx.shadowColor = "lime";
+      ctx.shadowBlur = 25;
+    } else {
+      ctx.shadowColor = "red";
+      ctx.shadowBlur = 15;
     }
+
+    ctx.fillStyle = m.color;
+    ctx.fillRect(-10,-m.length/2,20,m.length);
 
     ctx.restore();
   });
