@@ -3,347 +3,634 @@
 <head>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Qu33ph</title>
+  <title>Qu33ph 3D</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { margin:0; overflow:hidden; background:#111; font-family: 'Courier New', monospace; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { margin:0; overflow:hidden; background:#111; font-family:'Courier New',monospace; }
     canvas { display:block; touch-action:none; }
 
     #rotateBtn {
-      position:absolute;
-      bottom:20px;
-      left:50%;
-      transform:translateX(-50%);
-      padding:12px 20px;
-      border-radius:10px;
-      border:2px solid #444;
-      font-size:14px;
-      font-family: 'Courier New', monospace;
-      background:#1a1a1a;
-      color:#ccc;
-      letter-spacing:1px;
-      display:none;
+      position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+      padding:12px 20px; border-radius:8px; border:1px solid #444;
+      font-size:14px; font-family:'Courier New',monospace;
+      background:rgba(20,20,20,0.85); color:#ccc; letter-spacing:1px;
+      display:none; backdrop-filter:blur(4px);
     }
     #timeline {
-      position:absolute;
-      top:10px;
-      left:10%;
-      width:80%;
-      height:6px;
-      background:#333;
-      border-radius:10px;
-      overflow:hidden;
-      display:none;
+      position:absolute; top:10px; left:10%; width:80%; height:5px;
+      background:rgba(255,255,255,0.1); border-radius:10px; overflow:hidden; display:none;
     }
-    #progress {
-      height:100%;
-      width:0%;
-      background:lime;
-      transition: background 0.5s;
-    }
+    #progress { height:100%; width:0%; background:lime; transition:background 0.5s; }
 
-    /* TITLE SCREEN */
+    /* TITLE */
     #titleScreen {
-      position:absolute;
-      top:0; left:0; width:100%; height:100%;
-      background:#0a0a0a;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      z-index:100;
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      background:#08080a; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; z-index:100;
     }
     .title-logo {
-      font-size: clamp(48px, 12vw, 90px);
-      font-family: 'Courier New', monospace;
-      font-weight: bold;
-      color: #fff;
-      letter-spacing: 8px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      text-shadow: 0 0 40px rgba(255,255,255,0.15);
+      font-size:clamp(52px,13vw,96px); font-weight:bold; color:#fff;
+      letter-spacing:10px; margin-bottom:6px;
+      text-shadow: 0 0 60px rgba(120,200,255,0.2);
     }
-    .title-sub {
-      font-size: clamp(11px, 2.5vw, 14px);
-      color: #555;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      margin-bottom: 60px;
-    }
+    .title-sub { font-size:11px; color:#444; letter-spacing:5px; margin-bottom:56px; }
     .mode-btn {
-      width: min(340px, 80vw);
-      padding: 18px 24px;
-      margin: 10px 0;
-      border: 1px solid #333;
-      background: #111;
-      color: #eee;
-      font-family: 'Courier New', monospace;
-      font-size: clamp(14px, 3.5vw, 18px);
-      letter-spacing: 2px;
-      text-align: left;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 16px;
+      width:min(340px,80vw); padding:18px 20px; margin:9px 0;
+      border:1px solid #222; background:#0e0e0e; color:#ddd;
+      font-family:'Courier New',monospace; font-size:clamp(13px,3.5vw,17px);
+      letter-spacing:2px; text-align:left; cursor:pointer; border-radius:4px;
+      display:flex; align-items:center; gap:14px; transition:all 0.12s;
     }
-    .mode-btn:hover, .mode-btn:active {
-      background: #1e1e1e;
-      border-color: #666;
-      color: #fff;
-    }
-    .mode-icon { font-size: 24px; flex-shrink:0; }
-    .mode-text { display:flex; flex-direction:column; gap:4px; }
+    .mode-btn:hover,.mode-btn:active { background:#181818; border-color:#555; color:#fff; }
+    .mode-icon { font-size:22px; flex-shrink:0; }
+    .mode-text { display:flex; flex-direction:column; gap:3px; }
     .mode-name { font-weight:bold; }
-    .mode-desc { font-size: 10px; color: #555; letter-spacing: 1px; }
-    .high-score-title {
-      margin-top: 48px;
-      font-size: 11px;
-      color: #333;
-      letter-spacing: 3px;
-    }
+    .mode-desc { font-size:10px; color:#444; letter-spacing:1px; }
+    .hs-line { margin-top:44px; font-size:11px; color:#2a2a2a; letter-spacing:3px; }
 
-    /* OLYMPICS BRACKET SCREEN */
+    /* BRACKET */
     #bracketScreen {
-      position:absolute;
-      top:0; left:0; width:100%; height:100%;
-      background:#0a0a0a;
-      display:none;
-      flex-direction:column;
-      align-items:center;
-      justify-content:flex-start;
-      padding: 20px;
-      overflow-y: auto;
-      z-index:100;
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      background:#08080a; display:none; flex-direction:column;
+      align-items:center; padding:20px; overflow-y:auto; z-index:100;
     }
-    .bracket-title {
-      font-size: clamp(20px, 5vw, 32px);
-      font-family:'Courier New',monospace;
-      color:#fff;
-      letter-spacing:4px;
-      margin-bottom:4px;
-      margin-top:10px;
+    .br-title { font-size:clamp(18px,5vw,28px); color:#fff; letter-spacing:4px; margin:10px 0 3px; }
+    .br-sub { font-size:10px; color:#333; letter-spacing:3px; margin-bottom:22px; }
+    .br-rlabel { font-size:10px; color:#444; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px; align-self:flex-start; }
+    .br-match { width:min(360px,88vw); border:1px solid #1e1e1e; border-radius:4px; margin-bottom:10px; overflow:hidden; }
+    .br-match.active { border-color:#fff; }
+    .br-player { display:flex; align-items:center; padding:11px 14px; gap:11px; background:#0e0e0e; font-family:'Courier New',monospace; font-size:13px; color:#666; border-bottom:1px solid #161616; }
+    .br-player:last-child { border-bottom:none; }
+    .br-player.you { color:#fff; }
+    .br-player.win { color:lime; }
+    .br-player.loss { color:#2a2a2a; text-decoration:line-through; }
+    .br-flag { font-size:18px; }
+    .br-sc { margin-left:auto; font-weight:bold; color:#444; }
+    .br-sc.win { color:lime; }
+    .play-btn {
+      width:min(360px,88vw); padding:15px; margin:10px 0 28px;
+      background:#fff; color:#000; font-family:'Courier New',monospace;
+      font-size:14px; font-weight:bold; letter-spacing:2px; border:none;
+      border-radius:4px; cursor:pointer;
     }
-    .bracket-sub {
-      font-size:11px;
-      color:#444;
-      letter-spacing:3px;
-      margin-bottom:24px;
-    }
-    .bracket-round-label {
-      font-size:10px;
-      color:#555;
-      letter-spacing:3px;
-      text-transform:uppercase;
-      margin-bottom:10px;
-      align-self:flex-start;
-    }
-    .bracket-match {
-      width:min(380px,90vw);
-      border:1px solid #222;
-      border-radius:4px;
-      margin-bottom: 12px;
-      overflow:hidden;
-    }
-    .bracket-match.active-match {
-      border-color:#fff;
-    }
-    .bracket-player {
-      display:flex;
-      align-items:center;
-      padding: 12px 16px;
-      gap:12px;
-      background:#111;
-      font-family:'Courier New',monospace;
-      font-size:14px;
-      color:#aaa;
-      border-bottom:1px solid #1a1a1a;
-    }
-    .bracket-player:last-child { border-bottom:none; }
-    .bracket-player.is-you { color:#fff; }
-    .bracket-player.winner { color:lime; }
-    .bracket-player.loser { color:#333; text-decoration:line-through; }
-    .bracket-flag { font-size:20px; }
-    .bracket-score { margin-left:auto; font-size:16px; font-weight:bold; color:#666; }
-    .bracket-score.is-you { color:#fff; }
-    .bracket-score.winner { color:lime; }
-    .play-next-btn {
-      width:min(380px,90vw);
-      padding:16px;
-      margin-top:8px;
-      background:#fff;
-      color:#000;
-      font-family:'Courier New',monospace;
-      font-size:14px;
-      font-weight:bold;
-      letter-spacing:2px;
-      border:none;
-      border-radius:4px;
-      cursor:pointer;
-      text-align:center;
-    }
-    .play-next-btn:hover { background:#ddd; }
-    .play-next-btn.disabled {
-      background:#222;
-      color:#444;
-      cursor:default;
-    }
-    .bracket-spacer { height:16px; }
+    .play-btn:hover { background:#e0e0e0; }
+    .play-btn.off { background:#161616; color:#333; cursor:default; }
+    .br-gap { height:14px; }
   </style>
 </head>
 <body>
-
 <canvas id="game"></canvas>
 <button id="rotateBtn">Orientation: vertical</button>
 <div id="timeline"><div id="progress"></div></div>
 
-<!-- TITLE SCREEN -->
 <div id="titleScreen">
   <div class="title-logo">Qu33ph</div>
-  <div class="title-sub">arcade edition</div>
-
-  <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
+  <div class="title-sub">3d arcade edition</div>
+  <button class="mode-btn" onclick="startMode('single')">
     <span class="mode-icon">🎯</span>
     <span class="mode-text">
       <span class="mode-name">QUICK GAME</span>
       <span class="mode-desc">one round · 45 seconds · go for high score</span>
     </span>
   </button>
-
-  <button class="mode-btn" id="btnOlympics" onclick="startMode('olympics')">
+  <button class="mode-btn" onclick="startMode('olympics')">
     <span class="mode-icon">🏆</span>
     <span class="mode-text">
       <span class="mode-name">QU33PH OLYMPICS</span>
       <span class="mode-desc">stepladder finals · 3 rounds · 8 nations</span>
     </span>
   </button>
-
-  <div class="high-score-title" id="titleHighScore"></div>
+  <div class="hs-line" id="titleHS"></div>
 </div>
 
-<!-- OLYMPICS BRACKET SCREEN -->
-<div id="bracketScreen" style="display:none; flex-direction:column;">
-  <div class="bracket-title">OLYMPICS</div>
-  <div class="bracket-sub">QU33PH STEPLADDER FINALS</div>
+<div id="bracketScreen">
+  <div class="br-title">OLYMPICS</div>
+  <div class="br-sub">QU33PH STEPLADDER FINALS</div>
   <div id="bracketContent"></div>
-  <button class="play-next-btn" id="playNextBtn" onclick="playNextMatch()" style="display:none;margin-bottom:30px;">
-    PLAY YOUR MATCH →
-  </button>
+  <button class="play-btn" id="playBtn" style="display:none"></button>
 </div>
 
 <script>
-// ─── IMAGES ───────────────────────────────────────────────────────────────
+// ── CANVAS ──────────────────────────────────────────────────────────────────
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const W = canvas.width, H = canvas.height;
+
+// ── MARKER IMAGES ────────────────────────────────────────────────────────────
 const markerImages = { red:new Image(), green:new Image(), blue:new Image() };
-markerImages.red.src="red.png";
-markerImages.green.src="green.png";
-markerImages.blue.src="blue.png";
+markerImages.red.src = "red.png";
+markerImages.green.src = "green.png";
+markerImages.blue.src = "blue.png";
 
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
+// ── 3D PERSPECTIVE LAYOUT ────────────────────────────────────────────────────
+// The countertop is viewed in perspective from the player's end.
+// Vanishing point is at the top-center of the counter area.
+// The counter occupies the bottom ~60% of the screen.
+// The window / outside scene fills the top ~38%.
 
-// ─── LAYOUT ───────────────────────────────────────────────────────────────
-const LEFT_EDGE=canvas.width*0.2;
-const RIGHT_WALL=canvas.width*0.75;
-const END_LINE_Y=canvas.height*0.2;
-const START_LINE_Y=canvas.height-80;
+const VP = { x: W * 0.5, y: H * 0.38 };   // vanishing point (horizon)
+const COUNTER_NEAR_Y = H;                   // near edge of counter (bottom)
+const COUNTER_FAR_Y  = H * 0.58;           // far edge of counter (at window sill)
+const COUNTER_NEAR_LEFT  = 0;
+const COUNTER_NEAR_RIGHT = W;
+const COUNTER_FAR_LEFT   = W * 0.18;
+const COUNTER_FAR_RIGHT  = W * 0.82;
+
+// Map game-space [0,1] coords → screen coords on counter surface
+function counterPt(u, v) {
+  // u = 0..1 left→right, v = 0..1 near→far
+  let nearX = COUNTER_NEAR_LEFT + u * (COUNTER_NEAR_RIGHT - COUNTER_NEAR_LEFT);
+  let farX  = COUNTER_FAR_LEFT  + u * (COUNTER_FAR_RIGHT  - COUNTER_FAR_LEFT);
+  let nearY = COUNTER_NEAR_Y;
+  let farY  = COUNTER_FAR_Y;
+  return {
+    x: nearX + v * (farX - nearX),
+    y: nearY + v * (farY - nearY),
+    scale: 0.35 + (1 - v) * 0.65   // size scale: smaller at far end
+  };
+}
+
+// Game logic uses flat X/Y; we project them for drawing
+// Flat game space: X in [LEFT_EDGE..RIGHT_WALL], Y in [END_LINE_Y..START_LINE_Y]
+const LEFT_EDGE   = W * 0.2;
+const RIGHT_WALL  = W * 0.75;
+const END_LINE_Y  = H * 0.2;    // game logic top
+const START_LINE_Y = H - 80;    // game logic bottom (AC vent)
+
+function gameToScreen(gx, gy) {
+  let u = (gx - LEFT_EDGE) / (RIGHT_WALL - LEFT_EDGE);
+  // clamp u to full width for rendering (game only uses 20-75% range)
+  let screenU = 0.18 + u * (0.82 - 0.18); // map to counter width
+  let v = (gy - END_LINE_Y) / (START_LINE_Y - END_LINE_Y);
+  v = 1 - v; // v=0 = near (player), v=1 = far (window)
+  v = 1 - v; // flip: near = bottom screen
+  return counterPt(screenU, 1 - (gy - END_LINE_Y) / (START_LINE_Y - END_LINE_Y));
+}
+
+// ── SKY / WINDOW ─────────────────────────────────────────────────────────────
+let skyTime = 0; // 0=day, 1=dusk (progresses over game)
+let clouds = [];
+for (let i = 0; i < 6; i++) clouds.push({
+  x: Math.random() * W,
+  y: H * 0.05 + Math.random() * H * 0.28,
+  w: 60 + Math.random() * 120,
+  speed: 0.08 + Math.random() * 0.12,
+  opacity: 0.6 + Math.random() * 0.4
+});
+
+// Trees in the background (seen through window)
+let trees = [];
+for (let i = 0; i < 12; i++) trees.push({
+  x: W * 0.05 + Math.random() * W * 0.9,
+  h: 0.08 + Math.random() * 0.12
+});
+
+function drawSky(elapsed, totalTime) {
+  let t = Math.min(elapsed / totalTime, 1);
+  // Horizon Y is where counter far edge meets window
+  const horizonY = COUNTER_FAR_Y;
+  const windowTop = 0;
+  const windowBottom = horizonY;
+
+  // Sky gradient shifts from clear day → golden dusk during sudden death
+  let skyTop, skyMid, skyHoriz;
+  if (t < 0.66) {
+    // daytime — green outdoor scene like the photo
+    let d = t / 0.66;
+    skyTop   = lerpColor([90, 160, 220], [180, 120, 60], d);
+    skyMid   = lerpColor([140, 200, 240], [220, 160, 80], d);
+    skyHoriz = lerpColor([190, 230, 200], [240, 200, 120], d);
+  } else {
+    // sudden death — deep amber/crimson
+    let d = (t - 0.66) / 0.34;
+    skyTop   = lerpColor([180, 120, 60],  [20,  10, 40], d);
+    skyMid   = lerpColor([220, 160, 80],  [80,  30, 80], d);
+    skyHoriz = lerpColor([240, 200, 120], [200, 60, 30], d);
+  }
+
+  // Sky fill
+  let grad = ctx.createLinearGradient(0, windowTop, 0, windowBottom);
+  grad.addColorStop(0, `rgb(${skyTop})`);
+  grad.addColorStop(0.5, `rgb(${skyMid})`);
+  grad.addColorStop(1, `rgb(${skyHoriz})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, windowTop, W, windowBottom);
+
+  // Ground / outside greenery band (like the photo — grass/trees outside)
+  let groundH = windowBottom * 0.22;
+  let groundY = windowBottom - groundH;
+  let groundGrad = ctx.createLinearGradient(0, groundY, 0, windowBottom);
+  if (t < 0.66) {
+    groundGrad.addColorStop(0, `rgba(60,110,50,0.9)`);
+    groundGrad.addColorStop(1, `rgba(40,80,35,1)`);
+  } else {
+    let d = (t - 0.66) / 0.34;
+    let gc = lerpColor([60,110,50],[20,30,15],d);
+    groundGrad.addColorStop(0, `rgba(${gc},0.9)`);
+    groundGrad.addColorStop(1, `rgba(${gc},1)`);
+  }
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, groundY, W, groundH);
+
+  // Trees silhouettes
+  trees.forEach(tr => {
+    let treeH = windowBottom * tr.h;
+    let treeY = groundY - treeH * 0.6;
+    let treeW = treeH * 0.55;
+    ctx.fillStyle = t < 0.66 ? `rgba(30,70,25,0.85)` : `rgba(15,20,10,0.9)`;
+    // trunk
+    ctx.fillRect(tr.x - treeW*0.08, treeY + treeH*0.5, treeW*0.16, treeH*0.5);
+    // canopy — triangle-ish blob
+    ctx.beginPath();
+    ctx.ellipse(tr.x, treeY + treeH*0.3, treeW*0.5, treeH*0.55, 0, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Sun / moon
+  let sunX = W * 0.72;
+  let sunY = windowBottom * (0.18 + t * 0.35);
+  let sunR = t < 0.66 ? 18 : 14;
+  let sunColor = t < 0.66 ? `rgba(255,240,180,0.95)` : `rgba(220,80,40,0.9)`;
+  // glow
+  let glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunR * 3.5);
+  glow.addColorStop(0, t < 0.66 ? `rgba(255,240,140,0.35)` : `rgba(220,60,20,0.4)`);
+  glow.addColorStop(1, `rgba(0,0,0,0)`);
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(sunX, sunY, sunR * 3.5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = sunColor;
+  ctx.beginPath();
+  ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
+  ctx.fill();
+
+  // Clouds
+  clouds.forEach(c => {
+    let opacity = c.opacity * (t < 0.66 ? 1 : 0.5);
+    ctx.fillStyle = t < 0.66 ? `rgba(255,255,255,${opacity})` : `rgba(200,120,80,${opacity*0.7})`;
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, c.w * 0.5, c.w * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(c.x - c.w*0.25, c.y + c.w*0.06, c.w*0.3, c.w*0.18, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(c.x + c.w*0.25, c.y + c.w*0.04, c.w*0.32, c.w*0.16, 0, 0, Math.PI*2);
+    ctx.fill();
+    c.x += c.speed;
+    if (c.x - c.w > W) c.x = -c.w;
+  });
+
+  // Railing silhouette (like photo — metal railing outside)
+  let railY = groundY + groundH * 0.05;
+  let railH2 = groundH * 0.35;
+  ctx.strokeStyle = t < 0.66 ? `rgba(20,30,20,0.7)` : `rgba(10,10,10,0.8)`;
+  ctx.lineWidth = 2;
+  // horizontal rails
+  ctx.beginPath(); ctx.moveTo(0, railY); ctx.lineTo(W, railY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, railY + railH2); ctx.lineTo(W, railY + railH2); ctx.stroke();
+  // vertical balusters
+  for (let rx = 0; rx < W; rx += 22) {
+    ctx.beginPath(); ctx.moveTo(rx, railY - railH2*0.3); ctx.lineTo(rx, railY + railH2 + 4); ctx.stroke();
+  }
+}
+
+function lerpColor(a, b, t) {
+  return [
+    Math.round(a[0] + (b[0]-a[0])*t),
+    Math.round(a[1] + (b[1]-a[1])*t),
+    Math.round(a[2] + (b[2]-a[2])*t)
+  ].join(",");
+}
+
+// ── WINDOW FRAME ─────────────────────────────────────────────────────────────
+function drawWindowFrame() {
+  const horizonY = COUNTER_FAR_Y;
+  const frameColor = "#1a1a1a";
+  const frameW = 10;
+
+  // Top frame / roller blind
+  ctx.fillStyle = "#d8d0c4";
+  ctx.fillRect(0, 0, W, H * 0.06);
+  // blind gradient
+  let blindGrad = ctx.createLinearGradient(0, 0, 0, H*0.06);
+  blindGrad.addColorStop(0, "rgba(210,200,185,1)");
+  blindGrad.addColorStop(1, "rgba(190,182,168,1)");
+  ctx.fillStyle = blindGrad;
+  ctx.fillRect(0, 0, W, H * 0.06);
+  // blind slats
+  ctx.strokeStyle = "rgba(160,150,135,0.5)";
+  ctx.lineWidth = 1;
+  for (let sy = 4; sy < H*0.06; sy += 7) {
+    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(W, sy); ctx.stroke();
+  }
+  // blind bottom edge
+  ctx.fillStyle = "#b8b0a0";
+  ctx.fillRect(0, H*0.06 - 3, W, 5);
+
+  // Window frame border
+  ctx.fillStyle = frameColor;
+  // top bar
+  ctx.fillRect(0, H*0.06, W, frameW);
+  // bottom sill (at counter far edge)
+  ctx.fillStyle = "#2a2a2a";
+  ctx.fillRect(0, horizonY - frameW, W, frameW * 1.5);
+
+  // Window mullions (vertical) — dark metal like the photo
+  ctx.fillStyle = frameColor;
+  let cols = 4;
+  for (let ci = 1; ci < cols; ci++) {
+    let mx = W * ci / cols;
+    ctx.fillRect(mx - 5, H*0.06, 10, horizonY - H*0.06);
+  }
+  // horizontal mid-rail
+  ctx.fillRect(0, H*0.06 + (horizonY - H*0.06)*0.55, W, 8);
+
+  // Window sill (the flat sill in front of window — pale, like photo)
+  let sillH = H * 0.035;
+  let sillGrad = ctx.createLinearGradient(0, horizonY, 0, horizonY + sillH);
+  sillGrad.addColorStop(0, "#e8e2d8");
+  sillGrad.addColorStop(1, "#c8c2b8");
+  ctx.fillStyle = sillGrad;
+  ctx.fillRect(0, horizonY, W, sillH);
+
+  // Sill edge highlight
+  ctx.fillStyle = "#f0ece4";
+  ctx.fillRect(0, horizonY, W, 2);
+}
+
+// ── COUNTERTOP ────────────────────────────────────────────────────────────────
+function drawCountertop(elapsed, totalTime) {
+  let t = Math.min(elapsed / totalTime, 1);
+
+  // Counter surface — perspective trapezoid
+  // Dark grey/brown-grey like the photo (slate/laminate)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(COUNTER_NEAR_LEFT,  COUNTER_NEAR_Y);
+  ctx.lineTo(COUNTER_NEAR_RIGHT, COUNTER_NEAR_Y);
+  ctx.lineTo(COUNTER_FAR_RIGHT,  COUNTER_FAR_Y + H*0.035); // include sill
+  ctx.lineTo(COUNTER_FAR_LEFT,   COUNTER_FAR_Y + H*0.035);
+  ctx.closePath();
+
+  // Surface gradient: lighter near player, darker at far end (depth)
+  let surfGrad = ctx.createLinearGradient(0, COUNTER_FAR_Y + H*0.035, 0, COUNTER_NEAR_Y);
+  surfGrad.addColorStop(0, "#3a3835");
+  surfGrad.addColorStop(0.3, "#2e2c2a");
+  surfGrad.addColorStop(1, "#252320");
+  ctx.fillStyle = surfGrad;
+  ctx.fill();
+
+  // Subtle surface sheen / specular
+  let sheen = ctx.createLinearGradient(W*0.1, COUNTER_FAR_Y, W*0.9, COUNTER_NEAR_Y);
+  sheen.addColorStop(0, "rgba(255,255,255,0)");
+  sheen.addColorStop(0.4, "rgba(255,255,255,0.04)");
+  sheen.addColorStop(0.6, "rgba(255,255,255,0.04)");
+  sheen.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = sheen;
+  ctx.fill();
+
+  // Surface seam lines (like the photo has panel joins)
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(COUNTER_NEAR_LEFT,  COUNTER_NEAR_Y);
+  ctx.lineTo(COUNTER_NEAR_RIGHT, COUNTER_NEAR_Y);
+  ctx.lineTo(COUNTER_FAR_RIGHT,  COUNTER_FAR_Y + H*0.035);
+  ctx.lineTo(COUNTER_FAR_LEFT,   COUNTER_FAR_Y + H*0.035);
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.strokeStyle = "rgba(0,0,0,0.35)";
+  ctx.lineWidth = 1.5;
+  // Longitudinal seam (runs along counter length)
+  let seamU = 0.5;
+  let near = counterPt(seamU, 0);
+  let far  = counterPt(seamU, 1);
+  ctx.beginPath();
+  ctx.moveTo(near.x, near.y);
+  ctx.lineTo(far.x, far.y);
+  ctx.stroke();
+
+  // AC VENT / START LINE ──────────────────────────────────────────────────────
+  // The AC vent runs across the counter, close to the player end.
+  // In game logic it's the START_LINE — markers must pass it.
+  let ventV = 0.12; // how far up the counter (near player)
+  let ventNear = counterPt(0, ventV);
+  let ventFar  = counterPt(1, ventV);
+  let ventNearR = counterPt(1, ventV);
+  let ventFarL  = counterPt(0, ventV + 0.045);
+  let ventNearL2 = counterPt(0, ventV + 0.045);
+  let ventFarR2  = counterPt(1, ventV + 0.045);
+
+  // Vent housing (dark metal)
+  ctx.beginPath();
+  ctx.moveTo(counterPt(0, ventV).x,       counterPt(0, ventV).y);
+  ctx.lineTo(counterPt(1, ventV).x,       counterPt(1, ventV).y);
+  ctx.lineTo(counterPt(1, ventV+0.045).x, counterPt(1, ventV+0.045).y);
+  ctx.lineTo(counterPt(0, ventV+0.045).x, counterPt(0, ventV+0.045).y);
+  ctx.closePath();
+  let ventGrad = ctx.createLinearGradient(0, counterPt(0,ventV).y, 0, counterPt(0,ventV+0.045).y);
+  ventGrad.addColorStop(0, "#1a1714");
+  ventGrad.addColorStop(0.5, "#2a2520");
+  ventGrad.addColorStop(1, "#111010");
+  ctx.fillStyle = ventGrad;
+  ctx.fill();
+
+  // Vent slats (horizontal lines across vent)
+  let slats = 6;
+  for (let si = 1; si < slats; si++) {
+    let sv = ventV + (si/slats) * 0.045;
+    let p0 = counterPt(0, sv);
+    let p1 = counterPt(1, sv);
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y);
+    ctx.strokeStyle = "rgba(0,0,0,0.6)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // highlight on each slat
+    let ph0 = counterPt(0, sv - 0.003);
+    let ph1 = counterPt(1, sv - 0.003);
+    ctx.beginPath();
+    ctx.moveTo(ph0.x, ph0.y); ctx.lineTo(ph1.x, ph1.y);
+    ctx.strokeStyle = "rgba(80,70,60,0.4)";
+    ctx.stroke();
+  }
+
+  // Vent edges (metal trim)
+  ctx.strokeStyle = "#555";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(counterPt(0,ventV).x, counterPt(0,ventV).y);
+  ctx.lineTo(counterPt(1,ventV).x, counterPt(1,ventV).y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(counterPt(0,ventV+0.045).x, counterPt(0,ventV+0.045).y);
+  ctx.lineTo(counterPt(1,ventV+0.045).x, counterPt(1,ventV+0.045).y);
+  ctx.stroke();
+
+  // Edge trim (counter front face)
+  ctx.restore();
+
+  // Silver/aluminum counter edge at the very bottom
+  let edgeGrad = ctx.createLinearGradient(0, H*0.94, 0, H);
+  edgeGrad.addColorStop(0, "#888880");
+  edgeGrad.addColorStop(0.3, "#aaaaaa");
+  edgeGrad.addColorStop(0.7, "#666660");
+  edgeGrad.addColorStop(1, "#333330");
+  ctx.fillStyle = edgeGrad;
+  ctx.fillRect(0, H*0.94, W, H*0.06);
+
+  // Counter side face (right side, visible)
+  ctx.beginPath();
+  ctx.moveTo(COUNTER_FAR_RIGHT, COUNTER_FAR_Y + H*0.035);
+  ctx.lineTo(W, COUNTER_FAR_Y + H*0.035);
+  ctx.lineTo(W, COUNTER_NEAR_Y);
+  ctx.lineTo(COUNTER_NEAR_RIGHT, COUNTER_NEAR_Y);
+  ctx.closePath();
+  let sideGrad = ctx.createLinearGradient(COUNTER_FAR_RIGHT, 0, W, 0);
+  sideGrad.addColorStop(0, "#1e1c1a");
+  sideGrad.addColorStop(1, "#131210");
+  ctx.fillStyle = sideGrad;
+  ctx.fill();
+
+  // Wall on right side (cream/beige like the photo)
+  ctx.fillStyle = "#c8c4bc";
+  ctx.fillRect(W*0.82, COUNTER_FAR_Y + H*0.035, W*0.18, H - COUNTER_FAR_Y);
+  // Wall left side
+  ctx.fillStyle = "#c0bcb4";
+  ctx.fillRect(0, COUNTER_FAR_Y + H*0.035, W*0.18, H - COUNTER_FAR_Y);
+
+  // Floor (greenish like the photo)
+  ctx.fillStyle = "#7a9a7a";
+  ctx.fillRect(0, H*0.94, W, H*0.06);
+}
+
+// END LINE (far end of counter, near window sill)
+function drawEndLine() {
+  // White line at the far edge of the counter (game's END_LINE_Y)
+  let p0 = counterPt(0.18, 0.88);
+  let p1 = counterPt(0.82, 0.88);
+  ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y);
+  ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 3; ctx.stroke();
+}
+
+// ── GAME LOGIC (unchanged from original) ────────────────────────────────────
+const colors = ["green","red","blue"];
+const lengths = [60,60,90];
+
+let gameMode = null;
+let olympicsState = null;
+let olympicsResultMsg = "", olympicsResultSub = "";
+
+const NATIONS = [
+  {name:"Ireland",flag:"🇮🇪"},{name:"Israel",flag:"🇮🇱"},
+  {name:"USA",flag:"🇺🇸"},{name:"South Africa",flag:"🇿🇦"},
+  {name:"England",flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},{name:"Scotland",flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},
+  {name:"Norway",flag:"🇳🇴"},{name:"Japan",flag:"🇯🇵"},
+];
+const PLAYER_NATION = {name:"You",flag:"🎮",isPlayer:true};
+
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ let j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } }
+function simScore(){ return Math.floor(Math.random()*18)+2; }
+
+function buildOlympics(){
+  let pool=[...NATIONS]; shuffle(pool);
+  return {
+    seed1:pool[0],seed2:pool[1],seed3:pool[2],seed4:PLAYER_NATION,
+    eliminated:pool.slice(3),
+    round:1,
+    r1Score:null,r1Opp:null,r2Score:null,r2Opp:null,r3Score:null,r3Opp:null,
+    playerOut:false,champion:null
+  };
+}
+
+let speedMultiplier=1;
+let gameState="title";
+let markers=[], current=0, totalScore=0;
+let highScore=localStorage.getItem("qu33phHigh")||0;
+let chairLocked=false, startTime=Date.now(), suddenDeath=false;
+let explosions=[], scorePopups=[];
+let previewMarkers=[{color:"green",used:false},{color:"red",used:false},{color:"blue",used:false}];
+let shake=0;
+const ROUND_TIME=30, TOTAL_TIME=45;
+const orientations=["vertical","angled","horizontal"];
+let orientationIndex=0, currentOrientation="vertical";
 
 const redDot={x:RIGHT_WALL+10,y:END_LINE_Y+40};
 const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:END_LINE_Y+90,radius:35};
 
-// ─── GAME MODE STATE ──────────────────────────────────────────────────────
-let gameMode = null; // 'single' | 'olympics'
-let olympicsState = null;
+function touching(a,b){ return Math.hypot(a.x-b.x,a.y-b.y)<45; }
+function isTouchingAny(m){ return markers.some(n=>n!==m&&!n.fallen&&touching(m,n)); }
+function touchingChair(m){ return Math.hypot(m.x-chair.x,m.y-chair.y)<chair.radius; }
+function addShake(amount){ shake=Math.max(shake,amount); }
 
-// ─── NATIONS / STEPLADDER ─────────────────────────────────────────────────
-const NATIONS = [
-  { name:"Ireland",      flag:"🇮🇪" },
-  { name:"Israel",       flag:"🇮🇱" },
-  { name:"USA",          flag:"🇺🇸" },
-  { name:"South Africa", flag:"🇿🇦" },
-  { name:"England",      flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-  { name:"Scotland",     flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
-  { name:"Norway",       flag:"🇳🇴" },
-  { name:"Japan",        flag:"🇯🇵" },
-];
-
-const PLAYER_NATION = { name:"You", flag:"🎮", isPlayer:true };
-
-// Stepladder format:
-//   Round 1 (Semifinal B):  seed 3 vs seed 4  → winner goes to Round 2
-//   Round 2 (Semifinal A):  seed 2 vs Round1 winner
-//   Round 3 (Final):        seed 1 vs Round2 winner
-// The other 5 nations get simulated scores shown as "previous results"
-
-function buildOlympicsState(){
-  // shuffle non-player nations, pick 7 opponents
-  let pool = [...NATIONS];
-  shuffle(pool);
-  // seeds 1-4 are the finalists; rest are shown as knocked-out earlier
-  // seed 4 = you (player always starts in the earliest match)
-  let seed1 = pool[0];
-  let seed2 = pool[1];
-  let seed3 = pool[2];
-  // seed 4 = player
-  let eliminated = pool.slice(3); // remaining 4 as background results
-
-  return {
-    seed1, seed2, seed3,
-    seed4: PLAYER_NATION,
-    eliminated,
-    round: 1, // which round the player is about to play (1,2,3)
-    r1Score: null,      // player score in round 1
-    r1OppScore: null,
-    r2Score: null,
-    r2OppScore: null,
-    r3Score: null,
-    r3OppScore: null,
-    playerEliminated: false,
-    champion: null,
-  };
+function triggerMegaQu33ph(m){
+  m.x=redDot.x;m.y=redDot.y;m.vx=0;m.vy=0;m.stopped=true;
+  totalScore+=10; addShake(20);
+  explosions.push({x:redDot.x,y:redDot.y,radius:10,life:30,text:"MEGA QU33PH",mega:true});
 }
 
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    let j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
+function tryAdvanceRound(){
+  if(gameState!=="playing") return;
+  if(current===3&&markers.every(m=>m.stopped||m.fallen)){
+    let g=markers[0],r=markers[1],b=markers[2];
+    let rs=calculateScore(); totalScore+=rs;
+    scorePopups.push({x:W/2,y:H/2,text:"+"+rs,life:40});
+    if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
+      explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
+      addShake(8);
+    }
+    markers=[]; current=0;
+    previewMarkers=[{color:"green",used:false},{color:"red",used:false},{color:"blue",used:false}];
   }
 }
 
-function simulatedScore(){
-  // random realistic qu33ph score
-  return Math.floor(Math.random()*18)+2;
+function calculateScore(){
+  if(markers.length<3) return 0;
+  let g=markers[0],r=markers[1],b=markers[2];
+  if(!g||!r||!b||!(g.armed&&r.armed&&b.armed)) return 0;
+  let gr=touching(g,r),rb=touching(r,b),gb=touching(g,b);
+  if(suddenDeath){ if(gr&&rb&&gb)return 10; if(rb)return 5; if(gb)return 5; if(gr)return 3; return 0; }
+  else { if(gr&&rb&&gb)return 3; if(rb)return 2; if(gb)return 2; if(gr)return 0.5; return 0; }
 }
 
-// ─── GAME STATE ────────────────────────────────────────────────────────────
-let speedMultiplier=1;
-let gameState="title"; // "title"|"playing"|"end"|"bracket"
-let markers=[];
-let current=0;
-let totalScore=0;
-let highScore=localStorage.getItem("qu33phHigh")||0;
-let chairLocked=false;
-let startTime=Date.now();
-let suddenDeath=false;
-let explosions=[];
-let scorePopups=[];
-let previewMarkers=[
-  {color:"green",x:0,used:false},
-  {color:"red",x:0,used:false},
-  {color:"blue",x:0,used:false}
-];
-let shake=0;
+// ── INPUT ────────────────────────────────────────────────────────────────────
+let dragging=false,startX,startY,currentX,currentY;
 
-const ROUND_TIME=30;
-const TOTAL_TIME=45;
+canvas.addEventListener("pointerdown",e=>{
+  if(gameState==="title"||gameState==="bracket") return;
+  if(gameState==="end"||gameState==="olympicsResult"){ showTitle(); return; }
+  if(gameState!=="playing") return;
+  if(current===3&&markers.every(m=>m.stopped||m.fallen)){ tryAdvanceRound(); return; }
+  if(current>=3&&markers.length===0) return;
+  dragging=true; startX=e.clientX; startY=e.clientY; currentX=startX; currentY=startY;
+});
+canvas.addEventListener("pointermove",e=>{ if(dragging){ currentX=e.clientX; currentY=e.clientY; } });
+canvas.addEventListener("pointerup",()=>{
+  if(!dragging) return; dragging=false;
+  if(gameState!=="playing"||current>=3) return;
+  let dx=currentX-startX, dy=currentY-startY;
+  let baseRot=currentOrientation==="vertical"?0:currentOrientation==="angled"?Math.PI/6:Math.PI/2;
+  markers.push({
+    x:W/2,y:H-50,vx:dx*0.2,vy:dy*0.2,curve:dx*0.0003,
+    color:colors[current],length:lengths[current],stopped:false,fallen:false,
+    trail:[],rotation:baseRot,
+    spinVelocity:currentOrientation==="vertical"?0.08:currentOrientation==="angled"?0.12:0.18,
+    megaTriggered:false,armed:false,life:0,
+  });
+  current++; previewMarkers[current-1].used=true;
+});
 
-const orientations=["vertical","angled","horizontal"];
-let orientationIndex=0;
-let currentOrientation="vertical";
+document.getElementById("rotateBtn").onclick=()=>{
+  orientationIndex=(orientationIndex+1)%orientations.length;
+  currentOrientation=orientations[orientationIndex];
+  document.getElementById("rotateBtn").innerText="Orientation: "+currentOrientation;
+};
 
-// ─── TITLE SCREEN ─────────────────────────────────────────────────────────
+// ── TITLE / BRACKET / GAME START ─────────────────────────────────────────────
 function showTitle(){
   gameState="title";
   document.getElementById("titleScreen").style.display="flex";
@@ -351,23 +638,29 @@ function showTitle(){
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
   let hs=localStorage.getItem("qu33phHigh")||0;
-  document.getElementById("titleHighScore").innerText=
-    hs>0?"HIGH SCORE: "+hs:"";
+  document.getElementById("titleHS").innerText=hs>0?"HIGH SCORE: "+hs:"";
 }
 
 function startMode(mode){
   gameMode=mode;
   document.getElementById("titleScreen").style.display="none";
-
-  if(mode==="single"){
-    startGame();
-  } else {
-    olympicsState=buildOlympicsState();
-    showBracket();
-  }
+  if(mode==="single"){ startGame(); }
+  else { olympicsState=buildOlympics(); showBracket(); }
 }
 
-// ─── BRACKET SCREEN ────────────────────────────────────────────────────────
+function startGame(){
+  markers=[]; current=0; totalScore=0; startTime=Date.now();
+  suddenDeath=false; chairLocked=false; explosions=[]; scorePopups=[];
+  previewMarkers=[{color:"green",used:false},{color:"red",used:false},{color:"blue",used:false}];
+  shake=0; orientationIndex=0; currentOrientation="vertical";
+  document.getElementById("rotateBtn").style.display="block";
+  document.getElementById("rotateBtn").innerText="Orientation: vertical";
+  document.getElementById("timeline").style.display="block";
+  document.getElementById("progress").style.width="0%";
+  document.getElementById("progress").style.background="lime";
+  gameState="playing";
+}
+
 function showBracket(){
   gameState="bracket";
   document.getElementById("bracketScreen").style.display="flex";
@@ -379,686 +672,246 @@ function showBracket(){
 
 function renderBracket(){
   const os=olympicsState;
-  const content=document.getElementById("bracketContent");
-  const playBtn=document.getElementById("playNextBtn");
   let html="";
+  html+=`<div class="br-rlabel">PRELIMINARY RESULTS</div><div class="br-match">`;
+  os.eliminated.forEach(n=>{ html+=`<div class="br-player loss"><span class="br-flag">${n.flag}</span><span>${n.name}</span><span class="br-sc">${simScore()}</span></div>`; });
+  html+=`</div><div class="br-gap"></div>`;
 
-  // ── Background results (eliminated nations) ──
-  html+=`<div class="bracket-round-label">PRELIMINARY RESULTS</div>`;
-  html+=`<div class="bracket-match">`;
-  os.eliminated.forEach((n,i)=>{
-    let sc=simulatedScore();
-    html+=`<div class="bracket-player loser">`+
-      `<span class="bracket-flag">${n.flag}</span>`+
-      `<span>${n.name}</span>`+
-      `<span class="bracket-score">${sc}</span></div>`;
-  });
+  // R1
+  let r1win=os.r1Score!==null&&os.r1Score>os.r1Opp;
+  html+=`<div class="br-rlabel">SEMIFINAL B</div><div class="br-match${os.round===1?' active':''}">`;
+  html+=`<div class="br-player${os.r1Score!==null?(r1win?' loss':' win'):''}"><span class="br-flag">${os.seed3.flag}</span><span>${os.seed3.name}</span><span class="br-sc${os.r1Score!==null&&!r1win?' win':''}">${os.r1Opp??""}</span></div>`;
+  html+=`<div class="br-player you${os.r1Score!==null?(r1win?' win':' loss'):''}"><span class="br-flag">🎮</span><span>You</span><span class="br-sc${os.r1Score!==null&&r1win?' win':''}">${os.r1Score??""}</span></div>`;
+  html+=`</div><div class="br-gap"></div>`;
+
+  // R2
+  let r2WinnerName=os.r1Score!==null?(r1win?"You":os.seed3.name):"R1 Winner";
+  let r2WinnerFlag=os.r1Score!==null?(r1win?"🎮":os.seed3.flag):"❓";
+  let r2win=os.r2Score!==null&&os.r2Score>os.r2Opp;
+  let youInR2=os.r1Score!==null&&r1win;
+  html+=`<div class="br-rlabel">SEMIFINAL A</div><div class="br-match${os.round===2&&!os.playerOut?' active':''}">`;
+  html+=`<div class="br-player${os.r2Score!==null?(r2win?' loss':' win'):''}"><span class="br-flag">${os.seed2.flag}</span><span>${os.seed2.name}</span><span class="br-sc${os.r2Score!==null&&!r2win?' win':''}">${os.r2Opp??""}</span></div>`;
+  html+=`<div class="br-player${youInR2?' you':''}${os.r2Score!==null?(r2win?' win':' loss'):''}"><span class="br-flag">${r2WinnerFlag}</span><span>${r2WinnerName}</span><span class="br-sc${os.r2Score!==null&&r2win?' win':''}">${os.r2Score??""}</span></div>`;
+  html+=`</div><div class="br-gap"></div>`;
+
+  // R3
+  let r3WinnerName="R2 Winner",r3WinnerFlag="❓";
+  if(os.r2Score!==null){ r3WinnerName=r2win?(youInR2?"You":os.seed3.name):os.seed2.name; r3WinnerFlag=r2win?(youInR2?"🎮":os.seed3.flag):os.seed2.flag; }
+  let youInR3=os.r2Score!==null&&r2win&&youInR2;
+  let r3win=os.r3Score!==null&&os.r3Score>os.r3Opp;
+  html+=`<div class="br-rlabel">GRAND FINAL</div><div class="br-match${os.round===3&&!os.playerOut?' active':''}">`;
+  html+=`<div class="br-player${os.r3Score!==null?(r3win?' loss':' win'):''}"><span class="br-flag">${os.seed1.flag}</span><span>${os.seed1.name}</span><span class="br-sc${os.r3Score!==null&&!r3win?' win':''}">${os.r3Opp??""}</span></div>`;
+  html+=`<div class="br-player${youInR3?' you':''}${os.r3Score!==null?(r3win?' win':' loss'):''}"><span class="br-flag">${r3WinnerFlag}</span><span>${r3WinnerName}</span><span class="br-sc${os.r3Score!==null&&r3win?' win':''}">${os.r3Score??""}</span></div>`;
   html+=`</div>`;
+  document.getElementById("bracketContent").innerHTML=html;
 
-  html+=`<div class="bracket-spacer"></div>`;
-
-  // ── Stepladder Round 1: seed3 vs seed4(player) ──
-  html+=`<div class="bracket-round-label">SEMIFINAL B</div>`;
-  let r1Active = os.round===1;
-  let r1Class = r1Active?"bracket-match active-match":"bracket-match";
-
-  let r1p1Class="bracket-player";
-  let r1p2Class="bracket-player is-you";
-  let r1s1="", r1s2="";
-
-  if(os.r1Score!==null){
-    let playerWon=os.r1Score>os.r1OppScore;
-    r1p1Class="bracket-player "+(playerWon?"loser":"winner");
-    r1p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
-    r1s1=os.r1OppScore;
-    r1s2=os.r1Score;
-  }
-
-  html+=`<div class="${r1Class}">
-    <div class="${r1p1Class}">
-      <span class="bracket-flag">${os.seed3.flag}</span>
-      <span>${os.seed3.name}</span>
-      <span class="bracket-score ${r1s1===Math.max(r1s1,r1s2)&&r1s1!=""?"winner":""}">${r1s1}</span>
-    </div>
-    <div class="${r1p2Class}">
-      <span class="bracket-flag">${os.seed4.flag}</span>
-      <span>${os.seed4.name}</span>
-      <span class="bracket-score is-you ${r1s2===Math.max(r1s1,r1s2)&&r1s2!=""?"winner":""}">${r1s2}</span>
-    </div>
-  </div>`;
-
-  html+=`<div class="bracket-spacer"></div>`;
-
-  // ── Stepladder Round 2: seed2 vs R1 winner ──
-  html+=`<div class="bracket-round-label">SEMIFINAL A</div>`;
-  let r2Active=os.round===2;
-  let r2Class=r2Active?"bracket-match active-match":"bracket-match";
-  let r2WinnerName="R1 Winner";
-  let r2WinnerFlag="❓";
-
-  if(os.r1Score!==null){
-    let playerWonR1=os.r1Score>os.r1OppScore;
-    r2WinnerName=playerWonR1?os.seed4.name:os.seed3.name;
-    r2WinnerFlag=playerWonR1?os.seed4.flag:os.seed3.flag;
-  }
-
-  let r2p1Class="bracket-player";
-  let r2p2Class=os.r1Score!==null&&os.r1Score>os.r1OppScore?"bracket-player is-you":"bracket-player";
-  let r2s1="", r2s2="";
-
-  if(os.r2Score!==null){
-    let playerWon=os.r2Score>os.r2OppScore;
-    r2p1Class="bracket-player "+(playerWon?"loser":"winner");
-    r2p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
-    r2s1=os.r2OppScore;
-    r2s2=os.r2Score;
-  } else if(os.playerEliminated && os.round>2){
-    r2p1Class="bracket-player winner";
-    r2s1="?"; r2s2="?";
-  }
-
-  html+=`<div class="${r2Class}">
-    <div class="${r2p1Class}">
-      <span class="bracket-flag">${os.seed2.flag}</span>
-      <span>${os.seed2.name}</span>
-      <span class="bracket-score">${r2s1}</span>
-    </div>
-    <div class="${r2p2Class}">
-      <span class="bracket-flag">${r2WinnerFlag}</span>
-      <span>${r2WinnerName}</span>
-      <span class="bracket-score">${r2s2}</span>
-    </div>
-  </div>`;
-
-  html+=`<div class="bracket-spacer"></div>`;
-
-  // ── Grand Final: seed1 vs R2 winner ──
-  html+=`<div class="bracket-round-label">GRAND FINAL</div>`;
-  let r3Active=os.round===3&&!os.playerEliminated;
-  let r3Class=r3Active?"bracket-match active-match":"bracket-match";
-  let r3WinnerName="R2 Winner";
-  let r3WinnerFlag="❓";
-
-  if(os.r2Score!==null){
-    let playerWonR2=os.r2Score>os.r2OppScore;
-    r3WinnerName=playerWonR2?os.seed4.name:(os.r1Score>os.r1OppScore?os.seed4.name:os.seed3.name);
-    r3WinnerFlag=playerWonR2?os.seed4.flag:(os.r1Score>os.r1OppScore?os.seed4.flag:os.seed3.flag);
-    if(!playerWonR2){
-      r3WinnerName=os.seed2.name;
-      r3WinnerFlag=os.seed2.flag;
-    }
-  }
-
-  let r3p1Class="bracket-player";
-  let r3p2Class=os.r2Score!==null&&os.r2Score>os.r2OppScore?"bracket-player is-you":"bracket-player";
-  let r3s1="", r3s2="";
-
-  if(os.champion!==null){
-    r3s1=os.r3OppScore;
-    r3s2=os.r3Score;
-    let playerWon=os.r3Score>os.r3OppScore;
-    r3p1Class="bracket-player "+(playerWon?"loser":"winner");
-    r3p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
-  }
-
-  html+=`<div class="${r3Class}">
-    <div class="${r3p1Class}">
-      <span class="bracket-flag">${os.seed1.flag}</span>
-      <span>${os.seed1.name}</span>
-      <span class="bracket-score">${r3s1}</span>
-    </div>
-    <div class="${r3p2Class}">
-      <span class="bracket-flag">${r3WinnerFlag}</span>
-      <span>${r3WinnerName}</span>
-      <span class="bracket-score">${r3s2}</span>
-    </div>
-  </div>`;
-
-  content.innerHTML=html;
-
-  // Play button logic
-  if(os.playerEliminated){
-    playBtn.style.display="block";
-    playBtn.className="play-next-btn disabled";
-    playBtn.innerText="ELIMINATED — SEE RESULTS";
-    playBtn.onclick=()=>showFinalResult();
-  } else if(os.champion!==null){
-    playBtn.style.display="block";
-    playBtn.className="play-next-btn";
-    playBtn.innerText="SEE FINAL RESULT";
-    playBtn.onclick=()=>showFinalResult();
+  const btn=document.getElementById("playBtn");
+  btn.style.display="block";
+  if(os.champion!==null||os.playerOut){
+    btn.className="play-btn"; btn.innerText="← BACK TO MENU"; btn.onclick=showTitle;
   } else {
-    playBtn.style.display="block";
-    playBtn.className="play-next-btn";
-    let lbl=os.round===1?"PLAY SEMIFINAL B →":os.round===2?"PLAY SEMIFINAL A →":"PLAY GRAND FINAL →";
-    playBtn.innerText=lbl;
-    playBtn.onclick=()=>playNextMatch();
+    btn.className="play-btn";
+    btn.innerText=os.round===1?"PLAY SEMIFINAL B →":os.round===2?"PLAY SEMIFINAL A →":"PLAY GRAND FINAL →";
+    btn.onclick=()=>{ document.getElementById("bracketScreen").style.display="none"; startGame(); };
   }
 }
 
-function showFinalResult(){
-  const os=olympicsState;
-  let won=os.champion==="player";
-  document.getElementById("bracketScreen").style.display="none";
-
-  // go to game end screen but override message
-  gameState="olympicsResult";
-  olympicsResultMsg = won?
-    "🏆 QU33PH OLYMPIC CHAMPION! 🏆":
-    "ELIMINATED — BETTER LUCK NEXT TIME";
-  olympicsResultSub = won?"":
-    (os.playerEliminated?"You were knocked out in "+(os.round===2?"Semifinal B":"Semifinal A"):"You made the final!");
-}
-
-let olympicsResultMsg="";
-let olympicsResultSub="";
-
-function playNextMatch(){
-  document.getElementById("bracketScreen").style.display="none";
-  startGame();
-}
-
-// ─── GAME START ────────────────────────────────────────────────────────────
-function startGame(){
-  markers=[];
-  current=0;
-  totalScore=0;
-  startTime=Date.now();
-  suddenDeath=false;
-  chairLocked=false;
-  explosions=[];
-  scorePopups=[];
-  previewMarkers=[
-    {color:"green",x:0,used:false},
-    {color:"red",x:0,used:false},
-    {color:"blue",x:0,used:false}
-  ];
-  shake=0;
-  orientationIndex=0;
-  currentOrientation="vertical";
-  document.getElementById("rotateBtn").style.display="block";
-  document.getElementById("rotateBtn").innerText="Orientation: vertical";
-  document.getElementById("timeline").style.display="block";
-  document.getElementById("progress").style.width="0%";
-  document.getElementById("progress").style.background="lime";
-  randomizeSky();
-  gameState="playing";
-}
-
-// ─── ORIENTATION BTN ──────────────────────────────────────────────────────
-document.getElementById("rotateBtn").onclick=()=>{
-  orientationIndex=(orientationIndex+1)%orientations.length;
-  currentOrientation=orientations[orientationIndex];
-  document.getElementById("rotateBtn").innerText="Orientation: "+currentOrientation;
-};
-
-// ─── INPUT ────────────────────────────────────────────────────────────────
-let dragging=false,startX,startY,currentX,currentY;
-const colors=["green","red","blue"];
-const lengths=[60,60,90];
-
-canvas.addEventListener("pointerdown",e=>{
-  if(gameState==="title"||gameState==="bracket") return;
-
-  if(gameState==="end"||gameState==="olympicsResult"){
-    if(gameMode==="single"){
-      showTitle();
-    } else {
-      // olympics: go back to bracket or result
-      showTitle();
-    }
-    return;
-  }
-
-  if(gameState!=="playing") return;
-
-  if(current===3 && markers.every(m=>m.stopped||m.fallen)){
-    tryAdvanceRound();
-    return;
-  }
-
-  if(current>=3 && markers.length===0) return;
-
-  dragging=true;
-  startX=e.clientX;
-  startY=e.clientY;
-  currentX=startX;
-  currentY=startY;
-});
-
-canvas.addEventListener("pointermove",e=>{
-  if(!dragging) return;
-  currentX=e.clientX;
-  currentY=e.clientY;
-});
-
-canvas.addEventListener("pointerup",()=>{
-  if(!dragging) return;
-  dragging=false;
-
-  if(gameState!=="playing") return;
-  if(current>=3) return;
-
-  let dx=currentX-startX;
-  let dy=currentY-startY;
-
-  let baseRot=
-    currentOrientation==="vertical"?0:
-    currentOrientation==="angled"?Math.PI/6:
-    Math.PI/2;
-
-  markers.push({
-    x:canvas.width/2,
-    y:canvas.height-50,
-    usedPreview:current,
-    vx:dx*0.2,
-    vy:dy*0.2,
-    curve:dx*0.0003,
-    angleType:currentOrientation,
-    color:colors[current],
-    length:lengths[current],
-    stopped:false,
-    fallen:false,
-    trail:[],
-    rotation:baseRot,
-    spinVelocity:
-      currentOrientation==="vertical"?0.08:
-      currentOrientation==="angled"?0.12:0.18,
-    chairBoost:false,
-    megaTriggered:false,
-    armed:false,
-    life:0,
-  });
-
-  current++;
-  previewMarkers[current-1].used=true;
-});
-
-// ─── HELPERS ──────────────────────────────────────────────────────────────
-function touching(a,b){ return Math.hypot(a.x-b.x,a.y-b.y)<45; }
-function isTouchingAny(m){ return markers.some(n=>n!==m&&!n.fallen&&touching(m,n)); }
-function touchingChair(m){ return Math.hypot(m.x-chair.x,m.y-chair.y)<chair.radius; }
-function addShake(amount){ shake=Math.max(shake,amount); }
-
-function triggerMegaQu33ph(m){
-  m.x=redDot.x; m.y=redDot.y;
-  m.vx=0; m.vy=0; m.stopped=true;
-  totalScore+=10;
-  addShake(20);
-  explosions.push({x:redDot.x,y:redDot.y,radius:10,life:30,text:"MEGA QU33PH",mega:true});
-}
-
-// ─── ROUND SYSTEM ─────────────────────────────────────────────────────────
-function tryAdvanceRound(){
-  if(gameState!=="playing") return;
-  if(current===3 && markers.every(m=>m.stopped||m.fallen)){
-    let g=markers[0], r=markers[1], b=markers[2];
-    let roundScore=calculateScore();
-    totalScore+=roundScore;
-    scorePopups.push({x:canvas.width/2,y:canvas.height/2,text:"+"+roundScore,life:40});
-    if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
-      explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
-      addShake(8);
-    }
-    markers=[];
-    current=0;
-    previewMarkers=[
-      {color:"green",x:0,used:false},
-      {color:"red",x:0,used:false},
-      {color:"blue",x:0,used:false}
-    ];
-  }
-}
-
-function calculateScore(){
-  if(markers.length<3) return 0;
-  let g=markers[0],r=markers[1],b=markers[2];
-  if(!g||!r||!b) return 0;
-  if(!(g.armed&&r.armed&&b.armed)) return 0;
-  let gr=touching(g,r), rb=touching(r,b), gb=touching(g,b);
-  if(suddenDeath){
-    if(gr&&rb&&gb) return 10;
-    if(rb) return 5;
-    if(gb) return 5;
-    if(gr) return 3;
-    return 0;
-  } else {
-    if(gr&&rb&&gb) return 3;
-    if(rb) return 2;
-    if(gb) return 2;
-    if(gr) return 0.5;
-    return 0;
-  }
-}
-
-// ─── SKY ──────────────────────────────────────────────────────────────────
-let sunPos={x:0,y:0};
-let clouds=[];
-let skyWindows=[];
-
-function randomizeSky(){
-  let wx=RIGHT_WALL+10;
-  let ww=canvas.width-RIGHT_WALL-20;
-  sunPos={x:wx+Math.random()*ww, y:END_LINE_Y+40+Math.random()*80};
-  clouds=[];
-  skyWindows=[];
-  for(let i=0;i<4;i++) clouds.push({x:wx+Math.random()*ww, y:END_LINE_Y+40+Math.random()*200});
-  for(let i=0;i<6;i++) skyWindows.push({x:wx+Math.random()*ww, y:END_LINE_Y+40+Math.random()*200});
-}
-
-// ─── UPDATE ───────────────────────────────────────────────────────────────
-function update(){
-  if(gameState!=="playing") return;
-
-  if(shake>0){ shake*=0.9; if(shake<0.05) shake=0; }
-
-  let elapsed=(Date.now()-startTime)/1000;
-
-  if(elapsed>ROUND_TIME&&elapsed<=TOTAL_TIME){ suddenDeath=true; }
-  if(!chairLocked&&suddenDeath){ chairLocked=true; chair.x=(LEFT_EDGE+RIGHT_WALL)/2; chair.y=END_LINE_Y+90; }
-  if(elapsed>TOTAL_TIME){ endGame(); return; }
-
-  markers.forEach(m=>{
-    if(m.stopped||m.fallen) return;
-    m.life+=1/60;
-    if(m.life>=1){ m.stopped=true; m.vx=0; m.vy=0; }
-    m.vx+=m.curve;
-    m.x+=m.vx*speedMultiplier;
-    m.y+=m.vy*speedMultiplier;
-    if(!m.armed&&m.y<START_LINE_Y) m.armed=true;
-    m.vx*=0.94; m.vy*=0.94;
-    m.rotation+=m.spinVelocity*speedMultiplier;
-    m.spinVelocity*=0.96;
-    if(suddenDeath&&!m.megaTriggered&&touchingChair(m)){
-      if(Math.random()<0.25) triggerMegaQu33ph(m);
-      m.megaTriggered=true;
-    }
-    m.trail.push({x:m.x,y:m.y});
-    if(m.trail.length>20) m.trail.shift();
-    if(m.x<LEFT_EDGE) m.fallen=true;
-    if(m.x>RIGHT_WALL){ m.x=RIGHT_WALL; m.vx*=-0.4; }
-    if(m.y<END_LINE_Y){ m.y=END_LINE_Y; m.vy*=-0.2; }
-    if(Math.abs(m.vx)<0.05&&Math.abs(m.vy)<0.05) m.stopped=true;
-
-    let progress=Math.min(elapsed/TOTAL_TIME,1);
-    document.getElementById("progress").style.width=(progress*100)+"%";
-    if(elapsed>ROUND_TIME) document.getElementById("progress").style.background="red";
-  });
-
-  explosions.forEach(e=>{ e.radius+=e.mega?6:4; e.life--; });
-  explosions=explosions.filter(e=>e.life>0);
-  scorePopups.forEach(p=>{ p.y-=1; p.life--; });
-  scorePopups=scorePopups.filter(p=>p.life>0);
-
-  if(current===3&&markers.every(m=>m.stopped||m.fallen)) tryAdvanceRound();
-}
-
-// ─── END GAME ─────────────────────────────────────────────────────────────
 function endGame(){
   shake=0;
-  if(totalScore>highScore){
-    highScore=totalScore;
-    localStorage.setItem("qu33phHigh",highScore);
-  }
+  if(totalScore>highScore){ highScore=totalScore; localStorage.setItem("qu33phHigh",highScore); }
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
 
   if(gameMode==="olympics"){
-    // record result in olympics state
     const os=olympicsState;
-    let oppScore=simulatedScore();
-
-    if(os.round===1){
-      os.r1Score=totalScore;
-      os.r1OppScore=oppScore;
-      if(totalScore<=oppScore){
-        os.playerEliminated=true;
-      }
-      os.round=2;
-    } else if(os.round===2){
-      os.r2Score=totalScore;
-      os.r2OppScore=oppScore;
-      if(totalScore<=oppScore){
-        os.playerEliminated=true;
-      }
-      os.round=3;
-    } else if(os.round===3){
-      os.r3Score=totalScore;
-      os.r3OppScore=oppScore;
-      os.champion=totalScore>oppScore?"player":"cpu";
-    }
-
-    gameState="end"; // temp, will go to bracket
-    showBracket();
-    return;
+    let opp=simScore();
+    if(os.round===1){ os.r1Score=totalScore;os.r1Opp=opp;if(totalScore<=opp)os.playerOut=true;os.round=2; }
+    else if(os.round===2){ os.r2Score=totalScore;os.r2Opp=opp;if(totalScore<=opp)os.playerOut=true;os.round=3; }
+    else { os.r3Score=totalScore;os.r3Opp=opp;os.champion=totalScore>opp?"player":"cpu"; }
+    gameState="bracket"; showBracket(); return;
   }
-
   gameState="end";
 }
 
-// ─── DRAW MARKER ──────────────────────────────────────────────────────────
-function drawMarker(m){
+// ── UPDATE ───────────────────────────────────────────────────────────────────
+function update(){
+  if(gameState!=="playing") return;
+  if(shake>0){shake*=0.9;if(shake<0.05)shake=0;}
+  let elapsed=(Date.now()-startTime)/1000;
+  if(elapsed>ROUND_TIME){suddenDeath=true;}
+  if(!chairLocked&&suddenDeath){chairLocked=true;chair.x=(LEFT_EDGE+RIGHT_WALL)/2;chair.y=END_LINE_Y+90;}
+  if(elapsed>TOTAL_TIME){endGame();return;}
+
+  markers.forEach(m=>{
+    if(m.stopped||m.fallen) return;
+    m.life+=1/60; if(m.life>=1){m.stopped=true;m.vx=0;m.vy=0;}
+    m.vx+=m.curve; m.x+=m.vx*speedMultiplier; m.y+=m.vy*speedMultiplier;
+    if(!m.armed&&m.y<START_LINE_Y)m.armed=true;
+    m.vx*=0.94;m.vy*=0.94;
+    m.rotation+=m.spinVelocity*speedMultiplier; m.spinVelocity*=0.96;
+    if(suddenDeath&&!m.megaTriggered&&touchingChair(m)){if(Math.random()<0.25)triggerMegaQu33ph(m);m.megaTriggered=true;}
+    m.trail.push({x:m.x,y:m.y}); if(m.trail.length>20)m.trail.shift();
+    if(m.x<LEFT_EDGE)m.fallen=true;
+    if(m.x>RIGHT_WALL){m.x=RIGHT_WALL;m.vx*=-0.4;}
+    if(m.y<END_LINE_Y){m.y=END_LINE_Y;m.vy*=-0.2;}
+    if(Math.abs(m.vx)<0.05&&Math.abs(m.vy)<0.05)m.stopped=true;
+    let pr=Math.min(elapsed/TOTAL_TIME,1);
+    document.getElementById("progress").style.width=(pr*100)+"%";
+    if(elapsed>ROUND_TIME)document.getElementById("progress").style.background="red";
+  });
+  explosions.forEach(e=>{e.radius+=e.mega?6:4;e.life--;});
+  explosions=explosions.filter(e=>e.life>0);
+  scorePopups.forEach(p=>{p.y-=1;p.life--;});
+  scorePopups=scorePopups.filter(p=>p.life>0);
+  if(current===3&&markers.every(m=>m.stopped||m.fallen))tryAdvanceRound();
+}
+
+// ── DRAW MARKER (projected onto counter surface) ──────────────────────────────
+function drawMarker3D(m){
+  let sp=gameToScreen(m.x, m.y);
+  let sc=sp.scale;
+
+  // Trail
   if(m.trail&&m.trail.length>1){
-    let tw=m.color==="red"?3:m.color==="green"?4:6;
     ctx.beginPath();
-    ctx.moveTo(m.trail[0].x,m.trail[0].y);
-    for(let i=1;i<m.trail.length;i++) ctx.lineTo(m.trail[i].x,m.trail[i].y);
-    ctx.strokeStyle=m.color;
-    ctx.lineWidth=tw;
-    ctx.globalAlpha=0.6;
-    ctx.stroke();
-    ctx.globalAlpha=1;
+    let t0=gameToScreen(m.trail[0].x,m.trail[0].y);
+    ctx.moveTo(t0.x,t0.y);
+    for(let i=1;i<m.trail.length;i++){
+      let ti=gameToScreen(m.trail[i].x,m.trail[i].y);
+      ctx.lineTo(ti.x,ti.y);
+    }
+    let tw=m.color==="red"?3:m.color==="green"?4:6;
+    ctx.strokeStyle=m.color; ctx.lineWidth=tw*sc; ctx.globalAlpha=0.5; ctx.stroke(); ctx.globalAlpha=1;
   }
+
+  // Shadow on counter
+  ctx.save();
+  ctx.translate(sp.x+4*sc, sp.y+4*sc);
+  ctx.globalAlpha=0.3;
+  ctx.fillStyle="#000";
+  ctx.beginPath(); ctx.ellipse(0,0,22*sc,8*sc,0,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
   const img=markerImages[m.color];
   if(!img||!img.complete) return;
   ctx.save();
-  ctx.translate(m.x,m.y);
+  ctx.translate(sp.x, sp.y);
   ctx.rotate(m.rotation);
-  let w=50,h=50;
-  if(m.color==="blue"){w=80;h=50;}
+  let w=50*sc, h=50*sc;
+  if(m.color==="blue"){w=80*sc;h=50*sc;}
   ctx.drawImage(img,-w/2,-h/2,w,h);
   ctx.restore();
 }
 
-// ─── DRAW ─────────────────────────────────────────────────────────────────
+// ── DRAW ─────────────────────────────────────────────────────────────────────
 function draw(){
   if(gameState==="title"||gameState==="bracket") return;
+  let elapsed=(Date.now()-startTime)/1000;
 
   if(gameState==="end"){
-    ctx.fillStyle="#000";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.textAlign="center";
-    ctx.textBaseline="top";
-    ctx.fillStyle="#fff";
-    ctx.font="bold 60px 'Courier New',monospace";
-    ctx.fillText("Qu33ph",canvas.width/2,130);
-    ctx.font="22px 'Courier New',monospace";
-    ctx.fillStyle="#aaa";
-    ctx.fillText("SCORE: "+totalScore,canvas.width/2,210);
-    ctx.fillStyle="#555";
-    ctx.fillText("HIGH SCORE: "+highScore,canvas.width/2,244);
-    ctx.fillStyle="#333";
-    ctx.font="16px 'Courier New',monospace";
-    ctx.fillText("tap anywhere to return to menu",canvas.width/2,310);
+    ctx.fillStyle="#000"; ctx.fillRect(0,0,W,H);
+    ctx.setTransform(1,0,0,1,0,0); ctx.textAlign="center"; ctx.textBaseline="top";
+    ctx.fillStyle="#fff"; ctx.font="bold 58px 'Courier New',monospace"; ctx.fillText("Qu33ph",W/2,130);
+    ctx.font="22px 'Courier New',monospace"; ctx.fillStyle="#aaa"; ctx.fillText("SCORE: "+totalScore,W/2,205);
+    ctx.fillStyle="#444"; ctx.fillText("HIGH SCORE: "+highScore,W/2,238);
+    ctx.fillStyle="#2a2a2a"; ctx.font="15px 'Courier New',monospace"; ctx.fillText("tap anywhere to return to menu",W/2,305);
     return;
   }
 
-  if(gameState==="olympicsResult"){
-    ctx.fillStyle="#000";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    ctx.fillStyle="#fff";
-    ctx.font="bold 28px 'Courier New',monospace";
-    ctx.fillText(olympicsResultMsg,canvas.width/2,canvas.height/2-30);
-    if(olympicsResultSub){
-      ctx.fillStyle="#555";
-      ctx.font="16px 'Courier New',monospace";
-      ctx.fillText(olympicsResultSub,canvas.width/2,canvas.height/2+20);
-    }
-    ctx.fillStyle="#333";
-    ctx.font="14px 'Courier New',monospace";
-    ctx.fillText("tap to return to menu",canvas.width/2,canvas.height/2+70);
-    return;
-  }
+  ctx.clearRect(0,0,W,H);
+  let sx=(Math.random()-0.5)*shake, sy=(Math.random()-0.5)*shake;
+  ctx.save(); ctx.translate(sx,sy);
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  let shakeX=(Math.random()-0.5)*shake;
-  let shakeY=(Math.random()-0.5)*shake;
-  ctx.save();
-  ctx.translate(shakeX,shakeY);
+  // 1. Sky (through window)
+  drawSky(elapsed, TOTAL_TIME);
 
-  // BG
-  ctx.fillStyle="#222";
-  ctx.fillRect(RIGHT_WALL,0,canvas.width-RIGHT_WALL,canvas.height);
-  ctx.fillStyle="#6ec6ff";
-  ctx.fillRect(RIGHT_WALL+5,END_LINE_Y,canvas.width-RIGHT_WALL-10,canvas.height-END_LINE_Y);
+  // 2. Window frame + blind + sill
+  drawWindowFrame();
 
-  // SUN
-  ctx.fillStyle="yellow";
-  ctx.beginPath();
-  ctx.arc(sunPos.x,sunPos.y,20,0,Math.PI*2);
-  ctx.fill();
+  // 3. Counter surface + AC vent
+  drawCountertop(elapsed, TOTAL_TIME);
 
-  // CLOUDS
-  ctx.fillStyle="white";
-  clouds.forEach(c=>{
-    ctx.beginPath();
-    ctx.arc(c.x,c.y,15,0,Math.PI*2);
-    ctx.arc(c.x+20,c.y,20,0,Math.PI*2);
-    ctx.fill();
-  });
+  // 4. End line (far edge of playfield)
+  drawEndLine();
 
-  // WINDOWS
-  ctx.fillStyle="rgba(255,255,255,0.25)";
-  skyWindows.forEach(w=>ctx.fillRect(w.x,w.y,30,20));
-
-  // WINDOWSILL
-  ctx.fillStyle="#000";
-  ctx.fillRect(RIGHT_WALL,END_LINE_Y,35,canvas.height-END_LINE_Y);
-
-  // RED DOT
-  ctx.fillStyle="red";
-  ctx.beginPath();
-  ctx.arc(redDot.x,redDot.y,10,0,Math.PI*2);
-  ctx.fill();
-
-  // TOP LINE
-  ctx.fillStyle="white";
-  ctx.fillRect(LEFT_EDGE,END_LINE_Y,RIGHT_WALL-LEFT_EDGE,4);
-
-  // START LINE
-  ctx.fillStyle="rgba(255,255,255,0.4)";
-  ctx.fillRect(LEFT_EDGE,START_LINE_Y,RIGHT_WALL-LEFT_EDGE,4);
-
-  // ADVANCE PROMPT
-  if(current===3&&markers.every(m=>m.stopped||m.fallen)){
-    ctx.fillStyle="white";
-    ctx.font="bold 24px 'Courier New',monospace";
-    ctx.textAlign="center";
-    ctx.textBaseline="bottom";
-    ctx.fillText("tap anywhere on field to advance",(LEFT_EDGE+RIGHT_WALL)/2,END_LINE_Y-20);
-  }
-
-  ctx.restore();
-
-  // CHAIR
+  // 5. Chair (sudden death)
   if(suddenDeath){
-    ctx.save();
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.translate(chair.x,chair.y);
-    ctx.rotate(Math.PI);
-    ctx.font="30px Arial";
-    ctx.fillText("🪑",-15,10);
+    let cp=gameToScreen(chair.x, chair.y);
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+    ctx.translate(cp.x, cp.y); ctx.rotate(Math.PI);
+    ctx.font=`${Math.round(28*cp.scale)}px Arial`;
+    ctx.fillText("🪑",-12,8);
     ctx.restore();
   }
 
-  // EXPLOSIONS
-  explosions.forEach(e=>{
-    ctx.beginPath();
-    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
-    ctx.strokeStyle="white";
-    ctx.lineWidth=4;
-    ctx.globalAlpha=e.life/30;
-    ctx.stroke();
-    ctx.globalAlpha=e.life/30;
-    ctx.fillStyle="white";
-    ctx.font=e.mega?"bold 50px Arial":"bold 60px Arial";
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    ctx.fillText(e.text||"QU33PH",e.x,e.y);
-    ctx.globalAlpha=1;
+  // 6. Markers (perspective projected)
+  markers.forEach(m=>{
+    if(m.fallen) return;
+    if(isTouchingAny(m)){
+      let sp=gameToScreen(m.x,m.y);
+      ctx.save(); ctx.shadowColor="lime"; ctx.shadowBlur=18*sp.scale;
+      drawMarker3D(m); ctx.shadowBlur=0; ctx.restore();
+    } else {
+      drawMarker3D(m);
+    }
   });
 
-  // SCORE POPUPS
-  scorePopups.forEach(p=>{
-    ctx.save();
-    ctx.globalAlpha=p.life/40;
-    ctx.fillStyle="white";
-    ctx.font="bold 30px 'Courier New',monospace";
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    ctx.fillText(p.text,p.x,p.y);
-    ctx.restore();
-  });
-
-  // PREVIEW MARKERS
+  // 7. Preview markers (at near edge, above AC vent)
   previewMarkers.forEach((p,i)=>{
     if(p.used) return;
     const img=markerImages[p.color];
     if(!img||!img.complete) return;
-    let x=(LEFT_EDGE+RIGHT_WALL)/2;
-    let y=START_LINE_Y-60-i*60;
-    ctx.globalAlpha=0.5;
-    ctx.drawImage(img,x-25,y-25,50,50);
+    let px=W*0.35+i*W*0.12, py=H*0.88;
+    ctx.globalAlpha=0.45;
+    ctx.drawImage(img,px-20,py-20,40,40);
     ctx.globalAlpha=1;
   });
 
-  // MARKERS
-  markers.forEach(m=>{
-    if(m.fallen) return;
-    ctx.shadowColor=isTouchingAny(m)?"lime":"red";
-    ctx.shadowBlur=20;
-    drawMarker(m);
-    ctx.shadowBlur=0;
+  // 8. Explosions
+  explosions.forEach(e=>{
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
+    ctx.strokeStyle="white"; ctx.lineWidth=3; ctx.globalAlpha=e.life/30; ctx.stroke();
+    ctx.fillStyle="white"; ctx.font=e.mega?"bold 44px Arial":"bold 54px Arial";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(e.text||"QU33PH",e.x,e.y); ctx.globalAlpha=1;
   });
 
-  // UI TEXT
+  // 9. Score popups
+  scorePopups.forEach(p=>{
+    ctx.save(); ctx.globalAlpha=p.life/40; ctx.fillStyle="white";
+    ctx.font="bold 28px 'Courier New',monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(p.text,p.x,p.y); ctx.restore();
+  });
+
+  // 10. Advance prompt
+  if(current===3&&markers.every(m=>m.stopped||m.fallen)){
+    ctx.fillStyle="rgba(255,255,255,0.85)"; ctx.font="bold 20px 'Courier New',monospace";
+    ctx.textAlign="center"; ctx.textBaseline="bottom";
+    ctx.fillText("tap field to advance",W/2,COUNTER_FAR_Y - 12);
+  }
+
+  ctx.restore();
+
+  // UI (no shake)
   ctx.setTransform(1,0,0,1,0,0);
-  ctx.textAlign="left";
-  ctx.textBaseline="top";
-  let elapsed=(Date.now()-startTime)/1000;
-  ctx.fillStyle="white";
-  ctx.font="20px 'Courier New',monospace";
+  ctx.textAlign="left"; ctx.textBaseline="top";
+  ctx.fillStyle="white"; ctx.font="18px 'Courier New',monospace";
   if(!suddenDeath){
-    ctx.fillText("Time: "+Math.max(0,ROUND_TIME-Math.floor(elapsed)),20,20);
+    ctx.fillText("Time: "+Math.max(0,ROUND_TIME-Math.floor(elapsed)),18,18);
   } else {
-    ctx.fillStyle="red";
-    ctx.fillText("SUDDEN DEATH: "+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),20,20);
+    ctx.fillStyle="red"; ctx.fillText("SUDDEN DEATH: "+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),18,18);
   }
-  ctx.fillStyle="white";
-  ctx.fillText("Score: "+totalScore,20,50);
-
-  // Olympics mode: show round indicator
+  ctx.fillStyle="white"; ctx.fillText("Score: "+totalScore,18,44);
   if(gameMode==="olympics"&&olympicsState){
-    ctx.fillStyle="#555";
-    ctx.font="13px 'Courier New',monospace";
-    let rLabel=olympicsState.round===1?"SEMIFINAL B":olympicsState.round===2?"SEMIFINAL A":"GRAND FINAL";
-    ctx.fillText("OLYMPICS · "+rLabel,20,80);
+    ctx.fillStyle="#444"; ctx.font="12px 'Courier New',monospace";
+    let rl=olympicsState.round===1?"SEMIFINAL B":olympicsState.round===2?"SEMIFINAL A":"GRAND FINAL";
+    ctx.fillText("OLYMPICS · "+rl,18,70);
   }
 }
 
-// ─── INIT & LOOP ──────────────────────────────────────────────────────────
-randomizeSky();
+// ── LOOP ─────────────────────────────────────────────────────────────────────
 showTitle();
-
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
 loop();
 </script>
 </body>
