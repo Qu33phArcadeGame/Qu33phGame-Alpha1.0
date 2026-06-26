@@ -2,39 +2,195 @@
 <html>
 <head>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body { margin:0; overflow:hidden; background:#111; }
-canvas { display:block; touch-action:none; }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qu33ph</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { margin:0; overflow:hidden; background:#111; font-family: 'Courier New', monospace; }
+    canvas { display:block; touch-action:none; }
 
-#rotateBtn {
-  position:absolute;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  padding:12px 20px;
-  border-radius:10px;
-  border:none;
-  font-size:16px;
-  background:#222;
-  color:white;
-}
-#timeline {
-  position:absolute;
-  top:10px;
-  left:10%;
-  width:80%;
-  height:6px;
-  background:#333;
-  border-radius:10px;
-  overflow:hidden;
-}
-#progress {
-  height:100%;
-  width:0%;
-  background:lime;
-}
-</style>
+    #rotateBtn {
+      position:absolute;
+      bottom:20px;
+      left:50%;
+      transform:translateX(-50%);
+      padding:12px 20px;
+      border-radius:10px;
+      border:2px solid #444;
+      font-size:14px;
+      font-family: 'Courier New', monospace;
+      background:#1a1a1a;
+      color:#ccc;
+      letter-spacing:1px;
+      display:none;
+    }
+    #timeline {
+      position:absolute;
+      top:10px;
+      left:10%;
+      width:80%;
+      height:6px;
+      background:#333;
+      border-radius:10px;
+      overflow:hidden;
+      display:none;
+    }
+    #progress {
+      height:100%;
+      width:0%;
+      background:lime;
+      transition: background 0.5s;
+    }
+
+    /* TITLE SCREEN */
+    #titleScreen {
+      position:absolute;
+      top:0; left:0; width:100%; height:100%;
+      background:#0a0a0a;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      z-index:100;
+    }
+    .title-logo {
+      font-size: clamp(48px, 12vw, 90px);
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      color: #fff;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      text-shadow: 0 0 40px rgba(255,255,255,0.15);
+    }
+    .title-sub {
+      font-size: clamp(11px, 2.5vw, 14px);
+      color: #555;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 60px;
+    }
+    .mode-btn {
+      width: min(340px, 80vw);
+      padding: 18px 24px;
+      margin: 10px 0;
+      border: 1px solid #333;
+      background: #111;
+      color: #eee;
+      font-family: 'Courier New', monospace;
+      font-size: clamp(14px, 3.5vw, 18px);
+      letter-spacing: 2px;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .mode-btn:hover, .mode-btn:active {
+      background: #1e1e1e;
+      border-color: #666;
+      color: #fff;
+    }
+    .mode-icon { font-size: 24px; flex-shrink:0; }
+    .mode-text { display:flex; flex-direction:column; gap:4px; }
+    .mode-name { font-weight:bold; }
+    .mode-desc { font-size: 10px; color: #555; letter-spacing: 1px; }
+    .high-score-title {
+      margin-top: 48px;
+      font-size: 11px;
+      color: #333;
+      letter-spacing: 3px;
+    }
+
+    /* OLYMPICS BRACKET SCREEN */
+    #bracketScreen {
+      position:absolute;
+      top:0; left:0; width:100%; height:100%;
+      background:#0a0a0a;
+      display:none;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding: 20px;
+      overflow-y: auto;
+      z-index:100;
+    }
+    .bracket-title {
+      font-size: clamp(20px, 5vw, 32px);
+      font-family:'Courier New',monospace;
+      color:#fff;
+      letter-spacing:4px;
+      margin-bottom:4px;
+      margin-top:10px;
+    }
+    .bracket-sub {
+      font-size:11px;
+      color:#444;
+      letter-spacing:3px;
+      margin-bottom:24px;
+    }
+    .bracket-round-label {
+      font-size:10px;
+      color:#555;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      margin-bottom:10px;
+      align-self:flex-start;
+    }
+    .bracket-match {
+      width:min(380px,90vw);
+      border:1px solid #222;
+      border-radius:4px;
+      margin-bottom: 12px;
+      overflow:hidden;
+    }
+    .bracket-match.active-match {
+      border-color:#fff;
+    }
+    .bracket-player {
+      display:flex;
+      align-items:center;
+      padding: 12px 16px;
+      gap:12px;
+      background:#111;
+      font-family:'Courier New',monospace;
+      font-size:14px;
+      color:#aaa;
+      border-bottom:1px solid #1a1a1a;
+    }
+    .bracket-player:last-child { border-bottom:none; }
+    .bracket-player.is-you { color:#fff; }
+    .bracket-player.winner { color:lime; }
+    .bracket-player.loser { color:#333; text-decoration:line-through; }
+    .bracket-flag { font-size:20px; }
+    .bracket-score { margin-left:auto; font-size:16px; font-weight:bold; color:#666; }
+    .bracket-score.is-you { color:#fff; }
+    .bracket-score.winner { color:lime; }
+    .play-next-btn {
+      width:min(380px,90vw);
+      padding:16px;
+      margin-top:8px;
+      background:#fff;
+      color:#000;
+      font-family:'Courier New',monospace;
+      font-size:14px;
+      font-weight:bold;
+      letter-spacing:2px;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+      text-align:center;
+    }
+    .play-next-btn:hover { background:#ddd; }
+    .play-next-btn.disabled {
+      background:#222;
+      color:#444;
+      cursor:default;
+    }
+    .bracket-spacer { height:16px; }
+  </style>
 </head>
 <body>
 
@@ -42,170 +198,459 @@ canvas { display:block; touch-action:none; }
 <button id="rotateBtn">Orientation: vertical</button>
 <div id="timeline"><div id="progress"></div></div>
 
+<!-- TITLE SCREEN -->
+<div id="titleScreen">
+  <div class="title-logo">Qu33ph</div>
+  <div class="title-sub">arcade edition</div>
+
+  <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
+    <span class="mode-icon">🎯</span>
+    <span class="mode-text">
+      <span class="mode-name">QUICK GAME</span>
+      <span class="mode-desc">one round · 45 seconds · go for high score</span>
+    </span>
+  </button>
+
+  <button class="mode-btn" id="btnOlympics" onclick="startMode('olympics')">
+    <span class="mode-icon">🏆</span>
+    <span class="mode-text">
+      <span class="mode-name">QU33PH OLYMPICS</span>
+      <span class="mode-desc">stepladder finals · 3 rounds · 8 nations</span>
+    </span>
+  </button>
+
+  <div class="high-score-title" id="titleHighScore"></div>
+</div>
+
+<!-- OLYMPICS BRACKET SCREEN -->
+<div id="bracketScreen" style="display:none; flex-direction:column;">
+  <div class="bracket-title">OLYMPICS</div>
+  <div class="bracket-sub">QU33PH STEPLADDER FINALS</div>
+  <div id="bracketContent"></div>
+  <button class="play-next-btn" id="playNextBtn" onclick="playNextMatch()" style="display:none;margin-bottom:30px;">
+    PLAY YOUR MATCH →
+  </button>
+</div>
+
 <script>
-  const markerImages = {
-  red: new Image(),
-  green: new Image(),
-  blue: new Image()
-};
+// ─── IMAGES ───────────────────────────────────────────────────────────────
+const markerImages = { red:new Image(), green:new Image(), blue:new Image() };
+markerImages.red.src="red.png";
+markerImages.green.src="green.png";
+markerImages.blue.src="blue.png";
 
-markerImages.red.src = "red.png";
-markerImages.green.src = "green.png";
-markerImages.blue.src = "blue.png";
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+// ─── LAYOUT ───────────────────────────────────────────────────────────────
+const LEFT_EDGE=canvas.width*0.2;
+const RIGHT_WALL=canvas.width*0.75;
+const END_LINE_Y=canvas.height*0.2;
+const START_LINE_Y=canvas.height-80;
 
-// LAYOUT
-const LEFT_EDGE = canvas.width * 0.2;
-const RIGHT_WALL = canvas.width * 0.75;
-const END_LINE_Y = canvas.height * 0.2;
-const START_LINE_Y = canvas.height - 80; // ~1 inch-ish depending on screen scale
+const redDot={x:RIGHT_WALL+10,y:END_LINE_Y+40};
+const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:END_LINE_Y+90,radius:35};
 
-// 🔥 ADDED: red dot + chair positions
-const redDot = { x: RIGHT_WALL+10, y: END_LINE_Y+40 };
-const chair = { x:(LEFT_EDGE+RIGHT_WALL)/2, y:END_LINE_Y+90, radius:35 };
+// ─── GAME MODE STATE ──────────────────────────────────────────────────────
+let gameMode = null; // 'single' | 'olympics'
+let olympicsState = null;
 
-// STATE
-let speedMultiplier = 1;
-let gameState = "playing";
-let markers = [];
-let current = 0;
-let totalScore = 0;
-let highScore = localStorage.getItem("qu33phHigh") || 0;
-let chairLocked = false;
-
-let startTime = Date.now();
-let suddenDeath = false;
-let explosions = [];
-let scorePopups = [];
-let previewUsed = [false, false, false];
-let lastRoundScore = 0;
-  let previewMarkers = [
-  { color: "green", x: 0, used: false },
-  { color: "red", x: 0, used: false },
-  { color: "blue", x: 0, used: false }
+// ─── NATIONS / STEPLADDER ─────────────────────────────────────────────────
+const NATIONS = [
+  { name:"Ireland",      flag:"🇮🇪" },
+  { name:"Israel",       flag:"🇮🇱" },
+  { name:"USA",          flag:"🇺🇸" },
+  { name:"South Africa", flag:"🇿🇦" },
+  { name:"England",      flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  { name:"Scotland",     flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
+  { name:"Norway",       flag:"🇳🇴" },
+  { name:"Japan",        flag:"🇯🇵" },
 ];
-let shake = 0;
-  function addShake(amount){
-  shake = Math.max(shake, amount);
+
+const PLAYER_NATION = { name:"You", flag:"🎮", isPlayer:true };
+
+// Stepladder format:
+//   Round 1 (Semifinal B):  seed 3 vs seed 4  → winner goes to Round 2
+//   Round 2 (Semifinal A):  seed 2 vs Round1 winner
+//   Round 3 (Final):        seed 1 vs Round2 winner
+// The other 5 nations get simulated scores shown as "previous results"
+
+function buildOlympicsState(){
+  // shuffle non-player nations, pick 7 opponents
+  let pool = [...NATIONS];
+  shuffle(pool);
+  // seeds 1-4 are the finalists; rest are shown as knocked-out earlier
+  // seed 4 = you (player always starts in the earliest match)
+  let seed1 = pool[0];
+  let seed2 = pool[1];
+  let seed3 = pool[2];
+  // seed 4 = player
+  let eliminated = pool.slice(3); // remaining 4 as background results
+
+  return {
+    seed1, seed2, seed3,
+    seed4: PLAYER_NATION,
+    eliminated,
+    round: 1, // which round the player is about to play (1,2,3)
+    r1Score: null,      // player score in round 1
+    r1OppScore: null,
+    r2Score: null,
+    r2OppScore: null,
+    r3Score: null,
+    r3OppScore: null,
+    playerEliminated: false,
+    champion: null,
+  };
+}
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    let j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+
+function simulatedScore(){
+  // random realistic qu33ph score
+  return Math.floor(Math.random()*18)+2;
+}
+
+// ─── GAME STATE ────────────────────────────────────────────────────────────
+let speedMultiplier=1;
+let gameState="title"; // "title"|"playing"|"end"|"bracket"
+let markers=[];
+let current=0;
+let totalScore=0;
+let highScore=localStorage.getItem("qu33phHigh")||0;
+let chairLocked=false;
+let startTime=Date.now();
+let suddenDeath=false;
+let explosions=[];
+let scorePopups=[];
+let previewMarkers=[
+  {color:"green",x:0,used:false},
+  {color:"red",x:0,used:false},
+  {color:"blue",x:0,used:false}
+];
+let shake=0;
+
+const ROUND_TIME=30;
+const TOTAL_TIME=45;
+
+const orientations=["vertical","angled","horizontal"];
+let orientationIndex=0;
+let currentOrientation="vertical";
+
+// ─── TITLE SCREEN ─────────────────────────────────────────────────────────
+function showTitle(){
+  gameState="title";
+  document.getElementById("titleScreen").style.display="flex";
+  document.getElementById("bracketScreen").style.display="none";
+  document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("timeline").style.display="none";
+  let hs=localStorage.getItem("qu33phHigh")||0;
+  document.getElementById("titleHighScore").innerText=
+    hs>0?"HIGH SCORE: "+hs:"";
+}
+
+function startMode(mode){
+  gameMode=mode;
+  document.getElementById("titleScreen").style.display="none";
+
+  if(mode==="single"){
+    startGame();
+  } else {
+    olympicsState=buildOlympicsState();
+    showBracket();
+  }
+}
+
+// ─── BRACKET SCREEN ────────────────────────────────────────────────────────
+function showBracket(){
+  gameState="bracket";
+  document.getElementById("bracketScreen").style.display="flex";
+  document.getElementById("bracketScreen").style.flexDirection="column";
+  document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("timeline").style.display="none";
+  renderBracket();
+}
+
+function renderBracket(){
+  const os=olympicsState;
+  const content=document.getElementById("bracketContent");
+  const playBtn=document.getElementById("playNextBtn");
+  let html="";
+
+  // ── Background results (eliminated nations) ──
+  html+=`<div class="bracket-round-label">PRELIMINARY RESULTS</div>`;
+  html+=`<div class="bracket-match">`;
+  os.eliminated.forEach((n,i)=>{
+    let sc=simulatedScore();
+    html+=`<div class="bracket-player loser">`+
+      `<span class="bracket-flag">${n.flag}</span>`+
+      `<span>${n.name}</span>`+
+      `<span class="bracket-score">${sc}</span></div>`;
+  });
+  html+=`</div>`;
+
+  html+=`<div class="bracket-spacer"></div>`;
+
+  // ── Stepladder Round 1: seed3 vs seed4(player) ──
+  html+=`<div class="bracket-round-label">SEMIFINAL B</div>`;
+  let r1Active = os.round===1;
+  let r1Class = r1Active?"bracket-match active-match":"bracket-match";
+
+  let r1p1Class="bracket-player";
+  let r1p2Class="bracket-player is-you";
+  let r1s1="", r1s2="";
+
+  if(os.r1Score!==null){
+    let playerWon=os.r1Score>os.r1OppScore;
+    r1p1Class="bracket-player "+(playerWon?"loser":"winner");
+    r1p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
+    r1s1=os.r1OppScore;
+    r1s2=os.r1Score;
   }
 
-const ROUND_TIME = 30;
-const TOTAL_TIME = 45;
+  html+=`<div class="${r1Class}">
+    <div class="${r1p1Class}">
+      <span class="bracket-flag">${os.seed3.flag}</span>
+      <span>${os.seed3.name}</span>
+      <span class="bracket-score ${r1s1===Math.max(r1s1,r1s2)&&r1s1!=""?"winner":""}">${r1s1}</span>
+    </div>
+    <div class="${r1p2Class}">
+      <span class="bracket-flag">${os.seed4.flag}</span>
+      <span>${os.seed4.name}</span>
+      <span class="bracket-score is-you ${r1s2===Math.max(r1s1,r1s2)&&r1s2!=""?"winner":""}">${r1s2}</span>
+    </div>
+  </div>`;
 
-// ORIENTATION
-const orientations = ["vertical","angled","horizontal"];
-let orientationIndex = 0;
-let currentOrientation = "vertical";
+  html+=`<div class="bracket-spacer"></div>`;
 
-document.getElementById("rotateBtn").onclick = () => {
-  orientationIndex = (orientationIndex + 1) % orientations.length;
-  currentOrientation = orientations[orientationIndex];
-  document.getElementById("rotateBtn").innerText =
-    "Orientation: " + currentOrientation;
+  // ── Stepladder Round 2: seed2 vs R1 winner ──
+  html+=`<div class="bracket-round-label">SEMIFINAL A</div>`;
+  let r2Active=os.round===2;
+  let r2Class=r2Active?"bracket-match active-match":"bracket-match";
+  let r2WinnerName="R1 Winner";
+  let r2WinnerFlag="❓";
+
+  if(os.r1Score!==null){
+    let playerWonR1=os.r1Score>os.r1OppScore;
+    r2WinnerName=playerWonR1?os.seed4.name:os.seed3.name;
+    r2WinnerFlag=playerWonR1?os.seed4.flag:os.seed3.flag;
+  }
+
+  let r2p1Class="bracket-player";
+  let r2p2Class=os.r1Score!==null&&os.r1Score>os.r1OppScore?"bracket-player is-you":"bracket-player";
+  let r2s1="", r2s2="";
+
+  if(os.r2Score!==null){
+    let playerWon=os.r2Score>os.r2OppScore;
+    r2p1Class="bracket-player "+(playerWon?"loser":"winner");
+    r2p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
+    r2s1=os.r2OppScore;
+    r2s2=os.r2Score;
+  } else if(os.playerEliminated && os.round>2){
+    r2p1Class="bracket-player winner";
+    r2s1="?"; r2s2="?";
+  }
+
+  html+=`<div class="${r2Class}">
+    <div class="${r2p1Class}">
+      <span class="bracket-flag">${os.seed2.flag}</span>
+      <span>${os.seed2.name}</span>
+      <span class="bracket-score">${r2s1}</span>
+    </div>
+    <div class="${r2p2Class}">
+      <span class="bracket-flag">${r2WinnerFlag}</span>
+      <span>${r2WinnerName}</span>
+      <span class="bracket-score">${r2s2}</span>
+    </div>
+  </div>`;
+
+  html+=`<div class="bracket-spacer"></div>`;
+
+  // ── Grand Final: seed1 vs R2 winner ──
+  html+=`<div class="bracket-round-label">GRAND FINAL</div>`;
+  let r3Active=os.round===3&&!os.playerEliminated;
+  let r3Class=r3Active?"bracket-match active-match":"bracket-match";
+  let r3WinnerName="R2 Winner";
+  let r3WinnerFlag="❓";
+
+  if(os.r2Score!==null){
+    let playerWonR2=os.r2Score>os.r2OppScore;
+    r3WinnerName=playerWonR2?os.seed4.name:(os.r1Score>os.r1OppScore?os.seed4.name:os.seed3.name);
+    r3WinnerFlag=playerWonR2?os.seed4.flag:(os.r1Score>os.r1OppScore?os.seed4.flag:os.seed3.flag);
+    if(!playerWonR2){
+      r3WinnerName=os.seed2.name;
+      r3WinnerFlag=os.seed2.flag;
+    }
+  }
+
+  let r3p1Class="bracket-player";
+  let r3p2Class=os.r2Score!==null&&os.r2Score>os.r2OppScore?"bracket-player is-you":"bracket-player";
+  let r3s1="", r3s2="";
+
+  if(os.champion!==null){
+    r3s1=os.r3OppScore;
+    r3s2=os.r3Score;
+    let playerWon=os.r3Score>os.r3OppScore;
+    r3p1Class="bracket-player "+(playerWon?"loser":"winner");
+    r3p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
+  }
+
+  html+=`<div class="${r3Class}">
+    <div class="${r3p1Class}">
+      <span class="bracket-flag">${os.seed1.flag}</span>
+      <span>${os.seed1.name}</span>
+      <span class="bracket-score">${r3s1}</span>
+    </div>
+    <div class="${r3p2Class}">
+      <span class="bracket-flag">${r3WinnerFlag}</span>
+      <span>${r3WinnerName}</span>
+      <span class="bracket-score">${r3s2}</span>
+    </div>
+  </div>`;
+
+  content.innerHTML=html;
+
+  // Play button logic
+  if(os.playerEliminated){
+    playBtn.style.display="block";
+    playBtn.className="play-next-btn disabled";
+    playBtn.innerText="ELIMINATED — SEE RESULTS";
+    playBtn.onclick=()=>showFinalResult();
+  } else if(os.champion!==null){
+    playBtn.style.display="block";
+    playBtn.className="play-next-btn";
+    playBtn.innerText="SEE FINAL RESULT";
+    playBtn.onclick=()=>showFinalResult();
+  } else {
+    playBtn.style.display="block";
+    playBtn.className="play-next-btn";
+    let lbl=os.round===1?"PLAY SEMIFINAL B →":os.round===2?"PLAY SEMIFINAL A →":"PLAY GRAND FINAL →";
+    playBtn.innerText=lbl;
+    playBtn.onclick=()=>playNextMatch();
+  }
+}
+
+function showFinalResult(){
+  const os=olympicsState;
+  let won=os.champion==="player";
+  document.getElementById("bracketScreen").style.display="none";
+
+  // go to game end screen but override message
+  gameState="olympicsResult";
+  olympicsResultMsg = won?
+    "🏆 QU33PH OLYMPIC CHAMPION! 🏆":
+    "ELIMINATED — BETTER LUCK NEXT TIME";
+  olympicsResultSub = won?"":
+    (os.playerEliminated?"You were knocked out in "+(os.round===2?"Semifinal B":"Semifinal A"):"You made the final!");
+}
+
+let olympicsResultMsg="";
+let olympicsResultSub="";
+
+function playNextMatch(){
+  document.getElementById("bracketScreen").style.display="none";
+  startGame();
+}
+
+// ─── GAME START ────────────────────────────────────────────────────────────
+function startGame(){
+  markers=[];
+  current=0;
+  totalScore=0;
+  startTime=Date.now();
+  suddenDeath=false;
+  chairLocked=false;
+  explosions=[];
+  scorePopups=[];
+  previewMarkers=[
+    {color:"green",x:0,used:false},
+    {color:"red",x:0,used:false},
+    {color:"blue",x:0,used:false}
+  ];
+  shake=0;
+  orientationIndex=0;
+  currentOrientation="vertical";
+  document.getElementById("rotateBtn").style.display="block";
+  document.getElementById("rotateBtn").innerText="Orientation: vertical";
+  document.getElementById("timeline").style.display="block";
+  document.getElementById("progress").style.width="0%";
+  document.getElementById("progress").style.background="lime";
+  randomizeSky();
+  gameState="playing";
+}
+
+// ─── ORIENTATION BTN ──────────────────────────────────────────────────────
+document.getElementById("rotateBtn").onclick=()=>{
+  orientationIndex=(orientationIndex+1)%orientations.length;
+  currentOrientation=orientations[orientationIndex];
+  document.getElementById("rotateBtn").innerText="Orientation: "+currentOrientation;
 };
 
-canvas.addEventListener("pointerdown", e=>{
+// ─── INPUT ────────────────────────────────────────────────────────────────
+let dragging=false,startX,startY,currentX,currentY;
+const colors=["green","red","blue"];
+const lengths=[60,60,90];
 
-  // 🔥 restart from end screen
-  if(gameState === "end"){
-    gameState = "playing";
-    markers = [];
-    current = 0;
-    totalScore = 0;
-    startTime = Date.now();
-    suddenDeath = false;
-    randomizeSky();
+canvas.addEventListener("pointerdown",e=>{
+  if(gameState==="title"||gameState==="bracket") return;
+
+  if(gameState==="end"||gameState==="olympicsResult"){
+    if(gameMode==="single"){
+      showTitle();
+    } else {
+      // olympics: go back to bracket or result
+      showTitle();
+    }
     return;
   }
 
-  if(gameState !== "playing") return;
+  if(gameState!=="playing") return;
 
-  // 🔥 if round is ready → advance immediately
-  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
+  if(current===3 && markers.every(m=>m.stopped||m.fallen)){
     tryAdvanceRound();
-    return; // ❗ prevents drag from triggering
+    return;
   }
 
-  // normal drag
-  if(current >= 3 && markers.length === 0) return;
+  if(current>=3 && markers.length===0) return;
 
-  dragging = true;
-  startX = e.clientX;
-  startY = e.clientY;
-  currentX = startX;
-  currentY = startY;
+  dragging=true;
+  startX=e.clientX;
+  startY=e.clientY;
+  currentX=startX;
+  currentY=startY;
 });
 
-// INPUT
-let dragging=false,startX,startY,currentX,currentY;
-
-const colors = ["green","red","blue"];
-const lengths = [60,60,90];
-
-function touching(a,b){
-  return Math.hypot(a.x-b.x,a.y-b.y) < 45;
-}
-function isTouchingAny(marker){
-  return markers.some(m => m !== marker && !m.fallen && touching(marker, m));
-}
-
-// 🔥 ADDED
-function touchingChair(m){
-  return Math.hypot(m.x-chair.x, m.y-chair.y) < chair.radius;
-}
-
-function triggerMegaQu33ph(m){
-  m.x = redDot.x;
-  m.y = redDot.y;
-  m.vx = 0;
-  m.vy = 0;
-  m.stopped = true;
-
-  totalScore += 10;
-
-  addShake(20);
-
-  explosions.push({
-    x:redDot.x,
-    y:redDot.y,
-    radius:10,
-    life:30,
-    text:"MEGA QU33PH",
-    mega:true
-  });
-}
-
-// THROW
-
-
-canvas.addEventListener("pointermove", e=>{
+canvas.addEventListener("pointermove",e=>{
   if(!dragging) return;
   currentX=e.clientX;
   currentY=e.clientY;
 });
 
-canvas.addEventListener("pointerup", ()=>{
+canvas.addEventListener("pointerup",()=>{
   if(!dragging) return;
   dragging=false;
 
-  if(current >= 3) return;
+  if(gameState!=="playing") return;
+  if(current>=3) return;
 
   let dx=currentX-startX;
   let dy=currentY-startY;
 
-  let baseRot =
-    currentOrientation === "vertical" ? 0 :
-    currentOrientation === "angled" ? Math.PI/6 :
+  let baseRot=
+    currentOrientation==="vertical"?0:
+    currentOrientation==="angled"?Math.PI/6:
     Math.PI/2;
 
   markers.push({
     x:canvas.width/2,
     y:canvas.height-50,
-    usedPreview: current,
+    usedPreview:current,
     vx:dx*0.2,
     vy:dy*0.2,
     curve:dx*0.0003,
@@ -215,290 +660,261 @@ canvas.addEventListener("pointerup", ()=>{
     stopped:false,
     fallen:false,
     trail:[],
-    rotation: baseRot,
+    rotation:baseRot,
     spinVelocity:
-      currentOrientation === "vertical" ? 0.08 :
-      currentOrientation === "angled" ? 0.12 :
-      0.18,
+      currentOrientation==="vertical"?0.08:
+      currentOrientation==="angled"?0.12:0.18,
     chairBoost:false,
-
-    // 🔥 ADDED
     megaTriggered:false,
     armed:false,
-
-    life: 0,
+    life:0,
   });
 
   current++;
-  previewMarkers[current - 1].used = true;
+  previewMarkers[current-1].used=true;
 });
 
-// ROUND SYSTEM
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function touching(a,b){ return Math.hypot(a.x-b.x,a.y-b.y)<45; }
+function isTouchingAny(m){ return markers.some(n=>n!==m&&!n.fallen&&touching(m,n)); }
+function touchingChair(m){ return Math.hypot(m.x-chair.x,m.y-chair.y)<chair.radius; }
+function addShake(amount){ shake=Math.max(shake,amount); }
+
+function triggerMegaQu33ph(m){
+  m.x=redDot.x; m.y=redDot.y;
+  m.vx=0; m.vy=0; m.stopped=true;
+  totalScore+=10;
+  addShake(20);
+  explosions.push({x:redDot.x,y:redDot.y,radius:10,life:30,text:"MEGA QU33PH",mega:true});
+}
+
+// ─── ROUND SYSTEM ─────────────────────────────────────────────────────────
 function tryAdvanceRound(){
-  if(gameState !== "playing") return;
-
-  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
-
-    let g = markers[0];
-    let r = markers[1];
-    let b = markers[2];
-
-    let roundScore = calculateScore();
-    totalScore += roundScore;
-
-    // 🔥 POPUP
-    scorePopups.push({
-      x: canvas.width / 2,
-      y: canvas.height / 2,
-      text: "+" + roundScore,
-      life: 40
-    });
-
-    // 💥 QU33PH CHECK (RESTORED)
-    if(g && r && b &&
-       touching(g,r) &&
-       touching(r,b) &&
-       touching(g,b)){
-
-      explosions.push({
-        x: (g.x + r.x + b.x) / 3,
-        y: (g.y + r.y + b.y) / 3,
-        radius: 10,
-        life: 20,
-        text: "QU33PH"
-      });
-    addShake(8);
+  if(gameState!=="playing") return;
+  if(current===3 && markers.every(m=>m.stopped||m.fallen)){
+    let g=markers[0], r=markers[1], b=markers[2];
+    let roundScore=calculateScore();
+    totalScore+=roundScore;
+    scorePopups.push({x:canvas.width/2,y:canvas.height/2,text:"+"+roundScore,life:40});
+    if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
+      explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
+      addShake(8);
     }
-
-    markers = [];
-    current = 0;
-    previewMarkers = [
-  { color: "green", x: 0, used: false },
-  { color: "red", x: 0, used: false },
-  { color: "blue", x: 0, used: false }
-];
+    markers=[];
+    current=0;
+    previewMarkers=[
+      {color:"green",x:0,used:false},
+      {color:"red",x:0,used:false},
+      {color:"blue",x:0,used:false}
+    ];
   }
 }
 
+function calculateScore(){
+  if(markers.length<3) return 0;
+  let g=markers[0],r=markers[1],b=markers[2];
+  if(!g||!r||!b) return 0;
+  if(!(g.armed&&r.armed&&b.armed)) return 0;
+  let gr=touching(g,r), rb=touching(r,b), gb=touching(g,b);
+  if(suddenDeath){
+    if(gr&&rb&&gb) return 10;
+    if(rb) return 5;
+    if(gb) return 5;
+    if(gr) return 3;
+    return 0;
+  } else {
+    if(gr&&rb&&gb) return 3;
+    if(rb) return 2;
+    if(gb) return 2;
+    if(gr) return 0.5;
+    return 0;
+  }
+}
 
-// SKY (UNCHANGED)
+// ─── SKY ──────────────────────────────────────────────────────────────────
 let sunPos={x:0,y:0};
 let clouds=[];
 let skyWindows=[];
 
 function randomizeSky(){
-  let wx = RIGHT_WALL + 10;
-  let ww = canvas.width - RIGHT_WALL - 20;
-
-  sunPos = {
-    x: wx + Math.random()*ww,
-    y: END_LINE_Y + 40 + Math.random()*80
-  };
-
+  let wx=RIGHT_WALL+10;
+  let ww=canvas.width-RIGHT_WALL-20;
+  sunPos={x:wx+Math.random()*ww, y:END_LINE_Y+40+Math.random()*80};
   clouds=[];
   skyWindows=[];
-
-  for(let i=0;i<4;i++){
-    clouds.push({
-      x: wx + Math.random()*ww,
-      y: END_LINE_Y + 40 + Math.random()*200
-    });
-  }
-
-  for(let i=0;i<6;i++){
-    skyWindows.push({
-      x: wx + Math.random()*ww,
-      y: END_LINE_Y + 40 + Math.random()*200
-    });
-  }
+  for(let i=0;i<4;i++) clouds.push({x:wx+Math.random()*ww, y:END_LINE_Y+40+Math.random()*200});
+  for(let i=0;i<6;i++) skyWindows.push({x:wx+Math.random()*ww, y:END_LINE_Y+40+Math.random()*200});
 }
 
-// UPDATE
+// ─── UPDATE ───────────────────────────────────────────────────────────────
 function update(){
-  if (gameState !== "playing") return;
-  if(shake > 0){
-  shake *= 0.9;
-  if(shake < 0.05) shake = 0;
-  }
+  if(gameState!=="playing") return;
 
-  let elapsed = (Date.now()-startTime)/1000;
+  if(shake>0){ shake*=0.9; if(shake<0.05) shake=0; }
 
-  if(elapsed > ROUND_TIME && elapsed <= TOTAL_TIME){
-  suddenDeath = true;
-  chairLocked = true;
-  }
-  if (!chairLocked && suddenDeath) {
-  chairLocked = true;
-  chair.x = (LEFT_EDGE + RIGHT_WALL) / 2;
-  chair.y = END_LINE_Y + 90;
-  }
-  
-  if(elapsed > TOTAL_TIME){
-    endGame();
-  }
+  let elapsed=(Date.now()-startTime)/1000;
+
+  if(elapsed>ROUND_TIME&&elapsed<=TOTAL_TIME){ suddenDeath=true; }
+  if(!chairLocked&&suddenDeath){ chairLocked=true; chair.x=(LEFT_EDGE+RIGHT_WALL)/2; chair.y=END_LINE_Y+90; }
+  if(elapsed>TOTAL_TIME){ endGame(); return; }
 
   markers.forEach(m=>{
     if(m.stopped||m.fallen) return;
-
-    m.life += 1/60; // count seconds (roughly)
-    if(m.life >= 1){
-  m.stopped = true;
-  m.vx = 0;
-  m.vy = 0;
+    m.life+=1/60;
+    if(m.life>=1){ m.stopped=true; m.vx=0; m.vy=0; }
+    m.vx+=m.curve;
+    m.x+=m.vx*speedMultiplier;
+    m.y+=m.vy*speedMultiplier;
+    if(!m.armed&&m.y<START_LINE_Y) m.armed=true;
+    m.vx*=0.94; m.vy*=0.94;
+    m.rotation+=m.spinVelocity*speedMultiplier;
+    m.spinVelocity*=0.96;
+    if(suddenDeath&&!m.megaTriggered&&touchingChair(m)){
+      if(Math.random()<0.25) triggerMegaQu33ph(m);
+      m.megaTriggered=true;
     }
-
-    m.vx += m.curve;
-    m.x += m.vx * speedMultiplier;
-    m.y += m.vy * speedMultiplier;
-
-    // ARMING SYSTEM (must enter playfield first)
-if(!m.armed && m.y < START_LINE_Y){
-  m.armed = true;
-}
-
-    m.vx *= 0.94;
-    m.vy *= 0.94;
-
-    m.rotation += m.spinVelocity * speedMultiplier;
-    m.spinVelocity *= 0.96;
-
-    // 🔥 MEGA QU33PH
-    if(suddenDeath && !m.megaTriggered && touchingChair(m)){
-      if(Math.random() < 0.25){
-        triggerMegaQu33ph(m);
-      }
-      m.megaTriggered = true;
-    }
-
     m.trail.push({x:m.x,y:m.y});
-    if(m.trail.length > 20) m.trail.shift();
+    if(m.trail.length>20) m.trail.shift();
+    if(m.x<LEFT_EDGE) m.fallen=true;
+    if(m.x>RIGHT_WALL){ m.x=RIGHT_WALL; m.vx*=-0.4; }
+    if(m.y<END_LINE_Y){ m.y=END_LINE_Y; m.vy*=-0.2; }
+    if(Math.abs(m.vx)<0.05&&Math.abs(m.vy)<0.05) m.stopped=true;
 
-    if(m.x < LEFT_EDGE) m.fallen = true;
-
-    if(m.x > RIGHT_WALL){
-      m.x = RIGHT_WALL;
-      m.vx *= -0.4;
-    }
-
-    if(m.y < END_LINE_Y){
-      m.y = END_LINE_Y;
-      m.vy *= -0.2;
-    }
-
-    if(Math.abs(m.vx)<0.05 && Math.abs(m.vy)<0.05){
-      m.stopped = true;
-    }
-
-    let progress = Math.min(elapsed / TOTAL_TIME, 1);
-    document.getElementById("progress").style.width = (progress * 100) + "%";
+    let progress=Math.min(elapsed/TOTAL_TIME,1);
+    document.getElementById("progress").style.width=(progress*100)+"%";
+    if(elapsed>ROUND_TIME) document.getElementById("progress").style.background="red";
   });
 
-  explosions.forEach(e=>{
-    e.radius += e.mega ? 6 : 4;
-    e.life--;
-  });
+  explosions.forEach(e=>{ e.radius+=e.mega?6:4; e.life--; });
+  explosions=explosions.filter(e=>e.life>0);
+  scorePopups.forEach(p=>{ p.y-=1; p.life--; });
+  scorePopups=scorePopups.filter(p=>p.life>0);
 
-  explosions = explosions.filter(e => e.life > 0);
-  // 🔥 animate score popups
-scorePopups.forEach(p => {
-  p.y -= 1;     // move upward
-  p.life--;     // fade out over time
-});
-
-// remove expired popups
-scorePopups = scorePopups.filter(p => p.life > 0);
+  if(current===3&&markers.every(m=>m.stopped||m.fallen)) tryAdvanceRound();
 }
-if(gameState === "playing"){
-  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
-    tryAdvanceRound();
+
+// ─── END GAME ─────────────────────────────────────────────────────────────
+function endGame(){
+  shake=0;
+  if(totalScore>highScore){
+    highScore=totalScore;
+    localStorage.setItem("qu33phHigh",highScore);
   }
-}
-// DRAW (ONLY EXPLOSION TEXT MODIFIED)
-  function drawMarker(m) {
+  document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("timeline").style.display="none";
 
-  // 🔥 TRAIL (add this)
-  if (m.trail && m.trail.length > 1) {
+  if(gameMode==="olympics"){
+    // record result in olympics state
+    const os=olympicsState;
+    let oppScore=simulatedScore();
 
-    let trailWidth = 2;
-
-    if (m.color === "red") trailWidth = 3;
-    if (m.color === "green") trailWidth = 4;
-    if (m.color === "blue") trailWidth = 6;
-
-    ctx.beginPath();
-    ctx.moveTo(m.trail[0].x, m.trail[0].y);
-
-    for (let i = 1; i < m.trail.length; i++) {
-      ctx.lineTo(m.trail[i].x, m.trail[i].y);
+    if(os.round===1){
+      os.r1Score=totalScore;
+      os.r1OppScore=oppScore;
+      if(totalScore<=oppScore){
+        os.playerEliminated=true;
+      }
+      os.round=2;
+    } else if(os.round===2){
+      os.r2Score=totalScore;
+      os.r2OppScore=oppScore;
+      if(totalScore<=oppScore){
+        os.playerEliminated=true;
+      }
+      os.round=3;
+    } else if(os.round===3){
+      os.r3Score=totalScore;
+      os.r3OppScore=oppScore;
+      os.champion=totalScore>oppScore?"player":"cpu";
     }
 
-    ctx.strokeStyle = m.color;
-    ctx.lineWidth = trailWidth;
-    ctx.globalAlpha = 0.6;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-
-  // 🖼️ IMAGE (your existing marker code)
-  const img = markerImages[m.color];
-
-  if (!img || !img.complete) return;
-
-  ctx.save();
-  ctx.translate(m.x, m.y);
-  ctx.rotate(m.rotation);
-
-  let w = 50;
-  let h = 50;
-
-  if (m.color === "blue") {
-    w = 80;
-    h = 50;
-  }
-
-  ctx.drawImage(img, -w/2, -h/2, w, h);
-
-  ctx.restore();
-  }
-function draw(){
-
-  // END SCREEN
-  if(gameState === "end"){
-    ctx.fillStyle="black";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-
-    ctx.fillStyle="white";
-    ctx.font="60px Arial";
-    ctx.fillText("Qu33ph", canvas.width/2, 150);
-
-    ctx.font="30px Arial";
-    ctx.fillText("High Score: " + highScore, canvas.width/2, 220);
-
-    ctx.font="20px Arial";
-    ctx.fillText("Tap anywhere to restart", canvas.width/2, 300);
-
+    gameState="end"; // temp, will go to bracket
+    showBracket();
     return;
   }
 
-  // CLEAR SCREEN (correct place)
+  gameState="end";
+}
+
+// ─── DRAW MARKER ──────────────────────────────────────────────────────────
+function drawMarker(m){
+  if(m.trail&&m.trail.length>1){
+    let tw=m.color==="red"?3:m.color==="green"?4:6;
+    ctx.beginPath();
+    ctx.moveTo(m.trail[0].x,m.trail[0].y);
+    for(let i=1;i<m.trail.length;i++) ctx.lineTo(m.trail[i].x,m.trail[i].y);
+    ctx.strokeStyle=m.color;
+    ctx.lineWidth=tw;
+    ctx.globalAlpha=0.6;
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  const img=markerImages[m.color];
+  if(!img||!img.complete) return;
+  ctx.save();
+  ctx.translate(m.x,m.y);
+  ctx.rotate(m.rotation);
+  let w=50,h=50;
+  if(m.color==="blue"){w=80;h=50;}
+  ctx.drawImage(img,-w/2,-h/2,w,h);
+  ctx.restore();
+}
+
+// ─── DRAW ─────────────────────────────────────────────────────────────────
+function draw(){
+  if(gameState==="title"||gameState==="bracket") return;
+
+  if(gameState==="end"){
+    ctx.fillStyle="#000";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.textAlign="center";
+    ctx.textBaseline="top";
+    ctx.fillStyle="#fff";
+    ctx.font="bold 60px 'Courier New',monospace";
+    ctx.fillText("Qu33ph",canvas.width/2,130);
+    ctx.font="22px 'Courier New',monospace";
+    ctx.fillStyle="#aaa";
+    ctx.fillText("SCORE: "+totalScore,canvas.width/2,210);
+    ctx.fillStyle="#555";
+    ctx.fillText("HIGH SCORE: "+highScore,canvas.width/2,244);
+    ctx.fillStyle="#333";
+    ctx.font="16px 'Courier New',monospace";
+    ctx.fillText("tap anywhere to return to menu",canvas.width/2,310);
+    return;
+  }
+
+  if(gameState==="olympicsResult"){
+    ctx.fillStyle="#000";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillStyle="#fff";
+    ctx.font="bold 28px 'Courier New',monospace";
+    ctx.fillText(olympicsResultMsg,canvas.width/2,canvas.height/2-30);
+    if(olympicsResultSub){
+      ctx.fillStyle="#555";
+      ctx.font="16px 'Courier New',monospace";
+      ctx.fillText(olympicsResultSub,canvas.width/2,canvas.height/2+20);
+    }
+    ctx.fillStyle="#333";
+    ctx.font="14px 'Courier New',monospace";
+    ctx.fillText("tap to return to menu",canvas.width/2,canvas.height/2+70);
+    return;
+  }
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if (gameState === "end") shake = 0;
-  let shakeX = (Math.random() - 0.5) * shake;
-let shakeY = (Math.random() - 0.5) * shake;
+  let shakeX=(Math.random()-0.5)*shake;
+  let shakeY=(Math.random()-0.5)*shake;
+  ctx.save();
+  ctx.translate(shakeX,shakeY);
 
-ctx.save();
-ctx.translate(shakeX, shakeY);
-
-  // BACKGROUND
+  // BG
   ctx.fillStyle="#222";
   ctx.fillRect(RIGHT_WALL,0,canvas.width-RIGHT_WALL,canvas.height);
-
   ctx.fillStyle="#6ec6ff";
-  ctx.fillRect(RIGHT_WALL+5, END_LINE_Y, canvas.width-RIGHT_WALL-10, canvas.height-END_LINE_Y);
+  ctx.fillRect(RIGHT_WALL+5,END_LINE_Y,canvas.width-RIGHT_WALL-10,canvas.height-END_LINE_Y);
 
   // SUN
   ctx.fillStyle="yellow";
@@ -517,196 +933,126 @@ ctx.translate(shakeX, shakeY);
 
   // WINDOWS
   ctx.fillStyle="rgba(255,255,255,0.25)";
-  skyWindows.forEach(w=>{
-    ctx.fillRect(w.x,w.y,30,20);
-  });
+  skyWindows.forEach(w=>ctx.fillRect(w.x,w.y,30,20));
 
   // WINDOWSILL
   ctx.fillStyle="#000";
-  ctx.fillRect(RIGHT_WALL, END_LINE_Y, 35, canvas.height-END_LINE_Y);
+  ctx.fillRect(RIGHT_WALL,END_LINE_Y,35,canvas.height-END_LINE_Y);
 
   // RED DOT
   ctx.fillStyle="red";
   ctx.beginPath();
-  ctx.arc(redDot.x, redDot.y, 10, 0, Math.PI*2);
+  ctx.arc(redDot.x,redDot.y,10,0,Math.PI*2);
   ctx.fill();
 
   // TOP LINE
   ctx.fillStyle="white";
-  ctx.fillRect(LEFT_EDGE, END_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
+  ctx.fillRect(LEFT_EDGE,END_LINE_Y,RIGHT_WALL-LEFT_EDGE,4);
 
   // START LINE
-  ctx.fillStyle = "rgba(255,255,255,0.4)";
-  ctx.fillRect(LEFT_EDGE, START_LINE_Y, RIGHT_WALL-LEFT_EDGE, 4);
+  ctx.fillStyle="rgba(255,255,255,0.4)";
+  ctx.fillRect(LEFT_EDGE,START_LINE_Y,RIGHT_WALL-LEFT_EDGE,4);
 
-
-  // 🔥 SHOW TEXT ONLY WHEN READY
-  if(current === 3 && markers.every(m => m.stopped || m.fallen)){
-    ctx.fillStyle = "white";
-    ctx.font = "bold 24px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-
-    ctx.fillText(
-      "tap anywhere on field to advance",
-      (LEFT_EDGE + RIGHT_WALL) / 2,
-      END_LINE_Y - 20
-    );
+  // ADVANCE PROMPT
+  if(current===3&&markers.every(m=>m.stopped||m.fallen)){
+    ctx.fillStyle="white";
+    ctx.font="bold 24px 'Courier New',monospace";
+    ctx.textAlign="center";
+    ctx.textBaseline="bottom";
+    ctx.fillText("tap anywhere on field to advance",(LEFT_EDGE+RIGHT_WALL)/2,END_LINE_Y-20);
   }
 
-  // CHAIR (no shake ever)
-ctx.restore(); // 🔥 cancels the shake transform
-
-if(suddenDeath){
-  ctx.save();
-  ctx.setTransform(1,0,0,1,0,0);
-
-  ctx.translate(chair.x, chair.y);
-  ctx.rotate(Math.PI);
-  ctx.font="30px Arial";
-  ctx.fillText("🪑", -15, 10);
-
   ctx.restore();
-}
-  // 💥 EXPLOSIONS
-explosions.forEach(e=>{
-  ctx.beginPath();
-  ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-  ctx.strokeStyle = "white";
-  ctx.lineWidth = 4;
-  ctx.globalAlpha = e.life / 30;
-  ctx.stroke();
 
-  ctx.globalAlpha = e.life / 30;
-  ctx.fillStyle = "white";
-  ctx.font = e.mega ? "bold 50px Arial" : "bold 60px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(e.text || "QU33PH", e.x, e.y);
+  // CHAIR
+  if(suddenDeath){
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.translate(chair.x,chair.y);
+    ctx.rotate(Math.PI);
+    ctx.font="30px Arial";
+    ctx.fillText("🪑",-15,10);
+    ctx.restore();
+  }
 
-  ctx.globalAlpha = 1;
-});
+  // EXPLOSIONS
+  explosions.forEach(e=>{
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
+    ctx.strokeStyle="white";
+    ctx.lineWidth=4;
+    ctx.globalAlpha=e.life/30;
+    ctx.stroke();
+    ctx.globalAlpha=e.life/30;
+    ctx.fillStyle="white";
+    ctx.font=e.mega?"bold 50px Arial":"bold 60px Arial";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(e.text||"QU33PH",e.x,e.y);
+    ctx.globalAlpha=1;
+  });
 
-// 🔥 SCORE POPUPS (+points)
-scorePopups.forEach(p => {
-  ctx.save();
+  // SCORE POPUPS
+  scorePopups.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=p.life/40;
+    ctx.fillStyle="white";
+    ctx.font="bold 30px 'Courier New',monospace";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(p.text,p.x,p.y);
+    ctx.restore();
+  });
 
-  ctx.globalAlpha = p.life / 40;
-  ctx.fillStyle = "white";
-  ctx.font = "bold 30px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  ctx.fillText(p.text, p.x, p.y);
-
-  ctx.restore();
-});
-
-  // PREVIEW MARKERS (only show unused ones)
-previewMarkers.forEach((p, i) => {
-  if (p.used) return;
-
-  const img = markerImages[p.color];
-  if (!img || !img.complete) return;
-
-  let x = (LEFT_EDGE + RIGHT_WALL) / 2;
-  let y = START_LINE_Y - 60 - i * 60;
-
-  ctx.globalAlpha = 0.5;
-  ctx.drawImage(img, x - 25, y - 25, 50, 50);
-  ctx.globalAlpha = 1;
-});
+  // PREVIEW MARKERS
+  previewMarkers.forEach((p,i)=>{
+    if(p.used) return;
+    const img=markerImages[p.color];
+    if(!img||!img.complete) return;
+    let x=(LEFT_EDGE+RIGHT_WALL)/2;
+    let y=START_LINE_Y-60-i*60;
+    ctx.globalAlpha=0.5;
+    ctx.drawImage(img,x-25,y-25,50,50);
+    ctx.globalAlpha=1;
+  });
 
   // MARKERS
-markers.forEach(m => {
-  if (m.fallen) return;
-
-  ctx.shadowColor = isTouchingAny(m) ? "lime" : "red";
-  ctx.shadowBlur = 20;
-
-  drawMarker(m);
-
-  ctx.shadowBlur = 0;
-});
+  markers.forEach(m=>{
+    if(m.fallen) return;
+    ctx.shadowColor=isTouchingAny(m)?"lime":"red";
+    ctx.shadowBlur=20;
+    drawMarker(m);
+    ctx.shadowBlur=0;
+  });
 
   // UI TEXT
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-
-  let elapsed = (Date.now()-startTime)/1000;
-
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.textAlign="left";
+  ctx.textBaseline="top";
+  let elapsed=(Date.now()-startTime)/1000;
   ctx.fillStyle="white";
-  ctx.font="20px Arial";
-
+  ctx.font="20px 'Courier New',monospace";
   if(!suddenDeath){
-    ctx.fillText("Time: " + Math.max(0, ROUND_TIME - Math.floor(elapsed)), 20, 20);
+    ctx.fillText("Time: "+Math.max(0,ROUND_TIME-Math.floor(elapsed)),20,20);
   } else {
     ctx.fillStyle="red";
-    ctx.fillText("SUDDEN DEATH: " + Math.max(0, TOTAL_TIME - Math.floor(elapsed)), 20, 20);
+    ctx.fillText("SUDDEN DEATH: "+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),20,20);
   }
-
   ctx.fillStyle="white";
-  ctx.fillText("Score: " + totalScore, 20, 50);
-  
-  ctx.restore();
-}
-function calculateScore(){
-  if(markers.length < 3) return 0;
+  ctx.fillText("Score: "+totalScore,20,50);
 
-  let g = markers[0];
-  let r = markers[1];
-  let b = markers[2];
-
-  if(!g || !r || !b) return 0;
-
-// 🔒 SAFE VERSION (won’t crash)
-if(!(g.armed && r.armed && b.armed)) return 0;
-
-  let s = 0;
-
-  // detect combos FIRST
-  let gr = touching(g,r);
-  let rb = touching(r,b);
-  let gb = touching(g,b);
-
-  if(suddenDeath){
-
-    if(gr && rb && gb){
-      return 10;
-    }
-
-    if(rb) return 5;
-    if(gb) return 5;
-    if(gr) return 3;
-
-    return 0;
-
-  } else {
-
-    if(gr && rb && gb){
-      return 3;
-    }
-
-    if(rb) return 2;
-    if(gb) return 2;
-    if(gr) return 0.5;
-
-    return 0;
+  // Olympics mode: show round indicator
+  if(gameMode==="olympics"&&olympicsState){
+    ctx.fillStyle="#555";
+    ctx.font="13px 'Courier New',monospace";
+    let rLabel=olympicsState.round===1?"SEMIFINAL B":olympicsState.round===2?"SEMIFINAL A":"GRAND FINAL";
+    ctx.fillText("OLYMPICS · "+rLabel,20,80);
   }
 }
-// END
-function endGame(){
- shake = 0; //
-  if(totalScore > highScore){
-    highScore = totalScore;
-    localStorage.setItem("qu33phHigh", highScore);
-  }
-  gameState="end";
-}
 
-// INIT
+// ─── INIT & LOOP ──────────────────────────────────────────────────────────
 randomizeSky();
+showTitle();
 
 function loop(){
   update();
