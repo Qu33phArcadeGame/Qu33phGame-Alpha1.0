@@ -11,27 +11,18 @@
 
     #rotateBtn {
       position:absolute;
-      bottom:16px;
+      bottom:20px;
       left:50%;
       transform:translateX(-50%);
-      padding:8px 16px 8px 72px;
+      padding:12px 20px;
       border-radius:10px;
-      border:1px solid #444;
-      font-size:12px;
+      border:2px solid #444;
+      font-size:14px;
       font-family: 'Courier New', monospace;
-      background:rgba(20,20,20,0.9);
-      color:#888;
-      letter-spacing:2px;
+      background:#1a1a1a;
+      color:#ccc;
+      letter-spacing:1px;
       display:none;
-      white-space:nowrap;
-    }
-    #orientCanvas {
-      position:absolute;
-      bottom:10px;
-      left:50%;
-      transform:translateX(-50%);
-      display:none;
-      pointer-events:none;
     }
     #timeline {
       position:absolute;
@@ -221,8 +212,7 @@
 <body>
 
 <canvas id="game"></canvas>
-<button id="rotateBtn" onclick="rotateOrientation()">TAP TO ROTATE</button>
-<canvas id="orientCanvas" width="160" height="70" onclick="rotateOrientation()" style="cursor:pointer;"></canvas>
+<button id="rotateBtn">Orientation: vertical</button>
 <div id="timeline"><div id="progress"></div></div>
 
 <!-- TITLE SCREEN -->
@@ -456,7 +446,6 @@ function showTitle(){
   document.getElementById("medalScreen").style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   document.getElementById("rotateBtn").style.display="none";
-  document.getElementById("orientCanvas").style.display="none";
   document.getElementById("timeline").style.display="none";
   let hs=localStorage.getItem("qu33phHigh")||0;
   document.getElementById("titleHighScore").innerText=
@@ -480,7 +469,6 @@ function showBracket(){
   document.getElementById("bracketScreen").style.display="flex";
   document.getElementById("bracketScreen").style.flexDirection="column";
   document.getElementById("rotateBtn").style.display="none";
-  document.getElementById("orientCanvas").style.display="none";
   document.getElementById("timeline").style.display="none";
   renderBracket();
 }
@@ -836,10 +824,8 @@ function startGame(){
   shake=0;
   orientationIndex=0;
   currentOrientation="vertical";
-  document.getElementById("rotateBtn").style.display="none";
-  document.getElementById("orientCanvas").style.display="none";
-  document.getElementById("orientCanvas").style.display="block";
-  setTimeout(drawOrientPreview, 80);
+  document.getElementById("rotateBtn").style.display="block";
+  document.getElementById("rotateBtn").innerText="Orientation: vertical";
   document.getElementById("timeline").style.display="block";
   document.getElementById("progress").style.width="0%";
   document.getElementById("progress").style.background="lime";
@@ -848,85 +834,11 @@ function startGame(){
 }
 
 // ─── ORIENTATION BTN ──────────────────────────────────────────────────────
-document.getElementById("rotateBtn").onclick = rotateOrientation;
-
-function rotateOrientation(){
+document.getElementById("rotateBtn").onclick=()=>{
   orientationIndex=(orientationIndex+1)%orientations.length;
   currentOrientation=orientations[orientationIndex];
-  drawOrientPreview();
-}
-
-function drawOrientPreview(){
-  const oc = document.getElementById("orientCanvas");
-  const ox = oc.getContext("2d");
-  ox.clearRect(0,0,160,70);
-
-  // Background pill
-  ox.fillStyle="rgba(20,20,20,0.92)";
-  roundRect(ox, 0, 0, 160, 70, 12);
-  ox.fill();
-  ox.strokeStyle="#333"; ox.lineWidth=1;
-  roundRect(ox, 0, 0, 160, 70, 12);
-  ox.stroke();
-
-  // Draw all 3 marker images at their orientation angles
-  const angleMap = {vertical:0, angled:Math.PI/6, horizontal:Math.PI/2};
-  const colorOrder = ["green","red","blue"];
-  const positions = [{x:30,y:35},{x:80,y:35},{x:130,y:35}];
-  const sizes = [{w:28,h:28},{w:28,h:28},{w:44,h:28}];
-  const activeAngle = angleMap[currentOrientation];
-
-  colorOrder.forEach((col,i)=>{
-    const img = markerImages[col];
-    if(!img||!img.complete) return;
-    let {x,y} = positions[i];
-    let {w,h} = sizes[i];
-    let angle = activeAngle;
-
-    ox.save();
-    ox.translate(x,y);
-    ox.rotate(angle);
-    // active = bright, others = dim
-    ox.globalAlpha = 0.35;
-    ox.drawImage(img,-w/2,-h/2,w,h);
-    ox.globalAlpha=1;
-    ox.restore();
-  });
-
-  // Draw current marker set at full brightness
-  colorOrder.forEach((col,i)=>{
-    const img = markerImages[col];
-    if(!img||!img.complete) return;
-    let {x,y} = positions[i];
-    let {w,h} = sizes[i];
-    ox.save();
-    ox.translate(x,y);
-    ox.rotate(activeAngle);
-    ox.drawImage(img,-w/2,-h/2,w,h);
-    ox.restore();
-  });
-
-  // Label
-  ox.fillStyle="#555";
-  ox.font="10px 'Courier New',monospace";
-  ox.textAlign="center"; ox.textBaseline="bottom";
-  let label = currentOrientation==="vertical"?"VERTICAL":
-              currentOrientation==="angled"?"ANGLED":"HORIZONTAL";
-  ox.fillText(label, 80, 68);
-}
-
-function roundRect(ctx,x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
-  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r);
-  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  ctx.lineTo(x+r,y+h);
-  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r);
-  ctx.quadraticCurveTo(x,y,x+r,y);
-  ctx.closePath();
-}
+  document.getElementById("rotateBtn").innerText="Orientation: "+currentOrientation;
+};
 
 // ─── INPUT ────────────────────────────────────────────────────────────────
 let dragging=false,startX,startY,currentX,currentY;
@@ -1331,7 +1243,6 @@ function endGame(){
     localStorage.setItem("qu33phHigh",highScore);
   }
   document.getElementById("rotateBtn").style.display="none";
-  document.getElementById("orientCanvas").style.display="none";
   document.getElementById("timeline").style.display="none";
 
   if(gameMode==="olympics"){
@@ -1753,15 +1664,23 @@ function draw(){
     ctx.restore();
   });
 
-  // PREVIEW MARKERS
+  // PREVIEW MARKERS — rotated to show current orientation
+  const angleMap = {vertical:0, angled:Math.PI/6, horizontal:Math.PI/2};
+  let previewAngle = angleMap[currentOrientation] || 0;
   previewMarkers.forEach((p,i)=>{
     if(p.used) return;
     const img=markerImages[p.color];
     if(!img||!img.complete) return;
     let x=(LEFT_EDGE+RIGHT_WALL)/2;
     let y=START_LINE_Y-60-i*60;
+    let pw=50, ph=50;
+    if(p.color==="blue"){ pw=80; ph=50; }
+    ctx.save();
     ctx.globalAlpha=0.5;
-    ctx.drawImage(img,x-25,y-25,50,50);
+    ctx.translate(x, y);
+    ctx.rotate(previewAngle);
+    ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+    ctx.restore();
     ctx.globalAlpha=1;
   });
 
@@ -1811,3 +1730,4 @@ loop();
 </script>
 </body>
 </html>
+
