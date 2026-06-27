@@ -506,7 +506,7 @@ function renderBracket(){
   const PAD = 6;
   const topY = bh*0.20;
   const colW = bw*0.30;           // each match box width
-  const rH = Math.round(bh*0.055); // row height per player
+  const rH = Math.round(bh*0.072); // taller rows so two-line text never overlaps
   const mH = rH*2+1;              // match total height
   const lx = PAD;                 // left col x
   const rx = bw-PAD-colW;        // right col x
@@ -1404,13 +1404,6 @@ function draw(){
   ctx.fillStyle=sheenGrad;
   ctx.fill();
 
-  // Panel seam line (like real photo)
-  ctx.strokeStyle="rgba(0,0,0,0.12)"; ctx.lineWidth=1.2;
-  ctx.beginPath();
-  ctx.moveTo((cLeft+cRight)*0.48, cTop);
-  ctx.lineTo((cLeft+cRight)*0.5, cBot);
-  ctx.stroke();
-
   ctx.restore();
 
   // ── 6. COUNTER FRONT FACE (thin strip at bottom of surface) ──
@@ -1565,22 +1558,31 @@ function draw(){
     ctx.strokeRect(cLeft+2, cTop+2, cRight-cLeft-4, cBot-cTop-4);
     ctx.restore();
 
-    // Gold sparkles for the final
+    // Gold sparkles — stars travelling along the border rectangle
     if(round===3){
       let t=Date.now()/1000;
-      for(let i=0;i<14;i++){
-        let angle = (i/14)*Math.PI*2 + t*0.8;
-        let rad = Math.min(cRight-cLeft, cBot-cTop)*0.48;
-        let cx2 = (cLeft+cRight)/2 + Math.cos(angle)*rad*0.92;
-        let cy2 = (cTop+cBot)/2   + Math.sin(angle)*rad*0.72;
-        let pulse = 0.5+0.5*Math.sin(t*3+i*0.9);
-        let size = 3+pulse*4;
+      let numStars=16;
+      // Border rect: cLeft,cTop → cRight,cBot
+      let bLeft=cLeft+3, bRight=cRight-3, bTop=cTop+3, bBot=cBot-3;
+      let perimeter = 2*((bRight-bLeft)+(bBot-bTop));
+
+      for(let i=0;i<numStars;i++){
+        // Each star travels along the perimeter at a fixed offset
+        let dist = ((i/numStars)*perimeter + t*120) % perimeter;
+        let px,py;
+        let top=bRight-bLeft, right=bBot-bTop, bottom=bRight-bLeft, left=bBot-bTop;
+        if(dist<top){ px=bLeft+dist; py=bTop; }
+        else if(dist<top+right){ px=bRight; py=bTop+(dist-top); }
+        else if(dist<top+right+bottom){ px=bRight-(dist-top-right); py=bBot; }
+        else { px=bLeft; py=bBot-(dist-top-right-bottom); }
+
+        let pulse=0.5+0.5*Math.sin(t*4+i*1.1);
+        let size=3+pulse*4;
         ctx.save();
-        ctx.globalAlpha=0.4+pulse*0.6;
+        ctx.globalAlpha=0.5+pulse*0.5;
         ctx.fillStyle="#ffd700";
-        ctx.shadowColor="#ffd700"; ctx.shadowBlur=10;
-        // star shape
-        ctx.translate(cx2,cy2); ctx.rotate(t+i);
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=12;
+        ctx.translate(px,py); ctx.rotate(t*2+i);
         ctx.beginPath();
         for(let p=0;p<5;p++){
           let a=p*Math.PI*2/5-Math.PI/2;
