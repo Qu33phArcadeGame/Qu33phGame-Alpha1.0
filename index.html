@@ -535,7 +535,6 @@ function renderBracket(){
     let done = s1!==null && s2!==null;
     let winIdx = done ? (s1>s2?0:1) : -1;
 
-    // label
     if(label){
       bx.fillStyle=active?"#fff":"#444";
       bx.font=`${labelSz}px 'Courier New',monospace`;
@@ -543,7 +542,6 @@ function renderBracket(){
       bx.fillText(label, x, y-2);
     }
 
-    // border
     bx.strokeStyle=active?"#fff":done?"#444":"#222";
     bx.lineWidth=active?2:1;
     bx.strokeRect(x,y,colW,mH);
@@ -553,45 +551,49 @@ function renderBracket(){
       let isWin  = done && winIdx===pi;
       let isLoss = done && winIdx!==pi;
       let isYou  = p && p.isPlayer;
-      let isPending = !p; // TBD slot
+      let isPending = !p;
 
-      // row bg — subtle green tint for your row
       if(isYou && !isLoss){
         bx.fillStyle="rgba(68,238,68,0.06)";
         bx.fillRect(x+1, ry+1, colW-2, rH-1);
       }
 
-      // name — flag + short name, all in one colour
+      // Reserve right side for score so name never overlaps
+      let scoreReserve = done ? 30 : 0;
+      let nameClipW = colW - 6 - scoreReserve;
+
       let nameStr = "TBD";
       if(p){
         let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
         nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
       }
 
-      // colour: winner=green, loser=red, you pending=green, cpu pending=grey, TBD=dark grey
       let nameColor;
-      if(isPending)        nameColor="#2a2a2a";
-      else if(isWin)       nameColor="#44ee44";
-      else if(isLoss)      nameColor="#cc3333";
-      else if(isYou)       nameColor="#44ee44"; // your slot always green when pending
-      else                 nameColor="#777";
+      if(isPending)   nameColor="#2a2a2a";
+      else if(isWin)  nameColor="#44ee44";
+      else if(isLoss) nameColor="#cc3333";
+      else if(isYou)  nameColor="#44ee44";
+      else            nameColor="#777";
 
+      // Clip name so it never reaches the score area
+      bx.save();
+      bx.beginPath(); bx.rect(x+2, ry+1, nameClipW, rH-1); bx.clip();
       bx.fillStyle=nameColor;
       bx.font=`${nameSz}px 'Courier New',monospace`;
       bx.textAlign="left"; bx.textBaseline="middle";
       bx.fillText(nameStr, x+4, ry+rH/2);
+      bx.restore();
 
-      // score — right aligned
+      // Score drawn in its own clean right-side zone
       if(done){
         let sc = pi===0 ? s1 : s2;
         bx.fillStyle = isWin?"#44ee44":"#cc3333";
         bx.font=`bold ${scoreSz}px 'Courier New',monospace`;
-        bx.textAlign="right";
-        bx.fillText(sc, x+colW-4, ry+rH/2);
+        bx.textAlign="right"; bx.textBaseline="middle";
+        bx.fillText(sc, x+colW-3, ry+rH/2);
       }
     });
 
-    // divider between rows
     bx.strokeStyle="#1a1a1a"; bx.lineWidth=1;
     bx.beginPath(); bx.moveTo(x+1,y+rH); bx.lineTo(x+colW-1,y+rH); bx.stroke();
   }
