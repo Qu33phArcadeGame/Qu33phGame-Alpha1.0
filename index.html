@@ -1007,7 +1007,7 @@ function drawMarker(m){
     ctx.globalAlpha=1;
   }
   const img=markerImages[m.color];
-  if(!img||!img.complete) return;
+  if(!img||!img.complete||!img.naturalWidth) return;
   ctx.save();
   ctx.translate(m.x,m.y);
   ctx.rotate(m.rotation);
@@ -1068,138 +1068,199 @@ function draw(){
   ctx.save();
   ctx.translate(shakeX,shakeY);
 
-  // ── 1. COUNTER BACKGROUND (dark area left of window) ──
-  ctx.fillStyle="#111";
+  // ── 1. BACKGROUND BASE ──
+  ctx.fillStyle="#d8cfc4"; // cream/beige room
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // ── 2. WINDOW SCENE (right strip) ──
+  // ── 2. WINDOW SCENE (right strip, behind frame) ──
   drawWindowScene(elapsed);
   drawWindowFrame();
 
-  // ── 3. COUNTER SURFACE (perspective 3D) ──
-  // The counter is the playfield: LEFT_EDGE → RIGHT_WALL, top→bottom.
-  // 3D trick: taper the top edge inward slightly (far end narrower).
-  let taper = canvas.width * 0.03; // how much narrower at top
+  // ── 3. CREAM WALL (right of counter, left of window) ──
+  // This is the wall panel visible to the right of the playing field
+  ctx.fillStyle="#cdc8bc";
+  ctx.fillRect(RIGHT_WALL, END_LINE_Y, canvas.width*0.01, canvas.height-END_LINE_Y);
+
+  // ── 4. TEAL LEFT WALL PANEL ──
+  ctx.fillStyle="#3d6b62";
+  ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
+  ctx.fillStyle="#4a7d73";
+  ctx.fillRect(LEFT_EDGE-4, 0, 4, canvas.height);
+
+  // ── 5. COUNTER SURFACE — nearly full screen height ──
+  let taper = canvas.width * 0.02;
   let cLeft  = LEFT_EDGE;
   let cRight = RIGHT_WALL;
-  let cTop   = END_LINE_Y;
-  let cBot   = canvas.height;
+  let cTop   = canvas.height * 0.06;  // tiny gap at top for cabinet
+  let cBot   = canvas.height * 0.97;  // nearly full screen
 
-  // Counter surface trapezoid (slightly tapered at top = depth illusion)
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(cLeft + taper, cTop);
-  ctx.lineTo(cRight - taper, cTop);
+  ctx.lineTo(cRight - taper*0.3, cTop);
   ctx.lineTo(cRight, cBot);
   ctx.lineTo(cLeft, cBot);
   ctx.closePath();
 
-  // Dark slate laminate — lighter near player (bottom), darker far end (top)
+  // Light blue-grey laminate
   let surfGrad = ctx.createLinearGradient(0, cTop, 0, cBot);
-  surfGrad.addColorStop(0, "#1e1c1b");   // far/top — darker
-  surfGrad.addColorStop(0.4, "#28251f"); 
-  surfGrad.addColorStop(1, "#2e2b27");   // near/bottom — slightly lighter
+  surfGrad.addColorStop(0, "#8fa8a4");   // slightly darker at far end
+  surfGrad.addColorStop(0.3, "#9ab4af");
+  surfGrad.addColorStop(0.7, "#a8bebb");
+  surfGrad.addColorStop(1, "#b0c4c1");   // lighter near player
   ctx.fillStyle = surfGrad;
   ctx.fill();
 
-  // Subtle specular sheen stripe down the middle
-  let sheenGrad = ctx.createLinearGradient((cLeft+cRight)/2 - 60, 0, (cLeft+cRight)/2 + 60, 0);
+  // Subtle surface sheen
+  let sheenGrad = ctx.createLinearGradient(cLeft, 0, cRight, 0);
   sheenGrad.addColorStop(0,"rgba(255,255,255,0)");
-  sheenGrad.addColorStop(0.5,"rgba(255,255,255,0.03)");
+  sheenGrad.addColorStop(0.4,"rgba(255,255,255,0.07)");
   sheenGrad.addColorStop(1,"rgba(255,255,255,0)");
   ctx.fillStyle=sheenGrad;
   ctx.fill();
 
-  // Panel seam (longitudinal crack like the photo)
-  ctx.strokeStyle="rgba(0,0,0,0.5)"; ctx.lineWidth=1.5;
+  // Panel seam line (like real photo)
+  ctx.strokeStyle="rgba(0,0,0,0.12)"; ctx.lineWidth=1.2;
   ctx.beginPath();
-  ctx.moveTo((cLeft+cRight)/2 - taper*0.5, cTop);
-  ctx.lineTo((cLeft+cRight)/2, cBot);
+  ctx.moveTo((cLeft+cRight)*0.48, cTop);
+  ctx.lineTo((cLeft+cRight)*0.5, cBot);
   ctx.stroke();
 
   ctx.restore();
 
-  // ── 4. AC UNIT — flush recessed grill, 27% up from bottom ──
-  // In the photo it's a dark rectangle sitting flat on the counter surface
-  // with fine VERTICAL slats, metal trim surround, slight inset shadow
-  let ventMid = canvas.height - (canvas.height - END_LINE_Y) * 0.27;
-  let ventH = 28;
-  let ventTop = ventMid - ventH/2;
-  let ventBot = ventMid + ventH/2;
-  // grill is inset — narrower than full counter width, off to the right side like photo
-  let ventL = cLeft + (cRight-cLeft)*0.45;
-  let ventR = cRight - (cRight-cLeft)*0.04;
+  // ── 6. COUNTER FRONT FACE (thin strip at bottom of surface) ──
+  let faceTop = cBot;
+  let faceBot = cBot + canvas.height*0.025;
+  let faceGrad = ctx.createLinearGradient(0,faceTop,0,faceBot);
+  faceGrad.addColorStop(0,"#7a9490");
+  faceGrad.addColorStop(0.5,"#8ea8a4");
+  faceGrad.addColorStop(1,"#5a7470");
+  ctx.fillStyle=faceGrad;
+  ctx.fillRect(cLeft, faceTop, cRight-cLeft, faceBot-faceTop);
+  // aluminium trim strip at very top of front face
+  ctx.fillStyle="#b8c8c4";
+  ctx.fillRect(cLeft, faceTop, cRight-cLeft, 3);
 
-  // inset shadow around grill (recessed look)
-  ctx.fillStyle="rgba(0,0,0,0.5)";
-  ctx.fillRect(ventL-3, ventTop-3, ventR-ventL+6, ventH+6);
+  // ── 7. BOTTOM AREA — plain light blue-grey counter color ──
+  ctx.fillStyle="#a8bebb";
+  ctx.fillRect(cLeft, cBot, cRight-cLeft, canvas.height-cBot);
+  ctx.fillStyle="#b8c8c4";
+  ctx.fillRect(cLeft, cBot, cRight-cLeft, 3);
 
-  // grill surround — dark metal frame
-  let surroundGrad = ctx.createLinearGradient(0,ventTop,0,ventBot);
-  surroundGrad.addColorStop(0,"#2e2a24");
-  surroundGrad.addColorStop(1,"#1a1712");
-  ctx.fillStyle=surroundGrad;
-  ctx.fillRect(ventL, ventTop, ventR-ventL, ventH);
+  // ── 8. BEIGE FLOOR below counter ──
+  ctx.fillStyle="#c8b89a";
+  ctx.fillRect(0, canvas.height*0.97, canvas.width, canvas.height*0.03);
 
-  // inner grill area (darker recess)
-  let grillL = ventL + 4;
-  let grillR = ventR - 4;
-  let grillT = ventTop + 4;
-  let grillB = ventBot - 4;
-  ctx.fillStyle="#0e0c09";
-  ctx.fillRect(grillL, grillT, grillR-grillL, grillB-grillT);
+  // ── 9. TEAL GREEN CABINET — tiny strip at very TOP ──
+  ctx.fillStyle="#3d6b62";
+  ctx.fillRect(cLeft, cTop, cRight-cLeft, canvas.height*0.05);
+  ctx.fillStyle="#4a7d73";
+  ctx.fillRect(cLeft, cTop, cRight-cLeft, 3);
 
-  // VERTICAL slats (like the photo — fine vertical lines)
-  ctx.strokeStyle="rgba(50,44,35,0.8)"; ctx.lineWidth=1;
-  let slatSpacing = 5;
-  for(let sx=grillL+slatSpacing; sx<grillR; sx+=slatSpacing){
-    ctx.beginPath(); ctx.moveTo(sx,grillT); ctx.lineTo(sx,grillB); ctx.stroke();
+  // ── 10. BROWN AC UNIT — contained rectangle, left side, with grouped slats ──
+  let acBrownR = cRight; // extends to windowsill
+  let acT2 = cTop  + (cBot-cTop)*0.77;
+  let acB2 = cTop  + (cBot-cTop)*0.93;
+  let acH2 = acB2 - acT2;
+  let acTotalW = acBrownR - cLeft;
+
+  // Outer shadow
+  ctx.fillStyle="rgba(0,0,0,0.25)";
+  ctx.fillRect(cLeft-2, acT2-3, acTotalW+4, acH2+6);
+
+  // Full brown rectangle
+  let acGrad = ctx.createLinearGradient(0, acT2, 0, acB2);
+  acGrad.addColorStop(0,"#b89878");
+  acGrad.addColorStop(0.5,"#c0a085");
+  acGrad.addColorStop(1,"#907060");
+  ctx.fillStyle=acGrad;
+  ctx.fillRect(cLeft, acT2, acTotalW, acH2);
+
+  // Inset border
+  ctx.strokeStyle="rgba(70,48,28,0.7)"; ctx.lineWidth=2;
+  ctx.strokeRect(cLeft+3, acT2+3, acTotalW-6, acH2-6);
+  ctx.strokeStyle="rgba(180,150,110,0.2)"; ctx.lineWidth=1;
+  ctx.strokeRect(cLeft+5, acT2+5, acTotalW-10, acH2-10);
+
+  // Slat section — left ~30% of unit
+  let slatSectionR = cLeft + acTotalW*0.30;
+  ctx.fillStyle="#2a1c10";
+  ctx.fillRect(cLeft+6, acT2+6, slatSectionR-cLeft-6, acH2-12);
+
+  // Grouped slats with HORIZONTAL GAPS between groups
+  // Each group: several vertical slats side by side, then a tan horizontal bar
+  let numGroups = 5;
+  let groupH = (acH2-12) / numGroups;
+  let gapH = groupH * 0.18; // horizontal gap between groups
+  let slatAreaT = acT2+6;
+  let slatAreaL = cLeft+7;
+  let slatAreaR = slatSectionR-4;
+  let slatAreaW = slatAreaR - slatAreaL;
+
+  for(let gi=0; gi<numGroups; gi++){
+    let gy = slatAreaT + gi*groupH;
+    let gSlatsT = gy + gapH*0.5;
+    let gSlatsB = gy + groupH - gapH*0.5;
+    let gSlatsH = gSlatsB - gSlatsT;
+
+    // horizontal gap (tan/brown) between groups
+    ctx.fillStyle="#a07858";
+    ctx.fillRect(slatAreaL, gy, slatAreaW, gapH*0.5);
+
+    // vertical slats within this group
+    let slatW=4, slatGap=3;
+    for(let sx=slatAreaL+2; sx<slatAreaR-2; sx+=slatW+slatGap){
+      let sg=ctx.createLinearGradient(sx,0,sx+slatW,0);
+      sg.addColorStop(0,"#4a2e14");
+      sg.addColorStop(0.4,"#7a5030");
+      sg.addColorStop(1,"#4a2e14");
+      ctx.fillStyle=sg;
+      ctx.fillRect(sx, gSlatsT, slatW, gSlatsH);
+      ctx.fillStyle="rgba(0,0,0,0.55)";
+      ctx.fillRect(sx+slatW, gSlatsT, slatGap-1, gSlatsH);
+    }
   }
-  // slat highlights (left edge of each slat)
-  ctx.strokeStyle="rgba(80,72,58,0.3)"; ctx.lineWidth=0.5;
-  for(let sx=grillL+slatSpacing; sx<grillR; sx+=slatSpacing){
-    ctx.beginPath(); ctx.moveTo(sx-1,grillT); ctx.lineTo(sx-1,grillB); ctx.stroke();
-  }
+  // bottom gap
+  ctx.fillStyle="#a07858";
+  ctx.fillRect(slatAreaL, slatAreaT+(numGroups-1)*groupH+groupH-gapH*0.5, slatAreaW, gapH*0.5);
 
-  // metal trim edges
-  ctx.strokeStyle="#5a5248"; ctx.lineWidth=1.5;
-  ctx.strokeRect(ventL, ventTop, ventR-ventL, ventH);
-  // top highlight on surround
-  ctx.strokeStyle="rgba(120,110,90,0.4)"; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(ventL,ventTop); ctx.lineTo(ventR,ventTop); ctx.stroke();
+  // Border lines top/bottom
+  ctx.strokeStyle="rgba(60,40,20,0.45)"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cLeft,acT2); ctx.lineTo(acBrownR,acT2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cLeft,acB2); ctx.lineTo(acBrownR,acB2); ctx.stroke();
 
-  // Bottom shadow under unit
-  let shadowGrad = ctx.createLinearGradient(0,cubeBot,0,cubeBot+6);
-  shadowGrad.addColorStop(0,"rgba(0,0,0,0.4)");
-  shadowGrad.addColorStop(1,"rgba(0,0,0,0)");
-  ctx.fillStyle=shadowGrad;
-  ctx.fillRect(cubeL, cubeBot, cubeR-cubeL, 6);
+  // ── 11. BLACK STRIP at RIGHT_WALL (vertical, full counter height) ──
+  ctx.fillStyle="#0e0e0e";
+  ctx.fillRect(RIGHT_WALL, cTop, 13, cBot-cTop);
 
-  // ── 5. COUNTER FRONT EDGE (aluminium trim at very bottom) ──
-  let edgeGrad = ctx.createLinearGradient(0, canvas.height-22, 0, canvas.height);
-  edgeGrad.addColorStop(0,"#888880");
-  edgeGrad.addColorStop(0.35,"#b0b0a8");
-  edgeGrad.addColorStop(0.7,"#686860");
-  edgeGrad.addColorStop(1,"#303030");
-  ctx.fillStyle=edgeGrad;
-  ctx.fillRect(0, canvas.height-22, RIGHT_WALL, 22);
+  // ── 12. RED DOT — on black strip, at teal/counter junction ──
+  let dotCX = RIGHT_WALL + 6;
+  let dotCY = cTop + canvas.height*0.05 + 8;
+  let dotR = 7;
 
-  // ── 6. LEFT WALL (dark, off-playfield) ──
-  ctx.fillStyle="#1a1a1a";
-  ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
-  // subtle wall/counter join shadow
-  ctx.fillStyle="rgba(0,0,0,0.4)";
-  ctx.fillRect(LEFT_EDGE-8, cTop, 8, cBot-cTop);
+  // White card
+  ctx.fillStyle="#f5f5f0";
+  ctx.fillRect(dotCX-dotR-3, dotCY-dotR-3, dotR*2+6, dotR*2+6);
 
-  // ── 7. RED DOT (on windowsill) ──
-  ctx.fillStyle="red";
-  ctx.beginPath();
-  ctx.arc(redDot.x, redDot.y, 10, 0, Math.PI*2);
-  ctx.fill();
+  // Dark ring
+  ctx.fillStyle="#111";
+  ctx.beginPath(); ctx.arc(dotCX, dotCY, dotR+2, 0, Math.PI*2); ctx.fill();
 
-  // ── 8. TOP LINE (end line — far end of counter) ──
-  ctx.fillStyle="rgba(255,255,255,0.75)";
-  ctx.fillRect(LEFT_EDGE, END_LINE_Y, RIGHT_WALL-LEFT_EDGE, 3);
+  // Red gradient
+  let rg = ctx.createRadialGradient(dotCX-2, dotCY-2, 1, dotCX, dotCY, dotR);
+  rg.addColorStop(0,"#ff5555");
+  rg.addColorStop(0.5,"#dd1111");
+  rg.addColorStop(1,"#990000");
+  ctx.fillStyle=rg;
+  ctx.beginPath(); ctx.arc(dotCX, dotCY, dotR, 0, Math.PI*2); ctx.fill();
+
+  // Specular
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.beginPath(); ctx.arc(dotCX-2, dotCY-2, dotR*0.35, 0, Math.PI*2); ctx.fill();
+
+  // ── 13. END LINE ──
+  ctx.fillStyle="rgba(255,255,255,0.15)";
+  ctx.fillRect(cLeft, cTop+32, cRight-cLeft, 2);
 
   // ADVANCE PROMPT
   if(current===3&&markers.every(m=>m.stopped||m.fallen)){
