@@ -891,8 +891,8 @@ canvas.addEventListener("pointerup",()=>{
   let dy=currentY-startY;
 
   let baseRot=
-    currentOrientation==="vertical"?Math.PI/2:
-    currentOrientation==="angled"?Math.PI/3:
+    currentOrientation==="vertical"?Math.PI/3:
+    currentOrientation==="angled"?Math.PI/2:
     0;
 
   markers.push({
@@ -1667,8 +1667,8 @@ function draw(){
   // The marker images are drawn horizontally by default (0° = flat/horizontal)
   // So: vertical = 90°, angled = 60°, horizontal = 0°
   let previewAngle =
-    currentOrientation==="vertical"   ? Math.PI/2 :
-    currentOrientation==="angled"     ? Math.PI/3 :
+    currentOrientation==="vertical"   ? Math.PI/3 :
+    currentOrientation==="angled"     ? Math.PI/2 :
     0;
 
   previewMarkers.forEach((p,i)=>{
@@ -1677,11 +1677,10 @@ function draw(){
     if(!img||!img.complete||!img.naturalWidth) return;
     let cx = (LEFT_EDGE+RIGHT_WALL)/2;
     let cy = START_LINE_Y - 55 - i*58;
-    // All same height so rotation looks identical — blue slightly longer only
-    let pw = p.color==="blue" ? 68 : 46;
-    let ph = 13;
+    let pw = p.color==="blue" ? 80 : 50;
+    let ph = 50;
     ctx.save();
-    ctx.globalAlpha = 0.65;
+    ctx.globalAlpha = 0.6;
     ctx.translate(cx, cy);
     ctx.rotate(previewAngle);
     ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
