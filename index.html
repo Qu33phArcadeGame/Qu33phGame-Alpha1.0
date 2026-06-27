@@ -620,16 +620,17 @@ function renderBracket(){
   drawMatch(lx, qf1y, os.n[0],os.n[1], os.qf1s1,os.qf1s2, false,"QF1");
   drawMatch(lx, qf2y, os.n[2],os.n[3], os.qf2s1,os.qf2s2, false,"QF2");
 
-  // SF1 — show both QF winners (cpu matches always pre-resolved), show scores once played
+  // SF1 — both QF winners known (cpu), scores fill in once played
   drawMatch(mx, sf1y, qf1w, qf2w, os.sf1s1, os.sf1s2, false,"SF1");
 
   drawMatch(rx, qf3y, os.n[4],os.n[5], os.qf3s1,os.qf3s2, false,"QF3");
   drawMatch(rx, qf4y, os.n[6],playerNation, qf4done?os.qf4Opp:null, qf4done?os.qf4Score:null,
     os.round===1,"QF4");
 
-  // SF2 — p1=QF3 winner (always known), p2=TBD until player wins QF4
+  // SF2 — show NOTHING until QF4 is done (player must play first)
+  let sf2p1 = qf4done ? qf3w : null;
   let sf2p2 = qf4done ? qf4w : null;
-  drawMatch(mx, sf2y, qf3w, sf2p2, sf2done?os.sf2Opp:null, sf2done?os.sf2Score:null,
+  drawMatch(mx, sf2y, sf2p1, sf2p2, sf2done?os.sf2Opp:null, sf2done?os.sf2Score:null,
     os.round===2&&!os.playerEliminated,"SF2");
 
   // FINAL — both TBD until SFs resolved
@@ -931,7 +932,7 @@ function tryAdvanceRound(){
       // chair.y is near top of screen (low y = far up field)
       // blue passes chair if its final y < chair.y
       if(b.y > chair.y){
-        totalScore = Math.max(0, totalScore - 2);
+        totalScore = totalScore - 2;
         scorePopups.push({x:(LEFT_EDGE+RIGHT_WALL)/2, y:canvas.height*0.45, text:"PEEF", life:55, peef:true, shakeAmt:7});
         scorePopups.push({x:(LEFT_EDGE+RIGHT_WALL)/2, y:canvas.height*0.45+30, text:"-2 BLUE MISSED CHAIR", life:55, peef:true, shakeAmt:4});
         addShake(8);
@@ -1178,33 +1179,24 @@ function update(){
     m.trail.push({x:m.x,y:m.y});
     if(m.trail.length>20) m.trail.shift();
 
-    // Track if marker has crossed the Line of Destiny (AC unit)
-    if(!m.passedDestiny && m.y < LINE_OF_DESTINY) m.passedDestiny=true;
-
-    // Fallen off left edge
+    // Fallen off left edge — always a PEEF regardless of position
     if(m.x<LEFT_EDGE){
-      if(!m.deducted && m.passedDestiny){
-        // PEEF — deduct points for falling off after the line of destiny
+      if(!m.deducted){
         let deduction = suddenDeath ? 5 : 2;
-        totalScore = Math.max(0, totalScore - deduction);
+        totalScore = totalScore - deduction; // can go negative
         m.deducted=true;
         addShake(12);
-        // PEEF popup — shaking red text, no circle
         scorePopups.push({
-          x: LEFT_EDGE + 60,
-          y: m.y,
+          x: LEFT_EDGE + 80 + Math.random()*40,
+          y: Math.min(Math.max(m.y, END_LINE_Y+40), canvas.height*0.8),
           text:"PEEF",
-          life:50,
-          peef:true,
-          shakeAmt:8,
+          life:55, peef:true, shakeAmt:9,
         });
         scorePopups.push({
-          x: LEFT_EDGE + 60,
-          y: m.y + 28,
+          x: LEFT_EDGE + 80 + Math.random()*40,
+          y: Math.min(Math.max(m.y+30, END_LINE_Y+70), canvas.height*0.8+30),
           text:"-"+deduction,
-          life:50,
-          peef:true,
-          shakeAmt:5,
+          life:50, peef:true, shakeAmt:5,
         });
       }
       m.fallen=true;
