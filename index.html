@@ -1670,10 +1670,10 @@ function draw(){
     currentOrientation==="vertical"   ? Math.PI/3 :
     currentOrientation==="angled"     ? Math.PI/2 :
     0;
-  // Blue image has different aspect ratio so needs extra PI/6 offset to look the same
+  // Blue is wider so needs extra rotation to look the same angle as green/red
   let previewAngleBlue =
-    currentOrientation==="vertical"   ? Math.PI/3 - Math.PI/6 :
-    currentOrientation==="angled"     ? Math.PI/2 - Math.PI/6 :
+    currentOrientation==="vertical"   ? Math.PI/3 + Math.PI/4 :
+    currentOrientation==="angled"     ? Math.PI/2 + Math.PI/4 :
     0;
 
   previewMarkers.forEach((p,i)=>{
