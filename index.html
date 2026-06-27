@@ -271,6 +271,9 @@ markerImages.red.src="red.png";
 markerImages.green.src="green.png";
 markerImages.blue.src="blue.png";
 
+const chairImg = new Image();
+chairImg.src = "Chair.png";
+
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 canvas.width=window.innerWidth;
@@ -1621,10 +1624,11 @@ function draw(){
   if(suddenDeath){
     ctx.save();
     ctx.setTransform(1,0,0,1,0,0);
-    ctx.translate(chair.x,chair.y);
-    ctx.rotate(Math.PI);
-    ctx.font="30px Arial";
-    ctx.fillText("🪑",-15,10);
+    ctx.translate(chair.x, chair.y);
+    if(chairImg.complete && chairImg.naturalWidth){
+      let cw=40, ch=40;
+      ctx.drawImage(chairImg, -cw/2, -ch/2, cw, ch);
+    }
     ctx.restore();
   }
 
