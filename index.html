@@ -891,9 +891,9 @@ canvas.addEventListener("pointerup",()=>{
   let dy=currentY-startY;
 
   let baseRot=
-    currentOrientation==="vertical"?0:
-    currentOrientation==="angled"?Math.PI/6:
-    Math.PI/2;
+    currentOrientation==="vertical"?Math.PI/2:
+    currentOrientation==="angled"?Math.PI/3:
+    0;
 
   markers.push({
     x:canvas.width/2,
@@ -1664,12 +1664,12 @@ function draw(){
     ctx.restore();
   });
 
-  // PREVIEW MARKERS — all rotated together at current orientation angle
-  // vertical=0, angled=PI/6 (30°), horizontal=PI/2 (90°)
+  // The marker images are drawn horizontally by default (0° = flat/horizontal)
+  // So: vertical = 90°, angled = 60°, horizontal = 0°
   let previewAngle =
-    currentOrientation==="vertical"   ? 0 :
-    currentOrientation==="angled"     ? Math.PI/6 :
-    Math.PI/2;
+    currentOrientation==="vertical"   ? Math.PI/2 :
+    currentOrientation==="angled"     ? Math.PI/3 :
+    0;
 
   previewMarkers.forEach((p,i)=>{
     if(p.used) return;
@@ -1736,3 +1736,4 @@ loop();
 </script>
 </body>
 </html>
+
