@@ -104,92 +104,96 @@
       letter-spacing: 3px;
     }
 
-    /* OLYMPICS BRACKET SCREEN */
+    /* OLYMPICS BRACKET SCREEN — full screen canvas, no scroll */
     #bracketScreen {
       position:absolute;
       top:0; left:0; width:100%; height:100%;
-      background:#0a0a0a;
+      background:#08080a;
       display:none;
       flex-direction:column;
       align-items:center;
-      justify-content:flex-start;
-      padding: 20px;
-      overflow-y: auto;
+      justify-content:space-between;
+      overflow:hidden;
       z-index:100;
     }
-    .bracket-title {
-      font-size: clamp(20px, 5vw, 32px);
-      font-family:'Courier New',monospace;
-      color:#fff;
-      letter-spacing:4px;
-      margin-bottom:4px;
-      margin-top:10px;
+    #bracketCanvas {
+      flex:1; width:100%; display:block;
     }
-    .bracket-sub {
-      font-size:11px;
-      color:#444;
-      letter-spacing:3px;
-      margin-bottom:24px;
-    }
-    .bracket-round-label {
-      font-size:10px;
-      color:#555;
-      letter-spacing:3px;
-      text-transform:uppercase;
-      margin-bottom:10px;
-      align-self:flex-start;
-    }
-    .bracket-match {
-      width:min(380px,90vw);
-      border:1px solid #222;
-      border-radius:4px;
-      margin-bottom: 12px;
-      overflow:hidden;
-    }
-    .bracket-match.active-match {
-      border-color:#fff;
-    }
-    .bracket-player {
+    .bracket-play-btn {
+      width:100%;
+      padding:0 24px 32px;
       display:flex;
+      flex-direction:column;
       align-items:center;
-      padding: 12px 16px;
-      gap:12px;
-      background:#111;
-      font-family:'Courier New',monospace;
-      font-size:14px;
-      color:#aaa;
-      border-bottom:1px solid #1a1a1a;
+      gap:6px;
+      flex-shrink:0;
     }
-    .bracket-player:last-child { border-bottom:none; }
-    .bracket-player.is-you { color:#fff; }
-    .bracket-player.winner { color:lime; }
-    .bracket-player.loser { color:#333; text-decoration:line-through; }
-    .bracket-flag { font-size:20px; }
-    .bracket-score { margin-left:auto; font-size:16px; font-weight:bold; color:#666; }
-    .bracket-score.is-you { color:#fff; }
-    .bracket-score.winner { color:lime; }
-    .play-next-btn {
-      width:min(380px,90vw);
-      padding:16px;
-      margin-top:8px;
-      background:#fff;
+    #playNextBtn {
+      width:min(360px,88vw);
+      padding:17px;
+      background:#ffffff;
       color:#000;
       font-family:'Courier New',monospace;
-      font-size:14px;
+      font-size:15px;
       font-weight:bold;
       letter-spacing:2px;
       border:none;
       border-radius:4px;
       cursor:pointer;
-      text-align:center;
     }
-    .play-next-btn:hover { background:#ddd; }
-    .play-next-btn.disabled {
-      background:#222;
-      color:#444;
-      cursor:default;
+    #playNextBtn:active { background:#e0e0e0; }
+    #playNextBtn.elim { background:#181818; color:#333; cursor:default; }
+    #bracketRoundLabel {
+      font-size:10px;
+      color:#333;
+      letter-spacing:3px;
+      font-family:'Courier New',monospace;
     }
-    .bracket-spacer { height:16px; }
+    /* NATION SELECT SCREEN */
+    #nationScreen {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      background:#08080a; display:none; flex-direction:column;
+      align-items:center; z-index:100; overflow-y:auto;
+      padding-bottom:20px;
+    }
+    .nation-header {
+      width:100%; text-align:center; padding:24px 0 12px;
+      font-family:'Courier New',monospace;
+    }
+    .nation-title {
+      font-size:clamp(18px,5vw,26px); color:#fff;
+      letter-spacing:4px; font-weight:bold; display:block;
+    }
+    .nation-sub {
+      font-size:10px; color:#444; letter-spacing:3px; display:block; margin-top:4px;
+    }
+    .nation-grid {
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:8px; width:min(400px,92vw); margin-top:16px;
+    }
+    .nation-btn {
+      display:flex; flex-direction:column; align-items:center;
+      gap:4px; padding:14px 8px; background:#0e0e0e;
+      border:1px solid #222; border-radius:6px; cursor:pointer;
+      font-family:'Courier New',monospace; color:#888;
+      transition:all 0.12s; font-size:11px; letter-spacing:1px;
+    }
+    .nation-btn:hover, .nation-btn:active {
+      background:#1a1a1a; border-color:#888; color:#fff;
+    }
+    .nation-btn.selected {
+      background:#1a1a1a; border-color:#c8a840; color:#c8a840;
+    }
+    .nation-flag { font-size:28px; line-height:1; }
+    .nation-name { font-size:10px; text-align:center; line-height:1.3; }
+    .nation-confirm {
+      width:min(400px,92vw); margin-top:16px;
+      padding:16px; background:#c8a840; color:#000;
+      font-family:'Courier New',monospace; font-size:15px;
+      font-weight:bold; letter-spacing:2px; border:none;
+      border-radius:4px; cursor:pointer; display:none;
+    }
+    .nation-confirm:active { background:#a88830; }
   </style>
 </head>
 <body>
@@ -215,21 +219,30 @@
     <span class="mode-icon">🏆</span>
     <span class="mode-text">
       <span class="mode-name">QU33PH OLYMPICS</span>
-      <span class="mode-desc">stepladder finals · 3 rounds · 8 nations</span>
+      <span class="mode-desc">tournament bracket · 8 nations · 3 rounds</span>
     </span>
   </button>
 
   <div class="high-score-title" id="titleHighScore"></div>
 </div>
 
+<!-- NATION SELECT SCREEN -->
+<div id="nationScreen">
+  <div class="nation-header">
+    <span class="nation-title">CHOOSE YOUR NATION</span>
+    <span class="nation-sub">QU33PH OLYMPICS</span>
+  </div>
+  <div class="nation-grid" id="nationGrid"></div>
+  <button class="nation-confirm" id="nationConfirm" onclick="confirmNation()">ENTER TOURNAMENT →</button>
+</div>
+
 <!-- OLYMPICS BRACKET SCREEN -->
 <div id="bracketScreen" style="display:none; flex-direction:column;">
-  <div class="bracket-title">OLYMPICS</div>
-  <div class="bracket-sub">QU33PH STEPLADDER FINALS</div>
-  <div id="bracketContent"></div>
-  <button class="play-next-btn" id="playNextBtn" onclick="playNextMatch()" style="display:none;margin-bottom:30px;">
-    PLAY YOUR MATCH →
-  </button>
+  <canvas id="bracketCanvas"></canvas>
+  <div class="bracket-play-btn">
+    <button id="playNextBtn">PLAY →</button>
+    <div id="bracketRoundLabel"></div>
+  </div>
 </div>
 
 <script>
@@ -241,21 +254,62 @@ markerImages.blue.src="blue.png";
 
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
+
+// ─── HiDPI / RETINA SCALING ───────────────────────────────────────────────
+const DPR = window.devicePixelRatio || 1;
+const CW = window.innerWidth;
+const CH = window.innerHeight;
+canvas.width  = CW * DPR;
+canvas.height = CH * DPR;
+canvas.style.width  = CW + "px";
+canvas.style.height = CH + "px";
+ctx.scale(DPR, DPR);
 
 // ─── LAYOUT ───────────────────────────────────────────────────────────────
-const LEFT_EDGE=canvas.width*0.2;
-const RIGHT_WALL=canvas.width*0.75;
-const END_LINE_Y=canvas.height*0.06;
-const START_LINE_Y=canvas.height-80;
+const LEFT_EDGE=CW*0.2;
+const RIGHT_WALL=CW*0.75;
+const END_LINE_Y=CH*0.11;
+const START_LINE_Y=CH-80;
 
-const redDot={x:RIGHT_WALL+6,y:canvas.height*0.11};
-const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:canvas.height*0.13,radius:35};
+const redDot={x:RIGHT_WALL+6,y:CH*0.11};
+const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:CH*0.13,radius:35};
 
 // ─── GAME MODE STATE ──────────────────────────────────────────────────────
-let gameMode = null; // 'single' | 'olympics'
+let gameMode = null;
 let olympicsState = null;
+let playerNation = null; // chosen nation
+let selectedNationIdx = -1;
+
+// ─── NATION SELECT ────────────────────────────────────────────────────────
+function showNationSelect(){
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("nationScreen").style.display="flex";
+  selectedNationIdx = -1;
+  document.getElementById("nationConfirm").style.display="none";
+
+  const grid = document.getElementById("nationGrid");
+  grid.innerHTML = "";
+  NATIONS.forEach((n,i)=>{
+    const btn = document.createElement("button");
+    btn.className="nation-btn";
+    btn.innerHTML=`<span class="nation-flag">${n.flag}</span><span class="nation-name">${n.name}</span>`;
+    btn.onclick=()=>{
+      document.querySelectorAll(".nation-btn").forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedNationIdx=i;
+      document.getElementById("nationConfirm").style.display="block";
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function confirmNation(){
+  if(selectedNationIdx<0) return;
+  playerNation = { ...NATIONS[selectedNationIdx], isPlayer:true };
+  document.getElementById("nationScreen").style.display="none";
+  olympicsState=buildOlympicsState();
+  showBracket();
+}
 
 // ─── NATIONS / STEPLADDER ─────────────────────────────────────────────────
 const NATIONS = [
@@ -267,43 +321,57 @@ const NATIONS = [
   { name:"Scotland",     flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
   { name:"Norway",       flag:"🇳🇴" },
   { name:"Japan",        flag:"🇯🇵" },
+  { name:"Germany",      flag:"🇩🇪" },
+  { name:"Brazil",       flag:"🇧🇷" },
+  { name:"Australia",    flag:"🇦🇺" },
+  { name:"Canada",       flag:"🇨🇦" },
+  { name:"France",       flag:"🇫🇷" },
+  { name:"Netherlands",  flag:"🇳🇱" },
+  { name:"Sweden",       flag:"🇸🇪" },
 ];
 
 const PLAYER_NATION = { name:"You", flag:"🎮", isPlayer:true };
 
-// Stepladder format:
-//   Round 1 (Semifinal B):  seed 3 vs seed 4  → winner goes to Round 2
-//   Round 2 (Semifinal A):  seed 2 vs Round1 winner
-//   Round 3 (Final):        seed 1 vs Round2 winner
-// The other 5 nations get simulated scores shown as "previous results"
+// 8-team single elimination bracket
+// QF1: n0 vs n1   QF2: n2 vs n3   QF3: n4 vs n5   QF4: n6 vs PLAYER
+// SF1: QF1w vs QF2w    SF2: QF3w vs QF4w
+// Final: SF1w vs SF2w
+// Player plays QF4, then SF2 if they win, then Final if they win
 
 function buildOlympicsState(){
-  // shuffle non-player nations, pick 7 opponents
-  let pool = [...NATIONS];
+  // Use chosen playerNation, remove it from pool if it's in NATIONS
+  let pool = NATIONS.filter(n=>n.name!==playerNation.name);
   shuffle(pool);
-  // seeds 1-4 are the finalists; rest are shown as knocked-out earlier
-  // seed 4 = you (player always starts in the earliest match)
-  let seed1 = pool[0];
-  let seed2 = pool[1];
-  let seed3 = pool[2];
-  // seed 4 = player
-  let eliminated = pool.slice(3); // remaining 4 as background results
+  let nations = pool.slice(0,7);
+
+  let qf1s1=simulatedScore(), qf1s2=simulatedScore();
+  let qf2s1=simulatedScore(), qf2s2=simulatedScore();
+  let qf3s1=simulatedScore(), qf3s2=simulatedScore();
+  if(qf1s1===qf1s2) qf1s2++;
+  if(qf2s1===qf2s2) qf2s2++;
+  if(qf3s1===qf3s2) qf3s2++;
 
   return {
-    seed1, seed2, seed3,
-    seed4: PLAYER_NATION,
-    eliminated,
-    round: 1, // which round the player is about to play (1,2,3)
-    r1Score: null,      // player score in round 1
-    r1OppScore: null,
-    r2Score: null,
-    r2OppScore: null,
-    r3Score: null,
-    r3OppScore: null,
-    playerEliminated: false,
-    champion: null,
+    n: [...nations, playerNation], // n[7] = player
+    qf1s1,qf1s2,qf2s1,qf2s2,qf3s1,qf3s2,
+    qf4Score:null,qf4Opp:null,
+    sf2Score:null,sf2Opp:null,
+    finScore:null,finOpp:null,
+    sf1s1:null,sf1s2:null,
+    round:1,
+    playerEliminated:false,
+    champion:null,
   };
 }
+
+function getQFWinner(os, qf){
+  if(qf===1) return os.qf1s1>os.qf1s2 ? os.n[0] : os.n[1];
+  if(qf===2) return os.qf2s1>os.qf2s2 ? os.n[2] : os.n[3];
+  if(qf===3) return os.qf3s1>os.qf3s2 ? os.n[4] : os.n[5];
+  if(qf===4) return os.qf4Score!==null && os.qf4Score>os.qf4Opp ? PLAYER_NATION : os.n[6];
+}
+function getSF1Winner(os){ return os.sf1s1>os.sf1s2 ? getQFWinner(os,1) : getQFWinner(os,2); }
+function getSF2Winner(os){ return os.sf2Score!==null && os.sf2Score>os.sf2Opp ? PLAYER_NATION : (os.qf4Score!==null?getQFWinner(os,3):null); }
 
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
@@ -344,9 +412,14 @@ let orientationIndex=0;
 let currentOrientation="vertical";
 
 // ─── TITLE SCREEN ─────────────────────────────────────────────────────────
+let titleUnlockedAt = 0;
+
 function showTitle(){
   gameState="title";
+  titleUnlockedAt = Date.now() + 800; // 800ms buffer before buttons work
   document.getElementById("titleScreen").style.display="flex";
+  document.getElementById("bracketScreen").style.display="none";
+  document.getElementById("nationScreen").style.display="none";
   document.getElementById("bracketScreen").style.display="none";
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
@@ -356,14 +429,13 @@ function showTitle(){
 }
 
 function startMode(mode){
+  if(Date.now() < titleUnlockedAt) return;
   gameMode=mode;
   document.getElementById("titleScreen").style.display="none";
-
   if(mode==="single"){
     startGame();
   } else {
-    olympicsState=buildOlympicsState();
-    showBracket();
+    showNationSelect();
   }
 }
 
@@ -378,161 +450,147 @@ function showBracket(){
 }
 
 function renderBracket(){
-  const os=olympicsState;
-  const content=document.getElementById("bracketContent");
-  const playBtn=document.getElementById("playNextBtn");
-  let html="";
+  const os = olympicsState;
+  const bc = document.getElementById("bracketCanvas");
+  const bw = window.innerWidth;
+  const bh = window.innerHeight * 0.80;
+  bc.width = bw; bc.height = bh;
+  const bx = bc.getContext("2d");
+  bx.fillStyle="#08080a"; bx.fillRect(0,0,bw,bh);
 
-  // ── Background results (eliminated nations) ──
-  html+=`<div class="bracket-round-label">PRELIMINARY RESULTS</div>`;
-  html+=`<div class="bracket-match">`;
-  os.eliminated.forEach((n,i)=>{
-    let sc=simulatedScore();
-    html+=`<div class="bracket-player loser">`+
-      `<span class="bracket-flag">${n.flag}</span>`+
-      `<span>${n.name}</span>`+
-      `<span class="bracket-score">${sc}</span></div>`;
-  });
-  html+=`</div>`;
+  // ── HEADER ──
+  bx.textAlign="center"; bx.textBaseline="top";
+  bx.fillStyle="#ffffff";
+  bx.font=`bold ${Math.round(bw*0.07)}px 'Courier New',monospace`;
+  bx.fillText("QU33PH",bw/2,8);
+  bx.fillStyle="#c8a840";
+  bx.font=`bold ${Math.round(bw*0.045)}px 'Courier New',monospace`;
+  bx.fillText("OLYMPICS",bw/2,8+bw*0.076);
+  bx.fillStyle="#c8a840";
+  bx.fillRect(bw*0.2, 8+bw*0.13, bw*0.6, 2);
 
-  html+=`<div class="bracket-spacer"></div>`;
+  const topY = bh*0.22;
+  const botY = bh*0.97;
+  const totalH = botY - topY;
+  const boxW = bw*0.27;
+  const rowH = Math.round(totalH*0.065);
 
-  // ── Stepladder Round 1: seed3 vs seed4(player) ──
-  html+=`<div class="bracket-round-label">SEMIFINAL B</div>`;
-  let r1Active = os.round===1;
-  let r1Class = r1Active?"bracket-match active-match":"bracket-match";
+  // Column x positions
+  const qfLx = bw*0.01;
+  const sfLx = bw*0.265;
+  const finx = bw*0.375;
+  const sfRx = bw*0.485;
+  const qfRx = bw*0.72;
 
-  let r1p1Class="bracket-player";
-  let r1p2Class="bracket-player is-you";
-  let r1s1="", r1s2="";
+  // Row Y positions for matches
+  const qfLy1 = topY;
+  const qfLy2 = topY + totalH*0.38;
+  const sfLy  = topY + totalH*0.19;
+  const finy  = topY + totalH*0.42;
+  const sfRy  = topY + totalH*0.19;
+  const qfRy1 = topY;
+  const qfRy2 = topY + totalH*0.38;
 
-  if(os.r1Score!==null){
-    let playerWon=os.r1Score>os.r1OppScore;
-    r1p1Class="bracket-player "+(playerWon?"loser":"winner");
-    r1p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
-    r1s1=os.r1OppScore;
-    r1s2=os.r1Score;
-  }
+  function drawMatch(x,y,p1,p2,s1,s2,active,label){
+    let done = s1!==null && s2!==null;
+    let winIdx = done ? (s1>s2?0:1) : -1;
+    let mh = rowH*2+1;
 
-  html+=`<div class="${r1Class}">
-    <div class="${r1p1Class}">
-      <span class="bracket-flag">${os.seed3.flag}</span>
-      <span>${os.seed3.name}</span>
-      <span class="bracket-score ${r1s1===Math.max(r1s1,r1s2)&&r1s1!=""?"winner":""}">${r1s1}</span>
-    </div>
-    <div class="${r1p2Class}">
-      <span class="bracket-flag">${os.seed4.flag}</span>
-      <span>${os.seed4.name}</span>
-      <span class="bracket-score is-you ${r1s2===Math.max(r1s1,r1s2)&&r1s2!=""?"winner":""}">${r1s2}</span>
-    </div>
-  </div>`;
-
-  html+=`<div class="bracket-spacer"></div>`;
-
-  // ── Stepladder Round 2: seed2 vs R1 winner ──
-  html+=`<div class="bracket-round-label">SEMIFINAL A</div>`;
-  let r2Active=os.round===2;
-  let r2Class=r2Active?"bracket-match active-match":"bracket-match";
-  let r2WinnerName="R1 Winner";
-  let r2WinnerFlag="❓";
-
-  if(os.r1Score!==null){
-    let playerWonR1=os.r1Score>os.r1OppScore;
-    r2WinnerName=playerWonR1?os.seed4.name:os.seed3.name;
-    r2WinnerFlag=playerWonR1?os.seed4.flag:os.seed3.flag;
-  }
-
-  let r2p1Class="bracket-player";
-  let r2p2Class=os.r1Score!==null&&os.r1Score>os.r1OppScore?"bracket-player is-you":"bracket-player";
-  let r2s1="", r2s2="";
-
-  if(os.r2Score!==null){
-    let playerWon=os.r2Score>os.r2OppScore;
-    r2p1Class="bracket-player "+(playerWon?"loser":"winner");
-    r2p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
-    r2s1=os.r2OppScore;
-    r2s2=os.r2Score;
-  } else if(os.playerEliminated && os.round>2){
-    r2p1Class="bracket-player winner";
-    r2s1="?"; r2s2="?";
-  }
-
-  html+=`<div class="${r2Class}">
-    <div class="${r2p1Class}">
-      <span class="bracket-flag">${os.seed2.flag}</span>
-      <span>${os.seed2.name}</span>
-      <span class="bracket-score">${r2s1}</span>
-    </div>
-    <div class="${r2p2Class}">
-      <span class="bracket-flag">${r2WinnerFlag}</span>
-      <span>${r2WinnerName}</span>
-      <span class="bracket-score">${r2s2}</span>
-    </div>
-  </div>`;
-
-  html+=`<div class="bracket-spacer"></div>`;
-
-  // ── Grand Final: seed1 vs R2 winner ──
-  html+=`<div class="bracket-round-label">GRAND FINAL</div>`;
-  let r3Active=os.round===3&&!os.playerEliminated;
-  let r3Class=r3Active?"bracket-match active-match":"bracket-match";
-  let r3WinnerName="R2 Winner";
-  let r3WinnerFlag="❓";
-
-  if(os.r2Score!==null){
-    let playerWonR2=os.r2Score>os.r2OppScore;
-    r3WinnerName=playerWonR2?os.seed4.name:(os.r1Score>os.r1OppScore?os.seed4.name:os.seed3.name);
-    r3WinnerFlag=playerWonR2?os.seed4.flag:(os.r1Score>os.r1OppScore?os.seed4.flag:os.seed3.flag);
-    if(!playerWonR2){
-      r3WinnerName=os.seed2.name;
-      r3WinnerFlag=os.seed2.flag;
+    if(label){
+      bx.fillStyle=active?"#fff":"#444";
+      bx.font=`${Math.round(bw*0.024)}px 'Courier New',monospace`;
+      bx.textAlign="left"; bx.textBaseline="bottom";
+      bx.fillText(label,x,y-2);
     }
+
+    bx.strokeStyle=active?"#fff":done?"#383838":"#1e1e1e";
+    bx.lineWidth=active?2:1;
+    bx.strokeRect(x,y,boxW,mh);
+
+    [p1,p2].forEach((p,pi)=>{
+      let ry=y+pi*(rowH+1);
+      let isWin=done&&winIdx===pi;
+      let isLoss=done&&winIdx!==pi;
+      let isYou=p&&p.isPlayer;
+
+      bx.fillStyle=isYou&&!isLoss?"rgba(255,255,255,0.05)":"transparent";
+      bx.fillRect(x+1,ry+1,boxW-2,rowH-1);
+
+      let nm = p ? p.name.slice(0,9) : "TBD";
+      let name = p ? (p.flag+" "+nm+(p.isPlayer?" (you)":"")) : "TBD";
+      bx.fillStyle=isWin?"#44ee44":isLoss?"#222":isYou?"#fff":"#777";
+      bx.font=`${Math.round(bw*0.027)}px 'Courier New',monospace`;
+      bx.textAlign="left"; bx.textBaseline="middle";
+      bx.fillText(name,x+5,ry+rowH/2);
+
+      if(done){
+        let sc=pi===0?s1:s2;
+        bx.fillStyle=isWin?"#44ee44":"#383838";
+        bx.font=`bold ${Math.round(bw*0.03)}px 'Courier New',monospace`;
+        bx.textAlign="right";
+        bx.fillText(sc,x+boxW-5,ry+rowH/2);
+      }
+    });
+
+    bx.strokeStyle="#1e1e1e"; bx.lineWidth=1;
+    bx.beginPath(); bx.moveTo(x+1,y+rowH); bx.lineTo(x+boxW-1,y+rowH); bx.stroke();
   }
 
-  let r3p1Class="bracket-player";
-  let r3p2Class=os.r2Score!==null&&os.r2Score>os.r2OppScore?"bracket-player is-you":"bracket-player";
-  let r3s1="", r3s2="";
-
-  if(os.champion!==null){
-    r3s1=os.r3OppScore;
-    r3s2=os.r3Score;
-    let playerWon=os.r3Score>os.r3OppScore;
-    r3p1Class="bracket-player "+(playerWon?"loser":"winner");
-    r3p2Class="bracket-player is-you "+(playerWon?"winner":"loser");
+  function line(x1,y1,x2,y2){
+    bx.strokeStyle="#2a2a2a"; bx.lineWidth=1.5;
+    let mx=(x1+x2)/2;
+    bx.beginPath(); bx.moveTo(x1,y1); bx.lineTo(mx,y1); bx.lineTo(mx,y2); bx.lineTo(x2,y2); bx.stroke();
   }
 
-  html+=`<div class="${r3Class}">
-    <div class="${r3p1Class}">
-      <span class="bracket-flag">${os.seed1.flag}</span>
-      <span>${os.seed1.name}</span>
-      <span class="bracket-score">${r3s1}</span>
-    </div>
-    <div class="${r3p2Class}">
-      <span class="bracket-flag">${r3WinnerFlag}</span>
-      <span>${r3WinnerName}</span>
-      <span class="bracket-score">${r3s2}</span>
-    </div>
-  </div>`;
+  // ── Determine results ──
+  let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];
+  let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];
+  let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5];
+  let qf4done=os.qf4Score!==null;
+  let qf4w=qf4done?(os.qf4Score>os.qf4Opp?PLAYER_NATION:os.n[6]):null;
+  let sf1done=os.sf1s1!==null;
+  let sf1w=sf1done?(os.sf1s1>os.sf1s2?qf1w:qf2w):null;
+  let sf2done=os.sf2Score!==null;
+  let sf2w=sf2done?(os.sf2Score>os.sf2Opp?PLAYER_NATION:qf3w):null;
+  let finDone=os.finScore!==null;
 
-  content.innerHTML=html;
+  // ── DRAW ──
+  drawMatch(qfLx,qfLy1, os.n[0],os.n[1], os.qf1s1,os.qf1s2, false,"QF1");
+  drawMatch(qfLx,qfLy2, os.n[2],os.n[3], os.qf2s1,os.qf2s2, false,"QF2");
+  drawMatch(sfLx,sfLy,  qf1w,qf2w, os.sf1s1,os.sf1s2, false,"SF1");
+  drawMatch(finx,finy,  sf1w,sf2w, finDone?os.finOpp:null,finDone?os.finScore:null, os.round===3&&!os.playerEliminated&&!finDone,"FINAL");
+  drawMatch(sfRx,sfRy,  qf3w,qf4w||PLAYER_NATION, sf2done?os.sf2Opp:null,sf2done?os.sf2Score:null, os.round===2&&!os.playerEliminated&&!sf2done,"SF2");
+  drawMatch(qfRx,qfRy1, os.n[4],os.n[5], os.qf3s1,os.qf3s2, false,"QF3");
+  drawMatch(qfRx,qfRy2, os.n[6],PLAYER_NATION, qf4done?os.qf4Opp:null,qf4done?os.qf4Score:null, os.round===1&&!os.playerEliminated&&!qf4done,"QF4");
 
-  // Play button logic
-  if(os.playerEliminated){
-    playBtn.style.display="block";
-    playBtn.className="play-next-btn disabled";
-    playBtn.innerText="ELIMINATED — SEE RESULTS";
-    playBtn.onclick=()=>showFinalResult();
-  } else if(os.champion!==null){
-    playBtn.style.display="block";
-    playBtn.className="play-next-btn";
-    playBtn.innerText="SEE FINAL RESULT";
-    playBtn.onclick=()=>showFinalResult();
+  // ── CONNECTORS ──
+  line(qfLx+boxW, qfLy1+rowH, sfLx, sfLy+rowH);
+  line(qfLx+boxW, qfLy2+rowH, sfLx, sfLy+rowH);
+  line(sfLx+boxW, sfLy+rowH,  finx, finy+rowH);
+  line(sfRx,      sfRy+rowH,  finx+boxW, finy+rowH);
+  line(qfRx,      qfRy1+rowH, sfRx+boxW, sfRy+rowH);
+  line(qfRx,      qfRy2+rowH, sfRx+boxW, sfRy+rowH);
+
+  // Trophy
+  if(os.champion==="player"){
+    bx.font=`${Math.round(bw*0.1)}px Arial`;
+    bx.textAlign="center"; bx.textBaseline="top";
+    bx.fillText("🏆", bw/2, finy+rowH*2+8);
+  }
+
+  // ── BUTTON ──
+  const playBtn=document.getElementById("playNextBtn");
+  const roundLabel=document.getElementById("bracketRoundLabel");
+  if(os.champion!==null||os.playerEliminated){
+    playBtn.className=""; playBtn.innerText="← MENU";
+    playBtn.onclick=()=>showTitle();
+    roundLabel.innerText=os.champion==="player"?"🏆 OLYMPIC CHAMPION":"ELIMINATED";
   } else {
-    playBtn.style.display="block";
-    playBtn.className="play-next-btn";
-    let lbl=os.round===1?"PLAY SEMIFINAL B →":os.round===2?"PLAY SEMIFINAL A →":"PLAY GRAND FINAL →";
+    playBtn.className="";
+    let lbl=os.round===1?"PLAY QF4 →":os.round===2?"PLAY SEMI-FINAL →":"PLAY GRAND FINAL →";
     playBtn.innerText=lbl;
-    playBtn.onclick=()=>playNextMatch();
+    playBtn.onclick=()=>{document.getElementById("bracketScreen").style.display="none";startGame();};
+    roundLabel.innerText=os.round===1?"QUARTER-FINAL":os.round===2?"SEMI-FINAL":"GRAND FINAL";
   }
 }
 
@@ -648,8 +706,8 @@ canvas.addEventListener("pointerup",()=>{
     Math.PI/2;
 
   markers.push({
-    x:canvas.width/2,
-    y:canvas.height-50,
+    x:CW/2,
+    y:CH-50,
     usedPreview:current,
     vx:dx*0.2,
     vy:dy*0.2,
@@ -695,7 +753,7 @@ function tryAdvanceRound(){
     let g=markers[0], r=markers[1], b=markers[2];
     let roundScore=calculateScore();
     totalScore+=roundScore;
-    scorePopups.push({x:canvas.width/2,y:canvas.height/2,text:"+"+roundScore,life:40});
+    scorePopups.push({x:CW/2,y:CH/2,text:"+"+roundScore,life:40});
     if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
       explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
       addShake(8);
@@ -739,14 +797,14 @@ let trees=[];
 
 function randomizeSky(){
   let wx = RIGHT_WALL + 5;
-  let ww = canvas.width - wx;
+  let ww = CW - wx;
 
   clouds=[];
   for(let i=0;i<5;i++){
     clouds.push({
       // x stays within RIGHT_WALL..canvas.width, y within the sky portion of the window
       x: wx + Math.random()*ww,
-      y: END_LINE_Y + Math.random() * (canvas.height * 0.55 - END_LINE_Y),
+      y: END_LINE_Y + Math.random() * (CH * 0.55 - END_LINE_Y),
       w: 30 + Math.random()*50,
       speed: 0.05 + Math.random()*0.08,
       wx, ww  // store bounds for clamping drift
@@ -757,7 +815,7 @@ function randomizeSky(){
   for(let i=0;i<8;i++){
     trees.push({
       x: wx + Math.random()*ww,
-      h: canvas.height * (0.07 + Math.random()*0.09)
+      h: CH * (0.07 + Math.random()*0.09)
     });
   }
 }
@@ -773,8 +831,8 @@ function lerpRGB(a,b,t){
 function drawWindowScene(elapsed){
   let t = Math.min(elapsed/TOTAL_TIME, 1);
   let wx = RIGHT_WALL + 10; // inside frame
-  let ww = canvas.width - wx;
-  let wh = canvas.height;
+  let ww = CW - wx;
+  let wh = CH;
 
   // Window fills the ENTIRE right strip top to bottom
   // Sky takes top 60%, ground takes bottom 40%
@@ -833,10 +891,10 @@ function drawWindowScene(elapsed){
   let railY = horizonY + (wh-horizonY)*0.06;
   let railColor = t<0.66 ? `rgba(15,25,15,0.75)` : `rgba(8,8,8,0.85)`;
   ctx.strokeStyle=railColor; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(wx,railY); ctx.lineTo(canvas.width,railY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(wx,railY+18); ctx.lineTo(canvas.width,railY+18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(wx,railY); ctx.lineTo(CW,railY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(wx,railY+18); ctx.lineTo(CW,railY+18); ctx.stroke();
   ctx.lineWidth=1.5;
-  for(let bx=wx+4; bx<canvas.width; bx+=14){
+  for(let bx=wx+4; bx<CW; bx+=14){
     ctx.beginPath(); ctx.moveTo(bx,railY-8); ctx.lineTo(bx,railY+22); ctx.stroke();
   }
 
@@ -856,7 +914,7 @@ function drawWindowScene(elapsed){
     ctx.beginPath(); ctx.ellipse(c.x-c.w*0.22, cy+c.w*0.05, c.w*0.3, c.w*0.16, 0,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(c.x+c.w*0.22, cy+c.w*0.03, c.w*0.28, c.w*0.14, 0,0,Math.PI*2); ctx.fill();
     c.x += c.speed;
-    if(c.x - c.w > canvas.width) c.x = wx - c.w;
+    if(c.x - c.w > CW) c.x = wx - c.w;
     if(c.x + c.w < wx) c.x = canvas.width + c.w;
   });
   ctx.restore();
@@ -864,8 +922,8 @@ function drawWindowScene(elapsed){
 
 function drawWindowFrame(){
   let wx = RIGHT_WALL;
-  let ww = canvas.width - wx;
-  let wh = canvas.height;
+  let ww = CW - wx;
+  let wh = CH;
 
   // ── roller blind at very top ──
   let blindH = wh * 0.07;
@@ -876,7 +934,7 @@ function drawWindowFrame(){
   ctx.fillRect(wx+10, 0, ww-10, blindH);
   ctx.strokeStyle="rgba(150,144,136,0.4)"; ctx.lineWidth=1;
   for(let sy=5;sy<blindH;sy+=6){
-    ctx.beginPath(); ctx.moveTo(wx+10,sy); ctx.lineTo(canvas.width,sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(wx+10,sy); ctx.lineTo(CW,sy); ctx.stroke();
   }
   ctx.fillStyle="#a8a29a";
   ctx.fillRect(wx+10, blindH-3, ww-10, 5);
@@ -961,31 +1019,31 @@ function endGame(){
   document.getElementById("timeline").style.display="none";
 
   if(gameMode==="olympics"){
-    // record result in olympics state
     const os=olympicsState;
     let oppScore=simulatedScore();
+    // ensure no tie
+    while(oppScore===totalScore) oppScore=simulatedScore();
 
     if(os.round===1){
-      os.r1Score=totalScore;
-      os.r1OppScore=oppScore;
-      if(totalScore<=oppScore){
-        os.playerEliminated=true;
-      }
+      // QF4: player vs n[6]
+      os.qf4Score=totalScore; os.qf4Opp=oppScore;
+      // also sim SF1 now
+      os.sf1s1=simulatedScore(); os.sf1s2=simulatedScore();
+      while(os.sf1s1===os.sf1s2) os.sf1s2=simulatedScore();
+      if(totalScore<=oppScore){ os.playerEliminated=true; }
       os.round=2;
     } else if(os.round===2){
-      os.r2Score=totalScore;
-      os.r2OppScore=oppScore;
-      if(totalScore<=oppScore){
-        os.playerEliminated=true;
-      }
+      // SF2: QF3w vs QF4w(player)
+      os.sf2Score=totalScore; os.sf2Opp=oppScore;
+      if(totalScore<=oppScore){ os.playerEliminated=true; }
       os.round=3;
     } else if(os.round===3){
-      os.r3Score=totalScore;
-      os.r3OppScore=oppScore;
+      // Final
+      os.finScore=totalScore; os.finOpp=oppScore;
       os.champion=totalScore>oppScore?"player":"cpu";
     }
 
-    gameState="end"; // temp, will go to bracket
+    gameState="end";
     showBracket();
     return;
   }
@@ -1023,41 +1081,41 @@ function draw(){
 
   if(gameState==="end"){
     ctx.fillStyle="#000";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillRect(0,0,CW,CH);
     ctx.setTransform(1,0,0,1,0,0);
     ctx.textAlign="center";
     ctx.textBaseline="top";
     ctx.fillStyle="#fff";
     ctx.font="bold 60px 'Courier New',monospace";
-    ctx.fillText("Qu33ph",canvas.width/2,130);
+    ctx.fillText("Qu33ph",CW/2,130);
     ctx.font="22px 'Courier New',monospace";
     ctx.fillStyle="#aaa";
-    ctx.fillText("SCORE: "+totalScore,canvas.width/2,210);
+    ctx.fillText("SCORE: "+totalScore,CW/2,210);
     ctx.fillStyle="#555";
-    ctx.fillText("HIGH SCORE: "+highScore,canvas.width/2,244);
+    ctx.fillText("HIGH SCORE: "+highScore,CW/2,244);
     ctx.fillStyle="#333";
     ctx.font="16px 'Courier New',monospace";
-    ctx.fillText("tap anywhere to return to menu",canvas.width/2,310);
+    ctx.fillText("tap anywhere to return to menu",CW/2,310);
     return;
   }
 
   if(gameState==="olympicsResult"){
     ctx.fillStyle="#000";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillRect(0,0,CW,CH);
     ctx.setTransform(1,0,0,1,0,0);
     ctx.textAlign="center";
     ctx.textBaseline="middle";
     ctx.fillStyle="#fff";
     ctx.font="bold 28px 'Courier New',monospace";
-    ctx.fillText(olympicsResultMsg,canvas.width/2,canvas.height/2-30);
+    ctx.fillText(olympicsResultMsg,CW/2,CH/2-30);
     if(olympicsResultSub){
       ctx.fillStyle="#555";
       ctx.font="16px 'Courier New',monospace";
-      ctx.fillText(olympicsResultSub,canvas.width/2,canvas.height/2+20);
+      ctx.fillText(olympicsResultSub,CW/2,CH/2+20);
     }
     ctx.fillStyle="#333";
     ctx.font="14px 'Courier New',monospace";
-    ctx.fillText("tap to return to menu",canvas.width/2,canvas.height/2+70);
+    ctx.fillText("tap to return to menu",CW/2,CH/2+70);
     return;
   }
 
@@ -1070,7 +1128,7 @@ function draw(){
 
   // ── 1. BACKGROUND BASE ──
   ctx.fillStyle="#d8cfc4"; // cream/beige room
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillRect(0,0,CW,CH);
 
   // ── 2. WINDOW SCENE (right strip, behind frame) ──
   drawWindowScene(elapsed);
