@@ -247,11 +247,11 @@ canvas.height=window.innerHeight;
 // ─── LAYOUT ───────────────────────────────────────────────────────────────
 const LEFT_EDGE=canvas.width*0.2;
 const RIGHT_WALL=canvas.width*0.75;
-const END_LINE_Y=canvas.height*0.2;
+const END_LINE_Y=canvas.height*0.06;
 const START_LINE_Y=canvas.height-80;
 
-const redDot={x:RIGHT_WALL+10,y:END_LINE_Y+40};
-const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:END_LINE_Y+90,radius:35};
+const redDot={x:RIGHT_WALL+6,y:canvas.height*0.11};
+const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:canvas.height*0.13,radius:35};
 
 // ─── GAME MODE STATE ──────────────────────────────────────────────────────
 let gameMode = null; // 'single' | 'olympics'
@@ -1233,9 +1233,9 @@ function draw(){
   ctx.fillStyle="#0e0e0e";
   ctx.fillRect(RIGHT_WALL, cTop, 13, cBot-cTop);
 
-  // ── 12. RED DOT — on black strip, at teal/counter junction ──
-  let dotCX = RIGHT_WALL + 6;
-  let dotCY = cTop + canvas.height*0.05 + 8;
+  // ── 12. RED DOT — exactly where MEGA QU33PH lands (redDot position) ──
+  let dotCX = redDot.x;
+  let dotCY = redDot.y;
   let dotR = 7;
 
   // White card
