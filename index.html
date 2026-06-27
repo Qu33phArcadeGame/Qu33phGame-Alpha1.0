@@ -744,11 +744,12 @@ function randomizeSky(){
   clouds=[];
   for(let i=0;i<5;i++){
     clouds.push({
-      // y position inside window (top portion = sky)
+      // x stays within RIGHT_WALL..canvas.width, y within the sky portion of the window
       x: wx + Math.random()*ww,
-      y: Math.random() * canvas.height * 0.45,
+      y: END_LINE_Y + Math.random() * (canvas.height * 0.55 - END_LINE_Y),
       w: 30 + Math.random()*50,
-      speed: 0.05 + Math.random()*0.08
+      speed: 0.05 + Math.random()*0.08,
+      wx, ww  // store bounds for clamping drift
     });
   }
 
@@ -771,11 +772,15 @@ function lerpRGB(a,b,t){
 
 function drawWindowScene(elapsed){
   let t = Math.min(elapsed/TOTAL_TIME, 1);
-  let wx = RIGHT_WALL + 5;
+  let wx = RIGHT_WALL + 10; // inside frame
   let ww = canvas.width - wx;
   let wh = canvas.height;
 
-  // ── sky gradient (day → golden → dusk red in sudden death) ──
+  // Window fills the ENTIRE right strip top to bottom
+  // Sky takes top 60%, ground takes bottom 40%
+  let horizonY = wh * 0.6;
+
+  // ── sky gradient ──
   let skyTop, skyBot;
   if(t < 0.66){
     let d = t/0.66;
@@ -786,59 +791,58 @@ function drawWindowScene(elapsed){
     skyTop = lerpRGB([210,130,50],[15,8,35],d);
     skyBot = lerpRGB([240,180,80],[160,45,20],d);
   }
-  let grad = ctx.createLinearGradient(0,0,0,wh*0.62);
+  let grad = ctx.createLinearGradient(0,0,0,horizonY);
   grad.addColorStop(0, `rgb(${skyTop})`);
   grad.addColorStop(1, `rgb(${skyBot})`);
   ctx.fillStyle = grad;
-  ctx.fillRect(wx, 0, ww, wh*0.62);
+  ctx.fillRect(wx, 0, ww, horizonY);
 
-  // ── ground / greenery (bottom portion of window) ──
-  let groundY = wh * 0.55;
+  // ── ground / greenery ──
   let groundColor = t<0.66
     ? lerpRGB([55,105,45],[30,60,25],t/0.66)
     : lerpRGB([30,60,25],[12,22,10],(t-0.66)/0.34);
   ctx.fillStyle=`rgb(${groundColor})`;
-  ctx.fillRect(wx, groundY, ww, wh - groundY);
+  ctx.fillRect(wx, horizonY, ww, wh - horizonY);
 
-  // ground-sky blend strip
-  let blendGrad = ctx.createLinearGradient(0, groundY-20, 0, groundY+30);
-  blendGrad.addColorStop(0, `rgba(${skyBot},0)`);
-  blendGrad.addColorStop(1, `rgba(${groundColor},1)`);
-  ctx.fillStyle = blendGrad;
-  ctx.fillRect(wx, groundY-20, ww, 50);
-
-  // ── sun / moon ──
-  let sunY = wh * (0.08 + t*0.28);
+  // ── sun ──
+  let sunY = wh * (0.06 + t*0.22);
   let sunX = wx + ww*0.7;
   let sunR = t<0.66 ? 14 : 11;
-  let sunCol = t<0.66
-    ? `rgba(255,245,170,0.95)`
-    : `rgba(215,70,30,0.9)`;
-  // glow
   let glowR = ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*4);
   glowR.addColorStop(0, t<0.66?`rgba(255,240,120,0.3)`:`rgba(200,50,10,0.35)`);
   glowR.addColorStop(1,`rgba(0,0,0,0)`);
   ctx.fillStyle=glowR;
   ctx.beginPath(); ctx.arc(sunX,sunY,sunR*4,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle=sunCol;
+  ctx.fillStyle=t<0.66?`rgba(255,245,170,0.95)`:`rgba(215,70,30,0.9)`;
   ctx.beginPath(); ctx.arc(sunX,sunY,sunR,0,Math.PI*2); ctx.fill();
 
-  // ── trees ──
-  let treeCol = t<0.66 ? `rgba(28,65,22,0.88)` : `rgba(10,18,8,0.92)`;
+  // ── trees — perspective view looking out window ──
+  // Trees appear as vertical trunks seen from ABOVE/SIDE at low angle —
+  // drawn as horizontal bands receding into distance near the horizon
+  let treeCol = t<0.66 ? `rgba(28,65,22,0.9)` : `rgba(10,18,8,0.95)`;
   trees.forEach(tr=>{
-    let ty = groundY - tr.h*0.5;
-    let tw = tr.h*0.45;
-    ctx.fillStyle=treeCol;
-    // trunk
-    ctx.fillRect(tr.x - tw*0.07, ty+tr.h*0.45, tw*0.14, tr.h*0.55);
-    // canopy blob
+    // Each tree is a dark vertical stripe near the horizon,
+    // tapering upward (canopy) like you're looking slightly down at them
+    let tx = tr.x;
+    let trunkW = 5 + tr.h * 0.12;
+    // trunk runs from just below horizon upward (perspective: top of tree near horizon)
+    let trunkTop = horizonY - tr.h * 0.9;
+    let trunkBot = horizonY + tr.h * 0.25; // roots go slightly below horizon
+    ctx.fillStyle = treeCol;
+    // main trunk
+    ctx.fillRect(tx - trunkW*0.5, trunkTop, trunkW, trunkBot - trunkTop);
+    // canopy: wide ellipse near the top of the trunk
     ctx.beginPath();
-    ctx.ellipse(tr.x, ty+tr.h*0.25, tw*0.45, tr.h*0.5, 0,0,Math.PI*2);
+    ctx.ellipse(tx, trunkTop + tr.h*0.18, tr.h*0.38, tr.h*0.28, 0,0,Math.PI*2);
+    ctx.fill();
+    // mid canopy swell
+    ctx.beginPath();
+    ctx.ellipse(tx, trunkTop + tr.h*0.45, tr.h*0.22, tr.h*0.18, 0,0,Math.PI*2);
     ctx.fill();
   });
 
-  // ── railing (like photo — metal bar + balusters) ──
-  let railY = groundY + (wh-groundY)*0.08;
+  // ── railing ──
+  let railY = horizonY + (wh-horizonY)*0.06;
   let railColor = t<0.66 ? `rgba(15,25,15,0.75)` : `rgba(8,8,8,0.85)`;
   ctx.strokeStyle=railColor; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(wx,railY); ctx.lineTo(canvas.width,railY); ctx.stroke();
@@ -848,19 +852,26 @@ function drawWindowScene(elapsed){
     ctx.beginPath(); ctx.moveTo(bx,railY-8); ctx.lineTo(bx,railY+22); ctx.stroke();
   }
 
-  // ── clouds (drift slowly) ──
+  // ── clouds clipped to sky portion only ──
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(wx, 0, ww, horizonY * 0.85);
+  ctx.clip();
   let cloudCol = t<0.66
     ? `rgba(255,255,255,${0.75-(t/0.66)*0.25})`
-    : `rgba(190,110,70,${0.4-(t-0.66)/0.34*0.3})`;
+    : `rgba(190,110,70,${Math.max(0,0.4-(t-0.66)/0.34*0.3)})`;
   clouds.forEach(c=>{
+    // keep clouds in sky band
+    let cy = Math.min(c.y, horizonY * 0.75);
     ctx.fillStyle=cloudCol;
-    ctx.beginPath(); ctx.ellipse(c.x, c.y, c.w*0.5, c.w*0.2, 0,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(c.x-c.w*0.22, c.y+c.w*0.05, c.w*0.3, c.w*0.16, 0,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(c.x+c.w*0.22, c.y+c.w*0.03, c.w*0.28, c.w*0.14, 0,0,Math.PI*2); ctx.fill();
-    // drift
+    ctx.beginPath(); ctx.ellipse(c.x, cy, c.w*0.5, c.w*0.2, 0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(c.x-c.w*0.22, cy+c.w*0.05, c.w*0.3, c.w*0.16, 0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(c.x+c.w*0.22, cy+c.w*0.03, c.w*0.28, c.w*0.14, 0,0,Math.PI*2); ctx.fill();
     c.x += c.speed;
     if(c.x - c.w > canvas.width) c.x = wx - c.w;
+    if(c.x + c.w < wx) c.x = canvas.width + c.w;
   });
+  ctx.restore();
 }
 
 function drawWindowFrame(){
@@ -868,54 +879,39 @@ function drawWindowFrame(){
   let ww = canvas.width - wx;
   let wh = canvas.height;
 
-  // ── roller blind (top ~8%) ──
-  let blindH = wh * 0.08;
+  // ── roller blind at very top ──
+  let blindH = wh * 0.07;
   let blindGrad = ctx.createLinearGradient(0,0,0,blindH);
   blindGrad.addColorStop(0,"#d5cfc6");
   blindGrad.addColorStop(1,"#bfb9b0");
   ctx.fillStyle=blindGrad;
-  ctx.fillRect(wx+5, 0, ww-5, blindH);
-  // slats
+  ctx.fillRect(wx+10, 0, ww-10, blindH);
   ctx.strokeStyle="rgba(150,144,136,0.4)"; ctx.lineWidth=1;
   for(let sy=5;sy<blindH;sy+=6){
-    ctx.beginPath(); ctx.moveTo(wx+5,sy); ctx.lineTo(canvas.width,sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(wx+10,sy); ctx.lineTo(canvas.width,sy); ctx.stroke();
   }
-  // blind bottom bar
   ctx.fillStyle="#a8a29a";
-  ctx.fillRect(wx+5, blindH-3, ww-5, 5);
+  ctx.fillRect(wx+10, blindH-3, ww-10, 5);
 
-  // ── window frame (dark metal, like photo) ──
+  // ── outer left frame (full height dark strip) ──
   let frameColor="#181818";
-
-  // outer left frame strip (windowsill/frame meets counter)
   ctx.fillStyle=frameColor;
   ctx.fillRect(wx, 0, 10, wh);
 
-  // top frame bar (below blind)
-  ctx.fillRect(wx+5, blindH, ww-5, 9);
+  // ── top frame bar ──
+  ctx.fillRect(wx+10, blindH, ww-10, 8);
 
-  // bottom sill (where window meets counter top line)
-  ctx.fillStyle="#222";
-  ctx.fillRect(wx+5, END_LINE_Y-6, ww-5, 10);
+  // ── bottom frame bar (very bottom of screen) ──
+  ctx.fillRect(wx+10, wh-8, ww-10, 8);
 
-  // vertical mullions (2 columns like photo)
-  ctx.fillStyle=frameColor;
+  // ── vertical mullions (2 dividers, full height) ──
   let col1 = wx + ww*0.38;
   let col2 = wx + ww*0.72;
-  ctx.fillRect(col1-4, blindH, 8, END_LINE_Y - blindH);
-  ctx.fillRect(col2-4, blindH, 8, END_LINE_Y - blindH);
+  ctx.fillRect(col1-4, blindH, 8, wh - blindH);
+  ctx.fillRect(col2-4, blindH, 8, wh - blindH);
 
-  // horizontal mid-rail
-  ctx.fillRect(wx+5, blindH + (END_LINE_Y-blindH)*0.52, ww-5, 7);
-
-  // white window sill ledge
-  let sillGrad=ctx.createLinearGradient(0,END_LINE_Y,0,END_LINE_Y+18);
-  sillGrad.addColorStop(0,"#e8e4de");
-  sillGrad.addColorStop(1,"#c8c4bc");
-  ctx.fillStyle=sillGrad;
-  ctx.fillRect(wx, END_LINE_Y+4, ww, 16);
-  ctx.fillStyle="#f0ece6";
-  ctx.fillRect(wx, END_LINE_Y+4, ww, 2);
+  // ── horizontal mid-rail (about 60% down — near the horizon) ──
+  ctx.fillRect(wx+10, wh*0.6 - 4, ww-10, 8);
 }
 
 // ─── UPDATE ───────────────────────────────────────────────────────────────
@@ -1134,35 +1130,61 @@ function draw(){
 
   ctx.restore();
 
-  // ── 4. AC VENT (start line — horizontal grill near bottom) ──
-  let ventTop = START_LINE_Y - 14;
-  let ventBot = START_LINE_Y + 14;
+  // ── 4. AC UNIT — 3D cube, 27% up from bottom of screen ──
+  let ventMid = canvas.height - (canvas.height - END_LINE_Y) * 0.27;
+  let cubeH = 36;   // face height
+  let cubeD = 10;   // depth of top face (3D illusion)
+  let cubeTop = ventMid - cubeH/2;
+  let cubeBot = ventMid + cubeH/2;
+  let cubeL = cLeft;
+  let cubeR = cRight;
 
-  // Vent housing — dark metal
-  let ventGrad = ctx.createLinearGradient(0,ventTop,0,ventBot);
-  ventGrad.addColorStop(0,"#161310");
-  ventGrad.addColorStop(0.5,"#221e18");
-  ventGrad.addColorStop(1,"#0e0c0a");
-  ctx.fillStyle=ventGrad;
-  ctx.fillRect(cLeft, ventTop, cRight-cLeft, ventBot-ventTop);
+  // Top face (slightly lighter — catches light)
+  ctx.beginPath();
+  ctx.moveTo(cubeL, cubeTop);
+  ctx.lineTo(cubeR, cubeTop);
+  ctx.lineTo(cubeR - cubeD, cubeTop - cubeD);
+  ctx.lineTo(cubeL + cubeD, cubeTop - cubeD);
+  ctx.closePath();
+  let topFaceGrad = ctx.createLinearGradient(0, cubeTop-cubeD, 0, cubeTop);
+  topFaceGrad.addColorStop(0,"#3a3530");
+  topFaceGrad.addColorStop(1,"#2a2520");
+  ctx.fillStyle=topFaceGrad; ctx.fill();
+  ctx.strokeStyle="#555"; ctx.lineWidth=1; ctx.stroke();
 
-  // Slat lines across vent
+  // Front face
+  let frontGrad = ctx.createLinearGradient(0,cubeTop,0,cubeBot);
+  frontGrad.addColorStop(0,"#1a1714");
+  frontGrad.addColorStop(0.4,"#242018");
+  frontGrad.addColorStop(1,"#0e0c0a");
+  ctx.fillStyle=frontGrad;
+  ctx.fillRect(cubeL, cubeTop, cubeR-cubeL, cubeH);
+
+  // Vent slats on front face
   ctx.strokeStyle="rgba(0,0,0,0.7)"; ctx.lineWidth=1.2;
-  let slats=6;
+  let slats=7;
   for(let si=1;si<slats;si++){
-    let sy = ventTop + (si/slats)*(ventBot-ventTop);
-    ctx.beginPath(); ctx.moveTo(cLeft,sy); ctx.lineTo(cRight,sy); ctx.stroke();
+    let sy = cubeTop + (si/slats)*cubeH;
+    ctx.beginPath(); ctx.moveTo(cubeL,sy); ctx.lineTo(cubeR,sy); ctx.stroke();
   }
-  // Slat highlight (top edge of each slat catches light)
-  ctx.strokeStyle="rgba(70,60,50,0.35)"; ctx.lineWidth=1;
+  // slat highlights
+  ctx.strokeStyle="rgba(80,70,55,0.4)"; ctx.lineWidth=0.8;
   for(let si=1;si<slats;si++){
-    let sy = ventTop + (si/slats)*(ventBot-ventTop) - 1;
-    ctx.beginPath(); ctx.moveTo(cLeft,sy); ctx.lineTo(cRight,sy); ctx.stroke();
+    let sy = cubeTop + (si/slats)*cubeH - 1;
+    ctx.beginPath(); ctx.moveTo(cubeL,sy); ctx.lineTo(cubeR,sy); ctx.stroke();
   }
-  // Metal trim edges
-  ctx.strokeStyle="#4a4440"; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(cLeft,ventTop); ctx.lineTo(cRight,ventTop); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cLeft,ventBot); ctx.lineTo(cRight,ventBot); ctx.stroke();
+
+  // Metal trim edges (top and bottom of front face)
+  ctx.strokeStyle="#5a5248"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(cubeL,cubeTop); ctx.lineTo(cubeR,cubeTop); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cubeL,cubeBot); ctx.lineTo(cubeR,cubeBot); ctx.stroke();
+
+  // Bottom shadow under unit
+  let shadowGrad = ctx.createLinearGradient(0,cubeBot,0,cubeBot+6);
+  shadowGrad.addColorStop(0,"rgba(0,0,0,0.4)");
+  shadowGrad.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=shadowGrad;
+  ctx.fillRect(cubeL, cubeBot, cubeR-cubeL, 6);
 
   // ── 5. COUNTER FRONT EDGE (aluminium trim at very bottom) ──
   let edgeGrad = ctx.createLinearGradient(0, canvas.height-22, 0, canvas.height);
@@ -1299,3 +1321,4 @@ loop();
 </script>
 </body>
 </html>
+
