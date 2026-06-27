@@ -149,7 +149,20 @@
       letter-spacing:3px;
       font-family:'Courier New',monospace;
     }
-    /* NATION SELECT SCREEN */
+    /* MEDAL SCREEN */
+    #medalScreen {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      background:#08080a; display:none; flex-direction:column;
+      align-items:center; justify-content:center; z-index:100;
+    }
+    #medalCanvas { width:100%; flex:1; display:block; }
+    .medal-btn {
+      width:min(360px,88vw); padding:17px; margin:0 0 32px;
+      background:#fff; color:#000; font-family:'Courier New',monospace;
+      font-size:15px; font-weight:bold; letter-spacing:2px;
+      border:none; border-radius:4px; cursor:pointer; flex-shrink:0;
+    }
+    .medal-btn:active { background:#e0e0e0; }
     #nationScreen {
       position:absolute; top:0; left:0; width:100%; height:100%;
       background:#08080a; display:none; flex-direction:column;
@@ -236,6 +249,12 @@
   <button class="nation-confirm" id="nationConfirm" onclick="confirmNation()">ENTER TOURNAMENT →</button>
 </div>
 
+<!-- MEDAL SCREEN -->
+<div id="medalScreen">
+  <canvas id="medalCanvas"></canvas>
+  <button class="medal-btn" onclick="showTitle()">← BACK TO MENU</button>
+</div>
+
 <!-- OLYMPICS BRACKET SCREEN -->
 <div id="bracketScreen" style="display:none; flex-direction:column;">
   <canvas id="bracketCanvas"></canvas>
@@ -320,6 +339,9 @@ const NATIONS = [
   { name:"France",       flag:"🇫🇷" },
   { name:"Netherlands",  flag:"🇳🇱" },
   { name:"Sweden",       flag:"🇸🇪" },
+  { name:"Russia",       flag:"🇷🇺" },
+  { name:"Iran",         flag:"🇮🇷" },
+  { name:"China",        flag:"🇨🇳" },
 ];
 
 // playerNation is set at nation select time
@@ -373,8 +395,11 @@ function shuffle(arr){
 }
 
 function simulatedScore(){
-  // random realistic qu33ph score
-  return Math.floor(Math.random()*18)+2;
+  // Competitive AI — scores between 85-130, weighted toward 95-115
+  let base = 85 + Math.floor(Math.random()*45); // 85-129
+  // 70% chance of being in the 95-115 sweet spot
+  if(Math.random()<0.7) base = 90 + Math.floor(Math.random()*30);
+  return base;
 }
 
 // ─── GAME STATE ────────────────────────────────────────────────────────────
@@ -413,6 +438,8 @@ function showTitle(){
   document.getElementById("bracketScreen").style.display="none";
   document.getElementById("nationScreen").style.display="none";
   document.getElementById("bracketScreen").style.display="none";
+  document.getElementById("medalScreen").style.display="none";
+  if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
   let hs=localStorage.getItem("qu33phHigh")||0;
@@ -443,6 +470,12 @@ function showBracket(){
 
 function renderBracket(){
   const os = olympicsState;
+
+  // ── Check if tournament is over — show medal screen instead ──
+  if(os.champion!==null || os.playerEliminated){
+    showMedalScreen(); return;
+  }
+
   const bc = document.getElementById("bracketCanvas");
   const bw = window.innerWidth;
   const bh = window.innerHeight * 0.80;
@@ -454,150 +487,275 @@ function renderBracket(){
   bx.textAlign="center"; bx.textBaseline="top";
   bx.fillStyle="#ffffff";
   bx.font=`bold ${Math.round(bw*0.07)}px 'Courier New',monospace`;
-  bx.fillText("QU33PH",bw/2,8);
+  bx.fillText("QU33PH",bw/2,10);
   bx.fillStyle="#c8a840";
   bx.font=`bold ${Math.round(bw*0.045)}px 'Courier New',monospace`;
-  bx.fillText("OLYMPICS",bw/2,8+bw*0.076);
+  bx.fillText("OLYMPICS",bw/2,10+bw*0.076);
   bx.fillStyle="#c8a840";
-  bx.fillRect(bw*0.2, 8+bw*0.13, bw*0.6, 2);
+  bx.fillRect(bw*0.15, 10+bw*0.128, bw*0.7, 2);
 
-  const topY = bh*0.22;
-  const botY = bh*0.97;
-  const totalH = botY - topY;
-  const boxW = bw*0.27;
-  const rowH = Math.round(totalH*0.065);
+  // ── LAYOUT: vertical bracket on portrait ──
+  // Left col = QF1,QF2 (cpu matches)   Right col = QF3, QF4(player)
+  // Middle col = SF1, SF2
+  // Bottom centre = FINAL
+  const PAD = 6;
+  const topY = bh*0.20;
+  const colW = bw*0.30;           // each match box width
+  const rH = Math.round(bh*0.055); // row height per player
+  const mH = rH*2+1;              // match total height
+  const lx = PAD;                 // left col x
+  const rx = bw-PAD-colW;        // right col x
+  const mx = (bw-colW)/2;        // middle col x
 
-  // Column x positions
-  const qfLx = bw*0.01;
-  const sfLx = bw*0.265;
-  const finx = bw*0.375;
-  const sfRx = bw*0.485;
-  const qfRx = bw*0.72;
+  // Vertical spacing
+  const qfGap = bh*0.06;
+  const qf1y = topY;
+  const qf2y = topY + mH + qfGap;
+  const sf1y = topY + (mH+qfGap)/2; // vertically centred between qf1 and qf2
+  const qf3y = topY;
+  const qf4y = topY + mH + qfGap;
+  const sf2y = sf1y;
+  const finy = qf2y + mH + qfGap*0.8;
 
-  // Row Y positions for matches
-  const qfLy1 = topY;
-  const qfLy2 = topY + totalH*0.38;
-  const sfLy  = topY + totalH*0.19;
-  const finy  = topY + totalH*0.42;
-  const sfRy  = topY + totalH*0.19;
-  const qfRy1 = topY;
-  const qfRy2 = topY + totalH*0.38;
+  const labelSz = Math.round(bw*0.025);
+  const nameSz  = Math.round(bw*0.028);
+  const scoreSz = Math.round(bw*0.03);
+
+  function truncate(n, maxChars){
+    if(!n) return "TBD";
+    return n.length > maxChars ? n.slice(0,maxChars) : n;
+  }
 
   function drawMatch(x,y,p1,p2,s1,s2,active,label){
     let done = s1!==null && s2!==null;
     let winIdx = done ? (s1>s2?0:1) : -1;
-    let mh = rowH*2+1;
 
+    // label
     if(label){
       bx.fillStyle=active?"#fff":"#444";
-      bx.font=`${Math.round(bw*0.024)}px 'Courier New',monospace`;
+      bx.font=`${labelSz}px 'Courier New',monospace`;
       bx.textAlign="left"; bx.textBaseline="bottom";
-      bx.fillText(label,x,y-2);
+      bx.fillText(label, x, y-2);
     }
 
-    bx.strokeStyle=active?"#fff":done?"#383838":"#1e1e1e";
+    // border
+    bx.strokeStyle=active?"#fff":done?"#383838":"#222";
     bx.lineWidth=active?2:1;
-    bx.strokeRect(x,y,boxW,mh);
+    bx.strokeRect(x,y,colW,mH);
 
     [p1,p2].forEach((p,pi)=>{
-      let ry=y+pi*(rowH+1);
-      let isWin=done&&winIdx===pi;
-      let isLoss=done&&winIdx!==pi;
-      let isYou=p&&p.isPlayer;
+      let ry = y + pi*(rH+1);
+      let isWin  = done && winIdx===pi;
+      let isLoss = done && winIdx!==pi;
+      let isYou  = p && p.isPlayer;
 
-      bx.fillStyle=isYou&&!isLoss?"rgba(255,255,255,0.05)":"transparent";
-      bx.fillRect(x+1,ry+1,boxW-2,rowH-1);
+      // row bg
+      bx.fillStyle = isYou&&!isLoss ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0)";
+      bx.fillRect(x+1, ry+1, colW-2, rH-1);
 
-      let nm = p ? p.name.slice(0,9) : "TBD";
-      let name = p ? (p.flag+" "+nm+(p.isPlayer?" 🎮 (you)":"")) : "TBD";
-      bx.fillStyle=isWin?"#44ee44":isLoss?"#222":isYou?"#fff":"#777";
-      bx.font=`${Math.round(bw*0.027)}px 'Courier New',monospace`;
+      // name — keep short, flag + truncated name + (you)
+      let nameStr = "TBD";
+      if(p){
+        let short = truncate(p.name, 8);
+        nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
+      }
+      bx.fillStyle = isWin?"#44ee44" : isLoss?"#282828" : isYou?"#fff" : "#777";
+      bx.font=`${nameSz}px 'Courier New',monospace`;
       bx.textAlign="left"; bx.textBaseline="middle";
-      bx.fillText(name,x+5,ry+rowH/2);
+      bx.fillText(nameStr, x+4, ry+rH/2);
 
+      // score — right aligned
       if(done){
-        let sc=pi===0?s1:s2;
-        bx.fillStyle=isWin?"#44ee44":"#383838";
-        bx.font=`bold ${Math.round(bw*0.03)}px 'Courier New',monospace`;
+        let sc = pi===0 ? s1 : s2;
+        bx.fillStyle = isWin?"#44ee44":"#383838";
+        bx.font=`bold ${scoreSz}px 'Courier New',monospace`;
         bx.textAlign="right";
-        bx.fillText(sc,x+boxW-5,ry+rowH/2);
+        bx.fillText(sc, x+colW-4, ry+rH/2);
       }
     });
 
-    bx.strokeStyle="#1e1e1e"; bx.lineWidth=1;
-    bx.beginPath(); bx.moveTo(x+1,y+rowH); bx.lineTo(x+boxW-1,y+rowH); bx.stroke();
+    // divider between rows
+    bx.strokeStyle="#1a1a1a"; bx.lineWidth=1;
+    bx.beginPath(); bx.moveTo(x+1,y+rH); bx.lineTo(x+colW-1,y+rH); bx.stroke();
   }
 
-  function line(x1,y1,x2,y2){
+  function connector(x1,y1,x2,y2){
     bx.strokeStyle="#2a2a2a"; bx.lineWidth=1.5;
-    let mx=(x1+x2)/2;
-    bx.beginPath(); bx.moveTo(x1,y1); bx.lineTo(mx,y1); bx.lineTo(mx,y2); bx.lineTo(x2,y2); bx.stroke();
+    let midX=(x1+x2)/2;
+    bx.beginPath();
+    bx.moveTo(x1,y1); bx.lineTo(midX,y1); bx.lineTo(midX,y2); bx.lineTo(x2,y2);
+    bx.stroke();
   }
 
-  // ── Determine results ──
-  let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];
-  let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];
-  let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5];
-  let qf4done=os.qf4Score!==null;
-  let qf4w=qf4done?(os.qf4Score>os.qf4Opp?playerNation:os.n[6]):null;
-  let sf1done=os.sf1s1!==null;
-  let sf1w=sf1done?(os.sf1s1>os.sf1s2?qf1w:qf2w):null;
-  let sf2done=os.sf2Score!==null;
-  let sf2w=sf2done?(os.sf2Score>os.sf2Opp?playerNation:qf3w):null;
-  let finDone=os.finScore!==null;
+  // ── Determine winners ──
+  let qf1w = os.qf1s1>os.qf1s2 ? os.n[0] : os.n[1];
+  let qf2w = os.qf2s1>os.qf2s2 ? os.n[2] : os.n[3];
+  let qf3w = os.qf3s1>os.qf3s2 ? os.n[4] : os.n[5];
+  let qf4done = os.qf4Score!==null;
+  let qf4w = qf4done ? (os.qf4Score>os.qf4Opp ? playerNation : os.n[6]) : null;
+  let sf1done = os.sf1s1!==null;
+  let sf1w = sf1done ? (os.sf1s1>os.sf1s2 ? qf1w : qf2w) : null;
+  let sf2done = os.sf2Score!==null;
+  let sf2w = sf2done ? (os.sf2Score>os.sf2Opp ? playerNation : qf3w) : null;
+  let finDone = os.finScore!==null;
 
-  // ── DRAW ──
-  drawMatch(qfLx,qfLy1, os.n[0],os.n[1], os.qf1s1,os.qf1s2, false,"QF1");
-  drawMatch(qfLx,qfLy2, os.n[2],os.n[3], os.qf2s1,os.qf2s2, false,"QF2");
-  drawMatch(sfLx,sfLy,  qf1w,qf2w, os.sf1s1,os.sf1s2, false,"SF1");
-  drawMatch(finx,finy,  sf1w,sf2w, finDone?os.finOpp:null,finDone?os.finScore:null, os.round===3&&!os.playerEliminated&&!finDone,"FINAL");
-  drawMatch(sfRx,sfRy,  qf3w,qf4w||playerNation, sf2done?os.sf2Opp:null,sf2done?os.sf2Score:null, os.round===2&&!os.playerEliminated&&!sf2done,"SF2");
-  drawMatch(qfRx,qfRy1, os.n[4],os.n[5], os.qf3s1,os.qf3s2, false,"QF3");
-  drawMatch(qfRx,qfRy2, os.n[6],playerNation, qf4done?os.qf4Opp:null,qf4done?os.qf4Score:null, os.round===1&&!os.playerEliminated&&!qf4done,"QF4");
+  // ── DRAW MATCHES ──
+  // Left col — QF1, QF2
+  drawMatch(lx, qf1y, os.n[0],os.n[1], os.qf1s1,os.qf1s2, false,"QF1");
+  drawMatch(lx, qf2y, os.n[2],os.n[3], os.qf2s1,os.qf2s2, false,"QF2");
+  // Middle left — SF1
+  drawMatch(mx, sf1y, qf1w,qf2w, os.sf1s1,os.sf1s2, false,"SF1");
+  // Right col — QF3, QF4
+  drawMatch(rx, qf3y, os.n[4],os.n[5], os.qf3s1,os.qf3s2, false,"QF3");
+  drawMatch(rx, qf4y, os.n[6],playerNation, qf4done?os.qf4Opp:null, qf4done?os.qf4Score:null,
+    os.round===1,"QF4");
+  // Middle right — SF2
+  drawMatch(mx, sf2y, qf3w, qf4w||playerNation, sf2done?os.sf2Opp:null, sf2done?os.sf2Score:null,
+    os.round===2&&!os.playerEliminated,"SF2");
+  // Bottom centre — FINAL
+  drawMatch(mx, finy, sf1w, sf2w, finDone?os.finOpp:null, finDone?os.finScore:null,
+    os.round===3&&!os.playerEliminated,"FINAL");
 
   // ── CONNECTORS ──
-  line(qfLx+boxW, qfLy1+rowH, sfLx, sfLy+rowH);
-  line(qfLx+boxW, qfLy2+rowH, sfLx, sfLy+rowH);
-  line(sfLx+boxW, sfLy+rowH,  finx, finy+rowH);
-  line(sfRx,      sfRy+rowH,  finx+boxW, finy+rowH);
-  line(qfRx,      qfRy1+rowH, sfRx+boxW, sfRy+rowH);
-  line(qfRx,      qfRy2+rowH, sfRx+boxW, sfRy+rowH);
-
-  // Trophy
-  if(os.champion==="player"){
-    bx.font=`${Math.round(bw*0.1)}px Arial`;
-    bx.textAlign="center"; bx.textBaseline="top";
-    bx.fillText("🏆", bw/2, finy+rowH*2+8);
-  }
+  connector(lx+colW, qf1y+rH, mx, sf1y+rH);
+  connector(lx+colW, qf2y+rH, mx, sf1y+rH);
+  connector(rx,      qf3y+rH, mx+colW, sf2y+rH);
+  connector(rx,      qf4y+rH, mx+colW, sf2y+rH);
+  connector(mx+colW, sf1y+rH, mx, finy+rH);
+  connector(mx,      sf2y+rH, mx+colW, finy+rH);
 
   // ── BUTTON ──
   const playBtn=document.getElementById("playNextBtn");
   const roundLabel=document.getElementById("bracketRoundLabel");
-  if(os.champion!==null||os.playerEliminated){
-    playBtn.className=""; playBtn.innerText="← MENU";
-    playBtn.onclick=()=>showTitle();
-    roundLabel.innerText=os.champion==="player"?"🏆 OLYMPIC CHAMPION":"ELIMINATED";
-  } else {
-    playBtn.className="";
-    let lbl=os.round===1?"PLAY QF4 →":os.round===2?"PLAY SEMI-FINAL →":"PLAY GRAND FINAL →";
-    playBtn.innerText=lbl;
-    playBtn.onclick=()=>{document.getElementById("bracketScreen").style.display="none";startGame();};
-    roundLabel.innerText=os.round===1?"QUARTER-FINAL":os.round===2?"SEMI-FINAL":"GRAND FINAL";
-  }
+  playBtn.className="";
+  let lbl=os.round===1?"PLAY QF4 →":os.round===2?"PLAY SEMI-FINAL →":"PLAY GRAND FINAL →";
+  playBtn.innerText=lbl;
+  playBtn.onclick=()=>{document.getElementById("bracketScreen").style.display="none";startGame();};
+  roundLabel.innerText=os.round===1?"QUARTER-FINAL":os.round===2?"SEMI-FINAL":"GRAND FINAL";
 }
 
-function showFinalResult(){
-  const os=olympicsState;
-  let won=os.champion==="player";
+function showMedalScreen(){
+  const os = olympicsState;
   document.getElementById("bracketScreen").style.display="none";
+  document.getElementById("medalScreen").style.display="flex";
 
-  // go to game end screen but override message
-  gameState="olympicsResult";
-  olympicsResultMsg = won?
-    "🏆 QU33PH OLYMPIC CHAMPION! 🏆":
-    "ELIMINATED — BETTER LUCK NEXT TIME";
-  olympicsResultSub = won?"":
-    (os.playerEliminated?"You were knocked out in "+(os.round===2?"Semifinal B":"Semifinal A"):"You made the final!");
+  let medal, medalText, medalColor, bgColor;
+  if(os.champion==="player"){
+    medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
+  } else if(os.playerEliminated && os.round<=2){
+    medal="🥉"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
+  } else {
+    medal="🥈"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
+  }
+
+  const mc = document.getElementById("medalCanvas");
+  const mw = window.innerWidth;
+  const mh = window.innerHeight * 0.82;
+  mc.width=mw; mc.height=mh;
+  const mx2 = mc.getContext("2d");
+
+  let particles = [];
+  for(let i=0;i<28;i++){
+    particles.push({
+      x: mw*0.2 + Math.random()*mw*0.6,
+      y: mh*0.1 + Math.random()*mh*0.7,
+      vx: (Math.random()-0.5)*1.2,
+      vy: -0.5-Math.random()*1.5,
+      size: 3+Math.random()*6,
+      life: Math.random(),
+      speed: 0.008+Math.random()*0.012,
+      angle: Math.random()*Math.PI*2,
+      spin: (Math.random()-0.5)*0.15,
+    });
+  }
+
+  let frame=0;
+  let animId;
+
+  function drawMedal(){
+    mx2.fillStyle="#08080a"; mx2.fillRect(0,0,mw,mh);
+    frame++;
+
+    // Outer glow rings
+    for(let r=3;r>=1;r--){
+      let pulse = 0.5+0.5*Math.sin(frame*0.04);
+      let radius = mw*0.28 + r*18 + pulse*12;
+      let grad = mx2.createRadialGradient(mw/2,mh*0.42,0,mw/2,mh*0.42,radius);
+      grad.addColorStop(0, bgColor+(0.08*r*pulse)+")");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      mx2.fillStyle=grad; mx2.beginPath();
+      mx2.arc(mw/2,mh*0.42,radius,0,Math.PI*2); mx2.fill();
+    }
+
+    // Medal emoji
+    mx2.font=`${Math.round(mw*0.42)}px Arial`;
+    mx2.textAlign="center"; mx2.textBaseline="middle";
+    let bounce = Math.sin(frame*0.05)*6;
+    mx2.fillText(medal, mw/2, mh*0.42+bounce);
+
+    // Shiny sweep line
+    let sweepX = mw/2 + Math.cos(frame*0.03)*mw*0.12;
+    let sweepGrad = mx2.createLinearGradient(sweepX-40,0,sweepX+40,0);
+    sweepGrad.addColorStop(0,"rgba(255,255,255,0)");
+    sweepGrad.addColorStop(0.5,"rgba(255,255,255,0.18)");
+    sweepGrad.addColorStop(1,"rgba(255,255,255,0)");
+    mx2.save();
+    mx2.beginPath();
+    mx2.arc(mw/2,mh*0.42,mw*0.2,0,Math.PI*2);
+    mx2.clip();
+    mx2.fillStyle=sweepGrad;
+    mx2.fillRect(sweepX-40,mh*0.25,80,mh*0.35);
+    mx2.restore();
+
+    // Text
+    mx2.fillStyle=medalColor;
+    mx2.font=`bold ${Math.round(mw*0.07)}px 'Courier New',monospace`;
+    mx2.textAlign="center"; mx2.textBaseline="top";
+    mx2.fillText(medalText, mw/2, mh*0.72);
+
+    mx2.fillStyle="#fff";
+    mx2.font=`bold ${Math.round(mw*0.045)}px 'Courier New',monospace`;
+    mx2.fillText(playerNation.flag+" "+playerNation.name, mw/2, mh*0.72+mw*0.08);
+
+    if(os.champion==="player"){
+      mx2.fillStyle="#888";
+      mx2.font=`${Math.round(mw*0.032)}px 'Courier New',monospace`;
+      mx2.fillText("QU33PH OLYMPIC CHAMPION", mw/2, mh*0.72+mw*0.14);
+    }
+
+    // Sparkle particles
+    particles.forEach(p=>{
+      p.life += p.speed;
+      if(p.life>1){ p.life=0; p.x=mw*0.1+Math.random()*mw*0.8; p.y=mh*0.15+Math.random()*mh*0.6; }
+      p.x += p.vx; p.y += p.vy;
+      p.angle += p.spin;
+      let alpha = Math.sin(p.life*Math.PI);
+
+      mx2.save();
+      mx2.globalAlpha=alpha*0.9;
+      mx2.translate(p.x,p.y);
+      mx2.rotate(p.angle);
+      mx2.fillStyle=medalColor;
+      mx2.shadowColor=medalColor; mx2.shadowBlur=8;
+      // 4-point star
+      mx2.beginPath();
+      let s=p.size;
+      mx2.moveTo(0,-s); mx2.lineTo(s*0.25,-s*0.25);
+      mx2.lineTo(s,0);  mx2.lineTo(s*0.25,s*0.25);
+      mx2.lineTo(0,s);  mx2.lineTo(-s*0.25,s*0.25);
+      mx2.lineTo(-s,0); mx2.lineTo(-s*0.25,-s*0.25);
+      mx2.closePath(); mx2.fill();
+      mx2.restore();
+    });
+
+    animId = requestAnimationFrame(drawMedal);
+  }
+
+  // Stop animation when leaving
+  document.getElementById("medalScreen").dataset.animId = "";
+  if(window._medalAnimId) cancelAnimationFrame(window._medalAnimId);
+  drawMedal();
+  window._medalAnimId = animId;
 }
 
 let olympicsResultMsg="";
@@ -1311,6 +1469,63 @@ function draw(){
   // ── 13. END LINE ──
   ctx.fillStyle="rgba(255,255,255,0.15)";
   ctx.fillRect(cLeft, cTop+32, cRight-cLeft, 2);
+
+  // ── OLYMPICS MEDAL BORDER ──
+  if(gameMode==="olympics" && olympicsState){
+    let round = olympicsState.round;
+    let borderColor, glowColor, borderW;
+    if(round===1){
+      borderColor="#cd7f32"; glowColor="rgba(205,127,50,0.4)"; borderW=4; // bronze
+    } else if(round===2){
+      borderColor="#c0c0c0"; glowColor="rgba(192,192,192,0.4)"; borderW=5; // silver
+    } else {
+      borderColor="#ffd700"; glowColor="rgba(255,215,0,0.5)"; borderW=6; // gold
+    }
+    // Glow
+    ctx.save();
+    ctx.shadowColor=glowColor; ctx.shadowBlur=18;
+    ctx.strokeStyle=borderColor; ctx.lineWidth=borderW;
+    ctx.strokeRect(cLeft+2, cTop+2, cRight-cLeft-4, cBot-cTop-4);
+    ctx.restore();
+
+    // Gold sparkles for the final
+    if(round===3){
+      let t=Date.now()/1000;
+      for(let i=0;i<14;i++){
+        let angle = (i/14)*Math.PI*2 + t*0.8;
+        let rad = Math.min(cRight-cLeft, cBot-cTop)*0.48;
+        let cx2 = (cLeft+cRight)/2 + Math.cos(angle)*rad*0.92;
+        let cy2 = (cTop+cBot)/2   + Math.sin(angle)*rad*0.72;
+        let pulse = 0.5+0.5*Math.sin(t*3+i*0.9);
+        let size = 3+pulse*4;
+        ctx.save();
+        ctx.globalAlpha=0.4+pulse*0.6;
+        ctx.fillStyle="#ffd700";
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=10;
+        // star shape
+        ctx.translate(cx2,cy2); ctx.rotate(t+i);
+        ctx.beginPath();
+        for(let p=0;p<5;p++){
+          let a=p*Math.PI*2/5-Math.PI/2;
+          let b=a+Math.PI/5;
+          p===0?ctx.moveTo(Math.cos(a)*size,Math.sin(a)*size):ctx.lineTo(Math.cos(a)*size,Math.sin(a)*size);
+          ctx.lineTo(Math.cos(b)*size*0.4,Math.sin(b)*size*0.4);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Round label — drawn INSIDE the dark green cabinet at top
+    let medalEmoji = round===1?"🥉":round===2?"🥈":"🥇";
+    let roundName = round===1?"QUARTER-FINAL":round===2?"SEMI-FINAL":"GRAND FINAL";
+    // Cabinet runs from cTop to cTop+canvas.height*0.05
+    let cabMidY = cTop + canvas.height*0.025;
+    ctx.fillStyle=borderColor;
+    ctx.font="bold 13px 'Courier New',monospace";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(medalEmoji+" "+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
+  }
 
   // ADVANCE PROMPT
   if(current===3&&markers.every(m=>m.stopped||m.fallen)){
