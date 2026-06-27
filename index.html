@@ -1664,24 +1664,30 @@ function draw(){
     ctx.restore();
   });
 
-  // PREVIEW MARKERS — rotated to show current orientation
-  const angleMap = {vertical:0, angled:Math.PI/6, horizontal:Math.PI/2};
-  let previewAngle = angleMap[currentOrientation] || 0;
+  // PREVIEW MARKERS — all rotated together at current orientation angle
+  // vertical=0, angled=PI/6 (30°), horizontal=PI/2 (90°)
+  let previewAngle =
+    currentOrientation==="vertical"   ? 0 :
+    currentOrientation==="angled"     ? Math.PI/6 :
+    Math.PI/2;
+
   previewMarkers.forEach((p,i)=>{
     if(p.used) return;
     const img=markerImages[p.color];
-    if(!img||!img.complete) return;
-    let x=(LEFT_EDGE+RIGHT_WALL)/2;
-    let y=START_LINE_Y-60-i*60;
-    let pw=50, ph=50;
-    if(p.color==="blue"){ pw=80; ph=50; }
+    if(!img||!img.complete||!img.naturalWidth) return;
+    // Stack them vertically above AC unit, centred on counter
+    let cx = (LEFT_EDGE+RIGHT_WALL)/2;
+    let cy = START_LINE_Y - 55 - i*58;
+    // Blue is longer — use wider draw size but same rotation
+    let pw = p.color==="blue" ? 80 : 50;
+    let ph = 28;
     ctx.save();
-    ctx.globalAlpha=0.5;
-    ctx.translate(x, y);
+    ctx.globalAlpha = 0.55;
+    ctx.translate(cx, cy);
     ctx.rotate(previewAngle);
-    ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+    ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
     ctx.restore();
-    ctx.globalAlpha=1;
+    ctx.globalAlpha = 1;
   });
 
   // MARKERS
@@ -1730,4 +1736,3 @@ loop();
 </script>
 </body>
 </html>
-
