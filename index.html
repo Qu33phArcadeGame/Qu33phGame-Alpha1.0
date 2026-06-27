@@ -1675,14 +1675,13 @@ function draw(){
     if(p.used) return;
     const img=markerImages[p.color];
     if(!img||!img.complete||!img.naturalWidth) return;
-    // Stack them vertically above AC unit, centred on counter
     let cx = (LEFT_EDGE+RIGHT_WALL)/2;
     let cy = START_LINE_Y - 55 - i*58;
-    // Blue is longer — use wider draw size but same rotation
-    let pw = p.color==="blue" ? 80 : 50;
-    let ph = 28;
+    // All same height so rotation looks identical — blue slightly longer only
+    let pw = p.color==="blue" ? 68 : 46;
+    let ph = 13;
     ctx.save();
-    ctx.globalAlpha = 0.55;
+    ctx.globalAlpha = 0.65;
     ctx.translate(cx, cy);
     ctx.rotate(previewAngle);
     ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
@@ -1736,4 +1735,3 @@ loop();
 </script>
 </body>
 </html>
-
