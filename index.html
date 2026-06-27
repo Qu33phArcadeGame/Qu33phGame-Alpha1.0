@@ -11,18 +11,27 @@
 
     #rotateBtn {
       position:absolute;
-      bottom:20px;
+      bottom:16px;
       left:50%;
       transform:translateX(-50%);
-      padding:12px 20px;
+      padding:8px 16px 8px 72px;
       border-radius:10px;
-      border:2px solid #444;
-      font-size:14px;
+      border:1px solid #444;
+      font-size:12px;
       font-family: 'Courier New', monospace;
-      background:#1a1a1a;
-      color:#ccc;
-      letter-spacing:1px;
+      background:rgba(20,20,20,0.9);
+      color:#888;
+      letter-spacing:2px;
       display:none;
+      white-space:nowrap;
+    }
+    #orientCanvas {
+      position:absolute;
+      bottom:10px;
+      left:50%;
+      transform:translateX(-50%);
+      display:none;
+      pointer-events:none;
     }
     #timeline {
       position:absolute;
@@ -212,7 +221,8 @@
 <body>
 
 <canvas id="game"></canvas>
-<button id="rotateBtn">Orientation: vertical</button>
+<button id="rotateBtn" onclick="rotateOrientation()">TAP TO ROTATE</button>
+<canvas id="orientCanvas" width="160" height="70" onclick="rotateOrientation()" style="cursor:pointer;"></canvas>
 <div id="timeline"><div id="progress"></div></div>
 
 <!-- TITLE SCREEN -->
@@ -446,6 +456,7 @@ function showTitle(){
   document.getElementById("medalScreen").style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("orientCanvas").style.display="none";
   document.getElementById("timeline").style.display="none";
   let hs=localStorage.getItem("qu33phHigh")||0;
   document.getElementById("titleHighScore").innerText=
@@ -469,6 +480,7 @@ function showBracket(){
   document.getElementById("bracketScreen").style.display="flex";
   document.getElementById("bracketScreen").style.flexDirection="column";
   document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("orientCanvas").style.display="none";
   document.getElementById("timeline").style.display="none";
   renderBracket();
 }
@@ -558,16 +570,6 @@ function renderBracket(){
         bx.fillRect(x+1, ry+1, colW-2, rH-1);
       }
 
-      // Reserve right side for score so name never overlaps
-      let scoreReserve = done ? 30 : 0;
-      let nameClipW = colW - 6 - scoreReserve;
-
-      let nameStr = "TBD";
-      if(p){
-        let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
-        nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
-      }
-
       let nameColor;
       if(isPending)   nameColor="#2a2a2a";
       else if(isWin)  nameColor="#44ee44";
@@ -575,22 +577,47 @@ function renderBracket(){
       else if(isYou)  nameColor="#44ee44";
       else            nameColor="#777";
 
-      // Clip name so it never reaches the score area
-      bx.save();
-      bx.beginPath(); bx.rect(x+2, ry+1, nameClipW, rH-1); bx.clip();
-      bx.fillStyle=nameColor;
-      bx.font=`${nameSz}px 'Courier New',monospace`;
-      bx.textAlign="left"; bx.textBaseline="middle";
-      bx.fillText(nameStr, x+4, ry+rH/2);
-      bx.restore();
-
-      // Score drawn in its own clean right-side zone
       if(done){
+        // TWO LINES: name on top half, score on bottom half — never overlap
+        let nameStr = "TBD";
+        if(p){
+          let short = p.name.length>7 ? p.name.slice(0,7) : p.name;
+          nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
+        }
+        let topY = ry + rH*0.28;
+        let botY = ry + rH*0.72;
+
+        // Name line
+        bx.fillStyle=nameColor;
+        bx.font=`${Math.round(nameSz*0.82)}px 'Courier New',monospace`;
+        bx.textAlign="left"; bx.textBaseline="middle";
+        // Clip to full width since score is below
+        bx.save();
+        bx.beginPath(); bx.rect(x+3,ry+1,colW-6,rH*0.5-1); bx.clip();
+        bx.fillText(nameStr, x+4, topY);
+        bx.restore();
+
+        // Score line
         let sc = pi===0 ? s1 : s2;
         bx.fillStyle = isWin?"#44ee44":"#cc3333";
-        bx.font=`bold ${scoreSz}px 'Courier New',monospace`;
+        bx.font=`bold ${Math.round(scoreSz*0.85)}px 'Courier New',monospace`;
         bx.textAlign="right"; bx.textBaseline="middle";
-        bx.fillText(sc, x+colW-3, ry+rH/2);
+        bx.fillText(sc, x+colW-4, botY);
+
+      } else {
+        // Pending — single centred line
+        let nameStr = "TBD";
+        if(p){
+          let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
+          nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
+        }
+        bx.fillStyle=nameColor;
+        bx.font=`${nameSz}px 'Courier New',monospace`;
+        bx.textAlign="left"; bx.textBaseline="middle";
+        bx.save();
+        bx.beginPath(); bx.rect(x+3,ry+1,colW-6,rH-2); bx.clip();
+        bx.fillText(nameStr, x+4, ry+rH/2);
+        bx.restore();
       }
     });
 
@@ -809,8 +836,10 @@ function startGame(){
   shake=0;
   orientationIndex=0;
   currentOrientation="vertical";
-  document.getElementById("rotateBtn").style.display="block";
-  document.getElementById("rotateBtn").innerText="Orientation: vertical";
+  document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("orientCanvas").style.display="none";
+  document.getElementById("orientCanvas").style.display="block";
+  setTimeout(drawOrientPreview, 80);
   document.getElementById("timeline").style.display="block";
   document.getElementById("progress").style.width="0%";
   document.getElementById("progress").style.background="lime";
@@ -819,11 +848,85 @@ function startGame(){
 }
 
 // ─── ORIENTATION BTN ──────────────────────────────────────────────────────
-document.getElementById("rotateBtn").onclick=()=>{
+document.getElementById("rotateBtn").onclick = rotateOrientation;
+
+function rotateOrientation(){
   orientationIndex=(orientationIndex+1)%orientations.length;
   currentOrientation=orientations[orientationIndex];
-  document.getElementById("rotateBtn").innerText="Orientation: "+currentOrientation;
-};
+  drawOrientPreview();
+}
+
+function drawOrientPreview(){
+  const oc = document.getElementById("orientCanvas");
+  const ox = oc.getContext("2d");
+  ox.clearRect(0,0,160,70);
+
+  // Background pill
+  ox.fillStyle="rgba(20,20,20,0.92)";
+  roundRect(ox, 0, 0, 160, 70, 12);
+  ox.fill();
+  ox.strokeStyle="#333"; ox.lineWidth=1;
+  roundRect(ox, 0, 0, 160, 70, 12);
+  ox.stroke();
+
+  // Draw all 3 marker images at their orientation angles
+  const angleMap = {vertical:0, angled:Math.PI/6, horizontal:Math.PI/2};
+  const colorOrder = ["green","red","blue"];
+  const positions = [{x:30,y:35},{x:80,y:35},{x:130,y:35}];
+  const sizes = [{w:28,h:28},{w:28,h:28},{w:44,h:28}];
+  const activeAngle = angleMap[currentOrientation];
+
+  colorOrder.forEach((col,i)=>{
+    const img = markerImages[col];
+    if(!img||!img.complete) return;
+    let {x,y} = positions[i];
+    let {w,h} = sizes[i];
+    let angle = activeAngle;
+
+    ox.save();
+    ox.translate(x,y);
+    ox.rotate(angle);
+    // active = bright, others = dim
+    ox.globalAlpha = 0.35;
+    ox.drawImage(img,-w/2,-h/2,w,h);
+    ox.globalAlpha=1;
+    ox.restore();
+  });
+
+  // Draw current marker set at full brightness
+  colorOrder.forEach((col,i)=>{
+    const img = markerImages[col];
+    if(!img||!img.complete) return;
+    let {x,y} = positions[i];
+    let {w,h} = sizes[i];
+    ox.save();
+    ox.translate(x,y);
+    ox.rotate(activeAngle);
+    ox.drawImage(img,-w/2,-h/2,w,h);
+    ox.restore();
+  });
+
+  // Label
+  ox.fillStyle="#555";
+  ox.font="10px 'Courier New',monospace";
+  ox.textAlign="center"; ox.textBaseline="bottom";
+  let label = currentOrientation==="vertical"?"VERTICAL":
+              currentOrientation==="angled"?"ANGLED":"HORIZONTAL";
+  ox.fillText(label, 80, 68);
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
 
 // ─── INPUT ────────────────────────────────────────────────────────────────
 let dragging=false,startX,startY,currentX,currentY;
@@ -1228,6 +1331,7 @@ function endGame(){
     localStorage.setItem("qu33phHigh",highScore);
   }
   document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("orientCanvas").style.display="none";
   document.getElementById("timeline").style.display="none";
 
   if(gameMode==="olympics"){
