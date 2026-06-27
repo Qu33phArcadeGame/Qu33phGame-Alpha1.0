@@ -1666,9 +1666,14 @@ function draw(){
 
   // The marker images are drawn horizontally by default (0° = flat/horizontal)
   // So: vertical = 90°, angled = 60°, horizontal = 0°
-  let previewAngle =
+  let previewAngleStd =
     currentOrientation==="vertical"   ? Math.PI/3 :
     currentOrientation==="angled"     ? Math.PI/2 :
+    0;
+  // Blue image has different aspect ratio so needs extra PI/6 offset to look the same
+  let previewAngleBlue =
+    currentOrientation==="vertical"   ? Math.PI/3 - Math.PI/6 :
+    currentOrientation==="angled"     ? Math.PI/2 - Math.PI/6 :
     0;
 
   previewMarkers.forEach((p,i)=>{
@@ -1679,10 +1684,11 @@ function draw(){
     let cy = START_LINE_Y - 55 - i*58;
     let pw = p.color==="blue" ? 80 : 50;
     let ph = 50;
+    let angle = p.color==="blue" ? previewAngleBlue : previewAngleStd;
     ctx.save();
     ctx.globalAlpha = 0.6;
     ctx.translate(cx, cy);
-    ctx.rotate(previewAngle);
+    ctx.rotate(angle);
     ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
     ctx.restore();
     ctx.globalAlpha = 1;
