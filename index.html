@@ -254,25 +254,17 @@ markerImages.blue.src="blue.png";
 
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
-
-// ─── HiDPI / RETINA SCALING ───────────────────────────────────────────────
-const DPR = window.devicePixelRatio || 1;
-const CW = window.innerWidth;
-const CH = window.innerHeight;
-canvas.width  = CW * DPR;
-canvas.height = CH * DPR;
-canvas.style.width  = CW + "px";
-canvas.style.height = CH + "px";
-ctx.scale(DPR, DPR);
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
 // ─── LAYOUT ───────────────────────────────────────────────────────────────
-const LEFT_EDGE=CW*0.2;
-const RIGHT_WALL=CW*0.75;
-const END_LINE_Y=CH*0.11;
-const START_LINE_Y=CH-80;
+const LEFT_EDGE=canvas.width*0.2;
+const RIGHT_WALL=canvas.width*0.75;
+const END_LINE_Y=canvas.height*0.11;
+const START_LINE_Y=canvas.height-80;
 
-const redDot={x:RIGHT_WALL+6,y:CH*0.11};
-const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:CH*0.13,radius:35};
+const redDot={x:RIGHT_WALL+6,y:canvas.height*0.11};
+const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:canvas.height*0.13,radius:35};
 
 // ─── GAME MODE STATE ──────────────────────────────────────────────────────
 let gameMode = null;
@@ -330,7 +322,7 @@ const NATIONS = [
   { name:"Sweden",       flag:"🇸🇪" },
 ];
 
-const PLAYER_NATION = { name:"You", flag:"🎮", isPlayer:true };
+// playerNation is set at nation select time
 
 // 8-team single elimination bracket
 // QF1: n0 vs n1   QF2: n2 vs n3   QF3: n4 vs n5   QF4: n6 vs PLAYER
@@ -368,10 +360,10 @@ function getQFWinner(os, qf){
   if(qf===1) return os.qf1s1>os.qf1s2 ? os.n[0] : os.n[1];
   if(qf===2) return os.qf2s1>os.qf2s2 ? os.n[2] : os.n[3];
   if(qf===3) return os.qf3s1>os.qf3s2 ? os.n[4] : os.n[5];
-  if(qf===4) return os.qf4Score!==null && os.qf4Score>os.qf4Opp ? PLAYER_NATION : os.n[6];
+  if(qf===4) return os.qf4Score!==null && os.qf4Score>os.qf4Opp ? playerNation : os.n[6];
 }
 function getSF1Winner(os){ return os.sf1s1>os.sf1s2 ? getQFWinner(os,1) : getQFWinner(os,2); }
-function getSF2Winner(os){ return os.sf2Score!==null && os.sf2Score>os.sf2Opp ? PLAYER_NATION : (os.qf4Score!==null?getQFWinner(os,3):null); }
+function getSF2Winner(os){ return os.sf2Score!==null && os.sf2Score>os.sf2Opp ? playerNation : (os.qf4Score!==null?getQFWinner(os,3):null); }
 
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
@@ -517,7 +509,7 @@ function renderBracket(){
       bx.fillRect(x+1,ry+1,boxW-2,rowH-1);
 
       let nm = p ? p.name.slice(0,9) : "TBD";
-      let name = p ? (p.flag+" "+nm+(p.isPlayer?" (you)":"")) : "TBD";
+      let name = p ? (p.flag+" "+nm+(p.isPlayer?" 🎮 (you)":"")) : "TBD";
       bx.fillStyle=isWin?"#44ee44":isLoss?"#222":isYou?"#fff":"#777";
       bx.font=`${Math.round(bw*0.027)}px 'Courier New',monospace`;
       bx.textAlign="left"; bx.textBaseline="middle";
@@ -547,11 +539,11 @@ function renderBracket(){
   let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];
   let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5];
   let qf4done=os.qf4Score!==null;
-  let qf4w=qf4done?(os.qf4Score>os.qf4Opp?PLAYER_NATION:os.n[6]):null;
+  let qf4w=qf4done?(os.qf4Score>os.qf4Opp?playerNation:os.n[6]):null;
   let sf1done=os.sf1s1!==null;
   let sf1w=sf1done?(os.sf1s1>os.sf1s2?qf1w:qf2w):null;
   let sf2done=os.sf2Score!==null;
-  let sf2w=sf2done?(os.sf2Score>os.sf2Opp?PLAYER_NATION:qf3w):null;
+  let sf2w=sf2done?(os.sf2Score>os.sf2Opp?playerNation:qf3w):null;
   let finDone=os.finScore!==null;
 
   // ── DRAW ──
@@ -559,9 +551,9 @@ function renderBracket(){
   drawMatch(qfLx,qfLy2, os.n[2],os.n[3], os.qf2s1,os.qf2s2, false,"QF2");
   drawMatch(sfLx,sfLy,  qf1w,qf2w, os.sf1s1,os.sf1s2, false,"SF1");
   drawMatch(finx,finy,  sf1w,sf2w, finDone?os.finOpp:null,finDone?os.finScore:null, os.round===3&&!os.playerEliminated&&!finDone,"FINAL");
-  drawMatch(sfRx,sfRy,  qf3w,qf4w||PLAYER_NATION, sf2done?os.sf2Opp:null,sf2done?os.sf2Score:null, os.round===2&&!os.playerEliminated&&!sf2done,"SF2");
+  drawMatch(sfRx,sfRy,  qf3w,qf4w||playerNation, sf2done?os.sf2Opp:null,sf2done?os.sf2Score:null, os.round===2&&!os.playerEliminated&&!sf2done,"SF2");
   drawMatch(qfRx,qfRy1, os.n[4],os.n[5], os.qf3s1,os.qf3s2, false,"QF3");
-  drawMatch(qfRx,qfRy2, os.n[6],PLAYER_NATION, qf4done?os.qf4Opp:null,qf4done?os.qf4Score:null, os.round===1&&!os.playerEliminated&&!qf4done,"QF4");
+  drawMatch(qfRx,qfRy2, os.n[6],playerNation, qf4done?os.qf4Opp:null,qf4done?os.qf4Score:null, os.round===1&&!os.playerEliminated&&!qf4done,"QF4");
 
   // ── CONNECTORS ──
   line(qfLx+boxW, qfLy1+rowH, sfLx, sfLy+rowH);
@@ -706,8 +698,8 @@ canvas.addEventListener("pointerup",()=>{
     Math.PI/2;
 
   markers.push({
-    x:CW/2,
-    y:CH-50,
+    x:canvas.width/2,
+    y:canvas.height-50,
     usedPreview:current,
     vx:dx*0.2,
     vy:dy*0.2,
@@ -753,7 +745,7 @@ function tryAdvanceRound(){
     let g=markers[0], r=markers[1], b=markers[2];
     let roundScore=calculateScore();
     totalScore+=roundScore;
-    scorePopups.push({x:CW/2,y:CH/2,text:"+"+roundScore,life:40});
+    scorePopups.push({x:canvas.width/2,y:canvas.height/2,text:"+"+roundScore,life:40});
     if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
       explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
       addShake(8);
@@ -797,14 +789,14 @@ let trees=[];
 
 function randomizeSky(){
   let wx = RIGHT_WALL + 5;
-  let ww = CW - wx;
+  let ww = canvas.width - wx;
 
   clouds=[];
   for(let i=0;i<5;i++){
     clouds.push({
       // x stays within RIGHT_WALL..canvas.width, y within the sky portion of the window
       x: wx + Math.random()*ww,
-      y: END_LINE_Y + Math.random() * (CH * 0.55 - END_LINE_Y),
+      y: END_LINE_Y + Math.random() * (canvas.height * 0.55 - END_LINE_Y),
       w: 30 + Math.random()*50,
       speed: 0.05 + Math.random()*0.08,
       wx, ww  // store bounds for clamping drift
@@ -815,7 +807,7 @@ function randomizeSky(){
   for(let i=0;i<8;i++){
     trees.push({
       x: wx + Math.random()*ww,
-      h: CH * (0.07 + Math.random()*0.09)
+      h: canvas.height * (0.07 + Math.random()*0.09)
     });
   }
 }
@@ -831,8 +823,8 @@ function lerpRGB(a,b,t){
 function drawWindowScene(elapsed){
   let t = Math.min(elapsed/TOTAL_TIME, 1);
   let wx = RIGHT_WALL + 10; // inside frame
-  let ww = CW - wx;
-  let wh = CH;
+  let ww = canvas.width - wx;
+  let wh = canvas.height;
 
   // Window fills the ENTIRE right strip top to bottom
   // Sky takes top 60%, ground takes bottom 40%
@@ -891,10 +883,10 @@ function drawWindowScene(elapsed){
   let railY = horizonY + (wh-horizonY)*0.06;
   let railColor = t<0.66 ? `rgba(15,25,15,0.75)` : `rgba(8,8,8,0.85)`;
   ctx.strokeStyle=railColor; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(wx,railY); ctx.lineTo(CW,railY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(wx,railY+18); ctx.lineTo(CW,railY+18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(wx,railY); ctx.lineTo(canvas.width,railY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(wx,railY+18); ctx.lineTo(canvas.width,railY+18); ctx.stroke();
   ctx.lineWidth=1.5;
-  for(let bx=wx+4; bx<CW; bx+=14){
+  for(let bx=wx+4; bx<canvas.width; bx+=14){
     ctx.beginPath(); ctx.moveTo(bx,railY-8); ctx.lineTo(bx,railY+22); ctx.stroke();
   }
 
@@ -914,7 +906,7 @@ function drawWindowScene(elapsed){
     ctx.beginPath(); ctx.ellipse(c.x-c.w*0.22, cy+c.w*0.05, c.w*0.3, c.w*0.16, 0,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(c.x+c.w*0.22, cy+c.w*0.03, c.w*0.28, c.w*0.14, 0,0,Math.PI*2); ctx.fill();
     c.x += c.speed;
-    if(c.x - c.w > CW) c.x = wx - c.w;
+    if(c.x - c.w > canvas.width) c.x = wx - c.w;
     if(c.x + c.w < wx) c.x = canvas.width + c.w;
   });
   ctx.restore();
@@ -922,8 +914,8 @@ function drawWindowScene(elapsed){
 
 function drawWindowFrame(){
   let wx = RIGHT_WALL;
-  let ww = CW - wx;
-  let wh = CH;
+  let ww = canvas.width - wx;
+  let wh = canvas.height;
 
   // ── roller blind at very top ──
   let blindH = wh * 0.07;
@@ -934,7 +926,7 @@ function drawWindowFrame(){
   ctx.fillRect(wx+10, 0, ww-10, blindH);
   ctx.strokeStyle="rgba(150,144,136,0.4)"; ctx.lineWidth=1;
   for(let sy=5;sy<blindH;sy+=6){
-    ctx.beginPath(); ctx.moveTo(wx+10,sy); ctx.lineTo(CW,sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(wx+10,sy); ctx.lineTo(canvas.width,sy); ctx.stroke();
   }
   ctx.fillStyle="#a8a29a";
   ctx.fillRect(wx+10, blindH-3, ww-10, 5);
@@ -1081,41 +1073,41 @@ function draw(){
 
   if(gameState==="end"){
     ctx.fillStyle="#000";
-    ctx.fillRect(0,0,CW,CH);
+    ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.setTransform(1,0,0,1,0,0);
     ctx.textAlign="center";
     ctx.textBaseline="top";
     ctx.fillStyle="#fff";
     ctx.font="bold 60px 'Courier New',monospace";
-    ctx.fillText("Qu33ph",CW/2,130);
+    ctx.fillText("Qu33ph",canvas.width/2,130);
     ctx.font="22px 'Courier New',monospace";
     ctx.fillStyle="#aaa";
-    ctx.fillText("SCORE: "+totalScore,CW/2,210);
+    ctx.fillText("SCORE: "+totalScore,canvas.width/2,210);
     ctx.fillStyle="#555";
-    ctx.fillText("HIGH SCORE: "+highScore,CW/2,244);
+    ctx.fillText("HIGH SCORE: "+highScore,canvas.width/2,244);
     ctx.fillStyle="#333";
     ctx.font="16px 'Courier New',monospace";
-    ctx.fillText("tap anywhere to return to menu",CW/2,310);
+    ctx.fillText("tap anywhere to return to menu",canvas.width/2,310);
     return;
   }
 
   if(gameState==="olympicsResult"){
     ctx.fillStyle="#000";
-    ctx.fillRect(0,0,CW,CH);
+    ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.setTransform(1,0,0,1,0,0);
     ctx.textAlign="center";
     ctx.textBaseline="middle";
     ctx.fillStyle="#fff";
     ctx.font="bold 28px 'Courier New',monospace";
-    ctx.fillText(olympicsResultMsg,CW/2,CH/2-30);
+    ctx.fillText(olympicsResultMsg,canvas.width/2,canvas.height/2-30);
     if(olympicsResultSub){
       ctx.fillStyle="#555";
       ctx.font="16px 'Courier New',monospace";
-      ctx.fillText(olympicsResultSub,CW/2,CH/2+20);
+      ctx.fillText(olympicsResultSub,canvas.width/2,canvas.height/2+20);
     }
     ctx.fillStyle="#333";
     ctx.font="14px 'Courier New',monospace";
-    ctx.fillText("tap to return to menu",CW/2,CH/2+70);
+    ctx.fillText("tap to return to menu",canvas.width/2,canvas.height/2+70);
     return;
   }
 
@@ -1128,7 +1120,7 @@ function draw(){
 
   // ── 1. BACKGROUND BASE ──
   ctx.fillStyle="#d8cfc4"; // cream/beige room
-  ctx.fillRect(0,0,CW,CH);
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
   // ── 2. WINDOW SCENE (right strip, behind frame) ──
   drawWindowScene(elapsed);
