@@ -1364,28 +1364,23 @@ function draw(){
   drawWindowScene(elapsed);
   drawWindowFrame();
 
-  // ── 3. CREAM WALL (right of counter, left of window) ──
-  // This is the wall panel visible to the right of the playing field
-  ctx.fillStyle="#cdc8bc";
-  ctx.fillRect(RIGHT_WALL, END_LINE_Y, canvas.width*0.01, canvas.height-END_LINE_Y);
+  // ── 3. CREAM WALL — removed stray sliver ──
 
   // ── 4. TEAL LEFT WALL PANEL ──
   ctx.fillStyle="#3d6b62";
   ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
-  ctx.fillStyle="#4a7d73";
-  ctx.fillRect(LEFT_EDGE-4, 0, 4, canvas.height);
+  // No highlight strip — was causing uneven left line
 
   // ── 5. COUNTER SURFACE — nearly full screen height ──
-  let taper = canvas.width * 0.02;
   let cLeft  = LEFT_EDGE;
   let cRight = RIGHT_WALL;
-  let cTop   = canvas.height * 0.06;  // tiny gap at top for cabinet
-  let cBot   = canvas.height * 0.97;  // nearly full screen
+  let cTop   = canvas.height * 0.06;
+  let cBot   = canvas.height * 0.97;
 
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(cLeft + taper, cTop);
-  ctx.lineTo(cRight - taper*0.3, cTop);
+  ctx.moveTo(cLeft, cTop);
+  ctx.lineTo(cRight, cTop);
   ctx.lineTo(cRight, cBot);
   ctx.lineTo(cLeft, cBot);
   ctx.closePath();
@@ -1626,7 +1621,7 @@ function draw(){
     ctx.setTransform(1,0,0,1,0,0);
     ctx.translate(chair.x, chair.y);
     if(chairImg.complete && chairImg.naturalWidth){
-      let cw=40, ch=40;
+      let cw=50, ch=50;
       ctx.drawImage(chairImg, -cw/2, -ch/2, cw, ch);
     }
     ctx.restore();
