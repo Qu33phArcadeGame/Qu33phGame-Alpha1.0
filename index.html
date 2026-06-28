@@ -1454,6 +1454,18 @@ function draw(){
   ctx.fillStyle="#d8cfc4"; // cream/beige room
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
+  // ── OLYMPICS HEADER in cream strip above teal cabinet ──
+  if((gameMode==="olympics"||gameMode==="specialolympics") && olympicsState){
+    let headerY = canvas.height*0.03; // centre of cream strip
+    ctx.fillStyle="#3d4a44";
+    ctx.font="bold 13px 'Courier New',monospace";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    let headerText = gameMode==="specialolympics"
+      ? "QU33PH SPECIAL OLYMPICS"
+      : "QU33PH OLYMPICS";
+    ctx.fillText(headerText, (LEFT_EDGE+RIGHT_WALL)/2, headerY);
+  }
+
   // ── 2. WINDOW SCENE (right strip, behind frame) ──
   drawWindowScene(elapsed);
   drawWindowFrame();
