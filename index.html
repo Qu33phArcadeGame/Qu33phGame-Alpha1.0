@@ -252,7 +252,10 @@
 <!-- MEDAL SCREEN -->
 <div id="medalScreen">
   <canvas id="medalCanvas"></canvas>
-  <button class="medal-btn" onclick="showTitle()">← BACK TO MENU</button>
+  <div style="width:min(360px,88vw); display:flex; flex-direction:column; gap:10px; margin-bottom:32px;">
+    <button class="medal-btn" id="medalSpecialBtn" style="display:none; background:#1a1a1a; color:#ffd700; border:2px solid #ffd700;" onclick="startSpecialOlympics()">🏅 PLAY SPECIAL OLYMPICS</button>
+    <button class="medal-btn" onclick="showTitle()">← BACK TO MENU</button>
+  </div>
 </div>
 
 <!-- OLYMPICS BRACKET SCREEN -->
@@ -442,6 +445,7 @@ let titleUnlockedAt = 0;
 function showTitle(){
   gameState="title";
   titleUnlockedAt = Date.now() + 800; // 800ms buffer before buttons work
+  gameMode=null;
   document.getElementById("titleScreen").style.display="flex";
   document.getElementById("bracketScreen").style.display="none";
   document.getElementById("nationScreen").style.display="none";
@@ -498,7 +502,7 @@ function renderBracket(){
   bx.fillText("QU33PH",bw/2,10);
   bx.fillStyle="#c8a840";
   bx.font=`bold ${Math.round(bw*0.045)}px 'Courier New',monospace`;
-  bx.fillText("OLYMPICS",bw/2,10+bw*0.076);
+  bx.fillText(gameMode==="specialolympics"?"SPECIAL OLYMPICS":"OLYMPICS",bw/2,10+bw*0.076);
   bx.fillStyle="#c8a840";
   bx.fillRect(bw*0.15, 10+bw*0.128, bw*0.7, 2);
 
@@ -670,11 +674,21 @@ function renderBracket(){
   // ── BUTTON ──
   const playBtn=document.getElementById("playNextBtn");
   const roundLabel=document.getElementById("bracketRoundLabel");
-  playBtn.className="";
-  let lbl=os.round===1?"PLAY QF4 →":os.round===2?"PLAY SEMI-FINAL →":"PLAY GRAND FINAL →";
-  playBtn.innerText=lbl;
-  playBtn.onclick=()=>{document.getElementById("bracketScreen").style.display="none";startGame();};
-  roundLabel.innerText=os.round===1?"QUARTER-FINAL":os.round===2?"SEMI-FINAL":"GRAND FINAL";
+
+  if(os.champion!==null || os.playerEliminated){
+    // Tournament over — go to medal screen which has Special Olympics button
+    playBtn.className="";
+    playBtn.innerText="SEE RESULT →";
+    playBtn.onclick=()=>showMedalScreen();
+    roundLabel.innerText=os.champion==="player"?"🏆 CHAMPION":
+      os.round<=2?"ELIMINATED":os.round===3?"🥉 BRONZE":"🥈 SILVER";
+  } else {
+    playBtn.className="";
+    let lbl=os.round===1?"PLAY QF4 →":os.round===2?"PLAY SEMI-FINAL →":"PLAY GRAND FINAL →";
+    playBtn.innerText=lbl;
+    playBtn.onclick=()=>{document.getElementById("bracketScreen").style.display="none";startGame();};
+    roundLabel.innerText=os.round===1?"QUARTER-FINAL":os.round===2?"SEMI-FINAL":"GRAND FINAL";
+  }
 }
 
 function showMedalScreen(){
@@ -682,13 +696,21 @@ function showMedalScreen(){
   document.getElementById("bracketScreen").style.display="none";
   document.getElementById("medalScreen").style.display="flex";
 
-  let medal, medalText, medalColor, bgColor;
+  let medal, medalText, medalColor, bgColor, isEliminated=false, canPlaySpecial=false;
   if(os.champion==="player"){
     medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
   } else if(os.playerEliminated && os.round<=2){
+    // Lost in QF — no medal, just eliminated
+    isEliminated=true; canPlaySpecial=true;
+    medal="❌"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
+  } else if(os.playerEliminated && os.round===3){
+    // Lost in SF — bronze
     medal="🥉"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
+    canPlaySpecial=true;
   } else {
+    // Lost the Final — silver
     medal="🥈"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
+    canPlaySpecial=true;
   }
 
   const mc = document.getElementById("medalCanvas");
@@ -799,6 +821,80 @@ function showMedalScreen(){
   if(window._medalAnimId) cancelAnimationFrame(window._medalAnimId);
   drawMedal();
   window._medalAnimId = animId;
+
+  // Show/hide Special Olympics button
+  document.getElementById("medalSpecialBtn").style.display = canPlaySpecial ? "block" : "none";
+}
+
+function getMainBracketLosers(){
+  const os = olympicsState;
+  let losers = [];
+
+  // QF losers (always known — pre-simmed)
+  losers.push(os.qf1s1>os.qf1s2 ? os.n[1] : os.n[0]); // QF1 loser
+  losers.push(os.qf2s1>os.qf2s2 ? os.n[3] : os.n[2]); // QF2 loser
+  losers.push(os.qf3s1>os.qf3s2 ? os.n[5] : os.n[4]); // QF3 loser
+
+  // QF4 loser (player or n[6])
+  if(os.qf4Score!==null){
+    losers.push(os.qf4Score>os.qf4Opp ? os.n[6] : playerNation);
+  } else {
+    losers.push(os.n[6]); // player hasn't played yet, put their opponent in
+  }
+
+  // SF1 loser (if played)
+  if(os.sf1s1!==null){
+    let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];
+    let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];
+    losers.push(os.sf1s1>os.sf1s2 ? qf2w : qf1w);
+  }
+
+  // SF2 loser (if played)
+  if(os.sf2Score!==null){
+    let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5];
+    losers.push(os.sf2Score>os.sf2Opp ? qf3w : playerNation);
+  }
+
+  // Remove player from losers list (they'll be the competitor)
+  return losers.filter(n=>!n.isPlayer);
+}
+
+function startSpecialOlympics(){
+  const losers = getMainBracketLosers();
+  gameMode="specialolympics";
+
+  // Build a Special Olympics state using the actual losers from main bracket
+  // Fill up to 7 cpu slots with losers, pad with random nations if needed
+  let pool = [...losers];
+  if(pool.length < 7){
+    let extras = NATIONS.filter(n=>!pool.find(p=>p.name===n.name)&&n.name!==playerNation.name);
+    shuffle(extras);
+    pool = [...pool, ...extras].slice(0,7);
+  }
+  shuffle(pool);
+
+  let qf1s1=simulatedScore(), qf1s2=simulatedScore();
+  let qf2s1=simulatedScore(), qf2s2=simulatedScore();
+  let qf3s1=simulatedScore(), qf3s2=simulatedScore();
+  if(qf1s1===qf1s2) qf1s2++;
+  if(qf2s1===qf2s2) qf2s2++;
+  if(qf3s1===qf3s2) qf3s2++;
+
+  olympicsState = {
+    n: [...pool.slice(0,7), playerNation],
+    qf1s1,qf1s2,qf2s1,qf2s2,qf3s1,qf3s2,
+    qf4Score:null,qf4Opp:null,
+    sf2Score:null,sf2Opp:null,
+    finScore:null,finOpp:null,
+    sf1s1:null,sf1s2:null,
+    round:1,
+    playerEliminated:false,
+    champion:null,
+  };
+
+  document.getElementById("medalScreen").style.display="none";
+  if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
+  showBracket();
 }
 
 let olympicsResultMsg="";
@@ -1248,7 +1344,7 @@ function endGame(){
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
 
-  if(gameMode==="olympics"){
+  if(gameMode==="olympics" || gameMode==="specialolympics"){
     const os=olympicsState;
     let oppScore=simulatedScore();
     // ensure no tie
