@@ -700,17 +700,15 @@ function showMedalScreen(){
   if(os.champion==="player"){
     medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
   } else if(os.playerEliminated && os.round<=2){
-    // Lost in QF — no medal, just eliminated
-    isEliminated=true; canPlaySpecial=true;
+    isEliminated=true;
+    canPlaySpecial = gameMode!=="specialolympics"; // no special olympics from special olympics
     medal="❌"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
   } else if(os.playerEliminated && os.round===3){
-    // Lost in SF — bronze
     medal="🥉"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
-    canPlaySpecial=true;
+    canPlaySpecial = gameMode!=="specialolympics";
   } else {
-    // Lost the Final — silver
     medal="🥈"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
-    canPlaySpecial=true;
+    canPlaySpecial = gameMode!=="specialolympics";
   }
 
   const mc = document.getElementById("medalCanvas");
@@ -1692,12 +1690,12 @@ function draw(){
     // Round label — drawn INSIDE the dark green cabinet at top
     let medalEmoji = round===1?"🥉":round===2?"🥈":"🥇";
     let roundName = round===1?"QUARTER-FINAL":round===2?"SEMI-FINAL":"GRAND FINAL";
-    // Cabinet runs from cTop to cTop+canvas.height*0.05
+    let prefix = gameMode==="specialolympics" ? "SPECIAL · " : "";
     let cabMidY = cTop + canvas.height*0.025;
     ctx.fillStyle=borderColor;
-    ctx.font="bold 13px 'Courier New',monospace";
+    ctx.font="bold 12px 'Courier New',monospace";
     ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(medalEmoji+" "+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
+    ctx.fillText(medalEmoji+" "+prefix+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
   }
 
   // ADVANCE PROMPT
