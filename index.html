@@ -299,23 +299,24 @@
   <div class="theme-screen-title">THEME</div>
   <div class="theme-screen-sub">CHOOSE YOUR STYLE</div>
 
-  <div class="theme-option" id="theme-default" onclick="setTheme('default')">
+  <div class="theme-option" id="theme-default" onclick="selectTheme('default')">
     <span class="theme-icon">🎮</span>
-    <span><span class="theme-name">DEFAULT</span><span class="theme-desc">classic qu33ph look</span></span>
+    <span><span class="theme-name">DEFAULT</span><span class="theme-desc">classic qu33ph look · always free</span></span>
   </div>
-  <div class="theme-option" id="theme-cartoon" onclick="setTheme('cartoon')">
+  <div class="theme-option" id="theme-cartoon" onclick="selectTheme('cartoon')">
     <span class="theme-icon">✏️</span>
-    <span><span class="theme-name">COMIC</span><span class="theme-desc">black & white · comic style · custom markers</span></span>
+    <span><span class="theme-name" id="tname-cartoon">COMIC</span><span class="theme-desc" id="tdesc-cartoon">black & white · comic style · custom markers</span></span>
   </div>
-  <div class="theme-option" id="theme-neon" onclick="setTheme('neon')">
+  <div class="theme-option" id="theme-neon" onclick="selectTheme('neon')">
     <span class="theme-icon">⚡</span>
-    <span><span class="theme-name">NEON</span><span class="theme-desc">synthwave · glowing colours · dark room</span></span>
+    <span><span class="theme-name" id="tname-neon">NEON</span><span class="theme-desc" id="tdesc-neon">synthwave · glowing colours · dark room</span></span>
   </div>
-  <div class="theme-option" id="theme-sunset" onclick="setTheme('sunset')">
+  <div class="theme-option" id="theme-sunset" onclick="selectTheme('sunset')">
     <span class="theme-icon">🌅</span>
-    <span><span class="theme-name">GOLDEN HOUR</span><span class="theme-desc">warm amber · late afternoon vibes</span></span>
+    <span><span class="theme-name" id="tname-sunset">GOLDEN HOUR</span><span class="theme-desc" id="tdesc-sunset">warm amber · late afternoon vibes</span></span>
   </div>
 
+  <div id="themeCoinsDisplay" style="margin-top:14px; font-family:'Courier New',monospace; font-size:12px; color:#888; letter-spacing:2px;"></div>
   <button class="theme-back" onclick="showTitle()">← BACK</button>
 </div>
 
@@ -507,6 +508,23 @@ let markers=[];
 let current=0;
 let totalScore=0;
 let highScore=localStorage.getItem("qu33phHigh")||0;
+let coins = parseInt(localStorage.getItem("qu33phCoins")||0);
+const THEME_COST = 50;
+const unlockedThemes = ()=>{
+  let u = JSON.parse(localStorage.getItem("qu33phThemes")||'["default"]');
+  return u;
+};
+function unlockTheme(t){
+  let u=unlockedThemes();
+  if(!u.includes(t)){ u.push(t); localStorage.setItem("qu33phThemes",JSON.stringify(u)); }
+}
+function addCoins(n){
+  coins+=n;
+  localStorage.setItem("qu33phCoins",coins);
+}
+
+const coinImg = new Image();
+coinImg.src="coin.png";
 let chairLocked=false;
 let startTime=Date.now();
 let suddenDeath=false;
@@ -530,10 +548,40 @@ let currentOrientation="vertical";
 function showThemeScreen(){
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("themeScreen").style.display="flex";
-  // Highlight current
+  let u=unlockedThemes();
   ["default","cartoon","neon","sunset"].forEach(t=>{
-    document.getElementById("theme-"+t).classList.toggle("selected", t===currentTheme);
+    let el=document.getElementById("theme-"+t);
+    let unlocked = u.includes(t);
+    let active = t===currentTheme;
+    el.classList.toggle("selected", active);
+    el.style.opacity = unlocked ? "1" : "0.5";
+    if(t!=="default"){
+      let nameEl=document.getElementById("tname-"+t);
+      let descEl=document.getElementById("tdesc-"+t);
+      const names={cartoon:"COMIC",neon:"NEON",sunset:"GOLDEN HOUR"};
+      const descs={cartoon:"black & white · comic style · custom markers",neon:"synthwave · glowing colours · dark room",sunset:"warm amber · late afternoon vibes"};
+      if(nameEl) nameEl.innerText = unlocked ? names[t] : "🔒 "+names[t];
+      if(descEl) descEl.innerText = unlocked ? descs[t] : "50 🪙 to unlock";
+    }
   });
+  document.getElementById("themeCoinsDisplay").innerText="🪙 "+coins+" COINS";
+}
+
+function selectTheme(t){
+  let u=unlockedThemes();
+  if(!u.includes(t)){
+    // Try to purchase
+    if(coins>=THEME_COST){
+      addCoins(-THEME_COST);
+      unlockTheme(t);
+      document.getElementById("themeCoinsDisplay").innerText="🪙 "+coins+" COINS — UNLOCKED!";
+      showThemeScreen();
+    } else {
+      document.getElementById("themeCoinsDisplay").innerText="🪙 NEED "+THEME_COST+" COINS (YOU HAVE "+coins+")";
+    }
+    return;
+  }
+  setTheme(t);
 }
 
 function updateLogo(){
@@ -793,7 +841,7 @@ function showTitle(){
   document.getElementById("timeline").style.display="none";
   let hs=localStorage.getItem("qu33phHigh")||0;
   document.getElementById("titleHighScore").innerText=
-    hs>0?"HIGH SCORE: "+hs:"";
+    (hs>0?"HIGH SCORE: "+hs+"   ":"")+"🪙 "+coins;
 }
 
 function startMode(mode){
@@ -1034,19 +1082,26 @@ function showMedalScreen(){
   document.getElementById("medalScreen").style.display="flex";
 
   let medal, medalText, medalColor, bgColor, isEliminated=false, canPlaySpecial=false;
+  let coinsEarned = 0;
+  const isSpecial = gameMode==="specialolympics";
   if(os.champion==="player"){
     medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
+    coinsEarned = isSpecial ? 3 : 15;
   } else if(os.playerEliminated && os.round<=2){
     isEliminated=true;
-    canPlaySpecial = gameMode!=="specialolympics"; // no special olympics from special olympics
+    canPlaySpecial = !isSpecial;
     medal="❌"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
+    coinsEarned = 0;
   } else if(os.playerEliminated && os.round===3){
     medal="🥉"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
-    canPlaySpecial = gameMode!=="specialolympics";
+    canPlaySpecial = !isSpecial;
+    coinsEarned = isSpecial ? 1 : 5;
   } else {
     medal="🥈"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
-    canPlaySpecial = gameMode!=="specialolympics";
+    canPlaySpecial = !isSpecial;
+    coinsEarned = isSpecial ? 2 : 10;
   }
+  if(coinsEarned>0) addCoins(coinsEarned);
 
   const mc = document.getElementById("medalCanvas");
   const mw = window.innerWidth;
@@ -1112,6 +1167,11 @@ function showMedalScreen(){
     mx2.font=`bold ${Math.round(mw*0.07)}px 'Courier New',monospace`;
     mx2.textAlign="center"; mx2.textBaseline="top";
     mx2.fillText(medalText, mw/2, mh*0.72);
+    if(coinsEarned>0){
+      mx2.fillStyle="#ffd700";
+      mx2.font=`bold ${Math.round(mw*0.05)}px 'Courier New',monospace`;
+      mx2.fillText("+ "+coinsEarned+" 🪙", mw/2, mh*0.72+mw*0.08);
+    }
 
     mx2.fillStyle="#fff";
     mx2.font=`bold ${Math.round(mw*0.045)}px 'Courier New',monospace`;
@@ -2193,6 +2253,10 @@ function draw(){
   }
   ctx.fillStyle="white";
   ctx.fillText("Score: "+totalScore,20,50);
+  // Coin display
+  ctx.font="14px 'Courier New',monospace";
+  ctx.fillStyle="rgba(255,215,0,0.8)";
+  ctx.fillText("🪙 "+coins, 20, 72);
 
   // Olympics mode: show round indicator
   if(gameMode==="olympics"&&olympicsState){
@@ -2321,9 +2385,9 @@ function loop(){
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
         ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.95;
-        ctx.beginPath(); ctx.arc(tipX, -3, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
         ctx.globalAlpha=0.3;
-        ctx.beginPath(); ctx.arc(tipX, -3, 9, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
         ctx.restore();
       });
       let stdA2 = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
@@ -2337,9 +2401,9 @@ function loop(){
         ctx.translate(cx,cy); ctx.rotate(angle);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=18;
         ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.9;
-        ctx.beginPath(); ctx.arc(tipX, -3, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
         ctx.globalAlpha=0.3;
-        ctx.beginPath(); ctx.arc(tipX, -3, 9, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
         ctx.restore();
       });
     }
