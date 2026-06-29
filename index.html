@@ -588,49 +588,88 @@ function applyThemeOverlay(){
     ctx.restore();
 
   } else if(currentTheme==="neon"){
-    // Mild dark base — not too dark so colours still show
+    // Mild dark base
     ctx.save();
     ctx.globalCompositeOperation="multiply";
     ctx.fillStyle="rgba(8,0,25,0.45)";
     ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // BRIGHT screen-mode glows on every surface
+
     ctx.save();
     ctx.globalCompositeOperation="screen";
-    // Counter surface — bright electric green
+    // Counter — electric green
     let cg2=ctx.createLinearGradient(cw*0.2,0,cw*0.75,0);
-    cg2.addColorStop(0,"rgba(0,255,120,0.35)");
-    cg2.addColorStop(0.5,"rgba(0,255,120,0.45)");
-    cg2.addColorStop(1,"rgba(0,255,120,0.35)");
+    cg2.addColorStop(0,"rgba(0,255,120,0.4)");
+    cg2.addColorStop(0.5,"rgba(0,255,120,0.5)");
+    cg2.addColorStop(1,"rgba(0,255,120,0.4)");
     ctx.fillStyle=cg2; ctx.fillRect(cw*0.2,0,cw*0.55,ch);
-    // Left teal cabinet — bright cyan
+    // Left cabinet — bright cyan
     let lg=ctx.createLinearGradient(0,0,cw*0.22,0);
-    lg.addColorStop(0,"rgba(0,255,255,0.5)");
+    lg.addColorStop(0,"rgba(0,255,255,0.55)");
     lg.addColorStop(1,"rgba(0,255,255,0.1)");
     ctx.fillStyle=lg; ctx.fillRect(0,0,cw*0.22,ch);
-    // Right window — hot magenta/purple
+    // Right window — hot magenta
     let rg2=ctx.createLinearGradient(cw*0.75,0,cw,0);
     rg2.addColorStop(0,"rgba(255,0,200,0.15)");
-    rg2.addColorStop(1,"rgba(200,0,255,0.55)");
+    rg2.addColorStop(1,"rgba(200,0,255,0.6)");
     ctx.fillStyle=rg2; ctx.fillRect(cw*0.75,0,cw*0.25,ch);
-    // AC vent — warm hot pink
+    // AC vent — hot pink
     let ag=ctx.createRadialGradient(cw*0.1,ch*0.8,0,cw*0.1,ch*0.8,ch*0.22);
-    ag.addColorStop(0,"rgba(255,50,150,0.55)");
+    ag.addColorStop(0,"rgba(255,50,150,0.6)");
     ag.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,cw*0.25,ch*0.45);
-    // Top cabinet strip — yellow-white hot
-    let tg=ctx.createLinearGradient(0,0,0,ch*0.12);
-    tg.addColorStop(0,"rgba(255,255,100,0.5)");
-    tg.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=tg; ctx.fillRect(0,0,cw,ch*0.12);
     ctx.restore();
-    // Pulsing outer edge glow
-    let pulse=0.18+0.1*Math.sin(t*2.5);
+
+    // Red dot — neon red glow
+    let dotCX2=redDot.x, dotCY2=redDot.y;
+    ctx.save();
+    ctx.shadowColor="#ff0000"; ctx.shadowBlur=30;
+    ctx.fillStyle="#ff2222";
+    ctx.beginPath(); ctx.arc(dotCX2,dotCY2,9,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=60;
+    ctx.globalAlpha=0.5;
+    ctx.beginPath(); ctx.arc(dotCX2,dotCY2,9,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Neon window scene — glowing clouds, sun, trees
+    let glassTop2=ch*0.58+10;
+    let horizonX2=RIGHT_WALL+10+(canvas.width-RIGHT_WALL-10)*0.45;
+    // Neon sun — yellow-white blazing
+    ctx.save();
+    let sunX2=canvas.width-(canvas.width-horizonX2)*(0.15+(Date.now()/60000%1)*0.7);
+    let sunY2=glassTop2+(ch-glassTop2)*0.25;
+    ctx.shadowColor="#ffffff"; ctx.shadowBlur=40;
+    ctx.fillStyle="#ffffaa";
+    ctx.beginPath(); ctx.arc(sunX2,sunY2,14,0,Math.PI*2); ctx.fill();
+    ctx.shadowColor="#ffff00"; ctx.shadowBlur=80;
+    ctx.globalAlpha=0.5;
+    ctx.beginPath(); ctx.arc(sunX2,sunY2,20,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    // Neon clouds — white glowing blobs
+    ctx.save();
+    ctx.shadowColor="#ffffff"; ctx.shadowBlur=20;
+    ctx.fillStyle="rgba(200,255,255,0.7)";
+    clouds.forEach(c=>{
+      let cx2=horizonX2+(c.x-RIGHT_WALL-10)/(canvas.width-RIGHT_WALL-10)*(canvas.width-horizonX2);
+      let cy2=glassTop2+(c.y/ch)*(ch-glassTop2);
+      ctx.beginPath(); ctx.ellipse(cx2,cy2,c.w*0.28,c.w*0.12,0,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+    // Neon trees — glowing green band at horizon
+    ctx.save();
+    ctx.shadowColor="#00ff44"; ctx.shadowBlur=25;
+    ctx.fillStyle="rgba(0,255,80,0.35)";
+    let treeW2=canvas.width*0.06;
+    ctx.fillRect(horizonX2-treeW2*0.5, glassTop2, treeW2, ch-glassTop2);
+    ctx.restore();
+
+    // Pulsing edge glow
+    let pulse2=0.18+0.1*Math.sin(t*2.5);
     let eg=ctx.createRadialGradient(cw/2,ch/2,ch*0.25,cw/2,ch/2,ch);
     eg.addColorStop(0,"rgba(0,0,0,0)");
-    eg.addColorStop(1,`rgba(150,0,255,${pulse})`);
+    eg.addColorStop(1,`rgba(150,0,255,${pulse2})`);
     ctx.fillStyle=eg; ctx.fillRect(0,0,cw,ch);
-    // Bright scanlines
+    // Scanlines
     ctx.save();
     ctx.globalAlpha=0.06;
     ctx.strokeStyle="#fff"; ctx.lineWidth=1;
@@ -2190,6 +2229,15 @@ function loop(){
       ctx.fillStyle="rgba(255,255,255,0.5)";
       ctx.beginPath(); ctx.arc(dotCX-2,dotCY-2,dotR*0.35,0,Math.PI*2); ctx.fill();
       ctx.restore();
+      // Redraw chair in red during sudden death
+      if(suddenDeath && chairImg.complete && chairImg.naturalWidth){
+        ctx.save();
+        // Tint red by drawing red rect with multiply then chair on top
+        ctx.translate(chair.x, chair.y);
+        ctx.shadowColor="#ff2200"; ctx.shadowBlur=15;
+        ctx.drawImage(chairImg,-25,-25,50,50);
+        ctx.restore();
+      }
     }
 
     // ── NEON: intense glow on markers always + previews ──
@@ -2233,12 +2281,12 @@ function loop(){
       });
     }
 
-    // ── GOLDEN HOUR: gold tip at the END of each marker (x-axis tip) ──
+    // ── GOLDEN HOUR: gold tip at the END of each marker (right end = tip) ──
     if(currentTheme==="sunset"){
       // Thrown markers
       markers.forEach(m=>{
         if(m.fallen) return;
-        let tipX = m.color==="blue" ? -40 : -25; // tip = left end of image
+        let tipX = m.color==="blue" ? 40 : 25; // tip = RIGHT end of image
         ctx.save();
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
@@ -2254,9 +2302,8 @@ function loop(){
       previewMarkers.forEach((p,i)=>{
         if(p.used) return;
         let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
-        let pw=p.color==="blue"?80:50;
+        let tipX = p.color==="blue" ? 40 : 25;
         let angle=p.color==="blue"?blueA:stdA;
-        let tipX = p.color==="blue" ? -40 : -25;
         ctx.save();
         ctx.translate(cx,cy); ctx.rotate(angle);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=18;
@@ -2274,3 +2321,4 @@ loop();
 </script>
 </body>
 </html>
+
