@@ -293,7 +293,7 @@ const START_LINE_Y=canvas.height-80;
 // cTop = canvas.height*0.06, cBot = canvas.height*0.97
 const LINE_OF_DESTINY = canvas.height*0.06 + (canvas.height*0.97 - canvas.height*0.06)*0.77;
 
-const redDot={x:RIGHT_WALL+6,y:canvas.height*0.11};
+const redDot={x:RIGHT_WALL+6, y:canvas.height*0.08 + canvas.height*0.055};
 const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:canvas.height*0.13,radius:35};
 
 // ─── GAME MODE STATE ──────────────────────────────────────────────────────
@@ -1644,7 +1644,7 @@ function draw(){
 
   // ── 12. RED DOT — on black strip, slightly into the blinds section ──
   let dotCX = redDot.x;
-  let dotCY = cTop + canvas.height * 0.08 + canvas.height * 0.055; // a little into blinds
+  let dotCY = redDot.y;
   let dotR = 7;
 
   // White index card — rectangular, portrait orientation
@@ -1879,4 +1879,3 @@ loop();
 </script>
 </body>
 </html>
-
