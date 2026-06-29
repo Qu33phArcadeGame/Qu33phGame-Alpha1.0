@@ -284,7 +284,7 @@
   <button class="mode-btn" onclick="showThemeScreen()" id="btnThemes">
     <span class="mode-icon">🎨</span>
     <span class="mode-text">
-      <span class="mode-name" id="themeLabel">THEMES · DEFAULT</span>
+      <span class="mode-name" id="themeLabel">THEME · DEFAULT</span>
       <span class="mode-desc">change the look of the game</span>
     </span>
   </button>
@@ -294,7 +294,7 @@
 
 <!-- THEME SELECT SCREEN -->
 <div id="themeScreen">
-  <div class="theme-screen-title">THEMES</div>
+  <div class="theme-screen-title">THEME</div>
   <div class="theme-screen-sub">CHOOSE YOUR STYLE</div>
 
   <div class="theme-option" id="theme-default" onclick="setTheme('default')">
@@ -537,7 +537,7 @@ function showThemeScreen(){
 function setTheme(t){
   currentTheme=t;
   const names={default:"DEFAULT",cartoon:"CARTOON",neon:"NEON",sunset:"GOLDEN HOUR"};
-  document.getElementById("themeLabel").innerText="THEMES · "+names[t];
+  document.getElementById("themeLabel").innerText="THEME · "+names[t];
   ["default","cartoon","neon","sunset"].forEach(id=>{
     document.getElementById("theme-"+id).classList.toggle("selected", id===t);
   });
@@ -553,47 +553,137 @@ function getMarkerImg(color){
 // Apply theme overlay after all game drawing
 function applyThemeOverlay(){
   if(currentTheme==="default") return;
+  let cw=canvas.width, ch=canvas.height;
+  let t=Date.now()/1000;
+
   if(currentTheme==="cartoon"){
-    // Desaturate + slight contrast boost via greyscale overlay
+    // 1. Full greyscale
     ctx.save();
     ctx.globalCompositeOperation="saturation";
     ctx.fillStyle="rgba(128,128,128,1)";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // Slight vignette
-    let vg=ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.3,canvas.width/2,canvas.height/2,canvas.height*0.8);
-    vg.addColorStop(0,"rgba(0,0,0,0)");
-    vg.addColorStop(1,"rgba(0,0,0,0.35)");
-    ctx.fillStyle=vg; ctx.fillRect(0,0,canvas.width,canvas.height);
-  } else if(currentTheme==="neon"){
-    // Dark overlay then boost saturation with a multiply
+    // 2. High-contrast punch — darken shadows
     ctx.save();
     ctx.globalCompositeOperation="multiply";
-    ctx.fillStyle="rgba(10,0,30,0.55)";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="rgba(0,0,0,0.25)";
+    ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // Neon edge glow — cyan/magenta tint in corners
-    let ng=ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.2,canvas.width/2,canvas.height/2,canvas.height);
-    ng.addColorStop(0,"rgba(0,0,0,0)");
-    ng.addColorStop(1,"rgba(180,0,255,0.18)");
-    ctx.fillStyle=ng; ctx.fillRect(0,0,canvas.width,canvas.height);
-    // Scanlines
-    ctx.strokeStyle="rgba(0,0,0,0.08)"; ctx.lineWidth=1;
-    for(let sy=0;sy<canvas.height;sy+=3){
-      ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(canvas.width,sy); ctx.stroke();
+    // 3. Halftone dot pattern for comic texture
+    ctx.save();
+    ctx.globalAlpha=0.06;
+    ctx.fillStyle="#000";
+    for(let dy=0;dy<ch;dy+=8){
+      for(let dx=0;dx<cw;dx+=8){
+        ctx.beginPath();
+        ctx.arc(dx,dy,1.5,0,Math.PI*2);
+        ctx.fill();
+      }
     }
-  } else if(currentTheme==="sunset"){
-    // Warm amber overlay
+    ctx.restore();
+    // 4. Bold black vignette border
+    ctx.save();
+    ctx.strokeStyle="#000"; ctx.lineWidth=18;
+    ctx.strokeRect(0,0,cw,ch);
+    ctx.restore();
+
+  } else if(currentTheme==="neon"){
+    // 1. Deep dark base
     ctx.save();
     ctx.globalCompositeOperation="multiply";
-    ctx.fillStyle="rgba(255,160,60,0.22)";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="rgba(5,0,20,0.7)";
+    ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // Soft vignette in warm tone
-    let sg=ctx.createRadialGradient(canvas.width/2,canvas.height*0.3,0,canvas.width/2,canvas.height/2,canvas.height);
-    sg.addColorStop(0,"rgba(255,200,80,0.08)");
-    sg.addColorStop(1,"rgba(180,60,0,0.25)");
-    ctx.fillStyle=sg; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // 2. Glow every major asset area using screen blend
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    // Left teal cabinet — cyan glow
+    let lg=ctx.createLinearGradient(0,0,canvas.width*0.22,0);
+    lg.addColorStop(0,"rgba(0,255,220,0.15)");
+    lg.addColorStop(1,"rgba(0,255,220,0)");
+    ctx.fillStyle=lg; ctx.fillRect(0,0,canvas.width*0.22,ch);
+    // Counter surface — green glow
+    let cg2=ctx.createLinearGradient(canvas.width*0.2,0,canvas.width*0.75,0);
+    cg2.addColorStop(0,"rgba(0,255,100,0.08)");
+    cg2.addColorStop(0.5,"rgba(0,255,100,0.12)");
+    cg2.addColorStop(1,"rgba(0,255,100,0.08)");
+    ctx.fillStyle=cg2; ctx.fillRect(canvas.width*0.2,0,canvas.width*0.55,ch);
+    // Right window — purple glow
+    let rg2=ctx.createLinearGradient(canvas.width*0.75,0,cw,0);
+    rg2.addColorStop(0,"rgba(180,0,255,0)");
+    rg2.addColorStop(1,"rgba(180,0,255,0.2)");
+    ctx.fillStyle=rg2; ctx.fillRect(canvas.width*0.75,0,cw-canvas.width*0.75,ch);
+    // AC unit area glow — warm magenta
+    let ag=ctx.createRadialGradient(canvas.width*0.1,ch*0.8,0,canvas.width*0.1,ch*0.8,ch*0.25);
+    ag.addColorStop(0,"rgba(255,0,180,0.2)");
+    ag.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,canvas.width*0.25,ch*0.45);
+    ctx.restore();
+    // 3. Pulsing edge glow
+    let pulse=0.12+0.06*Math.sin(t*2);
+    let eg=ctx.createRadialGradient(cw/2,ch/2,ch*0.3,cw/2,ch/2,ch);
+    eg.addColorStop(0,"rgba(0,0,0,0)");
+    eg.addColorStop(1,`rgba(120,0,255,${pulse})`);
+    ctx.fillStyle=eg; ctx.fillRect(0,0,cw,ch);
+    // 4. Scanlines
+    ctx.save();
+    ctx.globalAlpha=0.07;
+    ctx.strokeStyle="#000"; ctx.lineWidth=1;
+    for(let sy=0;sy<ch;sy+=3){
+      ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(cw,sy); ctx.stroke();
+    }
+    ctx.restore();
+
+  } else if(currentTheme==="sunset"){
+    // 1. Rich golden multiply
+    ctx.save();
+    ctx.globalCompositeOperation="multiply";
+    ctx.fillStyle="rgba(255,180,30,0.35)";
+    ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+    // 2. Warm radial bloom from top
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    let bloom=ctx.createRadialGradient(cw*0.6,0,0,cw*0.6,0,ch*0.8);
+    bloom.addColorStop(0,"rgba(255,220,80,0.22)");
+    bloom.addColorStop(0.5,"rgba(255,140,0,0.08)");
+    bloom.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=bloom; ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+    // 3. Animated gold stars scattered around
+    ctx.save();
+    for(let i=0;i<18;i++){
+      let sx=((i*137+50)%cw);
+      let sy=((i*97+80)%ch);
+      let pulse2=0.4+0.6*Math.abs(Math.sin(t*1.5+i*0.7));
+      let size=2+pulse2*4;
+      ctx.globalAlpha=pulse2*0.8;
+      ctx.fillStyle="#ffd700";
+      ctx.shadowColor="#ffd700"; ctx.shadowBlur=12;
+      ctx.save();
+      ctx.translate(sx,sy); ctx.rotate(t*0.5+i);
+      ctx.beginPath();
+      for(let p=0;p<5;p++){
+        let a=p*Math.PI*2/5-Math.PI/2;
+        let b=a+Math.PI/5;
+        p===0?ctx.moveTo(Math.cos(a)*size,Math.sin(a)*size):ctx.lineTo(Math.cos(a)*size,Math.sin(a)*size);
+        ctx.lineTo(Math.cos(b)*size*0.4,Math.sin(b)*size*0.4);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+    // 4. Gold shimmer sweep
+    let sweepX=(Math.sin(t*0.4)*0.5+0.5)*cw;
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    ctx.globalAlpha=0.12;
+    let sw=ctx.createLinearGradient(sweepX-80,0,sweepX+80,0);
+    sw.addColorStop(0,"rgba(255,215,0,0)");
+    sw.addColorStop(0.5,"rgba(255,215,0,1)");
+    sw.addColorStop(1,"rgba(255,215,0,0)");
+    ctx.fillStyle=sw; ctx.fillRect(sweepX-80,0,160,ch);
+    ctx.restore();
   }
 }
 
@@ -2035,3 +2125,4 @@ loop();
 </script>
 </body>
 </html>
+
