@@ -597,26 +597,31 @@ function applyThemeOverlay(){
 
     ctx.save();
     ctx.globalCompositeOperation="screen";
-    // Counter — electric green
+    // Counter — blazing electric green
     let cg2=ctx.createLinearGradient(cw*0.2,0,cw*0.75,0);
-    cg2.addColorStop(0,"rgba(0,255,120,0.4)");
-    cg2.addColorStop(0.5,"rgba(0,255,120,0.5)");
-    cg2.addColorStop(1,"rgba(0,255,120,0.4)");
+    cg2.addColorStop(0,"rgba(0,255,120,0.6)");
+    cg2.addColorStop(0.5,"rgba(0,255,120,0.75)");
+    cg2.addColorStop(1,"rgba(0,255,120,0.6)");
     ctx.fillStyle=cg2; ctx.fillRect(cw*0.2,0,cw*0.55,ch);
-    // Left cabinet — bright cyan
+    // Second pass for extra intensity
+    ctx.fillStyle=cg2; ctx.fillRect(cw*0.2,0,cw*0.55,ch);
+    // Left cabinet — blazing cyan
     let lg=ctx.createLinearGradient(0,0,cw*0.22,0);
-    lg.addColorStop(0,"rgba(0,255,255,0.55)");
-    lg.addColorStop(1,"rgba(0,255,255,0.1)");
+    lg.addColorStop(0,"rgba(0,255,255,0.8)");
+    lg.addColorStop(1,"rgba(0,255,255,0.2)");
     ctx.fillStyle=lg; ctx.fillRect(0,0,cw*0.22,ch);
-    // Right window — hot magenta
+    ctx.fillStyle=lg; ctx.fillRect(0,0,cw*0.22,ch);
+    // Right window — blazing magenta
     let rg2=ctx.createLinearGradient(cw*0.75,0,cw,0);
-    rg2.addColorStop(0,"rgba(255,0,200,0.15)");
-    rg2.addColorStop(1,"rgba(200,0,255,0.6)");
+    rg2.addColorStop(0,"rgba(255,0,200,0.3)");
+    rg2.addColorStop(1,"rgba(200,0,255,0.9)");
     ctx.fillStyle=rg2; ctx.fillRect(cw*0.75,0,cw*0.25,ch);
-    // AC vent — hot pink
+    ctx.fillStyle=rg2; ctx.fillRect(cw*0.75,0,cw*0.25,ch);
+    // AC vent — hot pink blazing
     let ag=ctx.createRadialGradient(cw*0.1,ch*0.8,0,cw*0.1,ch*0.8,ch*0.22);
-    ag.addColorStop(0,"rgba(255,50,150,0.6)");
+    ag.addColorStop(0,"rgba(255,50,150,0.9)");
     ag.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,cw*0.25,ch*0.45);
     ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,cw*0.25,ch*0.45);
     ctx.restore();
 
@@ -2242,7 +2247,7 @@ function loop(){
     if(currentTheme==="neon"){
       let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
       let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
-      // Preview markers with neon glow
+      // Preview markers with intense neon glow
       previewMarkers.forEach((p,i)=>{
         if(p.used) return;
         const img=getMarkerImg(p.color);
@@ -2252,15 +2257,14 @@ function loop(){
         let pw=p.color==="blue"?80:50, ph=50;
         let angle=p.color==="blue"?blueA:stdA;
         ctx.save();
-        ctx.shadowColor=gc; ctx.shadowBlur=40;
+        ctx.shadowColor=gc; ctx.shadowBlur=60;
         ctx.translate(cx,cy); ctx.rotate(angle);
-        ctx.globalAlpha=0.8;
-        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
-        ctx.globalAlpha=0.4;
-        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalAlpha=1; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalAlpha=0.7; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalAlpha=0.5; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
         ctx.restore();
       });
-      // Thrown markers — always glow own color
+      // Thrown markers — blaze with own color, lime when touching
       markers.forEach(m=>{
         if(m.fallen) return;
         const img=getMarkerImg(m.color);
@@ -2269,22 +2273,22 @@ function loop(){
         let touching=isTouchingAny(m);
         ctx.save();
         ctx.shadowColor=touching?"#00ff00":gc;
-        ctx.shadowBlur=touching?55:45;
+        ctx.shadowBlur=touching?80:70;
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         let w=m.color==="blue"?80:50, h=50;
-        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=1;   ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.7; ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.globalAlpha=0.5; ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.globalAlpha=0.25; ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.3; ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.restore();
       });
     }
 
-    // ── GOLDEN HOUR: gold tip at the actual tip end of each marker ──
+    // ── GOLDEN HOUR: gold tip at LEFT end of marker (actual tip) ──
     if(currentTheme==="sunset"){
       markers.forEach(m=>{
         if(m.fallen) return;
-        // Marker images have tip at the right end — +w/2 but slightly inset
-        let tipX = m.color==="blue" ? 36 : 22;
+        let tipX = m.color==="blue" ? -38 : -23;
         ctx.save();
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
@@ -2299,7 +2303,7 @@ function loop(){
       previewMarkers.forEach((p,i)=>{
         if(p.used) return;
         let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
-        let tipX = p.color==="blue" ? 36 : 22;
+        let tipX = p.color==="blue" ? -38 : -23;
         let angle=p.color==="blue"?blueA2:stdA2;
         ctx.save();
         ctx.translate(cx,cy); ctx.rotate(angle);
