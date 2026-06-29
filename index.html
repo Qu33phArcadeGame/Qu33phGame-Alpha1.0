@@ -108,29 +108,40 @@
     #titleCoins {
       position: absolute;
       top: 16px;
-      left: 16px;
+      left: 0;
+      width: 56px;
       font-family: 'Courier New', monospace;
-      font-size: 14px;
+      font-size: 16px;
+      font-weight: bold;
       color: #fff;
       letter-spacing: 1px;
-      cursor: pointer;
-      z-index: 10;
+      z-index: 200;
       display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    #titleCoins img {
+      width: 44px; height: 44px;
+      object-fit: contain;
     }
     #slotBtn {
       position: absolute;
-      top: 42px;
-      left: 16px;
+      top: 80px;
+      left: 0;
+      width: 56px;
       font-family: 'Courier New', monospace;
-      font-size: 11px;
-      color: #555;
-      letter-spacing: 1px;
+      font-size: 9px;
+      color: #aaa;
+      letter-spacing: 0px;
       cursor: pointer;
-      z-index: 10;
+      z-index: 200;
       background: none;
       border: none;
       padding: 0;
       display: none;
+      text-align: center;
+      line-height: 1.4;
     }
     #slotBtn:active { color: #fff; }
 
@@ -313,7 +324,11 @@
 <button id="rotateBtn">Orientation: vertical</button>
 <div id="timeline"><div id="progress"></div></div>
 
-<div id="titleCoins"><img src="coin.png" width="16" height="16" style="vertical-align:middle; margin-right:4px; object-fit:contain;"><span id="titleCoinCount">0</span></div>
+<div id="titleCoins">
+  <img src="coin.png" alt="coins">
+  <span id="titleCoinCount">0</span>
+</div>
+<button id="slotBtn" onclick="showSlotMachine()">🎰<br>SLOT</button>
 <button id="slotBtn" onclick="showSlotMachine()">🎰 SLOT MACHINE</button>
 
 <!-- TITLE SCREEN -->
@@ -1072,7 +1087,7 @@ function showTitle(){
   let hs=localStorage.getItem("qu33phHigh")||0;
   document.getElementById("titleHighScore").innerText=hs>0?"HIGH SCORE: "+hs:"";
   document.getElementById("titleCoinCount").innerText=coins;
-  document.getElementById("titleCoins").style.display="block";
+  document.getElementById("titleCoins").style.display="flex";
   document.getElementById("slotBtn").style.display="block";
 }
 
@@ -2487,16 +2502,17 @@ function draw(){
   }
   ctx.fillStyle="white";
   ctx.fillText("Score: "+totalScore,20,50);
-  // Coin display using coin.png
+  // Coin display — large coin.png with number below, on left side
   if(coinImg.complete && coinImg.naturalWidth){
-    ctx.drawImage(coinImg, 18, 56, 18, 18);
-    ctx.fillStyle="rgba(255,215,0,0.9)";
-    ctx.font="14px 'Courier New',monospace";
-    ctx.fillText(coins, 40, 70);
-  } else {
-    ctx.fillStyle="rgba(255,215,0,0.8)";
-    ctx.font="14px 'Courier New',monospace";
-    ctx.fillText(coins+" coins", 20, 72);
+    let coinSize = Math.round(LEFT_EDGE * 0.55);
+    let coinX = (LEFT_EDGE - coinSize) / 2;
+    let coinY = canvas.height * 0.08;
+    ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
+    ctx.fillStyle="#ffd700";
+    ctx.font=`bold ${Math.round(LEFT_EDGE*0.28)}px 'Courier New',monospace`;
+    ctx.textAlign="center";
+    ctx.fillText(coins, LEFT_EDGE/2, coinY + coinSize + Math.round(LEFT_EDGE*0.3));
+    ctx.textAlign="left";
   }
 
   // Olympics mode: show round in the left teal cabinet — rotated vertically
