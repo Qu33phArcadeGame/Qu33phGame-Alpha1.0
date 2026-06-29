@@ -545,8 +545,8 @@ function updateLogo(){
   const container = document.getElementById("logoContainer");
   const fallback = document.getElementById("logoFallback");
   if(!img) return;
-  let src = currentTheme==="cartoon" ? "logoC.png"
-          : currentTheme==="neon"    ? "logoneon.png"
+  let src = currentTheme==="cartoon" ? "logoC.jpg"
+          : currentTheme==="neon"    ? "logoneon.jpg"
           : "logo.jpg";
   img.src = src;
   img.style.display = "block";
