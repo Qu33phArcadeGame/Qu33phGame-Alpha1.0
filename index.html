@@ -191,7 +191,7 @@
       font-family:'Courier New',monospace;
     }
     .reel-window {
-      width: 90px; height: 90px;
+      width: 78px; height: 78px;
       border: 2px solid #333;
       border-radius: 8px;
       background: #111;
@@ -199,21 +199,21 @@
       overflow: hidden;
     }
     .reel-img {
-      width: 72px; height: 72px;
+      width: 62px; height: 62px;
       object-fit: contain;
       transition: opacity 0.1s;
     }
     .paytable-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 14px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 12px;
       border-bottom: 1px solid #0f0f0f;
-      font-family: 'Courier New', monospace; font-size: 11px;
+      font-family: 'Courier New', monospace; font-size: 10px;
       color: #666;
     }
     .paytable-row:last-child { border-bottom: none; }
-    .paytable-icons { display: flex; gap: 3px; }
-    .paytable-icons img { width: 24px; height: 24px; object-fit: contain; }
-    .paytable-win { margin-left: auto; color: #ffd700; font-weight: bold; }
+    .paytable-icons { display: flex; gap: 2px; }
+    .paytable-icons img { width: 20px; height: 20px; object-fit: contain; }
+    .paytable-win { margin-left: auto; color: #ffd700; font-weight: bold; font-size: 11px; }
     #medalScreen {
       position:absolute; top:0; left:0; width:100%; height:100%;
       background:#08080a; display:none; flex-direction:column;
@@ -391,36 +391,31 @@
 </div>
 
 <!-- SLOT MACHINE SCREEN -->
-<div id="slotScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#08080a; flex-direction:column; align-items:center; z-index:100; overflow-y:auto; padding-bottom:24px; box-sizing:border-box;">
+<div id="slotScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#08080a; flex-direction:column; align-items:center; z-index:100; overflow:hidden; padding:0; box-sizing:border-box; justify-content:space-evenly;">
 
-  <div style="width:100%; display:flex; align-items:center; padding:16px 16px 0; box-sizing:border-box;">
+  <div style="width:100%; display:flex; align-items:center; padding:10px 16px 0; box-sizing:border-box; flex-shrink:0;">
     <button onclick="showTitle()" style="background:none; border:none; color:#555; font-family:'Courier New',monospace; font-size:13px; letter-spacing:2px; cursor:pointer;">← BACK</button>
-    <div style="margin-left:auto; font-family:'Courier New',monospace; font-size:13px; color:#fff; letter-spacing:1px;"><img src="coin.png" width="14" height="14" style="vertical-align:middle;object-fit:contain;margin-right:3px"><span id="slotCoinCount">0</span></div>
+    <div style="margin-left:auto; font-family:'Courier New',monospace; font-size:13px; color:#fff; display:flex; align-items:center; gap:4px;"><img src="coin.jpg" width="16" height="16" style="object-fit:contain;"> <span id="slotCoinCount">0</span></div>
   </div>
 
-  <div style="font-family:'Courier New',monospace; font-size:22px; font-weight:bold; color:#fff; letter-spacing:4px; margin:12px 0 4px;">QU33PH</div>
-  <div style="font-family:'Courier New',monospace; font-size:11px; color:#ffd700; letter-spacing:4px; margin-bottom:20px;">SLOT MACHINE</div>
-
-  <!-- Cost to spin -->
-  <div id="slotCostLabel" style="font-family:'Courier New',monospace; font-size:11px; color:#444; letter-spacing:2px; margin-bottom:14px;">SPIN COSTS 3 🪙</div>
-
-  <!-- Reels -->
-  <div id="slotReels" style="display:flex; gap:8px; margin-bottom:16px;">
-    <div class="reel-window"><img id="reel0" class="reel-img" src="slotred.png"></div>
-    <div class="reel-window"><img id="reel1" class="reel-img" src="slotgreen.png"></div>
-    <div class="reel-window"><img id="reel2" class="reel-img" src="slotblue.png"></div>
+  <div style="text-align:center; flex-shrink:0;">
+    <div style="font-family:'Courier New',monospace; font-size:18px; font-weight:bold; color:#fff; letter-spacing:4px;">QU33PH</div>
+    <div style="font-family:'Courier New',monospace; font-size:10px; color:#ffd700; letter-spacing:4px;">SLOT MACHINE · SPIN COSTS 3 🪙</div>
   </div>
 
-  <!-- Result message -->
-  <div id="slotResult" style="font-family:'Courier New',monospace; font-size:15px; color:#fff; letter-spacing:2px; min-height:24px; margin-bottom:16px; text-align:center;"></div>
+  <div id="slotReels" style="display:flex; gap:8px; flex-shrink:0;">
+    <div class="reel-window"><img id="reel0" class="reel-img" src="slotred.jpg"></div>
+    <div class="reel-window"><img id="reel1" class="reel-img" src="slotgreen.jpg"></div>
+    <div class="reel-window"><img id="reel2" class="reel-img" src="slotblue.jpg"></div>
+  </div>
 
-  <!-- Spin button -->
-  <button id="spinBtn" onclick="spinSlot()" style="width:min(300px,82vw); padding:16px; background:#fff; color:#000; font-family:'Courier New',monospace; font-size:15px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; margin-bottom:20px;">SPIN — 3 🪙</button>
+  <div id="slotResult" style="font-family:'Courier New',monospace; font-size:12px; color:#fff; letter-spacing:2px; text-align:center; min-height:16px; flex-shrink:0;"></div>
 
-  <!-- Paytable -->
-  <div style="width:min(320px,88vw); border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; margin-bottom:8px;">
-    <div style="background:#111; padding:10px 14px; font-family:'Courier New',monospace; font-size:10px; color:#555; letter-spacing:3px;">PAYTABLE</div>
-    <div id="paytable" style="padding:8px 0;"></div>
+  <button id="spinBtn" onclick="spinSlot()" style="width:min(280px,82vw); padding:11px; background:#fff; color:#000; font-family:'Courier New',monospace; font-size:14px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; flex-shrink:0;">SPIN — 3 🪙</button>
+
+  <div style="width:min(320px,92vw); border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; flex-shrink:0;">
+    <div style="background:#111; padding:5px 12px; font-family:'Courier New',monospace; font-size:9px; color:#555; letter-spacing:3px;">PAYTABLE</div>
+    <div id="paytable" style="padding:1px 0;"></div>
   </div>
 
 </div>
@@ -937,13 +932,13 @@ function applyThemeOverlay(){
 
 // ─── SLOT MACHINE ────────────────────────────────────────────────────────
 const SLOT_SYMBOLS = [
-  { id:"logo",  src:"slotlogo.png",  label:"LOGO",  weight:1 },
-  { id:"mega",  src:"slotmega.png",  label:"MEGA",  weight:2 },
-  { id:"coin",  src:"slotcoin.png",  label:"COIN",  weight:4 },
-  { id:"chair", src:"slotchair.png", label:"CHAIR", weight:5 },
-  { id:"red",   src:"slotred.png",   label:"RED",   weight:8 },
-  { id:"green", src:"slotgreen.png", label:"GREEN", weight:8 },
-  { id:"blue",  src:"slotblue.png",  label:"BLUE",  weight:8 },
+  { id:"logo",  src:"slotlogo.jpg",  label:"LOGO",  weight:1 },
+  { id:"mega",  src:"slotmega.jpg",  label:"MEGA",  weight:2 },
+  { id:"coin",  src:"slotcoin.jpg",  label:"COIN",  weight:4 },
+  { id:"chair", src:"slotchair.jpg", label:"CHAIR", weight:5 },
+  { id:"red",   src:"slotred.jpg",   label:"RED",   weight:8 },
+  { id:"green", src:"slotgreen.jpg", label:"GREEN", weight:8 },
+  { id:"blue",  src:"slotblue.jpg",  label:"BLUE",  weight:8 },
 ];
 const SLOT_COST = 3;
 
