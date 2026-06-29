@@ -54,14 +54,13 @@
       z-index:100;
     }
     .title-logo {
-      font-size: clamp(48px, 12vw, 90px);
-      font-family: 'Courier New', monospace;
-      font-weight: bold;
-      color: #fff;
-      letter-spacing: 8px;
-      text-transform: uppercase;
+      width: min(280px, 75vw);
       margin-bottom: 8px;
-      text-shadow: 0 0 40px rgba(255,255,255,0.15);
+    }
+    .title-logo img {
+      width: 100%;
+      height: auto;
+      display: block;
     }
     .title-sub {
       font-size: clamp(11px, 2.5vw, 14px);
@@ -262,7 +261,7 @@
 
 <!-- TITLE SCREEN -->
 <div id="titleScreen">
-  <div class="title-logo">Qu33ph</div>
+  <div class="title-logo"><img src="logo.png" alt="Qu33ph"></div>
   <div class="title-sub">arcade edition</div>
 
   <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
@@ -684,18 +683,24 @@ function applyThemeOverlay(){
     ctx.restore();
 
   } else if(currentTheme==="sunset"){
-    // 1. Different gold shade per surface
+    // 1. Different gold shade per surface — stronger
     ctx.save();
     ctx.globalCompositeOperation="multiply";
     // Counter — deep amber
-    ctx.fillStyle="rgba(255,160,20,0.38)";
+    ctx.fillStyle="rgba(255,160,20,0.52)";
     ctx.fillRect(cw*0.2,0,cw*0.55,ch);
     // Left cabinet — reddish gold
-    ctx.fillStyle="rgba(220,100,0,0.3)";
+    ctx.fillStyle="rgba(220,100,0,0.45)";
     ctx.fillRect(0,0,cw*0.2,ch);
     // Right window — pale gold
-    ctx.fillStyle="rgba(255,210,80,0.28)";
+    ctx.fillStyle="rgba(255,210,80,0.4)";
     ctx.fillRect(cw*0.75,0,cw*0.25,ch);
+    ctx.restore();
+    // 2. Extra screen-mode gold shimmer over everything
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    ctx.fillStyle="rgba(255,180,0,0.18)";
+    ctx.fillRect(0,0,cw,ch);
     ctx.restore();
     // 2. Warm bloom from upper right
     ctx.save();
@@ -2288,7 +2293,7 @@ function loop(){
     if(currentTheme==="sunset"){
       markers.forEach(m=>{
         if(m.fallen) return;
-        let tipX = m.color==="blue" ? -38 : -23;
+        let tipX = m.color==="blue" ? -35 : -20;
         ctx.save();
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
@@ -2303,7 +2308,7 @@ function loop(){
       previewMarkers.forEach((p,i)=>{
         if(p.used) return;
         let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
-        let tipX = p.color==="blue" ? -38 : -23;
+        let tipX = p.color==="blue" ? -35 : -20;
         let angle=p.color==="blue"?blueA2:stdA2;
         ctx.save();
         ctx.translate(cx,cy); ctx.rotate(angle);
