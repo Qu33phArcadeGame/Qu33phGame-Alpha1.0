@@ -56,11 +56,17 @@
     .title-logo {
       width: min(280px, 75vw);
       margin-bottom: 8px;
+      position: relative;
     }
     .title-logo img {
       width: 100%;
       height: auto;
       display: block;
+    }
+    .title-logo.golden-border img {
+      border: 3px solid #ffd700;
+      border-radius: 8px;
+      box-shadow: 0 0 18px #ffd700, 0 0 36px rgba(255,215,0,0.4);
     }
     .title-sub {
       font-size: clamp(11px, 2.5vw, 14px);
@@ -261,7 +267,7 @@
 
 <!-- TITLE SCREEN -->
 <div id="titleScreen">
-  <div class="title-logo"><img src="logo.png" alt="Qu33ph"></div>
+  <div class="title-logo" id="logoContainer"><img id="logoImg" src="logo.png" alt="Qu33ph"></div>
   <div class="title-sub">arcade edition</div>
 
   <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
@@ -533,6 +539,25 @@ function showThemeScreen(){
   });
 }
 
+function updateLogo(){
+  const img = document.getElementById("logoImg");
+  const container = document.getElementById("logoContainer");
+  if(!img) return;
+  if(currentTheme==="cartoon"){
+    img.src="logoC.png";
+    container.classList.remove("golden-border");
+  } else if(currentTheme==="neon"){
+    img.src="logoneon.png";
+    container.classList.remove("golden-border");
+  } else if(currentTheme==="sunset"){
+    img.src="logo.png";
+    container.classList.add("golden-border");
+  } else {
+    img.src="logo.png";
+    container.classList.remove("golden-border");
+  }
+}
+
 function setTheme(t){
   currentTheme=t;
   const names={default:"DEFAULT",cartoon:"COMIC",neon:"NEON",sunset:"GOLDEN HOUR"};
@@ -540,6 +565,7 @@ function setTheme(t){
   ["default","cartoon","neon","sunset"].forEach(id=>{
     document.getElementById("theme-"+id).classList.toggle("selected", id===t);
   });
+  updateLogo();
   showTitle();
 }
 
@@ -766,6 +792,7 @@ function showTitle(){
   document.getElementById("medalScreen").style.display="none";
   document.getElementById("themeScreen").style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
+  updateLogo();
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
   let hs=localStorage.getItem("qu33phHigh")||0;
@@ -2327,3 +2354,4 @@ loop();
 </script>
 </body>
 </html>
+
