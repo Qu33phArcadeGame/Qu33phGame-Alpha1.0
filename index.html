@@ -303,7 +303,7 @@
   </div>
   <div class="theme-option" id="theme-cartoon" onclick="setTheme('cartoon')">
     <span class="theme-icon">✏️</span>
-    <span><span class="theme-name">CARTOON</span><span class="theme-desc">black & white · comic style · custom markers</span></span>
+    <span><span class="theme-name">COMIC</span><span class="theme-desc">black & white · comic style · custom markers</span></span>
   </div>
   <div class="theme-option" id="theme-neon" onclick="setTheme('neon')">
     <span class="theme-icon">⚡</span>
@@ -536,7 +536,7 @@ function showThemeScreen(){
 
 function setTheme(t){
   currentTheme=t;
-  const names={default:"DEFAULT",cartoon:"CARTOON",neon:"NEON",sunset:"GOLDEN HOUR"};
+  const names={default:"DEFAULT",cartoon:"COMIC",neon:"NEON",sunset:"GOLDEN HOUR"};
   document.getElementById("themeLabel").innerText="THEME · "+names[t];
   ["default","cartoon","neon","sunset"].forEach(id=>{
     document.getElementById("theme-"+id).classList.toggle("selected", id===t);
@@ -588,80 +588,100 @@ function applyThemeOverlay(){
     ctx.restore();
 
   } else if(currentTheme==="neon"){
-    // 1. Deep dark base
+    // Mild dark base — not too dark so colours still show
     ctx.save();
     ctx.globalCompositeOperation="multiply";
-    ctx.fillStyle="rgba(5,0,20,0.7)";
+    ctx.fillStyle="rgba(8,0,25,0.45)";
     ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // 2. Glow every major asset area using screen blend
+    // BRIGHT screen-mode glows on every surface
     ctx.save();
     ctx.globalCompositeOperation="screen";
-    // Left teal cabinet — cyan glow
-    let lg=ctx.createLinearGradient(0,0,canvas.width*0.22,0);
-    lg.addColorStop(0,"rgba(0,255,220,0.15)");
-    lg.addColorStop(1,"rgba(0,255,220,0)");
-    ctx.fillStyle=lg; ctx.fillRect(0,0,canvas.width*0.22,ch);
-    // Counter surface — green glow
-    let cg2=ctx.createLinearGradient(canvas.width*0.2,0,canvas.width*0.75,0);
-    cg2.addColorStop(0,"rgba(0,255,100,0.08)");
-    cg2.addColorStop(0.5,"rgba(0,255,100,0.12)");
-    cg2.addColorStop(1,"rgba(0,255,100,0.08)");
-    ctx.fillStyle=cg2; ctx.fillRect(canvas.width*0.2,0,canvas.width*0.55,ch);
-    // Right window — purple glow
-    let rg2=ctx.createLinearGradient(canvas.width*0.75,0,cw,0);
-    rg2.addColorStop(0,"rgba(180,0,255,0)");
-    rg2.addColorStop(1,"rgba(180,0,255,0.2)");
-    ctx.fillStyle=rg2; ctx.fillRect(canvas.width*0.75,0,cw-canvas.width*0.75,ch);
-    // AC unit area glow — warm magenta
-    let ag=ctx.createRadialGradient(canvas.width*0.1,ch*0.8,0,canvas.width*0.1,ch*0.8,ch*0.25);
-    ag.addColorStop(0,"rgba(255,0,180,0.2)");
+    // Counter surface — bright electric green
+    let cg2=ctx.createLinearGradient(cw*0.2,0,cw*0.75,0);
+    cg2.addColorStop(0,"rgba(0,255,120,0.35)");
+    cg2.addColorStop(0.5,"rgba(0,255,120,0.45)");
+    cg2.addColorStop(1,"rgba(0,255,120,0.35)");
+    ctx.fillStyle=cg2; ctx.fillRect(cw*0.2,0,cw*0.55,ch);
+    // Left teal cabinet — bright cyan
+    let lg=ctx.createLinearGradient(0,0,cw*0.22,0);
+    lg.addColorStop(0,"rgba(0,255,255,0.5)");
+    lg.addColorStop(1,"rgba(0,255,255,0.1)");
+    ctx.fillStyle=lg; ctx.fillRect(0,0,cw*0.22,ch);
+    // Right window — hot magenta/purple
+    let rg2=ctx.createLinearGradient(cw*0.75,0,cw,0);
+    rg2.addColorStop(0,"rgba(255,0,200,0.15)");
+    rg2.addColorStop(1,"rgba(200,0,255,0.55)");
+    ctx.fillStyle=rg2; ctx.fillRect(cw*0.75,0,cw*0.25,ch);
+    // AC vent — warm hot pink
+    let ag=ctx.createRadialGradient(cw*0.1,ch*0.8,0,cw*0.1,ch*0.8,ch*0.22);
+    ag.addColorStop(0,"rgba(255,50,150,0.55)");
     ag.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,canvas.width*0.25,ch*0.45);
+    ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,cw*0.25,ch*0.45);
+    // Top cabinet strip — yellow-white hot
+    let tg=ctx.createLinearGradient(0,0,0,ch*0.12);
+    tg.addColorStop(0,"rgba(255,255,100,0.5)");
+    tg.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=tg; ctx.fillRect(0,0,cw,ch*0.12);
     ctx.restore();
-    // 3. Pulsing edge glow
-    let pulse=0.12+0.06*Math.sin(t*2);
-    let eg=ctx.createRadialGradient(cw/2,ch/2,ch*0.3,cw/2,ch/2,ch);
+    // Pulsing outer edge glow
+    let pulse=0.18+0.1*Math.sin(t*2.5);
+    let eg=ctx.createRadialGradient(cw/2,ch/2,ch*0.25,cw/2,ch/2,ch);
     eg.addColorStop(0,"rgba(0,0,0,0)");
-    eg.addColorStop(1,`rgba(120,0,255,${pulse})`);
+    eg.addColorStop(1,`rgba(150,0,255,${pulse})`);
     ctx.fillStyle=eg; ctx.fillRect(0,0,cw,ch);
-    // 4. Scanlines
+    // Bright scanlines
     ctx.save();
-    ctx.globalAlpha=0.07;
-    ctx.strokeStyle="#000"; ctx.lineWidth=1;
+    ctx.globalAlpha=0.06;
+    ctx.strokeStyle="#fff"; ctx.lineWidth=1;
     for(let sy=0;sy<ch;sy+=3){
       ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(cw,sy); ctx.stroke();
     }
     ctx.restore();
 
   } else if(currentTheme==="sunset"){
-    // 1. Rich golden multiply
+    // 1. Different gold shade per surface
     ctx.save();
     ctx.globalCompositeOperation="multiply";
-    ctx.fillStyle="rgba(255,180,30,0.35)";
-    ctx.fillRect(0,0,cw,ch);
+    // Counter — deep amber
+    ctx.fillStyle="rgba(255,160,20,0.38)";
+    ctx.fillRect(cw*0.2,0,cw*0.55,ch);
+    // Left cabinet — reddish gold
+    ctx.fillStyle="rgba(220,100,0,0.3)";
+    ctx.fillRect(0,0,cw*0.2,ch);
+    // Right window — pale gold
+    ctx.fillStyle="rgba(255,210,80,0.28)";
+    ctx.fillRect(cw*0.75,0,cw*0.25,ch);
     ctx.restore();
-    // 2. Warm radial bloom from top
+    // 2. Warm bloom from upper right
     ctx.save();
     ctx.globalCompositeOperation="screen";
-    let bloom=ctx.createRadialGradient(cw*0.6,0,0,cw*0.6,0,ch*0.8);
-    bloom.addColorStop(0,"rgba(255,220,80,0.22)");
-    bloom.addColorStop(0.5,"rgba(255,140,0,0.08)");
+    let bloom=ctx.createRadialGradient(cw*0.7,0,0,cw*0.7,0,ch*0.9);
+    bloom.addColorStop(0,"rgba(255,220,60,0.3)");
+    bloom.addColorStop(0.4,"rgba(255,140,0,0.1)");
     bloom.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle=bloom; ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // 3. Animated gold stars scattered around
+    // 3. Moving gold stars orbiting in slow arcs
     ctx.save();
-    for(let i=0;i<18;i++){
-      let sx=((i*137+50)%cw);
-      let sy=((i*97+80)%ch);
-      let pulse2=0.4+0.6*Math.abs(Math.sin(t*1.5+i*0.7));
-      let size=2+pulse2*4;
-      ctx.globalAlpha=pulse2*0.8;
-      ctx.fillStyle="#ffd700";
-      ctx.shadowColor="#ffd700"; ctx.shadowBlur=12;
+    for(let i=0;i<22;i++){
+      // Orbit around different centres
+      let cx2=cw*(0.2+0.6*((i*73)%100)/100);
+      let cy2=ch*(0.1+0.8*((i*53)%100)/100);
+      let orbitR=30+((i*37)%80);
+      let speed=0.3+((i*17)%10)/20;
+      let angle=t*speed+i*0.85;
+      let sx=cx2+Math.cos(angle)*orbitR;
+      let sy=ch*(0.05+((i*29)%90)/100);
+      // Drift downward over time too
+      sy=(sy+t*18*(0.3+((i*11)%10)/20))%ch;
+      let pulse2=0.3+0.7*Math.abs(Math.sin(t*1.2+i*0.6));
+      let size=1.5+pulse2*4;
+      ctx.globalAlpha=pulse2*0.85;
+      ctx.fillStyle=i%3===0?"#ffd700":i%3===1?"#ffb300":"#ffe066";
+      ctx.shadowColor="#ffd700"; ctx.shadowBlur=14;
       ctx.save();
-      ctx.translate(sx,sy); ctx.rotate(t*0.5+i);
+      ctx.translate(sx,sy); ctx.rotate(t*0.8+i);
       ctx.beginPath();
       for(let p=0;p<5;p++){
         let a=p*Math.PI*2/5-Math.PI/2;
@@ -673,16 +693,16 @@ function applyThemeOverlay(){
       ctx.restore();
     }
     ctx.restore();
-    // 4. Gold shimmer sweep
-    let sweepX=(Math.sin(t*0.4)*0.5+0.5)*cw;
+    // 4. Slow gold shimmer sweep
+    let sweepX=(Math.sin(t*0.35)*0.5+0.5)*cw;
     ctx.save();
     ctx.globalCompositeOperation="screen";
-    ctx.globalAlpha=0.12;
-    let sw=ctx.createLinearGradient(sweepX-80,0,sweepX+80,0);
+    ctx.globalAlpha=0.14;
+    let sw=ctx.createLinearGradient(sweepX-100,0,sweepX+100,0);
     sw.addColorStop(0,"rgba(255,215,0,0)");
     sw.addColorStop(0.5,"rgba(255,215,0,1)");
     sw.addColorStop(1,"rgba(255,215,0,0)");
-    ctx.fillStyle=sw; ctx.fillRect(sweepX-80,0,160,ch);
+    ctx.fillStyle=sw; ctx.fillRect(sweepX-100,0,200,ch);
     ctx.restore();
   }
 }
@@ -2118,11 +2138,55 @@ showTitle();
 function loop(){
   update();
   draw();
-  if(gameState==="playing") applyThemeOverlay();
+  if(gameState==="playing"){
+    applyThemeOverlay();
+    // Cartoon: redraw markers in COLOR on top of greyscale world
+    if(currentTheme==="cartoon"){
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        const img=cartoonImages[m.color];
+        if(!img||!img.complete||!img.naturalWidth) return;
+        ctx.save();
+        ctx.translate(m.x,m.y);
+        ctx.rotate(m.rotation);
+        let w=m.color==="blue"?80:50, h=50;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.restore();
+      });
+    }
+    // Neon: redraw markers with intense glow
+    if(currentTheme==="neon"){
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        const img=getMarkerImg(m.color);
+        if(!img||!img.complete) return;
+        ctx.save();
+        let gc=m.color==="red"?"#ff0055":m.color==="green"?"#00ff88":"#0088ff";
+        ctx.shadowColor=gc; ctx.shadowBlur=35;
+        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
+        let w=m.color==="blue"?80:50, h=50;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.shadowBlur=0;
+        ctx.restore();
+      });
+    }
+    // Golden hour: glow marker tips gold
+    if(currentTheme==="sunset"){
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        ctx.save();
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=20;
+        ctx.globalAlpha=0.7;
+        ctx.fillStyle="#ffd700";
+        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
+        ctx.beginPath(); ctx.arc(0,-22,6,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+    }
+  }
   requestAnimationFrame(loop);
 }
 loop();
 </script>
 </body>
 </html>
-
