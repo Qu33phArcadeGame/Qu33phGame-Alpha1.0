@@ -267,7 +267,8 @@
 
 <!-- TITLE SCREEN -->
 <div id="titleScreen">
-  <div class="title-logo" id="logoContainer"><img id="logoImg" src="logo.png" alt="Qu33ph"></div>
+  <div class="title-logo" id="logoContainer"><img id="logoImg" src="logo.jpg" alt="Qu33ph" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"></div>
+  <div id="logoFallback" style="display:none; font-family:'Courier New',monospace; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;">Qu33ph</div>
   <div class="title-sub">arcade edition</div>
 
   <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
@@ -542,18 +543,17 @@ function showThemeScreen(){
 function updateLogo(){
   const img = document.getElementById("logoImg");
   const container = document.getElementById("logoContainer");
+  const fallback = document.getElementById("logoFallback");
   if(!img) return;
-  if(currentTheme==="cartoon"){
-    img.src="logoC.png";
-    container.classList.remove("golden-border");
-  } else if(currentTheme==="neon"){
-    img.src="logoneon.png";
-    container.classList.remove("golden-border");
-  } else if(currentTheme==="sunset"){
-    img.src="logo.png";
+  let src = currentTheme==="cartoon" ? "logoC.png"
+          : currentTheme==="neon"    ? "logoneon.png"
+          : "logo.jpg";
+  img.src = src;
+  img.style.display = "block";
+  if(fallback) fallback.style.display = "none";
+  if(currentTheme==="sunset"){
     container.classList.add("golden-border");
   } else {
-    img.src="logo.png";
     container.classList.remove("golden-border");
   }
 }
