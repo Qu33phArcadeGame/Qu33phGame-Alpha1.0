@@ -1132,13 +1132,21 @@ function lerpRGB(a,b,t){
 
 function drawWindowScene(elapsed){
   let t = Math.min(elapsed/TOTAL_TIME, 1);
-  let wx = RIGHT_WALL + 10; // inside frame
+  let wx = RIGHT_WALL + 10;
   let ww = canvas.width - wx;
   let wh = canvas.height;
 
-  // Window fills the ENTIRE right strip top to bottom
-  // Sky takes top 60%, ground takes bottom 40%
-  let horizonY = wh * 0.6;
+  // Glass area starts below the white wall panel
+  let glassTop = wh * 0.42 + 10;
+  // Sky/horizon within the glass section
+  let horizonY = glassTop + (wh - glassTop) * 0.55;
+
+  // Fill everything above glass with background (wall panel covers it)
+  // Only draw scene in glass area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(wx, glassTop, ww, wh - glassTop);
+  ctx.clip();
 
   // ── sky gradient ──
   let skyTop, skyBot;
@@ -1155,7 +1163,7 @@ function drawWindowScene(elapsed){
   grad.addColorStop(0, `rgb(${skyTop})`);
   grad.addColorStop(1, `rgb(${skyBot})`);
   ctx.fillStyle = grad;
-  ctx.fillRect(wx, 0, ww, horizonY);
+  ctx.fillRect(wx, glassTop, ww, horizonY - glassTop);
 
   // ── ground / greenery ──
   let groundColor = t<0.66
@@ -1241,26 +1249,42 @@ function drawWindowFrame(){
   ctx.fillStyle="#a8a29a";
   ctx.fillRect(wx+10, blindH-3, ww-10, 5);
 
+  // ── WHITE/CREAM WALL PANEL between blind and glass ──
+  // In the reference this is a solid wall section ~35% of window height
+  let wallTop = blindH + 8;
+  let wallBot = wh * 0.42;
+  let wallGrad = ctx.createLinearGradient(0, wallTop, 0, wallBot);
+  wallGrad.addColorStop(0,"#e8e4de");
+  wallGrad.addColorStop(1,"#dedad4");
+  ctx.fillStyle=wallGrad;
+  ctx.fillRect(wx+10, wallTop, ww-10, wallBot-wallTop);
+  // subtle wall texture line
+  ctx.strokeStyle="rgba(200,196,190,0.5)"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(wx+10, wallBot); ctx.lineTo(canvas.width, wallBot); ctx.stroke();
+
   // ── outer left frame (full height dark strip) ──
   let frameColor="#181818";
   ctx.fillStyle=frameColor;
   ctx.fillRect(wx, 0, 10, wh);
 
-  // ── top frame bar ──
+  // ── top frame bar (below blind, above wall) ──
   ctx.fillRect(wx+10, blindH, ww-10, 8);
 
-  // ── bottom frame bar (very bottom of screen) ──
+  // ── frame bar between wall and glass ──
+  ctx.fillRect(wx+10, wallBot, ww-10, 10);
+
+  // ── bottom frame bar ──
   ctx.fillRect(wx+10, wh-8, ww-10, 8);
 
-  // ── vertical mullions (2 dividers, full height) ──
+  // ── vertical mullions — only in the glass section below the wall ──
+  let glassTop = wallBot + 10;
   let col1 = wx + ww*0.38;
   let col2 = wx + ww*0.72;
-  ctx.fillRect(col1-4, blindH, 8, wh - blindH);
-  ctx.fillRect(col2-4, blindH, 8, wh - blindH);
+  ctx.fillRect(col1-4, glassTop, 8, wh - glassTop);
+  ctx.fillRect(col2-4, glassTop, 8, wh - glassTop);
 
-  // ── horizontal mid-rails — 2 of them to make proper grid panes ──
-  ctx.fillRect(wx+10, wh*0.35, ww-10, 7);
-  ctx.fillRect(wx+10, wh*0.62, ww-10, 7);
+  // ── horizontal mid-rail in glass section ──
+  ctx.fillRect(wx+10, glassTop + (wh-glassTop)*0.5, ww-10, 7);
 }
 
 // ─── UPDATE ───────────────────────────────────────────────────────────────
