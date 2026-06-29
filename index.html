@@ -179,7 +179,30 @@
       letter-spacing:3px;
       font-family:'Courier New',monospace;
     }
-    /* MEDAL SCREEN */
+    .reel-window {
+      width: 90px; height: 90px;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #111;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .reel-img {
+      width: 72px; height: 72px;
+      object-fit: contain;
+      transition: opacity 0.1s;
+    }
+    .paytable-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid #0f0f0f;
+      font-family: 'Courier New', monospace; font-size: 11px;
+      color: #666;
+    }
+    .paytable-row:last-child { border-bottom: none; }
+    .paytable-icons { display: flex; gap: 3px; }
+    .paytable-icons img { width: 24px; height: 24px; object-fit: contain; }
+    .paytable-win { margin-left: auto; color: #ffd700; font-weight: bold; }
     #medalScreen {
       position:absolute; top:0; left:0; width:100%; height:100%;
       background:#08080a; display:none; flex-direction:column;
@@ -290,7 +313,7 @@
 <button id="rotateBtn">Orientation: vertical</button>
 <div id="timeline"><div id="progress"></div></div>
 
-<div id="titleCoins">🪙 <span id="titleCoinCount">0</span></div>
+<div id="titleCoins"><img src="coin.png" width="16" height="16" style="vertical-align:middle; margin-right:4px; object-fit:contain;"><span id="titleCoinCount">0</span></div>
 <button id="slotBtn" onclick="showSlotMachine()">🎰 SLOT MACHINE</button>
 
 <!-- TITLE SCREEN -->
@@ -350,6 +373,41 @@
 
   <div id="themeCoinsDisplay" style="margin-top:14px; font-family:'Courier New',monospace; font-size:12px; color:#888; letter-spacing:2px;"></div>
   <button class="theme-back" onclick="showTitle()">← BACK</button>
+</div>
+
+<!-- SLOT MACHINE SCREEN -->
+<div id="slotScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#08080a; flex-direction:column; align-items:center; z-index:100; overflow-y:auto; padding-bottom:24px; box-sizing:border-box;">
+
+  <div style="width:100%; display:flex; align-items:center; padding:16px 16px 0; box-sizing:border-box;">
+    <button onclick="showTitle()" style="background:none; border:none; color:#555; font-family:'Courier New',monospace; font-size:13px; letter-spacing:2px; cursor:pointer;">← BACK</button>
+    <div style="margin-left:auto; font-family:'Courier New',monospace; font-size:13px; color:#fff; letter-spacing:1px;"><img src="coin.png" width="14" height="14" style="vertical-align:middle;object-fit:contain;margin-right:3px"><span id="slotCoinCount">0</span></div>
+  </div>
+
+  <div style="font-family:'Courier New',monospace; font-size:22px; font-weight:bold; color:#fff; letter-spacing:4px; margin:12px 0 4px;">QU33PH</div>
+  <div style="font-family:'Courier New',monospace; font-size:11px; color:#ffd700; letter-spacing:4px; margin-bottom:20px;">SLOT MACHINE</div>
+
+  <!-- Cost to spin -->
+  <div id="slotCostLabel" style="font-family:'Courier New',monospace; font-size:11px; color:#444; letter-spacing:2px; margin-bottom:14px;">SPIN COSTS 3 🪙</div>
+
+  <!-- Reels -->
+  <div id="slotReels" style="display:flex; gap:8px; margin-bottom:16px;">
+    <div class="reel-window"><img id="reel0" class="reel-img" src="slotred.png"></div>
+    <div class="reel-window"><img id="reel1" class="reel-img" src="slotgreen.png"></div>
+    <div class="reel-window"><img id="reel2" class="reel-img" src="slotblue.png"></div>
+  </div>
+
+  <!-- Result message -->
+  <div id="slotResult" style="font-family:'Courier New',monospace; font-size:15px; color:#fff; letter-spacing:2px; min-height:24px; margin-bottom:16px; text-align:center;"></div>
+
+  <!-- Spin button -->
+  <button id="spinBtn" onclick="spinSlot()" style="width:min(300px,82vw); padding:16px; background:#fff; color:#000; font-family:'Courier New',monospace; font-size:15px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; margin-bottom:20px;">SPIN — 3 🪙</button>
+
+  <!-- Paytable -->
+  <div style="width:min(320px,88vw); border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; margin-bottom:8px;">
+    <div style="background:#111; padding:10px 14px; font-family:'Courier New',monospace; font-size:10px; color:#555; letter-spacing:3px;">PAYTABLE</div>
+    <div id="paytable" style="padding:8px 0;"></div>
+  </div>
+
 </div>
 
 <!-- NATION SELECT SCREEN -->
@@ -862,9 +920,139 @@ function applyThemeOverlay(){
   }
 }
 
+// ─── SLOT MACHINE ────────────────────────────────────────────────────────
+const SLOT_SYMBOLS = [
+  { id:"logo",  src:"slotlogo.png",  label:"LOGO",  weight:1 },
+  { id:"mega",  src:"slotmega.png",  label:"MEGA",  weight:2 },
+  { id:"coin",  src:"slotcoin.png",  label:"COIN",  weight:4 },
+  { id:"chair", src:"slotchair.png", label:"CHAIR", weight:5 },
+  { id:"red",   src:"slotred.png",   label:"RED",   weight:8 },
+  { id:"green", src:"slotgreen.png", label:"GREEN", weight:8 },
+  { id:"blue",  src:"slotblue.png",  label:"BLUE",  weight:8 },
+];
+const SLOT_COST = 3;
+
+// Paytable: [sym1, sym2, sym3] → coins won (null = any)
+const PAYTABLE = [
+  { syms:["logo","logo","logo"],   win:200, label:"JACKPOT" },
+  { syms:["mega","mega","mega"],   win:50,  label:"MEGA QU33PH" },
+  { syms:["coin","coin","coin"],   win:30,  label:"TRIPLE COIN" },
+  { syms:["chair","chair","chair"],win:20,  label:"CHAIR SPIN" },
+  { syms:["logo","logo",null],     win:15,  label:"DOUBLE LOGO" },
+  { syms:["mega","mega",null],     win:8,   label:"DOUBLE MEGA" },
+  { syms:["coin","coin",null],     win:5,   label:"DOUBLE COIN" },
+  { syms:["red","green","blue"],   win:10,  label:"QU33PH TRIO" },
+  { syms:[null,"logo",null],       win:3,   label:"ANY LOGO" },
+  { syms:[null,"coin",null],       win:2,   label:"ANY COIN" },
+];
+
+function pickSymbol(){
+  let total=SLOT_SYMBOLS.reduce((a,s)=>a+s.weight,0);
+  let r=Math.random()*total;
+  for(let s of SLOT_SYMBOLS){ r-=s.weight; if(r<=0) return s; }
+  return SLOT_SYMBOLS[SLOT_SYMBOLS.length-1];
+}
+
+function checkWin(results){
+  let ids=results.map(s=>s.id);
+  for(let row of PAYTABLE){
+    let match=true;
+    for(let i=0;i<3;i++){
+      if(row.syms[i]!==null && row.syms[i]!==ids[i]){ match=false; break; }
+    }
+    if(match) return row;
+  }
+  return null;
+}
+
+let slotSpinning=false;
+
 function showSlotMachine(){
-  // Slot machine — coming soon, will be implemented next
-  alert("🎰 SLOT MACHINE — coming soon!");
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
+  document.getElementById("slotScreen").style.display="flex";
+  document.getElementById("slotCoinCount").innerText=coins;
+  document.getElementById("slotResult").innerText="";
+  buildPaytable();
+  updateSpinBtn();
+}
+
+function updateSpinBtn(){
+  let btn=document.getElementById("spinBtn");
+  btn.disabled=coins<SLOT_COST||slotSpinning;
+  btn.style.background=coins<SLOT_COST?"#222":"#fff";
+  btn.style.color=coins<SLOT_COST?"#444":"#000";
+}
+
+function buildPaytable(){
+  let pt=document.getElementById("paytable");
+  pt.innerHTML="";
+  PAYTABLE.forEach(row=>{
+    let div=document.createElement("div");
+    div.className="paytable-row";
+    let icons=row.syms.map(s=>{
+      if(!s) return `<span style="font-size:18px;opacity:0.3">❓</span>`;
+      let sym=SLOT_SYMBOLS.find(x=>x.id===s);
+      return `<img src="${sym.src}" title="${sym.label}">`;
+    }).join("");
+    div.innerHTML=`<div class="paytable-icons">${icons}</div><span style="color:#888;font-size:10px;">${row.label}</span><span class="paytable-win">+${row.win}🪙</span>`;
+    pt.appendChild(div);
+  });
+}
+
+function spinSlot(){
+  if(slotSpinning||coins<SLOT_COST) return;
+  addCoins(-SLOT_COST);
+  document.getElementById("slotCoinCount").innerText=coins;
+  document.getElementById("slotResult").innerText="";
+  slotSpinning=true;
+  updateSpinBtn();
+
+  let results=[null,null,null];
+  let settled=0;
+  const reelIds=["reel0","reel1","reel2"];
+  const delays=[600,900,1200];
+
+  // Animate each reel — flash through symbols then settle
+  reelIds.forEach((id,i)=>{
+    let img=document.getElementById(id);
+    let ticks=0;
+    let maxTicks=12+i*6;
+    let interval=setInterval(()=>{
+      let sym=pickSymbol();
+      img.src=sym.src;
+      ticks++;
+      if(ticks>=maxTicks){
+        clearInterval(interval);
+        let final=pickSymbol();
+        results[i]=final;
+        img.src=final.src;
+        settled++;
+        if(settled===3){
+          slotSpinning=false;
+          let won=checkWin(results);
+          let resultEl=document.getElementById("slotResult");
+          if(won){
+            addCoins(won.win);
+            document.getElementById("slotCoinCount").innerText=coins;
+            resultEl.style.color="#ffd700";
+            resultEl.innerText=won.label+"! +"+won.win+" 🪙";
+            // Flash reels gold
+            reelIds.forEach(r=>{
+              document.getElementById(r).parentElement.style.borderColor="#ffd700";
+              setTimeout(()=>document.getElementById(r).parentElement.style.borderColor="#333",1500);
+            });
+          } else {
+            resultEl.style.color="#555";
+            resultEl.innerText="no match — try again";
+          }
+          document.getElementById("slotCoinCount").innerText=coins;
+          updateSpinBtn();
+        }
+      }
+    }, 80);
+  });
 }
 
 function showTitle(){
@@ -876,6 +1064,7 @@ function showTitle(){
   document.getElementById("nationScreen").style.display="none";
   document.getElementById("medalScreen").style.display="none";
   document.getElementById("themeScreen").style.display="none";
+  document.getElementById("slotScreen").style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   updateLogo();
   document.getElementById("rotateBtn").style.display="none";
@@ -2298,17 +2487,30 @@ function draw(){
   }
   ctx.fillStyle="white";
   ctx.fillText("Score: "+totalScore,20,50);
-  // Coin display
-  ctx.font="14px 'Courier New',monospace";
-  ctx.fillStyle="rgba(255,215,0,0.8)";
-  ctx.fillText("🪙 "+coins, 20, 72);
+  // Coin display using coin.png
+  if(coinImg.complete && coinImg.naturalWidth){
+    ctx.drawImage(coinImg, 18, 56, 18, 18);
+    ctx.fillStyle="rgba(255,215,0,0.9)";
+    ctx.font="14px 'Courier New',monospace";
+    ctx.fillText(coins, 40, 70);
+  } else {
+    ctx.fillStyle="rgba(255,215,0,0.8)";
+    ctx.font="14px 'Courier New',monospace";
+    ctx.fillText(coins+" coins", 20, 72);
+  }
 
-  // Olympics mode: show round indicator
-  if(gameMode==="olympics"&&olympicsState){
-    ctx.fillStyle="#555";
-    ctx.font="13px 'Courier New',monospace";
-    let rLabel=olympicsState.round===1?"SEMIFINAL B":olympicsState.round===2?"SEMIFINAL A":"GRAND FINAL";
-    ctx.fillText("OLYMPICS · "+rLabel,20,80);
+  // Olympics mode: show round in the left teal cabinet — rotated vertically
+  if((gameMode==="olympics"||gameMode==="specialolympics")&&olympicsState){
+    let rLabel = olympicsState.round===1?"QF":olympicsState.round===2?"SEMI":"FINAL";
+    let modeLabel = gameMode==="specialolympics"?"SPECIAL":"OLYMPICS";
+    ctx.save();
+    ctx.fillStyle="rgba(255,255,255,0.5)";
+    ctx.font="bold 10px 'Courier New',monospace";
+    ctx.textAlign="center";
+    ctx.translate(LEFT_EDGE*0.5, canvas.height*0.5);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText(modeLabel+" · "+rLabel, 0, 0);
+    ctx.restore();
   }
 }
 
