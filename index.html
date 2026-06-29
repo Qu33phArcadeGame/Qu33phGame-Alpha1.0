@@ -206,7 +206,52 @@
       font-weight:bold; letter-spacing:2px; border:none;
       border-radius:4px; cursor:pointer; display:none;
     }
-    .nation-confirm:active { background:#a88830; }
+    /* THEME BUTTON */
+    .theme-btn {
+      width:min(340px,80vw); margin:6px 0;
+      padding:14px 24px; border:1px solid #333;
+      background:#111; color:#eee;
+      font-family:'Courier New',monospace;
+      font-size:14px; letter-spacing:2px;
+      cursor:pointer; border-radius:6px;
+      display:flex; align-items:center; gap:14px;
+      text-align:left;
+    }
+    .theme-btn:active { background:#1a1a1a; }
+    .theme-btn.active-theme { border-color:#fff; color:#fff; }
+
+    /* THEME SELECT SCREEN */
+    #themeScreen {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      background:#08080a; display:none; flex-direction:column;
+      align-items:center; padding:40px 0 20px; z-index:100;
+    }
+    .theme-screen-title {
+      font-family:'Courier New',monospace; font-size:22px;
+      color:#fff; letter-spacing:4px; font-weight:bold; margin-bottom:6px;
+    }
+    .theme-screen-sub {
+      font-family:'Courier New',monospace; font-size:10px;
+      color:#444; letter-spacing:3px; margin-bottom:32px;
+    }
+    .theme-option {
+      width:min(340px,80vw); margin:8px 0;
+      padding:18px 20px; border:1px solid #222;
+      background:#0e0e0e; border-radius:6px; cursor:pointer;
+      display:flex; align-items:center; gap:16px;
+      font-family:'Courier New',monospace; color:#888;
+    }
+    .theme-option:active { background:#1a1a1a; }
+    .theme-option.selected { border-color:#fff; color:#fff; }
+    .theme-icon { font-size:28px; }
+    .theme-name { font-size:15px; letter-spacing:2px; font-weight:bold; display:block; }
+    .theme-desc { font-size:10px; letter-spacing:1px; color:#555; display:block; margin-top:3px; }
+    .theme-back {
+      width:min(340px,80vw); margin-top:20px; padding:14px;
+      background:transparent; color:#444; border:1px solid #222;
+      font-family:'Courier New',monospace; font-size:12px;
+      letter-spacing:2px; border-radius:4px; cursor:pointer;
+    }
   </style>
 </head>
 <body>
@@ -236,7 +281,40 @@
     </span>
   </button>
 
+  <button class="mode-btn" onclick="showThemeScreen()" id="btnThemes">
+    <span class="mode-icon">🎨</span>
+    <span class="mode-text">
+      <span class="mode-name" id="themeLabel">THEMES · DEFAULT</span>
+      <span class="mode-desc">change the look of the game</span>
+    </span>
+  </button>
+
   <div class="high-score-title" id="titleHighScore"></div>
+</div>
+
+<!-- THEME SELECT SCREEN -->
+<div id="themeScreen">
+  <div class="theme-screen-title">THEMES</div>
+  <div class="theme-screen-sub">CHOOSE YOUR STYLE</div>
+
+  <div class="theme-option" id="theme-default" onclick="setTheme('default')">
+    <span class="theme-icon">🎮</span>
+    <span><span class="theme-name">DEFAULT</span><span class="theme-desc">classic qu33ph look</span></span>
+  </div>
+  <div class="theme-option" id="theme-cartoon" onclick="setTheme('cartoon')">
+    <span class="theme-icon">✏️</span>
+    <span><span class="theme-name">CARTOON</span><span class="theme-desc">black & white · comic style · custom markers</span></span>
+  </div>
+  <div class="theme-option" id="theme-neon" onclick="setTheme('neon')">
+    <span class="theme-icon">⚡</span>
+    <span><span class="theme-name">NEON</span><span class="theme-desc">synthwave · glowing colours · dark room</span></span>
+  </div>
+  <div class="theme-option" id="theme-sunset" onclick="setTheme('sunset')">
+    <span class="theme-icon">🌅</span>
+    <span><span class="theme-name">GOLDEN HOUR</span><span class="theme-desc">warm amber · late afternoon vibes</span></span>
+  </div>
+
+  <button class="theme-back" onclick="showTitle()">← BACK</button>
 </div>
 
 <!-- NATION SELECT SCREEN -->
@@ -274,8 +352,15 @@ markerImages.red.src="red.png";
 markerImages.green.src="green.png";
 markerImages.blue.src="blue.png";
 
+const cartoonImages = { red:new Image(), green:new Image(), blue:new Image() };
+cartoonImages.red.src="redC.png";
+cartoonImages.green.src="greenC.png";
+cartoonImages.blue.src="blueC.png";
+
 const chairImg = new Image();
 chairImg.src = "Chair.png";
+
+let currentTheme = "default"; // "default" | "cartoon" | "neon" | "sunset"
 
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
@@ -440,7 +525,77 @@ let orientationIndex=0;
 let currentOrientation="vertical";
 
 // ─── TITLE SCREEN ─────────────────────────────────────────────────────────
-let titleUnlockedAt = 0;
+function showThemeScreen(){
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("themeScreen").style.display="flex";
+  // Highlight current
+  ["default","cartoon","neon","sunset"].forEach(t=>{
+    document.getElementById("theme-"+t).classList.toggle("selected", t===currentTheme);
+  });
+}
+
+function setTheme(t){
+  currentTheme=t;
+  const names={default:"DEFAULT",cartoon:"CARTOON",neon:"NEON",sunset:"GOLDEN HOUR"};
+  document.getElementById("themeLabel").innerText="THEMES · "+names[t];
+  ["default","cartoon","neon","sunset"].forEach(id=>{
+    document.getElementById("theme-"+id).classList.toggle("selected", id===t);
+  });
+  showTitle();
+}
+
+// Returns correct marker image set for current theme
+function getMarkerImg(color){
+  if(currentTheme==="cartoon") return cartoonImages[color];
+  return markerImages[color];
+}
+
+// Apply theme overlay after all game drawing
+function applyThemeOverlay(){
+  if(currentTheme==="default") return;
+  if(currentTheme==="cartoon"){
+    // Desaturate + slight contrast boost via greyscale overlay
+    ctx.save();
+    ctx.globalCompositeOperation="saturation";
+    ctx.fillStyle="rgba(128,128,128,1)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+    // Slight vignette
+    let vg=ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.3,canvas.width/2,canvas.height/2,canvas.height*0.8);
+    vg.addColorStop(0,"rgba(0,0,0,0)");
+    vg.addColorStop(1,"rgba(0,0,0,0.35)");
+    ctx.fillStyle=vg; ctx.fillRect(0,0,canvas.width,canvas.height);
+  } else if(currentTheme==="neon"){
+    // Dark overlay then boost saturation with a multiply
+    ctx.save();
+    ctx.globalCompositeOperation="multiply";
+    ctx.fillStyle="rgba(10,0,30,0.55)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+    // Neon edge glow — cyan/magenta tint in corners
+    let ng=ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.2,canvas.width/2,canvas.height/2,canvas.height);
+    ng.addColorStop(0,"rgba(0,0,0,0)");
+    ng.addColorStop(1,"rgba(180,0,255,0.18)");
+    ctx.fillStyle=ng; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Scanlines
+    ctx.strokeStyle="rgba(0,0,0,0.08)"; ctx.lineWidth=1;
+    for(let sy=0;sy<canvas.height;sy+=3){
+      ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(canvas.width,sy); ctx.stroke();
+    }
+  } else if(currentTheme==="sunset"){
+    // Warm amber overlay
+    ctx.save();
+    ctx.globalCompositeOperation="multiply";
+    ctx.fillStyle="rgba(255,160,60,0.22)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+    // Soft vignette in warm tone
+    let sg=ctx.createRadialGradient(canvas.width/2,canvas.height*0.3,0,canvas.width/2,canvas.height/2,canvas.height);
+    sg.addColorStop(0,"rgba(255,200,80,0.08)");
+    sg.addColorStop(1,"rgba(180,60,0,0.25)");
+    ctx.fillStyle=sg; ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+}
 
 function showTitle(){
   gameState="title";
@@ -449,8 +604,8 @@ function showTitle(){
   document.getElementById("titleScreen").style.display="flex";
   document.getElementById("bracketScreen").style.display="none";
   document.getElementById("nationScreen").style.display="none";
-  document.getElementById("bracketScreen").style.display="none";
   document.getElementById("medalScreen").style.display="none";
+  document.getElementById("themeScreen").style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
@@ -1408,7 +1563,7 @@ function drawMarker(m){
     ctx.stroke();
     ctx.globalAlpha=1;
   }
-  const img=markerImages[m.color];
+  const img=getMarkerImg(m.color);
   if(!img||!img.complete||!img.naturalWidth) return;
   ctx.save();
   ctx.translate(m.x,m.y);
@@ -1817,7 +1972,7 @@ function draw(){
 
   previewMarkers.forEach((p,i)=>{
     if(p.used) return;
-    const img=markerImages[p.color];
+    const img=getMarkerImg(p.color);
     if(!img||!img.complete||!img.naturalWidth) return;
     let cx = (LEFT_EDGE+RIGHT_WALL)/2;
     let cy = START_LINE_Y - 55 - i*58;
@@ -1873,6 +2028,7 @@ showTitle();
 function loop(){
   update();
   draw();
+  if(gameState==="playing") applyThemeOverlay();
   requestAnimationFrame(loop);
 }
 loop();
