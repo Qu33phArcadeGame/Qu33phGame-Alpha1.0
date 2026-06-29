@@ -2082,7 +2082,8 @@ function draw(){
 
   previewMarkers.forEach((p,i)=>{
     if(p.used) return;
-    const img=getMarkerImg(p.color);
+    // Comic theme uses cartoon images, always full color
+    const img = currentTheme==="cartoon" ? cartoonImages[p.color] : getMarkerImg(p.color);
     if(!img||!img.complete||!img.naturalWidth) return;
     let cx = (LEFT_EDGE+RIGHT_WALL)/2;
     let cy = START_LINE_Y - 55 - i*58;
@@ -2090,10 +2091,23 @@ function draw(){
     let ph = 50;
     let angle = p.color==="blue" ? previewAngleBlue : previewAngleStd;
     ctx.save();
-    ctx.globalAlpha = 0.6;
+    // Neon: glow preview markers their own color
+    if(currentTheme==="neon"){
+      let gc=p.color==="red"?"#ff0055":p.color==="green"?"#00ff88":"#0088ff";
+      ctx.shadowColor=gc; ctx.shadowBlur=30;
+    }
+    ctx.globalAlpha = currentTheme==="cartoon" ? 0.9 : 0.6;
     ctx.translate(cx, cy);
     ctx.rotate(angle);
     ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
+    // Golden hour: gold tip on preview
+    if(currentTheme==="sunset"){
+      ctx.shadowColor="#ffd700"; ctx.shadowBlur=15;
+      ctx.fillStyle="#ffd700";
+      ctx.globalAlpha=0.85;
+      // tip is at top of marker when rotated — offset along local -y axis
+      ctx.beginPath(); ctx.arc(0, -ph/2+6, 5, 0, Math.PI*2); ctx.fill();
+    }
     ctx.restore();
     ctx.globalAlpha = 1;
   });
@@ -2140,46 +2154,61 @@ function loop(){
   draw();
   if(gameState==="playing"){
     applyThemeOverlay();
-    // Cartoon: redraw markers in COLOR on top of greyscale world
+
+    // ── COMIC: redraw thrown markers in full COLOR on top of greyscale ──
     if(currentTheme==="cartoon"){
       markers.forEach(m=>{
         if(m.fallen) return;
         const img=cartoonImages[m.color];
         if(!img||!img.complete||!img.naturalWidth) return;
         ctx.save();
-        ctx.translate(m.x,m.y);
-        ctx.rotate(m.rotation);
+        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         let w=m.color==="blue"?80:50, h=50;
         ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.restore();
       });
     }
-    // Neon: redraw markers with intense glow
+
+    // ── NEON: markers glow own color always, brighter when touching ──
     if(currentTheme==="neon"){
       markers.forEach(m=>{
         if(m.fallen) return;
         const img=getMarkerImg(m.color);
         if(!img||!img.complete) return;
+        let gc=m.color==="red"?"#ff0044":m.color==="green"?"#00ff88":"#0099ff";
+        let touching=isTouchingAny(m);
         ctx.save();
-        let gc=m.color==="red"?"#ff0055":m.color==="green"?"#00ff88":"#0088ff";
-        ctx.shadowColor=gc; ctx.shadowBlur=35;
+        ctx.shadowColor=touching?"#00ff00":gc;
+        ctx.shadowBlur=touching?50:40;
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         let w=m.color==="blue"?80:50, h=50;
+        // Draw 3x for extra glow intensity
         ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.shadowBlur=0;
+        ctx.globalAlpha=0.5;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.3;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.restore();
       });
     }
-    // Golden hour: glow marker tips gold
+
+    // ── GOLDEN HOUR: gold tip at actual tip of each marker ──
     if(currentTheme==="sunset"){
       markers.forEach(m=>{
         if(m.fallen) return;
         ctx.save();
-        ctx.shadowColor="#ffd700"; ctx.shadowBlur=20;
-        ctx.globalAlpha=0.7;
-        ctx.fillStyle="#ffd700";
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
-        ctx.beginPath(); ctx.arc(0,-22,6,0,Math.PI*2); ctx.fill();
+        // Tip is at one end of the marker along its length axis
+        // Markers are drawn -pw/2 to pw/2 wide, -ph/2 to ph/2 tall
+        // The "tip" is the end pointing in the direction of travel = top edge = local y=-ph/2
+        let tipY = m.color==="blue" ? -40 : -22;
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=22;
+        ctx.fillStyle="#ffd700";
+        ctx.globalAlpha=0.9;
+        ctx.beginPath(); ctx.arc(0, tipY, 5, 0, Math.PI*2); ctx.fill();
+        // Second smaller dot for intensity
+        ctx.globalAlpha=0.5;
+        ctx.beginPath(); ctx.arc(0, tipY, 9, 0, Math.PI*2); ctx.fill();
         ctx.restore();
       });
     }
