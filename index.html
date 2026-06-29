@@ -2082,8 +2082,7 @@ function draw(){
 
   previewMarkers.forEach((p,i)=>{
     if(p.used) return;
-    // Comic theme uses cartoon images, always full color
-    const img = currentTheme==="cartoon" ? cartoonImages[p.color] : getMarkerImg(p.color);
+    const img = getMarkerImg(p.color);
     if(!img||!img.complete||!img.naturalWidth) return;
     let cx = (LEFT_EDGE+RIGHT_WALL)/2;
     let cy = START_LINE_Y - 55 - i*58;
@@ -2091,23 +2090,10 @@ function draw(){
     let ph = 50;
     let angle = p.color==="blue" ? previewAngleBlue : previewAngleStd;
     ctx.save();
-    // Neon: glow preview markers their own color
-    if(currentTheme==="neon"){
-      let gc=p.color==="red"?"#ff0055":p.color==="green"?"#00ff88":"#0088ff";
-      ctx.shadowColor=gc; ctx.shadowBlur=30;
-    }
-    ctx.globalAlpha = currentTheme==="cartoon" ? 0.9 : 0.6;
+    ctx.globalAlpha = 0.6;
     ctx.translate(cx, cy);
     ctx.rotate(angle);
     ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
-    // Golden hour: gold tip on preview
-    if(currentTheme==="sunset"){
-      ctx.shadowColor="#ffd700"; ctx.shadowBlur=15;
-      ctx.fillStyle="#ffd700";
-      ctx.globalAlpha=0.85;
-      // tip is at top of marker when rotated — offset along local -y axis
-      ctx.beginPath(); ctx.arc(0, -ph/2+6, 5, 0, Math.PI*2); ctx.fill();
-    }
     ctx.restore();
     ctx.globalAlpha = 1;
   });
@@ -2155,22 +2141,80 @@ function loop(){
   if(gameState==="playing"){
     applyThemeOverlay();
 
-    // ── COMIC: redraw thrown markers in full COLOR on top of greyscale ──
+    // ── COMIC: redraw ALL markers (thrown + previews) with boosted color ──
     if(currentTheme==="cartoon"){
+      // Thrown markers
       markers.forEach(m=>{
         if(m.fallen) return;
         const img=cartoonImages[m.color];
         if(!img||!img.complete||!img.naturalWidth) return;
         ctx.save();
+        // Boost saturation by drawing twice with screen blend
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         let w=m.color==="blue"?80:50, h=50;
         ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalCompositeOperation="screen";
+        ctx.globalAlpha=0.25;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.restore();
       });
+      // Preview markers — full color cartoon images
+      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        const img=cartoonImages[p.color];
+        if(!img||!img.complete||!img.naturalWidth) return;
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let pw=p.color==="blue"?80:50, ph=50;
+        let angle=p.color==="blue"?blueA:stdA;
+        ctx.save();
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.globalAlpha=1;
+        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        // Screen boost for vibrancy
+        ctx.globalCompositeOperation="screen";
+        ctx.globalAlpha=0.3;
+        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.restore();
+      });
+      // Keep red dot red — redraw it on top
+      let dotCX=redDot.x, dotCY=redDot.y, dotR=7;
+      ctx.save();
+      ctx.fillStyle="#111";
+      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR+2,0,Math.PI*2); ctx.fill();
+      let rg=ctx.createRadialGradient(dotCX-2,dotCY-2,1,dotCX,dotCY,dotR);
+      rg.addColorStop(0,"#ff5555"); rg.addColorStop(0.5,"#dd1111"); rg.addColorStop(1,"#990000");
+      ctx.fillStyle=rg;
+      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.5)";
+      ctx.beginPath(); ctx.arc(dotCX-2,dotCY-2,dotR*0.35,0,Math.PI*2); ctx.fill();
+      ctx.restore();
     }
 
-    // ── NEON: markers glow own color always, brighter when touching ──
+    // ── NEON: intense glow on markers always + previews ──
     if(currentTheme==="neon"){
+      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      // Preview markers with neon glow
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        const img=getMarkerImg(p.color);
+        if(!img||!img.complete) return;
+        let gc=p.color==="red"?"#ff0044":p.color==="green"?"#00ff88":"#0099ff";
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let pw=p.color==="blue"?80:50, ph=50;
+        let angle=p.color==="blue"?blueA:stdA;
+        ctx.save();
+        ctx.shadowColor=gc; ctx.shadowBlur=40;
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.globalAlpha=0.8;
+        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalAlpha=0.4;
+        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.restore();
+      });
+      // Thrown markers — always glow own color
       markers.forEach(m=>{
         if(m.fallen) return;
         const img=getMarkerImg(m.color);
@@ -2179,36 +2223,47 @@ function loop(){
         let touching=isTouchingAny(m);
         ctx.save();
         ctx.shadowColor=touching?"#00ff00":gc;
-        ctx.shadowBlur=touching?50:40;
+        ctx.shadowBlur=touching?55:45;
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         let w=m.color==="blue"?80:50, h=50;
-        // Draw 3x for extra glow intensity
         ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.globalAlpha=0.5;
-        ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.globalAlpha=0.3;
-        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.5; ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.25; ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.restore();
       });
     }
 
-    // ── GOLDEN HOUR: gold tip at actual tip of each marker ──
+    // ── GOLDEN HOUR: gold tip at the END of each marker (x-axis tip) ──
     if(currentTheme==="sunset"){
+      // Thrown markers
       markers.forEach(m=>{
         if(m.fallen) return;
+        let tipX = m.color==="blue" ? -40 : -25; // tip = left end of image
         ctx.save();
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
-        // Tip is at one end of the marker along its length axis
-        // Markers are drawn -pw/2 to pw/2 wide, -ph/2 to ph/2 tall
-        // The "tip" is the end pointing in the direction of travel = top edge = local y=-ph/2
-        let tipY = m.color==="blue" ? -40 : -22;
-        ctx.shadowColor="#ffd700"; ctx.shadowBlur=22;
-        ctx.fillStyle="#ffd700";
-        ctx.globalAlpha=0.9;
-        ctx.beginPath(); ctx.arc(0, tipY, 5, 0, Math.PI*2); ctx.fill();
-        // Second smaller dot for intensity
-        ctx.globalAlpha=0.5;
-        ctx.beginPath(); ctx.arc(0, tipY, 9, 0, Math.PI*2); ctx.fill();
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
+        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.95;
+        ctx.beginPath(); ctx.arc(tipX, 0, 5, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=0.35;
+        ctx.beginPath(); ctx.arc(tipX, 0, 10, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+      // Preview markers gold tip
+      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let pw=p.color==="blue"?80:50;
+        let angle=p.color==="blue"?blueA:stdA;
+        let tipX = p.color==="blue" ? -40 : -25;
+        ctx.save();
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=18;
+        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.9;
+        ctx.beginPath(); ctx.arc(tipX, 0, 5, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=0.3;
+        ctx.beginPath(); ctx.arc(tipX, 0, 10, 0, Math.PI*2); ctx.fill();
         ctx.restore();
       });
     }
