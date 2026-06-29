@@ -1136,98 +1136,84 @@ function drawWindowScene(elapsed){
   let ww = canvas.width - wx;
   let wh = canvas.height;
 
-  // Glass area starts below the white wall panel
-  let glassTop = wh * 0.42 + 10;
-  // Sky/horizon within the glass section
-  let horizonY = glassTop + (wh - glassTop) * 0.55;
+  // Glass area starts below the white wall panel (~52% down)
+  let glassTop = wh * 0.58 + 10;
+  // Horizon is a VERTICAL line — sky on RIGHT, ground on LEFT
+  let horizonX = wx + ww * 0.45;
 
-  // Fill everything above glass with background (wall panel covers it)
-  // Only draw scene in glass area
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(wx, glassTop, ww, wh - glassTop);
-  ctx.clip();
-
-  // ── sky gradient ──
-  let skyTop, skyBot;
-  if(t < 0.66){
-    let d = t/0.66;
-    skyTop = lerpRGB([82,148,210],[210,130,50],d);
-    skyBot = lerpRGB([140,195,235],[240,180,80],d);
-  } else {
-    let d = (t-0.66)/0.34;
-    skyTop = lerpRGB([210,130,50],[15,8,35],d);
-    skyBot = lerpRGB([240,180,80],[160,45,20],d);
-  }
-  let grad = ctx.createLinearGradient(0,0,0,horizonY);
-  grad.addColorStop(0, `rgb(${skyTop})`);
-  grad.addColorStop(1, `rgb(${skyBot})`);
-  ctx.fillStyle = grad;
-  ctx.fillRect(wx, glassTop, ww, horizonY - glassTop);
-
-  // ── ground / greenery ──
+  // ── ground — LEFT portion (bottom of real window) ──
   let groundColor = t<0.66
     ? lerpRGB([55,105,45],[30,60,25],t/0.66)
     : lerpRGB([30,60,25],[12,22,10],(t-0.66)/0.34);
   ctx.fillStyle=`rgb(${groundColor})`;
-  ctx.fillRect(wx, horizonY, ww, wh - horizonY);
+  ctx.fillRect(wx, glassTop, horizonX-wx, wh-glassTop);
 
-  // ── sun ──
-  let sunY = wh * (0.06 + t*0.22);
-  let sunX = wx + ww*0.7;
-  let sunR = t<0.66 ? 14 : 11;
-  let glowR = ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*4);
-  glowR.addColorStop(0, t<0.66?`rgba(255,240,120,0.3)`:`rgba(200,50,10,0.35)`);
-  glowR.addColorStop(1,`rgba(0,0,0,0)`);
-  ctx.fillStyle=glowR;
+  // ── sky — RIGHT portion (top of real window) ──
+  let skyTop2, skyBot2;
+  if(t < 0.66){
+    let d=t/0.66;
+    skyTop2=lerpRGB([82,148,210],[210,130,50],d);
+    skyBot2=lerpRGB([140,195,235],[240,180,80],d);
+  } else {
+    let d=(t-0.66)/0.34;
+    skyTop2=lerpRGB([210,130,50],[15,8,35],d);
+    skyBot2=lerpRGB([240,180,80],[160,45,20],d);
+  }
+  let skyGrad = ctx.createLinearGradient(horizonX, 0, canvas.width, 0);
+  skyGrad.addColorStop(0, `rgb(${skyBot2})`);
+  skyGrad.addColorStop(1, `rgb(${skyTop2})`);
+  ctx.fillStyle=skyGrad;
+  ctx.fillRect(horizonX, glassTop, canvas.width-horizonX, wh-glassTop);
+
+  // ── sun — starts far right (high noon), moves LEFT as time passes (= setting) ──
+  let sunX = canvas.width - (canvas.width - horizonX) * (0.15 + t * 0.7);
+  let sunY = glassTop + (wh-glassTop)*0.25;
+  let sunR = t<0.66 ? 12 : 9;
+  let glowG = ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*4);
+  glowG.addColorStop(0, t<0.66?`rgba(255,240,120,0.3)`:`rgba(200,50,10,0.35)`);
+  glowG.addColorStop(1,`rgba(0,0,0,0)`);
+  ctx.fillStyle=glowG;
   ctx.beginPath(); ctx.arc(sunX,sunY,sunR*4,0,Math.PI*2); ctx.fill();
   ctx.fillStyle=t<0.66?`rgba(255,245,170,0.95)`:`rgba(215,70,30,0.9)`;
   ctx.beginPath(); ctx.arc(sunX,sunY,sunR,0,Math.PI*2); ctx.fill();
 
-  // ── trees — horizontal dark bands at horizon (perpendicular/flat view) ──
-  trees.forEach(tr=>{
-    let bandY = horizonY - tr.h * 0.7;
-    let bandH = tr.h * 0.85;
-    let treGrad = ctx.createLinearGradient(0, bandY, 0, bandY+bandH);
-    treGrad.addColorStop(0, `rgba(0,0,0,0)`);
-    treGrad.addColorStop(0.25, t<0.66?`rgba(25,62,19,0.88)`:`rgba(8,15,6,0.92)`);
-    treGrad.addColorStop(0.75, t<0.66?`rgba(28,65,22,0.95)`:`rgba(10,18,8,0.97)`);
-    treGrad.addColorStop(1, `rgba(0,0,0,0)`);
-    ctx.fillStyle=treGrad;
-    ctx.fillRect(tr.x, bandY, tr.h * 2.2, bandH);
-  });
-
-  // ── railing ──
-  let railY = horizonY + (wh-horizonY)*0.06;
-  let railColor = t<0.66 ? `rgba(15,25,15,0.75)` : `rgba(8,8,8,0.85)`;
-  ctx.strokeStyle=railColor; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(wx,railY); ctx.lineTo(canvas.width,railY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(wx,railY+18); ctx.lineTo(canvas.width,railY+18); ctx.stroke();
-  ctx.lineWidth=1.5;
-  for(let bx=wx+4; bx<canvas.width; bx+=14){
-    ctx.beginPath(); ctx.moveTo(bx,railY-8); ctx.lineTo(bx,railY+22); ctx.stroke();
+  // ── tree silhouette — VERTICAL band at horizon (horizontal in the room) ──
+  let treeW = ww * 0.2;
+  let treeL = horizonX - treeW*0.55;
+  let treGrad = ctx.createLinearGradient(treeL, 0, treeL+treeW, 0);
+  treGrad.addColorStop(0, `rgba(0,0,0,0)`);
+  treGrad.addColorStop(0.2, t<0.66?`rgba(22,55,18,0.85)`:`rgba(8,14,6,0.9)`);
+  treGrad.addColorStop(0.8, t<0.66?`rgba(28,65,22,0.95)`:`rgba(10,18,8,0.97)`);
+  treGrad.addColorStop(1, `rgba(0,0,0,0)`);
+  ctx.fillStyle=treGrad;
+  ctx.fillRect(treeL, glassTop, treeW, wh-glassTop);
+  ctx.fillStyle=t<0.66?`rgba(22,55,18,0.88)`:`rgba(8,14,6,0.92)`;
+  for(let ty=glassTop; ty<wh; ty+=6){
+    let bump=Math.sin(ty*0.4)*3+Math.sin(ty*0.8)*2;
+    ctx.fillRect(horizonX-treeW*0.22+bump, ty, treeW*0.22-bump+2, 6);
   }
 
-  // ── clouds clipped to sky portion only ──
+  // ── clouds — drift TOP→BOTTOM on canvas (= left→right in real room) ──
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(wx, 0, ww, horizonY * 0.85);
-  ctx.clip();
+  ctx.beginPath(); ctx.rect(horizonX+2, glassTop, canvas.width-horizonX-2, wh-glassTop); ctx.clip();
   let cloudCol = t<0.66
     ? `rgba(255,255,255,${0.75-(t/0.66)*0.25})`
     : `rgba(190,110,70,${Math.max(0,0.4-(t-0.66)/0.34*0.3)})`;
   clouds.forEach(c=>{
-    // keep clouds in sky band
-    let cy = Math.min(c.y, horizonY * 0.75);
+    // Use c.x as the vertical position (top→bottom), remap to glass area
+    let cy2 = glassTop + (c.x - wx) / (canvas.width - wx) * (wh - glassTop);
+    // Horizontal scatter within sky portion
+    let cx2 = horizonX + 10 + (c.w % (canvas.width - horizonX - 20));
+    let cw2 = c.w * 0.55;
     ctx.fillStyle=cloudCol;
-    ctx.beginPath(); ctx.ellipse(c.x, cy, c.w*0.5, c.w*0.2, 0,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(c.x-c.w*0.22, cy+c.w*0.05, c.w*0.3, c.w*0.16, 0,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(c.x+c.w*0.22, cy+c.w*0.03, c.w*0.28, c.w*0.14, 0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx2, cy2, cw2*0.22, cw2*0.5, 0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx2+cw2*0.06, cy2-cw2*0.22, cw2*0.16, cw2*0.3, 0,0,Math.PI*2); ctx.fill();
+    // Drift downward (top→bottom on canvas)
     c.x += c.speed;
-    if(c.x - c.w > canvas.width) c.x = wx - c.w;
-    if(c.x + c.w < wx) c.x = canvas.width + c.w;
+    if(c.x > canvas.width + c.w) c.x = wx - c.w;
   });
   ctx.restore();
+
 }
 
 function drawWindowFrame(){
@@ -1235,40 +1221,51 @@ function drawWindowFrame(){
   let ww = canvas.width - wx;
   let wh = canvas.height;
 
-  // ── roller blind at very top ──
-  let blindH = wh * 0.07;
-  let blindGrad = ctx.createLinearGradient(0,0,0,blindH);
-  blindGrad.addColorStop(0,"#d5cfc6");
-  blindGrad.addColorStop(1,"#bfb9b0");
-  ctx.fillStyle=blindGrad;
-  ctx.fillRect(wx+10, 0, ww-10, blindH);
-  ctx.strokeStyle="rgba(150,144,136,0.4)"; ctx.lineWidth=1;
-  for(let sy=5;sy<blindH;sy+=6){
-    ctx.beginPath(); ctx.moveTo(wx+10,sy); ctx.lineTo(canvas.width,sy); ctx.stroke();
-  }
-  ctx.fillStyle="#a8a29a";
-  ctx.fillRect(wx+10, blindH-3, ww-10, 5);
+  // Sections top→bottom in window strip:
+  // 1. Slim wall strip  (8%)  — small strip next to green cabinet
+  // 2. Blinds           (30%) — the main blind area
+  // 3. White wall       (20%) — thicker wall below blinds
+  // 4. Glass            (42%) — sky/trees/clouds
+  let slimH    = wh * 0.08;
+  let blindTop = slimH;
+  let blindBot = slimH + wh * 0.30;
+  let wallTop  = blindBot;
+  let wallBot  = wallTop + wh * 0.20;
+  let glassTop2 = wallBot;
 
-  // ── WHITE/CREAM WALL PANEL between blind and glass ──
-  // In the reference this is a solid wall section ~35% of window height
-  let wallTop = blindH + 8;
-  let wallBot = wh * 0.42;
-  let wallGrad = ctx.createLinearGradient(0, wallTop, 0, wallBot);
-  wallGrad.addColorStop(0,"#e8e4de");
-  wallGrad.addColorStop(1,"#dedad4");
+  // ── 1. SLIM WALL STRIP at very top ──
+  ctx.fillStyle="#cdc8bc";
+  ctx.fillRect(wx+10, 0, ww-10, slimH);
+
+  // ── 2. BLINDS ──
+  let blindGrad = ctx.createLinearGradient(0,blindTop,0,blindBot);
+  blindGrad.addColorStop(0,"#a89878");
+  blindGrad.addColorStop(1,"#988868");
+  ctx.fillStyle=blindGrad;
+  let blindH = blindBot - blindTop;
+  ctx.fillRect(wx+10, blindTop, ww-10, blindH);
+  // Vertical slat lines
+  ctx.strokeStyle="rgba(60,45,25,0.5)"; ctx.lineWidth=2;
+  for(let sx=wx+10+8; sx<canvas.width; sx+=8){
+    ctx.beginPath(); ctx.moveTo(sx,blindTop); ctx.lineTo(sx,blindBot); ctx.stroke();
+  }
+  ctx.strokeStyle="rgba(200,185,155,0.4)"; ctx.lineWidth=1;
+  for(let sx=wx+10+8; sx<canvas.width; sx+=8){
+    ctx.beginPath(); ctx.moveTo(sx-2,blindTop); ctx.lineTo(sx-2,blindBot); ctx.stroke();
+  }
+  ctx.fillStyle="#7a7060";
+  ctx.fillRect(wx+10, blindBot-5, ww-10, 7);
+
+  // ── 3. WHITE WALL PANEL ──
+  let wallGrad = ctx.createLinearGradient(0,wallTop,0,wallBot);
+  wallGrad.addColorStop(0,"#edeae4");
+  wallGrad.addColorStop(1,"#e0ddd6");
   ctx.fillStyle=wallGrad;
   ctx.fillRect(wx+10, wallTop, ww-10, wallBot-wallTop);
-  // subtle wall texture line
-  ctx.strokeStyle="rgba(200,196,190,0.5)"; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(wx+10, wallBot); ctx.lineTo(canvas.width, wallBot); ctx.stroke();
 
-  // ── outer left frame (full height dark strip) ──
-  let frameColor="#181818";
-  ctx.fillStyle=frameColor;
+  // ── outer left frame (full height) ──
+  ctx.fillStyle="#181818";
   ctx.fillRect(wx, 0, 10, wh);
-
-  // ── top frame bar (below blind, above wall) ──
-  ctx.fillRect(wx+10, blindH, ww-10, 8);
 
   // ── frame bar between wall and glass ──
   ctx.fillRect(wx+10, wallBot, ww-10, 10);
@@ -1276,15 +1273,14 @@ function drawWindowFrame(){
   // ── bottom frame bar ──
   ctx.fillRect(wx+10, wh-8, ww-10, 8);
 
-  // ── vertical mullions — only in the glass section below the wall ──
-  let glassTop = wallBot + 10;
+  // ── vertical mullions (glass only) ──
   let col1 = wx + ww*0.38;
   let col2 = wx + ww*0.72;
-  ctx.fillRect(col1-4, glassTop, 8, wh - glassTop);
-  ctx.fillRect(col2-4, glassTop, 8, wh - glassTop);
+  ctx.fillRect(col1-4, glassTop2, 8, wh-glassTop2);
+  ctx.fillRect(col2-4, glassTop2, 8, wh-glassTop2);
 
-  // ── horizontal mid-rail in glass section ──
-  ctx.fillRect(wx+10, glassTop + (wh-glassTop)*0.5, ww-10, 7);
+  // ── mid-rail in glass ──
+  ctx.fillRect(wx+10, glassTop2+(wh-glassTop2)*0.5, ww-10, 7);
 }
 
 // ─── UPDATE ───────────────────────────────────────────────────────────────
@@ -1639,14 +1635,26 @@ function draw(){
   ctx.fillStyle="#0e0e0e";
   ctx.fillRect(RIGHT_WALL, cTop, 13, cBot-cTop);
 
-  // ── 12. RED DOT — exactly where MEGA QU33PH lands (redDot position) ──
+  // ── SLIM CREAM WALL BORDER — tiny strip at very top only, next to teal cabinet ──
+  let wallStripX = RIGHT_WALL + 13;
+  let wallStripW = canvas.width - wallStripX;
+  let wallStripBot = cTop + canvas.height * 0.08; // only the slim wall height
+  ctx.fillStyle="#cdc8bc";
+  ctx.fillRect(wallStripX, cTop, wallStripW, wallStripBot - cTop);
+
+  // ── 12. RED DOT — on black strip, slightly into the blinds section ──
   let dotCX = redDot.x;
-  let dotCY = redDot.y;
+  let dotCY = cTop + canvas.height * 0.08 + canvas.height * 0.055; // a little into blinds
   let dotR = 7;
 
-  // White card
+  // White index card — rectangular, portrait orientation
+  let cardW = dotR*2 + 10;
+  let cardH = dotR*3 + 14;
   ctx.fillStyle="#f5f5f0";
-  ctx.fillRect(dotCX-dotR-3, dotCY-dotR-3, dotR*2+6, dotR*2+6);
+  ctx.fillRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
+  // subtle card border
+  ctx.strokeStyle="rgba(180,175,165,0.6)"; ctx.lineWidth=1;
+  ctx.strokeRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
 
   // Dark ring
   ctx.fillStyle="#111";
@@ -1871,3 +1879,4 @@ loop();
 </script>
 </body>
 </html>
+
