@@ -2180,16 +2180,15 @@ function loop(){
   if(gameState==="playing"){
     applyThemeOverlay();
 
-    // ── COMIC: redraw ALL markers (thrown + previews) with boosted color ──
+    // ── COMIC: redraw ALL thrown markers using EXACT m.rotation ──
     if(currentTheme==="cartoon"){
-      // Thrown markers
       markers.forEach(m=>{
         if(m.fallen) return;
         const img=cartoonImages[m.color];
         if(!img||!img.complete||!img.naturalWidth) return;
         ctx.save();
-        // Boost saturation by drawing twice with screen blend
-        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
+        ctx.translate(m.x,m.y);
+        ctx.rotate(m.rotation); // use exact same rotation as drawMarker
         let w=m.color==="blue"?80:50, h=50;
         ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.globalCompositeOperation="screen";
@@ -2197,7 +2196,7 @@ function loop(){
         ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.restore();
       });
-      // Preview markers — full color cartoon images
+      // Preview markers — use same angle logic as main draw
       let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
       let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
       previewMarkers.forEach((p,i)=>{
@@ -2211,7 +2210,6 @@ function loop(){
         ctx.translate(cx,cy); ctx.rotate(angle);
         ctx.globalAlpha=1;
         ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
-        // Screen boost for vibrancy
         ctx.globalCompositeOperation="screen";
         ctx.globalAlpha=0.3;
         ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
@@ -2281,36 +2279,35 @@ function loop(){
       });
     }
 
-    // ── GOLDEN HOUR: gold tip at the END of each marker (right end = tip) ──
+    // ── GOLDEN HOUR: gold tip at the actual tip end of each marker ──
     if(currentTheme==="sunset"){
-      // Thrown markers
       markers.forEach(m=>{
         if(m.fallen) return;
-        let tipX = m.color==="blue" ? 40 : 25; // tip = RIGHT end of image
+        // Marker images have tip at the right end — +w/2 but slightly inset
+        let tipX = m.color==="blue" ? 36 : 22;
         ctx.save();
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
         ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.95;
-        ctx.beginPath(); ctx.arc(tipX, 0, 5, 0, Math.PI*2); ctx.fill();
-        ctx.globalAlpha=0.35;
-        ctx.beginPath(); ctx.arc(tipX, 0, 10, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=0.3;
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
         ctx.restore();
       });
-      // Preview markers gold tip
-      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
-      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      let stdA2 = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA2 = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
       previewMarkers.forEach((p,i)=>{
         if(p.used) return;
         let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
-        let tipX = p.color==="blue" ? 40 : 25;
-        let angle=p.color==="blue"?blueA:stdA;
+        let tipX = p.color==="blue" ? 36 : 22;
+        let angle=p.color==="blue"?blueA2:stdA2;
         ctx.save();
         ctx.translate(cx,cy); ctx.rotate(angle);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=18;
         ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.9;
-        ctx.beginPath(); ctx.arc(tipX, 0, 5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
         ctx.globalAlpha=0.3;
-        ctx.beginPath(); ctx.arc(tipX, 0, 10, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
         ctx.restore();
       });
     }
@@ -2321,4 +2318,3 @@ loop();
 </script>
 </body>
 </html>
-
