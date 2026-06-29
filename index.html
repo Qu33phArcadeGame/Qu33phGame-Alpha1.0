@@ -103,7 +103,36 @@
       font-size: 10px;
       color: #333;
       letter-spacing: 3px;
+      color: #fff;
     }
+    #titleCoins {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #fff;
+      letter-spacing: 1px;
+      cursor: pointer;
+      z-index: 10;
+      display: none;
+    }
+    #slotBtn {
+      position: absolute;
+      top: 42px;
+      left: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 1px;
+      cursor: pointer;
+      z-index: 10;
+      background: none;
+      border: none;
+      padding: 0;
+      display: none;
+    }
+    #slotBtn:active { color: #fff; }
 
     /* OLYMPICS BRACKET SCREEN — full screen canvas, no scroll */
     #bracketScreen {
@@ -261,6 +290,9 @@
 <button id="rotateBtn">Orientation: vertical</button>
 <div id="timeline"><div id="progress"></div></div>
 
+<div id="titleCoins">🪙 <span id="titleCoinCount">0</span></div>
+<button id="slotBtn" onclick="showSlotMachine()">🎰 SLOT MACHINE</button>
+
 <!-- TITLE SCREEN -->
 <div id="titleScreen">
   <div class="title-logo" id="logoContainer"><img id="logoImg" src="logo.jpg" alt="Qu33ph" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"></div>
@@ -393,6 +425,8 @@ let selectedNationIdx = -1;
 // ─── NATION SELECT ────────────────────────────────────────────────────────
 function showNationSelect(){
   document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
   document.getElementById("nationScreen").style.display="flex";
   selectedNationIdx = -1;
   document.getElementById("nationConfirm").style.display="none";
@@ -547,6 +581,8 @@ let currentOrientation="vertical";
 // ─── TITLE SCREEN ─────────────────────────────────────────────────────────
 function showThemeScreen(){
   document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
   document.getElementById("themeScreen").style.display="flex";
   let u=unlockedThemes();
   ["default","cartoon","neon","sunset"].forEach(t=>{
@@ -826,6 +862,11 @@ function applyThemeOverlay(){
   }
 }
 
+function showSlotMachine(){
+  // Slot machine — coming soon, will be implemented next
+  alert("🎰 SLOT MACHINE — coming soon!");
+}
+
 function showTitle(){
   gameState="title";
   titleUnlockedAt = Date.now() + 800; // 800ms buffer before buttons work
@@ -840,14 +881,18 @@ function showTitle(){
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
   let hs=localStorage.getItem("qu33phHigh")||0;
-  document.getElementById("titleHighScore").innerText=
-    (hs>0?"HIGH SCORE: "+hs+"   ":"")+"🪙 "+coins;
+  document.getElementById("titleHighScore").innerText=hs>0?"HIGH SCORE: "+hs:"";
+  document.getElementById("titleCoinCount").innerText=coins;
+  document.getElementById("titleCoins").style.display="block";
+  document.getElementById("slotBtn").style.display="block";
 }
 
 function startMode(mode){
   if(Date.now() < titleUnlockedAt) return;
   gameMode=mode;
   document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
   if(mode==="single"){
     startGame();
   } else {
