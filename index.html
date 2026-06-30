@@ -453,6 +453,7 @@
   <div class="bracket-play-btn">
     <button id="playNextBtn">PLAY →</button>
     <div id="bracketRoundLabel"></div>
+    <div id="bracketCoinHistory" style="display:flex; gap:10px; margin-top:6px; font-family:'Courier New',monospace; font-size:11px; color:#ffd700; letter-spacing:1px;"></div>
   </div>
 </div>
 
@@ -574,6 +575,7 @@ function buildOlympicsState(){
     playerEliminated:false,
     champion:null,
     coinsWonThisRun:0,
+    coinHistory:[],
   };
 }
 
@@ -916,7 +918,11 @@ const PAYTABLE = [
   { syms:["logo","logo",null],     win:15,  label:"DOUBLE LOGO" },
   { syms:["mega","mega",null],     win:8,   label:"DOUBLE MEGA" },
   { syms:["coin","coin",null],     win:5,   label:"DOUBLE COIN" },
-  { syms:["red","green","blue"],   win:10,  label:"QU33PH TRIO" },
+  { syms:["red","green","blue"],   win:10,  label:"QU33PH TRIO (blue last)" },
+  { syms:[null,null,null],         win:6,   label:"QU33PH TRIO (any order)" }, // placeholder row, handled specially in checkWin
+  { syms:["red","red","red"],      win:4,   label:"RED TRIPLE" },
+  { syms:["green","green","green"],win:4,   label:"GREEN TRIPLE" },
+  { syms:["blue","blue","blue"],   win:4,   label:"BLUE TRIPLE" },
   { syms:[null,"logo",null],       win:3,   label:"ANY LOGO" },
   { syms:[null,"coin",null],       win:2,   label:"ANY COIN" },
 ];
@@ -930,7 +936,19 @@ function pickSymbol(){
 
 function checkWin(results){
   let ids=results.map(s=>s.id);
+
+  // QU33PH TRIO — any order of red/green/blue wins something.
+  // Full payout only if blue lands in the 3rd (rightmost) reel; any other
+  // arrangement still pays, just less.
+  let markerColors=["red","green","blue"];
+  if(markerColors.includes(ids[0]) && markerColors.includes(ids[1]) && markerColors.includes(ids[2])
+     && new Set(ids).size===3){
+    if(ids[2]==="blue") return {win:10, label:"QU33PH TRIO"};
+    return {win:5, label:"QU33PH TRIO (mixed order)"};
+  }
+
   for(let row of PAYTABLE){
+    if(row.syms[0]===null && row.syms[1]===null && row.syms[2]===null) continue; // skip the TRIO placeholder row
     let match=true;
     for(let i=0;i<3;i++){
       if(row.syms[i]!==null && row.syms[i]!==ids[i]){ match=false; break; }
@@ -939,6 +957,7 @@ function checkWin(results){
   }
   return null;
 }
+
 
 let slotSpinning=false;
 
@@ -1112,7 +1131,7 @@ function renderBracket(){
 
   const bc = document.getElementById("bracketCanvas");
   const bw = window.innerWidth;
-  const bh = window.innerHeight * 0.80;
+  const bh = window.innerHeight * 0.76;
   bc.width = bw; bc.height = bh;
   const bx = bc.getContext("2d");
   bx.fillStyle="#08080a"; bx.fillRect(0,0,bw,bh);
@@ -1165,8 +1184,8 @@ function renderBracket(){
       bx.fillText(label, x, y-2);
     }
 
-    bx.strokeStyle=active?"#fff":done?"#444":"#222";
-    bx.lineWidth=active?2:1;
+    bx.strokeStyle=active?"#fff":done?"#888":"#222";
+    bx.lineWidth=active?2:done?1.5:1;
     bx.strokeRect(x,y,colW,mH);
 
     [p1,p2].forEach((p,pi)=>{
@@ -1207,9 +1226,12 @@ function renderBracket(){
 
         let sc = pi===0 ? s1 : s2;
         bx.fillStyle = isWin?"#44ee44":"#cc3333";
-        bx.font=`bold ${Math.round(scoreSz*0.8)}px 'Courier New',monospace`;
+        bx.font=`bold ${Math.round(scoreSz*0.75)}px 'Courier New',monospace`;
         bx.textAlign="right"; bx.textBaseline="middle";
-        bx.fillText(sc, x+colW-4, botY);
+        bx.save();
+        bx.beginPath(); bx.rect(x+2,ry+1,colW-4,rH-2); bx.clip();
+        bx.fillText(sc, x+colW-5, botY);
+        bx.restore();
 
       } else {
         let nameStr = "TBD";
@@ -1292,6 +1314,13 @@ function renderBracket(){
     playBtn.onclick=()=>{document.getElementById("bracketScreen").style.display="none";startGame();};
     roundLabel.innerText=os.round===1?"QUARTER-FINAL":os.round===2?"SEMI-FINAL":"GRAND FINAL";
   }
+
+  const coinHistEl = document.getElementById("bracketCoinHistory");
+  if(coinHistEl){
+    coinHistEl.innerHTML = (os.coinHistory||[]).map(h=>
+      `<span>${h.label} +${h.amt}🪙</span>`
+    ).join("");
+  }
 }
 
 // ─── ROUND-BY-ROUND COIN REWARDS ──────────────────────────────────────────
@@ -1304,7 +1333,7 @@ function showMedalScreen(){
   document.getElementById("medalScreen").style.display="flex";
 
   let medal, medalText, medalColor, bgColor, isEliminated=false, canPlaySpecial=false;
-  let coinsEarned = os.coinsWonThisRun || 0; // coins were already awarded round-by-round in endGame()
+  let coinsEarned = os.lastRoundReward || 0; // only THIS round's reward — coins were already awarded in endGame()
   const isSpecial = gameMode==="specialolympics";
   if(os.champion==="player"){
     medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
@@ -1499,6 +1528,7 @@ function startSpecialOlympics(){
     playerEliminated:false,
     champion:null,
     coinsWonThisRun:0,
+    coinHistory:[],
   };
 
   document.getElementById("medalScreen").style.display="none";
@@ -1944,6 +1974,8 @@ function endGame(){
   if(gameMode==="olympics" || gameMode==="specialolympics"){
     const os=olympicsState;
     if(os.coinsWonThisRun===undefined) os.coinsWonThisRun=0;
+    if(os.coinHistory===undefined) os.coinHistory=[]; // e.g. [{label:"QF4",amt:5}, ...]
+    os.lastRoundReward = 0; // reward from THIS round only — shown on medal screen
     let oppScore=simulatedScore();
     while(oppScore===totalScore) oppScore=simulatedScore();
 
@@ -1958,6 +1990,8 @@ function endGame(){
       } else {
         addCoins(rewards[1]);
         os.coinsWonThisRun += rewards[1];
+        os.lastRoundReward = rewards[1];
+        os.coinHistory.push({label:"QF4", amt:rewards[1]});
       }
       os.round=2;
     } else if(os.round===2){
@@ -1967,6 +2001,8 @@ function endGame(){
       } else {
         addCoins(rewards[2]);
         os.coinsWonThisRun += rewards[2];
+        os.lastRoundReward = rewards[2];
+        os.coinHistory.push({label:"SEMI", amt:rewards[2]});
       }
       os.round=3;
     } else if(os.round===3){
@@ -1975,6 +2011,8 @@ function endGame(){
       if(os.champion==="player"){
         addCoins(rewards[3]);
         os.coinsWonThisRun += rewards[3];
+        os.lastRoundReward = rewards[3];
+        os.coinHistory.push({label:"FINAL", amt:rewards[3]});
       }
     }
 
@@ -1982,6 +2020,7 @@ function endGame(){
     showBracket();
     return;
   }
+
 
   gameState="end";
 }
@@ -2211,6 +2250,17 @@ function draw(){
 
   let cardW = dotR*2 + 10;
   let cardH = dotR*3 + 14;
+
+  // During Olympics, clip the card/dot to inside the medal border so it
+  // never spills past the gold/silver/bronze frame line.
+  let clipForOlympics = (gameMode==="olympics" && olympicsState);
+  if(clipForOlympics){
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cLeft, cTop, cRight-cLeft-3, cBot-cTop);
+    ctx.clip();
+  }
+
   ctx.fillStyle="#f5f5f0";
   ctx.fillRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
   ctx.strokeStyle="rgba(180,175,165,0.6)"; ctx.lineWidth=1;
@@ -2228,6 +2278,8 @@ function draw(){
 
   ctx.fillStyle="rgba(255,255,255,0.5)";
   ctx.beginPath(); ctx.arc(dotCX-2, dotCY-2, dotR*0.35, 0, Math.PI*2); ctx.fill();
+
+  if(clipForOlympics) ctx.restore();
 
   ctx.fillStyle="rgba(255,255,255,0.15)";
   ctx.fillRect(cLeft, cTop+32, cRight-cLeft, 2);
