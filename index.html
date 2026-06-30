@@ -1025,6 +1025,11 @@ function applyReelOffsets(){
   });
 }
 
+// Non-marker icons (logo, mega, coin, chair) need their own smaller nudge —
+// the reel windows themselves aren't perfectly symmetric, so dead-centering
+// at 0% still lands them slightly off in reel0/reel2.
+const NONMARKER_OFFSET = { reel0: -14, reel1: 0, reel2: 20 };
+
 function setReelImg(img, reelId, sym){
   img.src = sym.src;
   img.parentElement.style.overflow = "hidden";
@@ -1038,7 +1043,8 @@ function setReelImg(img, reelId, sym){
     // don't apply the marker-only nudge or it clips them off-frame. Sized a bit
     // smaller than markers since their solid-color shapes read as overflowing
     // the window even when technically contained.
-    img.style.cssText = `width:60%; height:60%; object-fit:contain; margin:auto; display:block; transform:translateX(0%);`;
+    let nOffset = NONMARKER_OFFSET[reelId] || 0;
+    img.style.cssText = `width:60%; height:60%; object-fit:contain; margin:auto; display:block; transform:translateX(${nOffset}%);`;
   }
 }
 
