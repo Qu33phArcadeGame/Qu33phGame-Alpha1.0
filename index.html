@@ -206,18 +206,18 @@
     }
     .paytable-row {
       display: flex; align-items: center; gap: 4px;
-      padding: 2px 6px;
+      padding: 1px 6px;
       border-bottom: 1px solid #0f0f0f;
       font-family: 'Courier New', monospace; font-size: 8px;
       color: #666;
-      min-height: 22px;
+      min-height: 19px;
     }
     .paytable-row:last-child { border-bottom: none; }
     .paytable-icons { display: flex; gap: 1px; flex-shrink:0; }
-    .paytable-icons img { width: 13px; height: 13px; object-fit: contain; }
-    .paytable-label { line-height:1.15; }
+    .paytable-icons img { width: 11px; height: 11px; object-fit: contain; }
+    .paytable-label { line-height:1.1; }
     .paytable-win { margin-left: auto; color: #ffd700; font-weight: bold; font-size: 9px; white-space:nowrap; flex-shrink:0; }
-    #paytable { display: grid; grid-template-columns: 1fr 1fr; max-height: 38vh; overflow-y: auto; }
+    #paytable { display: grid; grid-template-columns: 1fr 1fr; }
     #medalScreen {
       position:absolute; top:0; left:0; width:100%; height:100%;
       background:#08080a; display:none; flex-direction:column;
@@ -1035,8 +1035,10 @@ function setReelImg(img, reelId, sym){
     img.style.cssText = `width:${sz}%; height:${sz}%; object-fit:contain; margin:auto; display:block; transform:translateX(${offset}%);`;
   } else {
     // Non-marker icons (logo, mega, coin, chair) are already centered/symmetric —
-    // don't apply the marker-only nudge or it clips them off-frame.
-    img.style.cssText = `width:72%; height:72%; object-fit:contain; margin:auto; display:block; transform:translateX(0%);`;
+    // don't apply the marker-only nudge or it clips them off-frame. Sized a bit
+    // smaller than markers since their solid-color shapes read as overflowing
+    // the window even when technically contained.
+    img.style.cssText = `width:60%; height:60%; object-fit:contain; margin:auto; display:block; transform:translateX(0%);`;
   }
 }
 
