@@ -410,7 +410,7 @@
       <div id="slotReels" style="position:absolute; top:37%; left:25%; width:46%; height:11%; display:flex; gap:1%; align-items:stretch;">
         <div class="reel-window" style="flex:1; height:100%; justify-content:flex-start;"><img id="reel0" class="reel-img" src="slotred.jpg" style="width:80%; height:100%; object-fit:contain; margin-left:-8%;"></div>
         <div class="reel-window" style="flex:1; height:100%; justify-content:flex-end;"><img id="reel1" class="reel-img" src="slotgreen.jpg" style="width:85%; height:100%; object-fit:contain; transform:translateX(10%);"></div>
-        <div class="reel-window" style="flex:1; height:100%; justify-content:flex-start; overflow:visible;"><img id="reel2" class="reel-img" src="slotblue.jpg" style="width:75%; height:75%; object-fit:contain; transform:translateX(60%);"></div>
+        <div class="reel-window" style="flex:1; height:100%; justify-content:flex-start; overflow:hidden;"><img id="reel2" class="reel-img" src="slotblue.jpg" style="width:75%; height:75%; object-fit:contain; transform:translateX(60%);"></div>
       </div>
     </div>
 
@@ -994,6 +994,9 @@ function showSlotMachine(){
   document.getElementById("slotResult").innerText="";
   buildPaytable();
   updateSpinBtn();
+  // reel2 defaults to showing blue, which needs overflow:visible
+  let r2=document.getElementById("reel2");
+  if(r2) r2.parentElement.style.overflow="visible";
 }
 
 function updateSpinBtn(){
@@ -1027,12 +1030,14 @@ const SLOT_CUSTOM_STYLE = {
   reel1: { green:"width:85%; height:100%; object-fit:contain; transform:translateX(10%);" },
   reel2: { blue:"width:75%; height:75%; object-fit:contain; transform:translateX(60%);" },
 };
-const SLOT_DEFAULT_STYLE = "width:78%; height:78%; object-fit:contain;";
+const SLOT_DEFAULT_STYLE = "width:100%; height:100%; object-fit:contain;";
 
 function setReelImg(img, reelId, sym){
   img.src = sym.src;
   let custom = SLOT_CUSTOM_STYLE[reelId] && SLOT_CUSTOM_STYLE[reelId][sym.id];
   img.style.cssText = custom || SLOT_DEFAULT_STYLE;
+  // Only blue's special slot needs the container to allow overflow — clip everything else
+  img.parentElement.style.overflow = (reelId==="reel2" && sym.id==="blue") ? "visible" : "hidden";
 }
 
 function spinSlot(){
