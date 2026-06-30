@@ -408,21 +408,21 @@
       <img src="slotoverlay.png" style="width:100%; display:block; object-fit:contain;">
       <!-- Reels positioned inside the window squares - upper portion of machine -->
       <div id="slotReels" style="position:absolute; top:37%; left:25%; width:46%; height:11%; display:flex; gap:1%; align-items:stretch;">
-        <div class="reel-window" style="flex:1; height:100%; justify-content:flex-start;"><img id="reel0" class="reel-img" src="slotred.jpg" style="width:80%; height:100%; object-fit:contain; margin-left:-8%;"></div>
-        <div class="reel-window" style="flex:1; height:100%; justify-content:flex-end;"><img id="reel1" class="reel-img" src="slotgreen.jpg" style="width:85%; height:100%; object-fit:contain; transform:translateX(10%);"></div>
-        <div class="reel-window" style="flex:1; height:100%; justify-content:flex-start; overflow:hidden;"><img id="reel2" class="reel-img" src="slotblue.jpg" style="width:75%; height:75%; object-fit:contain; transform:translateX(60%);"></div>
+        <div class="reel-window" style="flex:1; height:100%; justify-content:center;"><img id="reel0" class="reel-img" src="slotred.jpg" style="width:100%; height:100%; object-fit:contain;"></div>
+        <div class="reel-window" style="flex:1; height:100%; justify-content:center;"><img id="reel1" class="reel-img" src="slotgreen.jpg" style="width:100%; height:100%; object-fit:contain;"></div>
+        <div class="reel-window" style="flex:1; height:100%; justify-content:center;"><img id="reel2" class="reel-img" src="slotblue.jpg" style="width:100%; height:100%; object-fit:contain;"></div>
       </div>
     </div>
 
   <!-- Result + spin -->
   <div style="flex-shrink:0; text-align:center; padding:4px 0;">
     <div id="slotResult" style="font-family:'Courier New',monospace; font-size:13px; color:#fff; letter-spacing:2px; min-height:18px; margin-bottom:6px;"></div>
-    <button id="spinBtn" onclick="spinSlot()" style="width:min(260px,80vw); padding:12px; background:#ffd700; color:#000; font-family:'Courier New',monospace; font-size:14px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">SPIN — 3 <img src="coin.png" width="18" height="18" style="object-fit:contain;" onerror="this.src='coin.jpg'"></button>
+    <button id="spinBtn" onclick="spinSlot()" style="width:min(260px,80vw); padding:12px; background:#ffd700; color:#000; font-family:'Courier New',monospace; font-size:14px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">SPIN — 1 <img src="coin.png" width="18" height="18" style="object-fit:contain;" onerror="this.src='coin.jpg'"></button>
   </div>
 
   <!-- Paytable -->
   <div style="width:min(340px,92vw); border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; flex-shrink:0; margin-top:6px; margin-bottom:8px;">
-    <div style="background:#111; padding:5px 12px; font-family:'Courier New',monospace; font-size:9px; color:#555; letter-spacing:3px; display:flex; align-items:center; gap:4px;">PAYTABLE · SPIN COSTS 3 <img src="coin.png" width="12" height="12" style="object-fit:contain;" onerror="this.src='coin.jpg'"></div>
+    <div style="background:#111; padding:5px 12px; font-family:'Courier New',monospace; font-size:9px; color:#555; letter-spacing:3px; display:flex; align-items:center; gap:4px;">PAYTABLE · SPIN COSTS 1 <img src="coin.png" width="12" height="12" style="object-fit:contain;" onerror="this.src='coin.jpg'"></div>
     <div id="paytable" style="padding:1px 0;"></div>
   </div>
 
@@ -485,8 +485,6 @@ const END_LINE_Y=canvas.height*0.11;
 const START_LINE_Y=canvas.height-80;
 
 // LINE OF DESTINY = AC unit position in game coords
-// AC band is at 77% of counter height (cTop to cBot)
-// cTop = canvas.height*0.06, cBot = canvas.height*0.97
 const LINE_OF_DESTINY = canvas.height*0.06 + (canvas.height*0.97 - canvas.height*0.06)*0.77;
 
 const redDot={x:RIGHT_WALL+6, y:canvas.height*0.08 + canvas.height*0.09};
@@ -495,7 +493,7 @@ const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:canvas.height*0.13,radius:35};
 // ─── GAME MODE STATE ──────────────────────────────────────────────────────
 let gameMode = null;
 let olympicsState = null;
-let playerNation = null; // chosen nation
+let playerNation = null;
 let selectedNationIdx = -1;
 
 // ─── NATION SELECT ────────────────────────────────────────────────────────
@@ -553,16 +551,7 @@ const NATIONS = [
   { name:"China",        flag:"🇨🇳" },
 ];
 
-// playerNation is set at nation select time
-
-// 8-team single elimination bracket
-// QF1: n0 vs n1   QF2: n2 vs n3   QF3: n4 vs n5   QF4: n6 vs PLAYER
-// SF1: QF1w vs QF2w    SF2: QF3w vs QF4w
-// Final: SF1w vs SF2w
-// Player plays QF4, then SF2 if they win, then Final if they win
-
 function buildOlympicsState(){
-  // Use chosen playerNation, remove it from pool if it's in NATIONS
   let pool = NATIONS.filter(n=>n.name!==playerNation.name);
   shuffle(pool);
   let nations = pool.slice(0,7);
@@ -575,7 +564,7 @@ function buildOlympicsState(){
   if(qf3s1===qf3s2) qf3s2++;
 
   return {
-    n: [...nations, playerNation], // n[7] = player
+    n: [...nations, playerNation],
     qf1s1,qf1s2,qf2s1,qf2s2,qf3s1,qf3s2,
     qf4Score:null,qf4Opp:null,
     sf2Score:null,sf2Opp:null,
@@ -584,6 +573,7 @@ function buildOlympicsState(){
     round:1,
     playerEliminated:false,
     champion:null,
+    coinsWonThisRun:0,
   };
 }
 
@@ -604,16 +594,14 @@ function shuffle(arr){
 }
 
 function simulatedScore(){
-  // Competitive AI — scores between 85-130, weighted toward 95-115
-  let base = 85 + Math.floor(Math.random()*45); // 85-129
-  // 70% chance of being in the 95-115 sweet spot
+  let base = 85 + Math.floor(Math.random()*45);
   if(Math.random()<0.7) base = 90 + Math.floor(Math.random()*30);
   return base;
 }
 
 // ─── GAME STATE ────────────────────────────────────────────────────────────
 let speedMultiplier=1;
-let gameState="title"; // "title"|"playing"|"end"|"bracket"
+let gameState="title";
 let markers=[];
 let current=0;
 let totalScore=0;
@@ -682,7 +670,6 @@ function showThemeScreen(){
 function selectTheme(t){
   let u=unlockedThemes();
   if(!u.includes(t)){
-    // Try to purchase
     if(coins>=THEME_COST){
       addCoins(-THEME_COST);
       unlockTheme(t);
@@ -725,32 +712,27 @@ function setTheme(t){
   showTitle();
 }
 
-// Returns correct marker image set for current theme
 function getMarkerImg(color){
   if(currentTheme==="cartoon") return cartoonImages[color];
   return markerImages[color];
 }
 
-// Apply theme overlay after all game drawing
 function applyThemeOverlay(){
   if(currentTheme==="default") return;
   let cw=canvas.width, ch=canvas.height;
   let t=Date.now()/1000;
 
   if(currentTheme==="cartoon"){
-    // 1. Full greyscale
     ctx.save();
     ctx.globalCompositeOperation="saturation";
     ctx.fillStyle="rgba(128,128,128,1)";
     ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // 2. High-contrast punch — darken shadows
     ctx.save();
     ctx.globalCompositeOperation="multiply";
     ctx.fillStyle="rgba(0,0,0,0.25)";
     ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // 3. Halftone dot pattern for comic texture
     ctx.save();
     ctx.globalAlpha=0.06;
     ctx.fillStyle="#000";
@@ -762,14 +744,12 @@ function applyThemeOverlay(){
       }
     }
     ctx.restore();
-    // 4. Bold black vignette border
     ctx.save();
     ctx.strokeStyle="#000"; ctx.lineWidth=18;
     ctx.strokeRect(0,0,cw,ch);
     ctx.restore();
 
   } else if(currentTheme==="neon"){
-    // Mild dark base
     ctx.save();
     ctx.globalCompositeOperation="multiply";
     ctx.fillStyle="rgba(8,0,25,0.45)";
@@ -778,27 +758,22 @@ function applyThemeOverlay(){
 
     ctx.save();
     ctx.globalCompositeOperation="screen";
-    // Counter — blazing electric green
     let cg2=ctx.createLinearGradient(cw*0.2,0,cw*0.75,0);
     cg2.addColorStop(0,"rgba(0,255,120,0.6)");
     cg2.addColorStop(0.5,"rgba(0,255,120,0.75)");
     cg2.addColorStop(1,"rgba(0,255,120,0.6)");
     ctx.fillStyle=cg2; ctx.fillRect(cw*0.2,0,cw*0.55,ch);
-    // Second pass for extra intensity
     ctx.fillStyle=cg2; ctx.fillRect(cw*0.2,0,cw*0.55,ch);
-    // Left cabinet — blazing cyan
     let lg=ctx.createLinearGradient(0,0,cw*0.22,0);
     lg.addColorStop(0,"rgba(0,255,255,0.8)");
     lg.addColorStop(1,"rgba(0,255,255,0.2)");
     ctx.fillStyle=lg; ctx.fillRect(0,0,cw*0.22,ch);
     ctx.fillStyle=lg; ctx.fillRect(0,0,cw*0.22,ch);
-    // Right window — blazing magenta
     let rg2=ctx.createLinearGradient(cw*0.75,0,cw,0);
     rg2.addColorStop(0,"rgba(255,0,200,0.3)");
     rg2.addColorStop(1,"rgba(200,0,255,0.9)");
     ctx.fillStyle=rg2; ctx.fillRect(cw*0.75,0,cw*0.25,ch);
     ctx.fillStyle=rg2; ctx.fillRect(cw*0.75,0,cw*0.25,ch);
-    // AC vent — hot pink blazing
     let ag=ctx.createRadialGradient(cw*0.1,ch*0.8,0,cw*0.1,ch*0.8,ch*0.22);
     ag.addColorStop(0,"rgba(255,50,150,0.9)");
     ag.addColorStop(1,"rgba(0,0,0,0)");
@@ -806,7 +781,6 @@ function applyThemeOverlay(){
     ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,cw*0.25,ch*0.45);
     ctx.restore();
 
-    // Red dot — neon red glow
     let dotCX2=redDot.x, dotCY2=redDot.y;
     ctx.save();
     ctx.shadowColor="#ff0000"; ctx.shadowBlur=30;
@@ -817,10 +791,8 @@ function applyThemeOverlay(){
     ctx.beginPath(); ctx.arc(dotCX2,dotCY2,9,0,Math.PI*2); ctx.fill();
     ctx.restore();
 
-    // Neon window scene — glowing clouds, sun, trees
     let glassTop2=ch*0.58+10;
     let horizonX2=RIGHT_WALL+10+(canvas.width-RIGHT_WALL-10)*0.45;
-    // Neon sun — yellow-white blazing
     ctx.save();
     let sunX2=canvas.width-(canvas.width-horizonX2)*(0.15+(Date.now()/60000%1)*0.7);
     let sunY2=glassTop2+(ch-glassTop2)*0.25;
@@ -831,7 +803,6 @@ function applyThemeOverlay(){
     ctx.globalAlpha=0.5;
     ctx.beginPath(); ctx.arc(sunX2,sunY2,20,0,Math.PI*2); ctx.fill();
     ctx.restore();
-    // Neon clouds — white glowing blobs
     ctx.save();
     ctx.shadowColor="#ffffff"; ctx.shadowBlur=20;
     ctx.fillStyle="rgba(200,255,255,0.7)";
@@ -841,7 +812,6 @@ function applyThemeOverlay(){
       ctx.beginPath(); ctx.ellipse(cx2,cy2,c.w*0.28,c.w*0.12,0,0,Math.PI*2); ctx.fill();
     });
     ctx.restore();
-    // Neon trees — glowing green band at horizon
     ctx.save();
     ctx.shadowColor="#00ff44"; ctx.shadowBlur=25;
     ctx.fillStyle="rgba(0,255,80,0.35)";
@@ -849,13 +819,11 @@ function applyThemeOverlay(){
     ctx.fillRect(horizonX2-treeW2*0.5, glassTop2, treeW2, ch-glassTop2);
     ctx.restore();
 
-    // Pulsing edge glow
     let pulse2=0.18+0.1*Math.sin(t*2.5);
     let eg=ctx.createRadialGradient(cw/2,ch/2,ch*0.25,cw/2,ch/2,ch);
     eg.addColorStop(0,"rgba(0,0,0,0)");
     eg.addColorStop(1,`rgba(150,0,255,${pulse2})`);
     ctx.fillStyle=eg; ctx.fillRect(0,0,cw,ch);
-    // Scanlines
     ctx.save();
     ctx.globalAlpha=0.06;
     ctx.strokeStyle="#fff"; ctx.lineWidth=1;
@@ -865,26 +833,20 @@ function applyThemeOverlay(){
     ctx.restore();
 
   } else if(currentTheme==="sunset"){
-    // 1. Different gold shade per surface — stronger
     ctx.save();
     ctx.globalCompositeOperation="multiply";
-    // Counter — deep amber
     ctx.fillStyle="rgba(255,160,20,0.52)";
     ctx.fillRect(cw*0.2,0,cw*0.55,ch);
-    // Left cabinet — reddish gold
     ctx.fillStyle="rgba(220,100,0,0.45)";
     ctx.fillRect(0,0,cw*0.2,ch);
-    // Right window — pale gold
     ctx.fillStyle="rgba(255,210,80,0.4)";
     ctx.fillRect(cw*0.75,0,cw*0.25,ch);
     ctx.restore();
-    // 2. Extra screen-mode gold shimmer over everything
     ctx.save();
     ctx.globalCompositeOperation="screen";
     ctx.fillStyle="rgba(255,180,0,0.18)";
     ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // 2. Warm bloom from upper right
     ctx.save();
     ctx.globalCompositeOperation="screen";
     let bloom=ctx.createRadialGradient(cw*0.7,0,0,cw*0.7,0,ch*0.9);
@@ -893,10 +855,8 @@ function applyThemeOverlay(){
     bloom.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle=bloom; ctx.fillRect(0,0,cw,ch);
     ctx.restore();
-    // 3. Moving gold stars orbiting in slow arcs
     ctx.save();
     for(let i=0;i<22;i++){
-      // Orbit around different centres
       let cx2=cw*(0.2+0.6*((i*73)%100)/100);
       let cy2=ch*(0.1+0.8*((i*53)%100)/100);
       let orbitR=30+((i*37)%80);
@@ -904,7 +864,6 @@ function applyThemeOverlay(){
       let angle=t*speed+i*0.85;
       let sx=cx2+Math.cos(angle)*orbitR;
       let sy=ch*(0.05+((i*29)%90)/100);
-      // Drift downward over time too
       sy=(sy+t*18*(0.3+((i*11)%10)/20))%ch;
       let pulse2=0.3+0.7*Math.abs(Math.sin(t*1.2+i*0.6));
       let size=1.5+pulse2*4;
@@ -924,7 +883,6 @@ function applyThemeOverlay(){
       ctx.restore();
     }
     ctx.restore();
-    // 4. Slow gold shimmer sweep
     let sweepX=(Math.sin(t*0.35)*0.5+0.5)*cw;
     ctx.save();
     ctx.globalCompositeOperation="screen";
@@ -948,9 +906,8 @@ const SLOT_SYMBOLS = [
   { id:"green", src:"slotgreen.jpg", label:"GREEN", weight:8 },
   { id:"blue",  src:"slotblue.jpg",  label:"BLUE",  weight:8 },
 ];
-const SLOT_COST = 3;
+const SLOT_COST = 1;
 
-// Paytable: [sym1, sym2, sym3] → coins won (null = any)
 const PAYTABLE = [
   { syms:["logo","logo","logo"],   win:200, label:"JACKPOT" },
   { syms:["mega","mega","mega"],   win:50,  label:"MEGA QU33PH" },
@@ -994,9 +951,6 @@ function showSlotMachine(){
   document.getElementById("slotResult").innerText="";
   buildPaytable();
   updateSpinBtn();
-  // reel2 defaults to showing blue, which needs overflow:visible
-  let r2=document.getElementById("reel2");
-  if(r2) r2.parentElement.style.overflow="visible";
 }
 
 function updateSpinBtn(){
@@ -1023,21 +977,11 @@ function buildPaytable(){
   });
 }
 
-// Per-slot custom positioning ONLY applies to the marker colors (red/green/blue)
-// Other symbols (logo, mega, coin, chair) get clean centred display
-const SLOT_CUSTOM_STYLE = {
-  reel0: { red:"width:80%; height:100%; object-fit:contain; margin-left:-8%;" },
-  reel1: { green:"width:85%; height:100%; object-fit:contain; transform:translateX(10%);" },
-  reel2: { blue:"width:75%; height:75%; object-fit:contain; transform:translateX(60%);" },
-};
-const SLOT_DEFAULT_STYLE = "width:100%; height:100%; object-fit:contain;";
-
+// All symbols are simply centred and contained within their reel window now.
 function setReelImg(img, reelId, sym){
   img.src = sym.src;
-  let custom = SLOT_CUSTOM_STYLE[reelId] && SLOT_CUSTOM_STYLE[reelId][sym.id];
-  img.style.cssText = custom || SLOT_DEFAULT_STYLE;
-  // Only blue's special slot needs the container to allow overflow — clip everything else
-  img.parentElement.style.overflow = (reelId==="reel2" && sym.id==="blue") ? "visible" : "hidden";
+  img.style.cssText = "width:100%; height:100%; object-fit:contain;";
+  img.parentElement.style.overflow = "hidden";
 }
 
 function spinSlot(){
@@ -1053,7 +997,6 @@ function spinSlot(){
   const reelIds=["reel0","reel1","reel2"];
   const delays=[600,900,1200];
 
-  // Animate each reel — flash through symbols then settle
   reelIds.forEach((id,i)=>{
     let img=document.getElementById(id);
     let ticks=0;
@@ -1077,7 +1020,6 @@ function spinSlot(){
             document.getElementById("slotCoinCount").innerText=coins;
             resultEl.style.color="#ffd700";
             resultEl.innerHTML=won.label+"! +"+won.win+' <img src="coin.png" onerror="this.src=\'coin.jpg\'" style="width:14px;height:14px;object-fit:contain;vertical-align:middle;">';
-            // Flash reels gold
             reelIds.forEach(r=>{
               document.getElementById(r).parentElement.style.borderColor="#ffd700";
               setTimeout(()=>document.getElementById(r).parentElement.style.borderColor="#333",1500);
@@ -1096,7 +1038,7 @@ function spinSlot(){
 
 function showTitle(){
   gameState="title";
-  titleUnlockedAt = Date.now() + 800; // 800ms buffer before buttons work
+  titleUnlockedAt = Date.now() + 800;
   gameMode=null;
   document.getElementById("titleScreen").style.display="flex";
   document.getElementById("bracketScreen").style.display="none";
@@ -1141,7 +1083,6 @@ function showBracket(){
 function renderBracket(){
   const os = olympicsState;
 
-  // ── Check if tournament is over — show medal screen instead ──
   if(os.champion!==null || os.playerEliminated){
     showMedalScreen(); return;
   }
@@ -1153,7 +1094,6 @@ function renderBracket(){
   const bx = bc.getContext("2d");
   bx.fillStyle="#08080a"; bx.fillRect(0,0,bw,bh);
 
-  // ── HEADER ──
   bx.textAlign="center"; bx.textBaseline="top";
   bx.fillStyle="#ffffff";
   bx.font=`bold ${Math.round(bw*0.07)}px 'Courier New',monospace`;
@@ -1164,24 +1104,19 @@ function renderBracket(){
   bx.fillStyle="#c8a840";
   bx.fillRect(bw*0.15, 10+bw*0.128, bw*0.7, 2);
 
-  // ── LAYOUT: vertical bracket on portrait ──
-  // Left col = QF1,QF2 (cpu matches)   Right col = QF3, QF4(player)
-  // Middle col = SF1, SF2
-  // Bottom centre = FINAL
   const PAD = 6;
   const topY = bh*0.20;
-  const colW = bw*0.30;           // each match box width
-  const rH = Math.round(bh*0.072); // taller rows so two-line text never overlaps
-  const mH = rH*2+1;              // match total height
-  const lx = PAD;                 // left col x
-  const rx = bw-PAD-colW;        // right col x
-  const mx = (bw-colW)/2;        // middle col x
+  const colW = bw*0.30;
+  const rH = Math.round(bh*0.072);
+  const mH = rH*2+1;
+  const lx = PAD;
+  const rx = bw-PAD-colW;
+  const mx = (bw-colW)/2;
 
-  // Vertical spacing
   const qfGap = bh*0.06;
   const qf1y = topY;
   const qf2y = topY + mH + qfGap;
-  const sf1y = topY + (mH+qfGap)/2; // vertically centred between qf1 and qf2
+  const sf1y = topY + (mH+qfGap)/2;
   const qf3y = topY;
   const qf4y = topY + mH + qfGap;
   const sf2y = sf1y;
@@ -1231,7 +1166,6 @@ function renderBracket(){
       else            nameColor="#777";
 
       if(done){
-        // TWO LINES: name on top half, score on bottom half — never overlap
         let nameStr = "TBD";
         if(p){
           let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
@@ -1240,17 +1174,14 @@ function renderBracket(){
         let topY = ry + rH*0.26;
         let botY = ry + rH*0.74;
 
-        // Name line
         bx.fillStyle=nameColor;
         bx.font=`${Math.round(nameSz*0.72)}px 'Courier New',monospace`;
         bx.textAlign="left"; bx.textBaseline="middle";
-        // Clip strictly to top half only, leaving the bottom half clear for the score
         bx.save();
         bx.beginPath(); bx.rect(x+3,ry+1,colW-6,rH*0.48); bx.clip();
         bx.fillText(nameStr, x+4, topY);
         bx.restore();
 
-        // Score line
         let sc = pi===0 ? s1 : s2;
         bx.fillStyle = isWin?"#44ee44":"#cc3333";
         bx.font=`bold ${Math.round(scoreSz*0.8)}px 'Courier New',monospace`;
@@ -1258,7 +1189,6 @@ function renderBracket(){
         bx.fillText(sc, x+colW-4, botY);
 
       } else {
-        // Pending — single centred line
         let nameStr = "TBD";
         if(p){
           let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
@@ -1286,7 +1216,6 @@ function renderBracket(){
     bx.stroke();
   }
 
-  // ── Determine winners ──
   let qf1w = os.qf1s1>os.qf1s2 ? os.n[0] : os.n[1];
   let qf2w = os.qf2s1>os.qf2s2 ? os.n[2] : os.n[3];
   let qf3w = os.qf3s1>os.qf3s2 ? os.n[4] : os.n[5];
@@ -1298,30 +1227,25 @@ function renderBracket(){
   let sf2w = sf2done ? (os.sf2Score>os.sf2Opp ? playerNation : qf3w) : null;
   let finDone = os.finScore!==null;
 
-  // ── DRAW MATCHES ──
   drawMatch(lx, qf1y, os.n[0],os.n[1], os.qf1s1,os.qf1s2, false,"QF1");
   drawMatch(lx, qf2y, os.n[2],os.n[3], os.qf2s1,os.qf2s2, false,"QF2");
 
-  // SF1 — both QF winners known (cpu), scores fill in once played
   drawMatch(mx, sf1y, qf1w, qf2w, os.sf1s1, os.sf1s2, false,"SF1");
 
   drawMatch(rx, qf3y, os.n[4],os.n[5], os.qf3s1,os.qf3s2, false,"QF3");
   drawMatch(rx, qf4y, os.n[6],playerNation, qf4done?os.qf4Opp:null, qf4done?os.qf4Score:null,
     os.round===1,"QF4");
 
-  // SF2 — show NOTHING until QF4 is done (player must play first)
   let sf2p1 = qf4done ? qf3w : null;
   let sf2p2 = qf4done ? qf4w : null;
   drawMatch(mx, sf2y, sf2p1, sf2p2, sf2done?os.sf2Opp:null, sf2done?os.sf2Score:null,
     os.round===2&&!os.playerEliminated,"SF2");
 
-  // FINAL — both TBD until SFs resolved
   let finp1 = sf1done ? sf1w : null;
   let finp2 = sf2done ? sf2w : null;
   drawMatch(mx, finy, finp1, finp2, finDone?os.finOpp:null, finDone?os.finScore:null,
     os.round===3&&!os.playerEliminated,"FINAL");
 
-  // ── CONNECTORS ──
   connector(lx+colW, qf1y+rH, mx, sf1y+rH);
   connector(lx+colW, qf2y+rH, mx, sf1y+rH);
   connector(rx,      qf3y+rH, mx+colW, sf2y+rH);
@@ -1329,12 +1253,10 @@ function renderBracket(){
   connector(mx+colW, sf1y+rH, mx, finy+rH);
   connector(mx,      sf2y+rH, mx+colW, finy+rH);
 
-  // ── BUTTON ──
   const playBtn=document.getElementById("playNextBtn");
   const roundLabel=document.getElementById("bracketRoundLabel");
 
   if(os.champion!==null || os.playerEliminated){
-    // Tournament over — go to medal screen which has Special Olympics button
     playBtn.className="";
     playBtn.innerText="SEE RESULT →";
     playBtn.onclick=()=>showMedalScreen();
@@ -1349,32 +1271,31 @@ function renderBracket(){
   }
 }
 
+// ─── ROUND-BY-ROUND COIN REWARDS ──────────────────────────────────────────
+const OLYMPICS_REWARDS = { 1:5, 2:10, 3:15 };       // win QF4=5, win SF2=10, win FINAL=15
+const SPECIAL_OLYMPICS_REWARDS = { 1:1, 2:2, 3:3 }; // smaller payout in special olympics
+
 function showMedalScreen(){
   const os = olympicsState;
   document.getElementById("bracketScreen").style.display="none";
   document.getElementById("medalScreen").style.display="flex";
 
   let medal, medalText, medalColor, bgColor, isEliminated=false, canPlaySpecial=false;
-  let coinsEarned = 0;
+  let coinsEarned = os.coinsWonThisRun || 0; // coins were already awarded round-by-round in endGame()
   const isSpecial = gameMode==="specialolympics";
   if(os.champion==="player"){
     medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
-    coinsEarned = isSpecial ? 3 : 15;
   } else if(os.playerEliminated && os.round<=2){
     isEliminated=true;
     canPlaySpecial = !isSpecial;
     medal="❌"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
-    coinsEarned = 0;
   } else if(os.playerEliminated && os.round===3){
     medal="🥉"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
     canPlaySpecial = !isSpecial;
-    coinsEarned = isSpecial ? 1 : 5;
   } else {
     medal="🥈"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
     canPlaySpecial = !isSpecial;
-    coinsEarned = isSpecial ? 2 : 10;
   }
-  if(coinsEarned>0) addCoins(coinsEarned);
 
   const mc = document.getElementById("medalCanvas");
   const mw = window.innerWidth;
@@ -1404,7 +1325,6 @@ function showMedalScreen(){
     mx2.fillStyle="#08080a"; mx2.fillRect(0,0,mw,mh);
     frame++;
 
-    // Outer glow rings
     for(let r=3;r>=1;r--){
       let pulse = 0.5+0.5*Math.sin(frame*0.04);
       let radius = mw*0.28 + r*18 + pulse*12;
@@ -1415,13 +1335,11 @@ function showMedalScreen(){
       mx2.arc(mw/2,mh*0.42,radius,0,Math.PI*2); mx2.fill();
     }
 
-    // Medal emoji
     mx2.font=`${Math.round(mw*0.42)}px Arial`;
     mx2.textAlign="center"; mx2.textBaseline="middle";
     let bounce = Math.sin(frame*0.05)*6;
     mx2.fillText(medal, mw/2, mh*0.42+bounce);
 
-    // Shiny sweep line
     let sweepX = mw/2 + Math.cos(frame*0.03)*mw*0.12;
     let sweepGrad = mx2.createLinearGradient(sweepX-40,0,sweepX+40,0);
     sweepGrad.addColorStop(0,"rgba(255,255,255,0)");
@@ -1435,7 +1353,6 @@ function showMedalScreen(){
     mx2.fillRect(sweepX-40,mh*0.25,80,mh*0.35);
     mx2.restore();
 
-    // Text
     mx2.fillStyle=medalColor;
     mx2.font=`bold ${Math.round(mw*0.07)}px 'Courier New',monospace`;
     mx2.textAlign="center"; mx2.textBaseline="top";
@@ -1443,7 +1360,6 @@ function showMedalScreen(){
 
     let lineY = mh*0.72 + mw*0.1;
 
-    // Coins earned — image + number, own line
     if(coinsEarned>0){
       let coinSz = Math.round(mw*0.06);
       if(coinImg.complete && coinImg.naturalWidth){
@@ -1457,7 +1373,6 @@ function showMedalScreen(){
       lineY += coinSz*1.4;
     }
 
-    // Nation — own line below coins
     mx2.fillStyle="#fff";
     mx2.font=`bold ${Math.round(mw*0.045)}px 'Courier New',monospace`;
     mx2.fillText(playerNation.flag+" "+playerNation.name, mw/2, lineY);
@@ -1469,7 +1384,6 @@ function showMedalScreen(){
       mx2.fillText("QU33PH OLYMPIC CHAMPION", mw/2, lineY);
     }
 
-    // Sparkle particles
     particles.forEach(p=>{
       p.life += p.speed;
       if(p.life>1){ p.life=0; p.x=mw*0.1+Math.random()*mw*0.8; p.y=mh*0.15+Math.random()*mh*0.6; }
@@ -1483,7 +1397,6 @@ function showMedalScreen(){
       mx2.rotate(p.angle);
       mx2.fillStyle=medalColor;
       mx2.shadowColor=medalColor; mx2.shadowBlur=8;
-      // 4-point star
       mx2.beginPath();
       let s=p.size;
       mx2.moveTo(0,-s); mx2.lineTo(s*0.25,-s*0.25);
@@ -1497,13 +1410,11 @@ function showMedalScreen(){
     animId = requestAnimationFrame(drawMedal);
   }
 
-  // Stop animation when leaving
   document.getElementById("medalScreen").dataset.animId = "";
   if(window._medalAnimId) cancelAnimationFrame(window._medalAnimId);
   drawMedal();
   window._medalAnimId = animId;
 
-  // Show/hide Special Olympics button
   document.getElementById("medalSpecialBtn").style.display = canPlaySpecial ? "block" : "none";
 }
 
@@ -1511,32 +1422,27 @@ function getMainBracketLosers(){
   const os = olympicsState;
   let losers = [];
 
-  // QF losers (always known — pre-simmed)
-  losers.push(os.qf1s1>os.qf1s2 ? os.n[1] : os.n[0]); // QF1 loser
-  losers.push(os.qf2s1>os.qf2s2 ? os.n[3] : os.n[2]); // QF2 loser
-  losers.push(os.qf3s1>os.qf3s2 ? os.n[5] : os.n[4]); // QF3 loser
+  losers.push(os.qf1s1>os.qf1s2 ? os.n[1] : os.n[0]);
+  losers.push(os.qf2s1>os.qf2s2 ? os.n[3] : os.n[2]);
+  losers.push(os.qf3s1>os.qf3s2 ? os.n[5] : os.n[4]);
 
-  // QF4 loser (player or n[6])
   if(os.qf4Score!==null){
     losers.push(os.qf4Score>os.qf4Opp ? os.n[6] : playerNation);
   } else {
-    losers.push(os.n[6]); // player hasn't played yet, put their opponent in
+    losers.push(os.n[6]);
   }
 
-  // SF1 loser (if played)
   if(os.sf1s1!==null){
     let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];
     let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];
     losers.push(os.sf1s1>os.sf1s2 ? qf2w : qf1w);
   }
 
-  // SF2 loser (if played)
   if(os.sf2Score!==null){
     let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5];
     losers.push(os.sf2Score>os.sf2Opp ? qf3w : playerNation);
   }
 
-  // Remove player from losers list (they'll be the competitor)
   return losers.filter(n=>!n.isPlayer);
 }
 
@@ -1544,8 +1450,6 @@ function startSpecialOlympics(){
   const losers = getMainBracketLosers();
   gameMode="specialolympics";
 
-  // Build a Special Olympics state using the actual losers from main bracket
-  // Fill up to 7 cpu slots with losers, pad with random nations if needed
   let pool = [...losers];
   if(pool.length < 7){
     let extras = NATIONS.filter(n=>!pool.find(p=>p.name===n.name)&&n.name!==playerNation.name);
@@ -1571,6 +1475,7 @@ function startSpecialOlympics(){
     round:1,
     playerEliminated:false,
     champion:null,
+    coinsWonThisRun:0,
   };
 
   document.getElementById("medalScreen").style.display="none";
@@ -1632,7 +1537,6 @@ canvas.addEventListener("pointerdown",e=>{
     if(gameMode==="single"){
       showTitle();
     } else {
-      // olympics: go back to bracket or result
       showTitle();
     }
     return;
@@ -1696,8 +1600,8 @@ canvas.addEventListener("pointerup",()=>{
     megaTriggered:false,
     armed:false,
     life:0,
-    passedDestiny:false,  // crossed the AC unit line
-    deducted:false,       // PEEF deduction already applied
+    passedDestiny:false,
+    deducted:false,
   });
 
   current++;
@@ -1724,10 +1628,7 @@ function tryAdvanceRound(){
   if(current===3 && markers.every(m=>m.stopped||m.fallen)){
     let g=markers[0], r=markers[1], b=markers[2];
 
-    // ── DEDUCTION: Blue marker must pass the chair during sudden death ──
     if(b && !b.fallen && suddenDeath){
-      // chair.y is near top of screen (low y = far up field)
-      // blue passes chair if its final y < chair.y
       if(b.y > chair.y){
         totalScore = totalScore - 2;
         scorePopups.push({x:(LEFT_EDGE+RIGHT_WALL)/2, y:canvas.height*0.45, text:"PEEF", life:55, peef:true, shakeAmt:7});
@@ -1775,8 +1676,6 @@ function calculateScore(){
 }
 
 // ─── SKY ──────────────────────────────────────────────────────────────────
-// Window panel is the vertical strip from RIGHT_WALL to screen right edge.
-// Sky goes top to bottom inside that strip.
 let clouds=[];
 let trees=[];
 
@@ -1787,12 +1686,11 @@ function randomizeSky(){
   clouds=[];
   for(let i=0;i<5;i++){
     clouds.push({
-      // x stays within RIGHT_WALL..canvas.width, y within the sky portion of the window
       x: wx + Math.random()*ww,
       y: END_LINE_Y + Math.random() * (canvas.height * 0.55 - END_LINE_Y),
       w: 30 + Math.random()*50,
       speed: 0.05 + Math.random()*0.08,
-      wx, ww  // store bounds for clamping drift
+      wx, ww
     });
   }
 
@@ -1819,19 +1717,15 @@ function drawWindowScene(elapsed){
   let ww = canvas.width - wx;
   let wh = canvas.height;
 
-  // Glass area starts below the white wall panel (~52% down)
   let glassTop = wh * 0.58 + 10;
-  // Horizon is a VERTICAL line — sky on RIGHT, ground on LEFT
   let horizonX = wx + ww * 0.45;
 
-  // ── ground — LEFT portion (bottom of real window) ──
   let groundColor = t<0.66
     ? lerpRGB([55,105,45],[30,60,25],t/0.66)
     : lerpRGB([30,60,25],[12,22,10],(t-0.66)/0.34);
   ctx.fillStyle=`rgb(${groundColor})`;
   ctx.fillRect(wx, glassTop, horizonX-wx, wh-glassTop);
 
-  // ── sky — RIGHT portion (top of real window) ──
   let skyTop2, skyBot2;
   if(t < 0.66){
     let d=t/0.66;
@@ -1848,7 +1742,6 @@ function drawWindowScene(elapsed){
   ctx.fillStyle=skyGrad;
   ctx.fillRect(horizonX, glassTop, canvas.width-horizonX, wh-glassTop);
 
-  // ── sun — starts far right (high noon), moves LEFT as time passes (= setting) ──
   let sunX = canvas.width - (canvas.width - horizonX) * (0.15 + t * 0.7);
   let sunY = glassTop + (wh-glassTop)*0.25;
   let sunR = t<0.66 ? 12 : 9;
@@ -1860,7 +1753,6 @@ function drawWindowScene(elapsed){
   ctx.fillStyle=t<0.66?`rgba(255,245,170,0.95)`:`rgba(215,70,30,0.9)`;
   ctx.beginPath(); ctx.arc(sunX,sunY,sunR,0,Math.PI*2); ctx.fill();
 
-  // ── tree silhouette — VERTICAL band at horizon (horizontal in the room) ──
   let treeW = ww * 0.2;
   let treeL = horizonX - treeW*0.55;
   let treGrad = ctx.createLinearGradient(treeL, 0, treeL+treeW, 0);
@@ -1876,22 +1768,18 @@ function drawWindowScene(elapsed){
     ctx.fillRect(horizonX-treeW*0.22+bump, ty, treeW*0.22-bump+2, 6);
   }
 
-  // ── clouds — drift TOP→BOTTOM on canvas (= left→right in real room) ──
   ctx.save();
   ctx.beginPath(); ctx.rect(horizonX+2, glassTop, canvas.width-horizonX-2, wh-glassTop); ctx.clip();
   let cloudCol = t<0.66
     ? `rgba(255,255,255,${0.75-(t/0.66)*0.25})`
     : `rgba(190,110,70,${Math.max(0,0.4-(t-0.66)/0.34*0.3)})`;
   clouds.forEach(c=>{
-    // Use c.x as the vertical position (top→bottom), remap to glass area
     let cy2 = glassTop + (c.x - wx) / (canvas.width - wx) * (wh - glassTop);
-    // Horizontal scatter within sky portion
     let cx2 = horizonX + 10 + (c.w % (canvas.width - horizonX - 20));
     let cw2 = c.w * 0.55;
     ctx.fillStyle=cloudCol;
     ctx.beginPath(); ctx.ellipse(cx2, cy2, cw2*0.22, cw2*0.5, 0,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx2+cw2*0.06, cy2-cw2*0.22, cw2*0.16, cw2*0.3, 0,0,Math.PI*2); ctx.fill();
-    // Drift downward (top→bottom on canvas)
     c.x += c.speed;
     if(c.x > canvas.width + c.w) c.x = wx - c.w;
   });
@@ -1904,11 +1792,6 @@ function drawWindowFrame(){
   let ww = canvas.width - wx;
   let wh = canvas.height;
 
-  // Sections top→bottom in window strip:
-  // 1. Slim wall strip  (8%)  — small strip next to green cabinet
-  // 2. Blinds           (30%) — the main blind area
-  // 3. White wall       (20%) — thicker wall below blinds
-  // 4. Glass            (42%) — sky/trees/clouds
   let slimH    = wh * 0.08;
   let blindTop = slimH;
   let blindBot = slimH + wh * 0.30;
@@ -1916,18 +1799,15 @@ function drawWindowFrame(){
   let wallBot  = wallTop + wh * 0.20;
   let glassTop2 = wallBot;
 
-  // ── 1. SLIM WALL STRIP at very top ──
   ctx.fillStyle="#cdc8bc";
   ctx.fillRect(wx+10, 0, ww-10, slimH);
 
-  // ── 2. BLINDS ──
   let blindGrad = ctx.createLinearGradient(0,blindTop,0,blindBot);
   blindGrad.addColorStop(0,"#a89878");
   blindGrad.addColorStop(1,"#988868");
   ctx.fillStyle=blindGrad;
   let blindH = blindBot - blindTop;
   ctx.fillRect(wx+10, blindTop, ww-10, blindH);
-  // Vertical slat lines
   ctx.strokeStyle="rgba(60,45,25,0.5)"; ctx.lineWidth=2;
   for(let sx=wx+10+8; sx<canvas.width; sx+=8){
     ctx.beginPath(); ctx.moveTo(sx,blindTop); ctx.lineTo(sx,blindBot); ctx.stroke();
@@ -1939,30 +1819,24 @@ function drawWindowFrame(){
   ctx.fillStyle="#7a7060";
   ctx.fillRect(wx+10, blindBot-5, ww-10, 7);
 
-  // ── 3. WHITE WALL PANEL ──
   let wallGrad = ctx.createLinearGradient(0,wallTop,0,wallBot);
   wallGrad.addColorStop(0,"#edeae4");
   wallGrad.addColorStop(1,"#e0ddd6");
   ctx.fillStyle=wallGrad;
   ctx.fillRect(wx+10, wallTop, ww-10, wallBot-wallTop);
 
-  // ── outer left frame (full height) ──
   ctx.fillStyle="#181818";
   ctx.fillRect(wx, 0, 10, wh);
 
-  // ── frame bar between wall and glass ──
   ctx.fillRect(wx+10, wallBot, ww-10, 10);
 
-  // ── bottom frame bar ──
   ctx.fillRect(wx+10, wh-8, ww-10, 8);
 
-  // ── vertical mullions (glass only) ──
   let col1 = wx + ww*0.38;
   let col2 = wx + ww*0.72;
   ctx.fillRect(col1-4, glassTop2, 8, wh-glassTop2);
   ctx.fillRect(col2-4, glassTop2, 8, wh-glassTop2);
 
-  // ── mid-rail in glass ──
   ctx.fillRect(wx+10, glassTop2+(wh-glassTop2)*0.5, ww-10, 7);
 }
 
@@ -1996,11 +1870,10 @@ function update(){
     m.trail.push({x:m.x,y:m.y});
     if(m.trail.length>20) m.trail.shift();
 
-    // Fallen off left edge — always a PEEF regardless of position
     if(m.x<LEFT_EDGE){
       if(!m.deducted){
         let deduction = suddenDeath ? 5 : 2;
-        totalScore = totalScore - deduction; // can go negative
+        totalScore = totalScore - deduction;
         m.deducted=true;
         addShake(12);
         scorePopups.push({
@@ -2047,27 +1920,39 @@ function endGame(){
 
   if(gameMode==="olympics" || gameMode==="specialolympics"){
     const os=olympicsState;
+    if(os.coinsWonThisRun===undefined) os.coinsWonThisRun=0;
     let oppScore=simulatedScore();
-    // ensure no tie
     while(oppScore===totalScore) oppScore=simulatedScore();
 
+    const rewards = gameMode==="specialolympics" ? SPECIAL_OLYMPICS_REWARDS : OLYMPICS_REWARDS;
+
     if(os.round===1){
-      // QF4: player vs n[6]
       os.qf4Score=totalScore; os.qf4Opp=oppScore;
-      // also sim SF1 now
       os.sf1s1=simulatedScore(); os.sf1s2=simulatedScore();
       while(os.sf1s1===os.sf1s2) os.sf1s2=simulatedScore();
-      if(totalScore<=oppScore){ os.playerEliminated=true; }
+      if(totalScore<=oppScore){
+        os.playerEliminated=true;
+      } else {
+        addCoins(rewards[1]);
+        os.coinsWonThisRun += rewards[1];
+      }
       os.round=2;
     } else if(os.round===2){
-      // SF2: QF3w vs QF4w(player)
       os.sf2Score=totalScore; os.sf2Opp=oppScore;
-      if(totalScore<=oppScore){ os.playerEliminated=true; }
+      if(totalScore<=oppScore){
+        os.playerEliminated=true;
+      } else {
+        addCoins(rewards[2]);
+        os.coinsWonThisRun += rewards[2];
+      }
       os.round=3;
     } else if(os.round===3){
-      // Final
       os.finScore=totalScore; os.finOpp=oppScore;
       os.champion=totalScore>oppScore?"player":"cpu";
+      if(os.champion==="player"){
+        addCoins(rewards[3]);
+        os.coinsWonThisRun += rewards[3];
+      }
     }
 
     gameState="end";
@@ -2153,13 +2038,11 @@ function draw(){
   ctx.save();
   ctx.translate(shakeX,shakeY);
 
-  // ── 1. BACKGROUND BASE ──
-  ctx.fillStyle="#d8cfc4"; // cream/beige room
+  ctx.fillStyle="#d8cfc4";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // ── OLYMPICS HEADER in cream strip above teal cabinet ──
   if((gameMode==="olympics"||gameMode==="specialolympics") && olympicsState){
-    let headerY = canvas.height*0.03; // centre of cream strip
+    let headerY = canvas.height*0.03;
     ctx.fillStyle="#3d4a44";
     ctx.font="bold 13px 'Courier New',monospace";
     ctx.textAlign="center"; ctx.textBaseline="middle";
@@ -2169,18 +2052,12 @@ function draw(){
     ctx.fillText(headerText, (LEFT_EDGE+RIGHT_WALL)/2, headerY);
   }
 
-  // ── 2. WINDOW SCENE (right strip, behind frame) ──
   drawWindowScene(elapsed);
   drawWindowFrame();
 
-  // ── 3. CREAM WALL — removed stray sliver ──
-
-  // ── 4. TEAL LEFT WALL PANEL ──
   ctx.fillStyle="#3d6b62";
   ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
-  // No highlight strip — was causing uneven left line
 
-  // ── 5. COUNTER SURFACE — nearly full screen height ──
   let cLeft  = LEFT_EDGE;
   let cRight = RIGHT_WALL;
   let cTop   = canvas.height * 0.06;
@@ -2194,16 +2071,14 @@ function draw(){
   ctx.lineTo(cLeft, cBot);
   ctx.closePath();
 
-  // Light blue-grey laminate
   let surfGrad = ctx.createLinearGradient(0, cTop, 0, cBot);
-  surfGrad.addColorStop(0, "#8fa8a4");   // slightly darker at far end
+  surfGrad.addColorStop(0, "#8fa8a4");
   surfGrad.addColorStop(0.3, "#9ab4af");
   surfGrad.addColorStop(0.7, "#a8bebb");
-  surfGrad.addColorStop(1, "#b0c4c1");   // lighter near player
+  surfGrad.addColorStop(1, "#b0c4c1");
   ctx.fillStyle = surfGrad;
   ctx.fill();
 
-  // Subtle surface sheen
   let sheenGrad = ctx.createLinearGradient(cLeft, 0, cRight, 0);
   sheenGrad.addColorStop(0,"rgba(255,255,255,0)");
   sheenGrad.addColorStop(0.4,"rgba(255,255,255,0.07)");
@@ -2213,7 +2088,6 @@ function draw(){
 
   ctx.restore();
 
-  // ── 6. COUNTER FRONT FACE (thin strip at bottom of surface) ──
   let faceTop = cBot;
   let faceBot = cBot + canvas.height*0.025;
   let faceGrad = ctx.createLinearGradient(0,faceTop,0,faceBot);
@@ -2222,38 +2096,31 @@ function draw(){
   faceGrad.addColorStop(1,"#5a7470");
   ctx.fillStyle=faceGrad;
   ctx.fillRect(cLeft, faceTop, cRight-cLeft, faceBot-faceTop);
-  // aluminium trim strip at very top of front face
   ctx.fillStyle="#b8c8c4";
   ctx.fillRect(cLeft, faceTop, cRight-cLeft, 3);
 
-  // ── 7. BOTTOM AREA — plain light blue-grey counter color ──
   ctx.fillStyle="#a8bebb";
   ctx.fillRect(cLeft, cBot, cRight-cLeft, canvas.height-cBot);
   ctx.fillStyle="#b8c8c4";
   ctx.fillRect(cLeft, cBot, cRight-cLeft, 3);
 
-  // ── 8. BEIGE FLOOR below counter ──
   ctx.fillStyle="#c8b89a";
   ctx.fillRect(0, canvas.height*0.97, canvas.width, canvas.height*0.03);
 
-  // ── 9. TEAL GREEN CABINET — tiny strip at very TOP ──
   ctx.fillStyle="#3d6b62";
   ctx.fillRect(cLeft, cTop, cRight-cLeft, canvas.height*0.05);
   ctx.fillStyle="#4a7d73";
   ctx.fillRect(cLeft, cTop, cRight-cLeft, 3);
 
-  // ── 10. BROWN AC UNIT — contained rectangle, left side, with grouped slats ──
-  let acBrownR = cRight; // extends to windowsill
+  let acBrownR = cRight;
   let acT2 = cTop  + (cBot-cTop)*0.77;
   let acB2 = cTop  + (cBot-cTop)*0.93;
   let acH2 = acB2 - acT2;
   let acTotalW = acBrownR - cLeft;
 
-  // Outer shadow
   ctx.fillStyle="rgba(0,0,0,0.25)";
   ctx.fillRect(cLeft-2, acT2-3, acTotalW+4, acH2+6);
 
-  // Full brown rectangle
   let acGrad = ctx.createLinearGradient(0, acT2, 0, acB2);
   acGrad.addColorStop(0,"#b89878");
   acGrad.addColorStop(0.5,"#c0a085");
@@ -2261,22 +2128,18 @@ function draw(){
   ctx.fillStyle=acGrad;
   ctx.fillRect(cLeft, acT2, acTotalW, acH2);
 
-  // Inset border
   ctx.strokeStyle="rgba(70,48,28,0.7)"; ctx.lineWidth=2;
   ctx.strokeRect(cLeft+3, acT2+3, acTotalW-6, acH2-6);
   ctx.strokeStyle="rgba(180,150,110,0.2)"; ctx.lineWidth=1;
   ctx.strokeRect(cLeft+5, acT2+5, acTotalW-10, acH2-10);
 
-  // Slat section — left ~30% of unit
   let slatSectionR = cLeft + acTotalW*0.30;
   ctx.fillStyle="#2a1c10";
   ctx.fillRect(cLeft+6, acT2+6, slatSectionR-cLeft-6, acH2-12);
 
-  // Grouped slats with HORIZONTAL GAPS between groups
-  // Each group: several vertical slats side by side, then a tan horizontal bar
   let numGroups = 5;
   let groupH = (acH2-12) / numGroups;
-  let gapH = groupH * 0.18; // horizontal gap between groups
+  let gapH = groupH * 0.18;
   let slatAreaT = acT2+6;
   let slatAreaL = cLeft+7;
   let slatAreaR = slatSectionR-4;
@@ -2288,11 +2151,9 @@ function draw(){
     let gSlatsB = gy + groupH - gapH*0.5;
     let gSlatsH = gSlatsB - gSlatsT;
 
-    // horizontal gap (tan/brown) between groups
     ctx.fillStyle="#a07858";
     ctx.fillRect(slatAreaL, gy, slatAreaW, gapH*0.5);
 
-    // vertical slats within this group
     let slatW=4, slatGap=3;
     for(let sx=slatAreaL+2; sx<slatAreaR-2; sx+=slatW+slatGap){
       let sg=ctx.createLinearGradient(sx,0,sx+slatW,0);
@@ -2305,45 +2166,36 @@ function draw(){
       ctx.fillRect(sx+slatW, gSlatsT, slatGap-1, gSlatsH);
     }
   }
-  // bottom gap
   ctx.fillStyle="#a07858";
   ctx.fillRect(slatAreaL, slatAreaT+(numGroups-1)*groupH+groupH-gapH*0.5, slatAreaW, gapH*0.5);
 
-  // Border lines top/bottom
   ctx.strokeStyle="rgba(60,40,20,0.45)"; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(cLeft,acT2); ctx.lineTo(acBrownR,acT2); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(cLeft,acB2); ctx.lineTo(acBrownR,acB2); ctx.stroke();
 
-  // ── 11. BLACK STRIP at RIGHT_WALL (vertical, full counter height) ──
   ctx.fillStyle="#0e0e0e";
   ctx.fillRect(RIGHT_WALL, cTop, 13, cBot-cTop);
 
-  // ── SLIM CREAM WALL BORDER — tiny strip at very top only, next to teal cabinet ──
   let wallStripX = RIGHT_WALL + 13;
   let wallStripW = canvas.width - wallStripX;
-  let wallStripBot = cTop + canvas.height * 0.08; // only the slim wall height
+  let wallStripBot = cTop + canvas.height * 0.08;
   ctx.fillStyle="#cdc8bc";
   ctx.fillRect(wallStripX, cTop, wallStripW, wallStripBot - cTop);
 
-  // ── 12. RED DOT — on black strip, slightly into the blinds section ──
   let dotCX = redDot.x;
   let dotCY = redDot.y;
   let dotR = 7;
 
-  // White index card — rectangular, portrait orientation
   let cardW = dotR*2 + 10;
   let cardH = dotR*3 + 14;
   ctx.fillStyle="#f5f5f0";
   ctx.fillRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
-  // subtle card border
   ctx.strokeStyle="rgba(180,175,165,0.6)"; ctx.lineWidth=1;
   ctx.strokeRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
 
-  // Dark ring
   ctx.fillStyle="#111";
   ctx.beginPath(); ctx.arc(dotCX, dotCY, dotR+2, 0, Math.PI*2); ctx.fill();
 
-  // Red gradient
   let rg = ctx.createRadialGradient(dotCX-2, dotCY-2, 1, dotCX, dotCY, dotR);
   rg.addColorStop(0,"#ff5555");
   rg.addColorStop(0.5,"#dd1111");
@@ -2351,42 +2203,35 @@ function draw(){
   ctx.fillStyle=rg;
   ctx.beginPath(); ctx.arc(dotCX, dotCY, dotR, 0, Math.PI*2); ctx.fill();
 
-  // Specular
   ctx.fillStyle="rgba(255,255,255,0.5)";
   ctx.beginPath(); ctx.arc(dotCX-2, dotCY-2, dotR*0.35, 0, Math.PI*2); ctx.fill();
 
-  // ── 13. END LINE ──
   ctx.fillStyle="rgba(255,255,255,0.15)";
   ctx.fillRect(cLeft, cTop+32, cRight-cLeft, 2);
 
-  // ── OLYMPICS MEDAL BORDER ──
   if(gameMode==="olympics" && olympicsState){
     let round = olympicsState.round;
     let borderColor, glowColor, borderW;
     if(round===1){
-      borderColor="#cd7f32"; glowColor="rgba(205,127,50,0.4)"; borderW=4; // bronze
+      borderColor="#cd7f32"; glowColor="rgba(205,127,50,0.4)"; borderW=4;
     } else if(round===2){
-      borderColor="#c0c0c0"; glowColor="rgba(192,192,192,0.4)"; borderW=5; // silver
+      borderColor="#c0c0c0"; glowColor="rgba(192,192,192,0.4)"; borderW=5;
     } else {
-      borderColor="#ffd700"; glowColor="rgba(255,215,0,0.5)"; borderW=6; // gold
+      borderColor="#ffd700"; glowColor="rgba(255,215,0,0.5)"; borderW=6;
     }
-    // Glow
     ctx.save();
     ctx.shadowColor=glowColor; ctx.shadowBlur=18;
     ctx.strokeStyle=borderColor; ctx.lineWidth=borderW;
     ctx.strokeRect(cLeft+2, cTop+2, cRight-cLeft-4, cBot-cTop-4);
     ctx.restore();
 
-    // Gold sparkles — stars travelling along the border rectangle
     if(round===3){
       let t=Date.now()/1000;
       let numStars=16;
-      // Border rect: cLeft,cTop → cRight,cBot
       let bLeft=cLeft+3, bRight=cRight-3, bTop=cTop+3, bBot=cBot-3;
       let perimeter = 2*((bRight-bLeft)+(bBot-bTop));
 
       for(let i=0;i<numStars;i++){
-        // Each star travels along the perimeter at a fixed offset
         let dist = ((i/numStars)*perimeter + t*120) % perimeter;
         let px,py;
         let top=bRight-bLeft, right=bBot-bTop, bottom=bRight-bLeft, left=bBot-bTop;
@@ -2414,7 +2259,6 @@ function draw(){
       }
     }
 
-    // Round label — drawn INSIDE the dark green cabinet at top
     let medalEmoji = round===1?"🥉":round===2?"🥈":"🥇";
     let roundName = round===1?"QUARTER-FINAL":round===2?"SEMI-FINAL":"GRAND FINAL";
     let prefix = gameMode==="specialolympics" ? "SPECIAL · " : "";
@@ -2425,7 +2269,6 @@ function draw(){
     ctx.fillText(medalEmoji+" "+prefix+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
   }
 
-  // ADVANCE PROMPT
   if(current===3&&markers.every(m=>m.stopped||m.fallen)){
     ctx.fillStyle="white";
     ctx.font="bold 24px 'Courier New',monospace";
@@ -2436,7 +2279,6 @@ function draw(){
 
   ctx.restore();
 
-  // CHAIR
   if(suddenDeath){
     ctx.save();
     ctx.setTransform(1,0,0,1,0,0);
@@ -2448,7 +2290,6 @@ function draw(){
     ctx.restore();
   }
 
-  // EXPLOSIONS
   explosions.forEach(e=>{
     ctx.beginPath();
     ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
@@ -2465,11 +2306,9 @@ function draw(){
     ctx.globalAlpha=1;
   });
 
-  // SCORE POPUPS
   scorePopups.forEach(p=>{
     ctx.save();
     if(p.peef){
-      // PEEF — red, shaking, no fade as fast
       let shake2 = p.shakeAmt ? (Math.random()-0.5)*p.shakeAmt*(p.life/55) : 0;
       ctx.globalAlpha = Math.min(1, p.life/25);
       ctx.fillStyle="#ff2222";
@@ -2486,13 +2325,10 @@ function draw(){
     ctx.restore();
   });
 
-  // The marker images are drawn horizontally by default (0° = flat/horizontal)
-  // So: vertical = 90°, angled = 60°, horizontal = 0°
   let previewAngleStd =
     currentOrientation==="vertical"   ? Math.PI/3 :
     currentOrientation==="angled"     ? Math.PI/2 :
     0;
-  // Blue is wider so needs extra rotation to look the same angle as green/red
   let previewAngleBlue =
     currentOrientation==="vertical"   ? Math.PI/3 + Math.PI/4 :
     currentOrientation==="angled"     ? Math.PI/2 + Math.PI/4 :
@@ -2516,7 +2352,6 @@ function draw(){
     ctx.globalAlpha = 1;
   });
 
-  // MARKERS
   markers.forEach(m=>{
     if(m.fallen) return;
     ctx.shadowColor=isTouchingAny(m)?"lime":"red";
@@ -2525,12 +2360,10 @@ function draw(){
     ctx.shadowBlur=0;
   });
 
-  // UI TEXT
   ctx.setTransform(1,0,0,1,0,0);
   ctx.textAlign="left";
   ctx.textBaseline="top";
 
-  // "Time" label then value below
   ctx.fillStyle="rgba(255,255,255,0.5)";
   ctx.font="11px 'Courier New',monospace";
   ctx.fillText("Time",20,16);
@@ -2544,7 +2377,6 @@ function draw(){
     ctx.fillText("SD:"+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),20,30);
   }
 
-  // "Score" label then value below
   ctx.fillStyle="rgba(255,255,255,0.5)";
   ctx.font="11px 'Courier New',monospace";
   ctx.fillText("Score",20,52);
@@ -2552,7 +2384,6 @@ function draw(){
   ctx.font="bold 18px 'Courier New',monospace";
   ctx.fillText(totalScore,20,66);
 
-  // Coin display below score
   if(coinImg.complete && coinImg.naturalWidth){
     let coinSize = Math.round(LEFT_EDGE * 0.5);
     let coinX = (LEFT_EDGE - coinSize) / 2;
@@ -2565,7 +2396,6 @@ function draw(){
     ctx.textAlign="left";
   }
 
-  // Olympics mode: show round in the left teal cabinet — rotated vertically, lower down
   if((gameMode==="olympics"||gameMode==="specialolympics")&&olympicsState){
     let rLabel = olympicsState.round===1?"QF":olympicsState.round===2?"SEMI":"FINAL";
     let modeLabel = gameMode==="specialolympics"?"SPECIAL":"OLYMPICS";
@@ -2590,7 +2420,6 @@ function loop(){
   if(gameState==="playing"){
     applyThemeOverlay();
 
-    // ── COMIC: redraw ALL thrown markers using EXACT m.rotation ──
     if(currentTheme==="cartoon"){
       markers.forEach(m=>{
         if(m.fallen) return;
@@ -2598,7 +2427,7 @@ function loop(){
         if(!img||!img.complete||!img.naturalWidth) return;
         ctx.save();
         ctx.translate(m.x,m.y);
-        ctx.rotate(m.rotation); // use exact same rotation as drawMarker
+        ctx.rotate(m.rotation);
         let w=m.color==="blue"?80:50, h=50;
         ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.globalCompositeOperation="screen";
@@ -2606,7 +2435,6 @@ function loop(){
         ctx.drawImage(img,-w/2,-h/2,w,h);
         ctx.restore();
       });
-      // Preview markers — use same angle logic as main draw
       let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
       let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
       previewMarkers.forEach((p,i)=>{
@@ -2625,7 +2453,6 @@ function loop(){
         ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
         ctx.restore();
       });
-      // Keep red dot red — redraw it on top
       let dotCX=redDot.x, dotCY=redDot.y, dotR=7;
       ctx.save();
       ctx.fillStyle="#111";
@@ -2637,10 +2464,8 @@ function loop(){
       ctx.fillStyle="rgba(255,255,255,0.5)";
       ctx.beginPath(); ctx.arc(dotCX-2,dotCY-2,dotR*0.35,0,Math.PI*2); ctx.fill();
       ctx.restore();
-      // Redraw chair in red during sudden death
       if(suddenDeath && chairImg.complete && chairImg.naturalWidth){
         ctx.save();
-        // Tint red by drawing red rect with multiply then chair on top
         ctx.translate(chair.x, chair.y);
         ctx.shadowColor="#ff2200"; ctx.shadowBlur=15;
         ctx.drawImage(chairImg,-25,-25,50,50);
@@ -2648,11 +2473,9 @@ function loop(){
       }
     }
 
-    // ── NEON: intense glow on markers always + previews ──
     if(currentTheme==="neon"){
       let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
       let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
-      // Preview markers with intense neon glow
       previewMarkers.forEach((p,i)=>{
         if(p.used) return;
         const img=getMarkerImg(p.color);
@@ -2669,7 +2492,6 @@ function loop(){
         ctx.globalAlpha=0.5; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
         ctx.restore();
       });
-      // Thrown markers — blaze with own color, lime when touching
       markers.forEach(m=>{
         if(m.fallen) return;
         const img=getMarkerImg(m.color);
@@ -2689,7 +2511,6 @@ function loop(){
       });
     }
 
-    // ── GOLDEN HOUR: gold tip at LEFT end of marker (actual tip) ──
     if(currentTheme==="sunset"){
       markers.forEach(m=>{
         if(m.fallen) return;
