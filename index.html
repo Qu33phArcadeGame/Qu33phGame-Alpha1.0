@@ -1020,6 +1020,21 @@ function buildPaytable(){
   });
 }
 
+// Per-slot custom positioning ONLY applies to the marker colors (red/green/blue)
+// Other symbols (logo, mega, coin, chair) get clean centred display
+const SLOT_CUSTOM_STYLE = {
+  reel0: { red:"width:80%; height:100%; object-fit:contain; margin-left:-8%;" },
+  reel1: { green:"width:85%; height:100%; object-fit:contain; transform:translateX(10%);" },
+  reel2: { blue:"width:75%; height:75%; object-fit:contain; transform:translateX(60%);" },
+};
+const SLOT_DEFAULT_STYLE = "width:78%; height:78%; object-fit:contain;";
+
+function setReelImg(img, reelId, sym){
+  img.src = sym.src;
+  let custom = SLOT_CUSTOM_STYLE[reelId] && SLOT_CUSTOM_STYLE[reelId][sym.id];
+  img.style.cssText = custom || SLOT_DEFAULT_STYLE;
+}
+
 function spinSlot(){
   if(slotSpinning||coins<SLOT_COST) return;
   addCoins(-SLOT_COST);
@@ -1040,13 +1055,13 @@ function spinSlot(){
     let maxTicks=12+i*6;
     let interval=setInterval(()=>{
       let sym=pickSymbol();
-      img.src=sym.src;
+      setReelImg(img, id, sym);
       ticks++;
       if(ticks>=maxTicks){
         clearInterval(interval);
         let final=pickSymbol();
         results[i]=final;
-        img.src=final.src;
+        setReelImg(img, id, final);
         settled++;
         if(settled===3){
           slotSpinning=false;
@@ -1214,26 +1229,26 @@ function renderBracket(){
         // TWO LINES: name on top half, score on bottom half — never overlap
         let nameStr = "TBD";
         if(p){
-          let short = p.name.length>7 ? p.name.slice(0,7) : p.name;
+          let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
           nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
         }
-        let topY = ry + rH*0.28;
-        let botY = ry + rH*0.72;
+        let topY = ry + rH*0.26;
+        let botY = ry + rH*0.74;
 
         // Name line
         bx.fillStyle=nameColor;
-        bx.font=`${Math.round(nameSz*0.82)}px 'Courier New',monospace`;
+        bx.font=`${Math.round(nameSz*0.72)}px 'Courier New',monospace`;
         bx.textAlign="left"; bx.textBaseline="middle";
-        // Clip to full width since score is below
+        // Clip strictly to top half only, leaving the bottom half clear for the score
         bx.save();
-        bx.beginPath(); bx.rect(x+3,ry+1,colW-6,rH*0.5-1); bx.clip();
+        bx.beginPath(); bx.rect(x+3,ry+1,colW-6,rH*0.48); bx.clip();
         bx.fillText(nameStr, x+4, topY);
         bx.restore();
 
         // Score line
         let sc = pi===0 ? s1 : s2;
         bx.fillStyle = isWin?"#44ee44":"#cc3333";
-        bx.font=`bold ${Math.round(scoreSz*0.85)}px 'Courier New',monospace`;
+        bx.font=`bold ${Math.round(scoreSz*0.8)}px 'Courier New',monospace`;
         bx.textAlign="right"; bx.textBaseline="middle";
         bx.fillText(sc, x+colW-4, botY);
 
@@ -2545,7 +2560,7 @@ function draw(){
     ctx.textAlign="left";
   }
 
-  // Olympics mode: show round in the left teal cabinet — rotated vertically
+  // Olympics mode: show round in the left teal cabinet — rotated vertically, lower down
   if((gameMode==="olympics"||gameMode==="specialolympics")&&olympicsState){
     let rLabel = olympicsState.round===1?"QF":olympicsState.round===2?"SEMI":"FINAL";
     let modeLabel = gameMode==="specialolympics"?"SPECIAL":"OLYMPICS";
@@ -2553,7 +2568,7 @@ function draw(){
     ctx.fillStyle="rgba(255,255,255,0.5)";
     ctx.font="bold 10px 'Courier New',monospace";
     ctx.textAlign="center";
-    ctx.translate(LEFT_EDGE*0.5, canvas.height*0.5);
+    ctx.translate(LEFT_EDGE*0.5, canvas.height*0.78);
     ctx.rotate(-Math.PI/2);
     ctx.fillText(modeLabel+" · "+rLabel, 0, 0);
     ctx.restore();
