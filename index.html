@@ -984,8 +984,8 @@ function buildPaytable(){
 // Positive = shift symbol right, Negative = shift symbol left.
 // Tune these three numbers only — both the static (idle) reels and the
 // spin animation read from here, so they always stay in sync.
-const REEL_OFFSET = { reel0: -30, reel1: 12, reel2: 52 }; // red, green, blue (in %)
-const REEL_SIZE = { reel0: 72, reel1: 72, reel2: 56 }; // blue shrunk so it has room to shift right without clipping
+const REEL_OFFSET = { reel0: -30, reel1: 6, reel2: 35 }; // red, green, blue (in %)
+const REEL_SIZE = { reel0: 72, reel1: 72, reel2: 60 }; // blue shrunk so it has room to shift right without clipping
 
 function applyReelOffsets(){
   Object.keys(REEL_OFFSET).forEach(id=>{
