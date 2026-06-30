@@ -406,7 +406,7 @@
     <div style="position:relative; width:min(320px,88vw); flex-shrink:0;">
       <img src="slotoverlay.png" style="width:100%; display:block; object-fit:contain;">
       <!-- Reels positioned inside the window squares - upper portion of machine -->
-      <div id="slotReels" style="position:absolute; top:36%; left:15%; width:57%; display:flex; gap:2%; justify-content:space-between;">
+      <div id="slotReels" style="position:absolute; top:34%; left:22%; width:55%; display:flex; gap:2%; justify-content:space-between;">
         <div class="reel-window" style="flex:1;"><img id="reel0" class="reel-img" src="slotred.jpg"></div>
         <div class="reel-window" style="flex:1;"><img id="reel1" class="reel-img" src="slotgreen.jpg"></div>
         <div class="reel-window" style="flex:1;"><img id="reel2" class="reel-img" src="slotblue.jpg"></div>
@@ -1005,7 +1005,8 @@ function updateSpinBtn(){
 function buildPaytable(){
   let pt=document.getElementById("paytable");
   pt.innerHTML="";
-  PAYTABLE.forEach(row=>{
+  let sorted=[...PAYTABLE].sort((a,b)=>b.win-a.win);
+  sorted.forEach(row=>{
     let div=document.createElement("div");
     div.className="paytable-row";
     let icons=row.syms.map(s=>{
@@ -2508,7 +2509,7 @@ function draw(){
   if(coinImg.complete && coinImg.naturalWidth){
     let coinSize = Math.round(LEFT_EDGE * 0.55);
     let coinX = (LEFT_EDGE - coinSize) / 2;
-    let coinY = canvas.height * 0.08;
+    let coinY = canvas.height * 0.12;
     ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
     ctx.fillStyle="#ffd700";
     ctx.font=`bold ${Math.round(LEFT_EDGE*0.28)}px 'Courier New',monospace`;
