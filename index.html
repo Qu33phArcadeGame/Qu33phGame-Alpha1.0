@@ -205,17 +205,19 @@
       display: block;
     }
     .paytable-row {
-      display: flex; align-items: center; gap: 5px;
-      padding: 3px 8px;
+      display: flex; align-items: center; gap: 4px;
+      padding: 2px 6px;
       border-bottom: 1px solid #0f0f0f;
-      font-family: 'Courier New', monospace; font-size: 9px;
+      font-family: 'Courier New', monospace; font-size: 8px;
       color: #666;
+      min-height: 22px;
     }
     .paytable-row:last-child { border-bottom: none; }
-    .paytable-icons { display: flex; gap: 1px; }
-    .paytable-icons img { width: 16px; height: 16px; object-fit: contain; }
-    .paytable-win { margin-left: auto; color: #ffd700; font-weight: bold; font-size: 10px; white-space:nowrap; }
-    #paytable { display: grid; grid-template-columns: 1fr 1fr; }
+    .paytable-icons { display: flex; gap: 1px; flex-shrink:0; }
+    .paytable-icons img { width: 13px; height: 13px; object-fit: contain; }
+    .paytable-label { line-height:1.15; }
+    .paytable-win { margin-left: auto; color: #ffd700; font-weight: bold; font-size: 9px; white-space:nowrap; flex-shrink:0; }
+    #paytable { display: grid; grid-template-columns: 1fr 1fr; max-height: 38vh; overflow-y: auto; }
     #medalScreen {
       position:absolute; top:0; left:0; width:100%; height:100%;
       background:#08080a; display:none; flex-direction:column;
@@ -916,15 +918,20 @@ const PAYTABLE = [
   { syms:["coin","coin","coin"],   win:30,  label:"TRIPLE COIN" },
   { syms:["chair","chair","chair"],win:20,  label:"CHAIR SPIN" },
   { syms:["logo","logo",null],     win:15,  label:"DOUBLE LOGO" },
+  { syms:["red","green","blue"],   win:10,  label:"TRIO · BLUE 3RD" },
   { syms:["mega","mega",null],     win:8,   label:"DOUBLE MEGA" },
+  { syms:["chair","chair",null],   win:6,   label:"DOUBLE CHAIR" },
+  { syms:[null,null,null],         win:6,   label:"TRIO · ANY ORDER" }, // placeholder row, handled specially in checkWin
   { syms:["coin","coin",null],     win:5,   label:"DOUBLE COIN" },
-  { syms:["red","green","blue"],   win:10,  label:"QU33PH TRIO (blue last)" },
-  { syms:[null,null,null],         win:6,   label:"QU33PH TRIO (any order)" }, // placeholder row, handled specially in checkWin
   { syms:["red","red","red"],      win:4,   label:"RED TRIPLE" },
   { syms:["green","green","green"],win:4,   label:"GREEN TRIPLE" },
   { syms:["blue","blue","blue"],   win:4,   label:"BLUE TRIPLE" },
   { syms:[null,"logo",null],       win:3,   label:"ANY LOGO" },
+  { syms:["red","red",null],       win:2,   label:"DOUBLE RED" },
+  { syms:["green","green",null],   win:2,   label:"DOUBLE GREEN" },
+  { syms:["blue","blue",null],     win:2,   label:"DOUBLE BLUE" },
   { syms:[null,"coin",null],       win:2,   label:"ANY COIN" },
+  { syms:[null,"chair",null],      win:1,   label:"ANY CHAIR" },
 ];
 
 function pickSymbol(){
@@ -943,8 +950,8 @@ function checkWin(results){
   let markerColors=["red","green","blue"];
   if(markerColors.includes(ids[0]) && markerColors.includes(ids[1]) && markerColors.includes(ids[2])
      && new Set(ids).size===3){
-    if(ids[2]==="blue") return {win:10, label:"QU33PH TRIO"};
-    return {win:5, label:"QU33PH TRIO (mixed order)"};
+    if(ids[2]==="blue") return {win:10, label:"TRIO · BLUE 3RD"};
+    return {win:5, label:"TRIO · MIXED ORDER"};
   }
 
   for(let row of PAYTABLE){
@@ -992,7 +999,7 @@ function buildPaytable(){
       let sym=SLOT_SYMBOLS.find(x=>x.id===s);
       return `<img src="${sym.src}" title="${sym.label}">`;
     }).join("");
-    div.innerHTML=`<div class="paytable-icons">${icons}</div><span style="color:#888;font-size:10px;">${row.label}</span><span class="paytable-win">+${row.win}<img src="coin.png" onerror="this.src='coin.jpg'" style="width:11px;height:11px;object-fit:contain;vertical-align:middle;margin-left:2px;"></span>`;
+    div.innerHTML=`<div class="paytable-icons">${icons}</div><span class="paytable-label" style="color:#888;">${row.label}</span><span class="paytable-win">+${row.win}<img src="coin.png" onerror="this.src='coin.jpg'" style="width:10px;height:10px;object-fit:contain;vertical-align:middle;margin-left:2px;"></span>`;
     pt.appendChild(div);
   });
 }
@@ -1020,10 +1027,17 @@ function applyReelOffsets(){
 
 function setReelImg(img, reelId, sym){
   img.src = sym.src;
-  let offset = REEL_OFFSET[reelId] || 0;
-  let sz = REEL_SIZE[reelId] || 72;
-  img.style.cssText = `width:${sz}%; height:${sz}%; object-fit:contain; margin:auto; display:block; transform:translateX(${offset}%);`;
   img.parentElement.style.overflow = "hidden";
+  let isMarker = (sym.id==="red" || sym.id==="green" || sym.id==="blue");
+  if(isMarker){
+    let offset = REEL_OFFSET[reelId] || 0;
+    let sz = REEL_SIZE[reelId] || 72;
+    img.style.cssText = `width:${sz}%; height:${sz}%; object-fit:contain; margin:auto; display:block; transform:translateX(${offset}%);`;
+  } else {
+    // Non-marker icons (logo, mega, coin, chair) are already centered/symmetric —
+    // don't apply the marker-only nudge or it clips them off-frame.
+    img.style.cssText = `width:72%; height:72%; object-fit:contain; margin:auto; display:block; transform:translateX(0%);`;
+  }
 }
 
 function spinSlot(){
