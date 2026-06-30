@@ -406,7 +406,7 @@
     <div style="position:relative; width:min(320px,88vw); flex-shrink:0;">
       <img src="slotoverlay.png" style="width:100%; display:block; object-fit:contain;">
       <!-- Reels positioned inside the window squares - upper portion of machine -->
-      <div id="slotReels" style="position:absolute; top:34%; left:22%; width:55%; display:flex; gap:2%; justify-content:space-between;">
+      <div id="slotReels" style="position:absolute; top:33%; left:23%; width:52%; display:flex; gap:3%; justify-content:space-between;">
         <div class="reel-window" style="flex:1;"><img id="reel0" class="reel-img" src="slotred.jpg"></div>
         <div class="reel-window" style="flex:1;"><img id="reel1" class="reel-img" src="slotgreen.jpg"></div>
         <div class="reel-window" style="flex:1;"><img id="reel2" class="reel-img" src="slotblue.jpg"></div>
@@ -2495,26 +2495,39 @@ function draw(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.textAlign="left";
   ctx.textBaseline="top";
-  ctx.fillStyle="white";
-  ctx.font="20px 'Courier New',monospace";
+
+  // "Time" label then value below
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.font="11px 'Courier New',monospace";
+  ctx.fillText("Time",20,16);
   if(!suddenDeath){
-    ctx.fillText("Time: "+Math.max(0,ROUND_TIME-Math.floor(elapsed)),20,20);
+    ctx.fillStyle="white";
+    ctx.font="bold 18px 'Courier New',monospace";
+    ctx.fillText(Math.max(0,ROUND_TIME-Math.floor(elapsed)),20,30);
   } else {
     ctx.fillStyle="red";
-    ctx.fillText("SUDDEN DEATH: "+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),20,20);
+    ctx.font="bold 16px 'Courier New',monospace";
+    ctx.fillText("SD:"+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),20,30);
   }
+
+  // "Score" label then value below
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.font="11px 'Courier New',monospace";
+  ctx.fillText("Score",20,52);
   ctx.fillStyle="white";
-  ctx.fillText("Score: "+totalScore,20,50);
-  // Coin display — large coin.png with number below, on left side
+  ctx.font="bold 18px 'Courier New',monospace";
+  ctx.fillText(totalScore,20,66);
+
+  // Coin display below score
   if(coinImg.complete && coinImg.naturalWidth){
-    let coinSize = Math.round(LEFT_EDGE * 0.55);
+    let coinSize = Math.round(LEFT_EDGE * 0.5);
     let coinX = (LEFT_EDGE - coinSize) / 2;
-    let coinY = canvas.height * 0.12;
+    let coinY = 94;
     ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
     ctx.fillStyle="#ffd700";
-    ctx.font=`bold ${Math.round(LEFT_EDGE*0.28)}px 'Courier New',monospace`;
+    ctx.font=`bold ${Math.round(LEFT_EDGE*0.26)}px 'Courier New',monospace`;
     ctx.textAlign="center";
-    ctx.fillText(coins, LEFT_EDGE/2, coinY + coinSize + Math.round(LEFT_EDGE*0.3));
+    ctx.fillText(coins, LEFT_EDGE/2, coinY + coinSize + 4);
     ctx.textAlign="left";
   }
 
