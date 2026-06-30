@@ -407,7 +407,7 @@
     <div style="position:relative; width:min(320px,88vw); flex-shrink:0;">
       <img src="slotoverlay.png" style="width:100%; display:block; object-fit:contain;">
       <!-- Reels positioned inside the window squares - upper portion of machine -->
-      <div id="slotReels" style="position:absolute; top:37.5%; left:25%; width:47%; height:10.5%; display:flex; gap:3%; align-items:stretch;">
+      <div id="slotReels" style="position:absolute; top:37.5%; left:25%; width:48%; height:10.5%; display:flex; gap:2.5%; align-items:stretch;">
         <div class="reel-window" style="flex:1; height:100%; justify-content:center; align-items:center;"><img id="reel0" class="reel-img" src="slotred.jpg" style="width:72%; height:72%; object-fit:contain; margin:auto; display:block;"></div>
         <div class="reel-window" style="flex:1; height:100%; justify-content:center; align-items:center;"><img id="reel1" class="reel-img" src="slotgreen.jpg" style="width:72%; height:72%; object-fit:contain; margin:auto; display:block;"></div>
         <div class="reel-window" style="flex:1; height:100%; justify-content:center; align-items:center;"><img id="reel2" class="reel-img" src="slotblue.jpg" style="width:72%; height:72%; object-fit:contain; margin:auto; display:block;"></div>
@@ -984,8 +984,8 @@ function buildPaytable(){
 // Positive = shift symbol right, Negative = shift symbol left.
 // Tune these three numbers only — both the static (idle) reels and the
 // spin animation read from here, so they always stay in sync.
-const REEL_OFFSET = { reel0: -30, reel1: 12, reel2: 65 }; // red, green, blue (in %)
-const REEL_SIZE = { reel0: 72, reel1: 72, reel2: 52 }; // blue shrunk so it has room to shift right without clipping
+const REEL_OFFSET = { reel0: -30, reel1: 12, reel2: 52 }; // red, green, blue (in %)
+const REEL_SIZE = { reel0: 72, reel1: 72, reel2: 56 }; // blue shrunk so it has room to shift right without clipping
 
 function applyReelOffsets(){
   Object.keys(REEL_OFFSET).forEach(id=>{
