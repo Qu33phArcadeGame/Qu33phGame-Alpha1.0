@@ -984,19 +984,26 @@ function buildPaytable(){
 // Positive = shift symbol right, Negative = shift symbol left.
 // Tune these three numbers only — both the static (idle) reels and the
 // spin animation read from here, so they always stay in sync.
-const REEL_OFFSET = { reel0: -26, reel1: 12, reel2: 60 }; // red, green, blue (in %)
+const REEL_OFFSET = { reel0: -32, reel1: 12, reel2: 68 }; // red, green, blue (in %)
+const REEL_SIZE = { reel0: 72, reel1: 72, reel2: 58 }; // blue shrunk so it has room to shift right without clipping
 
 function applyReelOffsets(){
   Object.keys(REEL_OFFSET).forEach(id=>{
     let img = document.getElementById(id);
-    if(img) img.style.transform = `translateX(${REEL_OFFSET[id]}%)`;
+    if(img){
+      let sz = REEL_SIZE[id] || 72;
+      img.style.width = sz+"%";
+      img.style.height = sz+"%";
+      img.style.transform = `translateX(${REEL_OFFSET[id]}%)`;
+    }
   });
 }
 
 function setReelImg(img, reelId, sym){
   img.src = sym.src;
   let offset = REEL_OFFSET[reelId] || 0;
-  img.style.cssText = `width:72%; height:72%; object-fit:contain; margin:auto; display:block; transform:translateX(${offset}%);`;
+  let sz = REEL_SIZE[reelId] || 72;
+  img.style.cssText = `width:${sz}%; height:${sz}%; object-fit:contain; margin:auto; display:block; transform:translateX(${offset}%);`;
   img.parentElement.style.overflow = "hidden";
 }
 
