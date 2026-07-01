@@ -116,7 +116,7 @@
       color: #fff;
       letter-spacing: 1px;
       z-index: 200;
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       gap: 2px;
@@ -139,7 +139,7 @@
       background: none;
       border: none;
       padding: 0;
-      display: block;
+      display: none;
       text-align: center;
       line-height: 1.4;
     }
@@ -321,78 +321,6 @@
       letter-spacing:2px; border-radius:4px; cursor:pointer;
     }
   </style>
-  <style>
-    /* ACHIEVEMENT TOAST */
-    @keyframes achIn { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-    #achToast { position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
-      background:#111;border:1px solid #ffd700;border-radius:8px;padding:10px 16px;
-      font-family:'Courier New',monospace;color:#ffd700;font-size:12px;letter-spacing:1px;
-      z-index:9999;display:flex;align-items:center;gap:10px;
-      box-shadow:0 0 24px rgba(255,215,0,0.35);animation:achIn 0.3s ease;
-      white-space:nowrap;max-width:90vw; }
-
-    /* CAREER / ACHIEVEMENTS / MEDAL WALL SCREENS */
-    .overlay-screen {
-      position:absolute;top:0;left:0;width:100%;height:100%;
-      background:#08080a;display:none;flex-direction:column;
-      align-items:center;z-index:100;overflow-y:auto;padding-bottom:24px;
-    }
-    .overlay-header {
-      width:100%;text-align:center;padding:28px 0 8px;
-      font-family:'Courier New',monospace;font-weight:bold;
-      font-size:clamp(18px,5vw,26px);color:#fff;letter-spacing:4px;
-    }
-    .overlay-sub {
-      font-family:'Courier New',monospace;font-size:10px;
-      color:#444;letter-spacing:3px;margin-bottom:20px;
-    }
-    .stat-grid {
-      display:grid;grid-template-columns:1fr 1fr;
-      gap:8px;width:min(380px,92vw);
-    }
-    .stat-card {
-      background:#0e0e0e;border:1px solid #1a1a1a;border-radius:6px;
-      padding:10px 12px;font-family:'Courier New',monospace;
-    }
-    .stat-val { font-size:22px;font-weight:bold;color:#fff; }
-    .stat-label { font-size:9px;color:#444;letter-spacing:2px;margin-top:2px; }
-    .medal-entry {
-      width:min(380px,92vw);display:flex;align-items:center;gap:12px;
-      padding:10px 14px;background:#0e0e0e;border:1px solid #1a1a1a;
-      border-radius:6px;font-family:'Courier New',monospace;margin-bottom:6px;
-    }
-    .medal-entry-icon { font-size:26px;flex-shrink:0; }
-    .medal-entry-info { flex:1; }
-    .medal-entry-name { font-size:13px;color:#fff;font-weight:bold; }
-    .medal-entry-meta { font-size:9px;color:#444;letter-spacing:1px;margin-top:2px; }
-    .ach-grid {
-      display:grid;grid-template-columns:1fr 1fr;
-      gap:6px;width:min(380px,92vw);
-    }
-    .ach-card {
-      background:#0e0e0e;border:1px solid #1a1a1a;border-radius:6px;
-      padding:8px 10px;font-family:'Courier New',monospace;
-      display:flex;align-items:center;gap:8px;
-    }
-    .ach-card.unlocked { border-color:#3a3a1a; }
-    .ach-card.locked { opacity:0.4; }
-    .ach-icon { font-size:18px;flex-shrink:0; }
-    .ach-text { flex:1; }
-    .ach-name { font-size:10px;color:#fff;font-weight:bold;letter-spacing:1px; }
-    .ach-desc { font-size:8px;color:#444;letter-spacing:0px;margin-top:1px;line-height:1.3; }
-    .overlay-back {
-      width:min(380px,92vw);margin-top:16px;padding:14px;
-      background:transparent;color:#444;border:1px solid #222;
-      font-family:'Courier New',monospace;font-size:12px;
-      letter-spacing:2px;border-radius:4px;cursor:pointer;
-    }
-    .overlay-tab {
-      padding:8px 16px;background:#111;border:1px solid #222;
-      font-family:'Courier New',monospace;font-size:11px;
-      letter-spacing:2px;color:#666;cursor:pointer;border-radius:4px;
-    }
-    .overlay-tab.active { border-color:#fff;color:#fff; }
-  </style>
 </head>
 <body>
 
@@ -436,13 +364,6 @@
     </span>
   </button>
 
-  <button class="mode-btn" onclick="showCareer('stats')">
-    <span class="mode-icon">📊</span>
-    <span class="mode-text">
-      <span class="mode-name">CAREER STATS</span>
-      <span class="mode-desc">lifetime record · medal wall · achievements</span>
-    </span>
-  </button>
 
   <div class="high-score-title" id="titleHighScore"></div>
 </div>
@@ -541,283 +462,7 @@
   </div>
 </div>
 
-<!-- CAREER SCREEN -->
-<div class="overlay-screen" id="careerScreen">
-  <div class="overlay-header">CAREER</div>
-  <div class="overlay-sub" id="careerSub">LIFETIME RECORD</div>
-  <div style="display:flex;gap:8px;margin-bottom:16px;">
-    <button class="overlay-tab active" id="tabStats" onclick="showCareerTab('stats')">STATS</button>
-    <button class="overlay-tab" id="tabMedals" onclick="showCareerTab('medals')">MEDAL WALL</button>
-    <button class="overlay-tab" id="tabAch" onclick="showCareerTab('achievements')">ACHIEVEMENTS</button>
-  </div>
-  <div id="careerContent"></div>
-  <button class="overlay-back" onclick="showTitle()">← BACK</button>
-</div>
-
-<!-- DEBUG CONSOLE - catches errors from main script loading -->
 <script>
-(function(){
-  let box = document.createElement("div");
-  box.id = "mobileDebug";
-  box.style.cssText = "position:fixed;bottom:0;left:0;width:100%;max-height:200px;overflow-y:auto;background:rgba(0,0,0,0.95);color:#ff4444;font-family:monospace;font-size:12px;padding:8px;z-index:99999;border-top:3px solid #ff4444;word-break:break-all;";
-  document.body.appendChild(box);
-  function log(type, msg){
-    let line = document.createElement("div");
-    line.style.cssText = "border-bottom:1px solid #330000;padding:3px 0;color:"+(type==="error"?"#ff4444":type==="warn"?"#ffaa00":"#44ff44")+";";
-    line.innerText = "["+type.toUpperCase()+"] "+msg;
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
-  }
-  window.onerror = function(msg,src,line,col,err){
-    log("error", msg+" — line "+line);
-    return false;
-  };
-  window.onunhandledrejection = function(e){ log("error","Promise: "+e.reason); };
-  let oe=console.error, ow=console.warn;
-  console.error=function(){ log("error",Array.from(arguments).join(" ")); oe.apply(console,arguments); };
-  console.warn=function(){ log("warn",Array.from(arguments).join(" ")); ow.apply(console,arguments); };
-  box.addEventListener("click",()=>box.remove());
-  log("log","v3 DEBUG READY — tap to dismiss");
-})();
-</script>
-
-<script>
-// ─── HAPTICS ──────────────────────────────────────────────────────────────
-function haptic(pattern){ if(navigator.vibrate) navigator.vibrate(pattern); }
-
-// ─── NATION COLORS ────────────────────────────────────────────────────────
-const NATION_COLORS = {
-  "Ireland":"#169B62","Israel":"#0038B8","USA":"#B22234",
-  "South Africa":"#007A4D","England":"#CF142B","Scotland":"#0065BF",
-  "Norway":"#EF2B2D","Japan":"#BC002D","Germany":"#FFCE00",
-  "Brazil":"#009C3B","Australia":"#FF0000","Canada":"#FF0000",
-  "France":"#0055A4","Netherlands":"#FF7900","Sweden":"#006AA7",
-  "Russia":"#D52B1E","Iran":"#239F40","China":"#DE2910",
-};
-function getNationColor(name){ return NATION_COLORS[name]||"#888"; }
-
-// ─── CAREER STATS ─────────────────────────────────────────────────────────
-function getCareer(){
-  try{ return JSON.parse(localStorage.getItem("qu33phCareer")||"{}"); }catch(e){ return {}; }
-}
-function saveCareer(c){ localStorage.setItem("qu33phCareer",JSON.stringify(c)); }
-function bumpCareer(updates){
-  let c=getCareer();
-  Object.keys(updates).forEach(k=>{
-    if(typeof updates[k]==="number") c[k]=(c[k]||0)+updates[k];
-    else c[k]=updates[k];
-  });
-  saveCareer(c); return c;
-}
-function pushMedalRecord(obj){
-  let c=getCareer();
-  if(!c.medals) c.medals=[];
-  c.medals.unshift(obj); // newest first
-  saveCareer(c);
-}
-function recordNation(name){
-  let c=getCareer();
-  if(!c.nations) c.nations={};
-  c.nations[name]=(c.nations[name]||0)+1;
-  saveCareer(c);
-}
-
-// ─── ACHIEVEMENTS ─────────────────────────────────────────────────────────
-const ACHIEVEMENTS = [
-  {id:'first_game',    label:'First Slide',         desc:'Play your first game',                   icon:'🎯'},
-  {id:'first_qu33ph',  label:'QU33PH!',             desc:'Land all 3 markers touching at once',    icon:'✅'},
-  {id:'first_mega',    label:'MEGA QU33PH',          desc:'Hit the red dot in sudden death',        icon:'🔴'},
-  {id:'five_mega',     label:'Mega Machine',         desc:'5 MEGA QU33PHs career total',            icon:'🔥'},
-  {id:'ten_mega',      label:'Mega Master',          desc:'10 MEGA QU33PHs career total',           icon:'💥'},
-  {id:'first_peef',    label:'First PEEF',           desc:'Drop a marker off the left edge',        icon:'😬'},
-  {id:'ten_peef',      label:'PEEF Veteran',         desc:'10 PEEFs career total',                  icon:'😅'},
-  {id:'sudden_score',  label:'Sudden Death Scorer',  desc:'Score points during sudden death',       icon:'💀'},
-  {id:'score_50',      label:'Decent Slide',         desc:'Score 50+ in a quick game',              icon:'📈'},
-  {id:'score_100',     label:'Century Slide',        desc:'Score 100+ in a quick game',             icon:'💯'},
-  {id:'score_150',     label:'Elite Slider',         desc:'Score 150+ in a quick game',             icon:'🏅'},
-  {id:'score_200',     label:'Qu33ph Legend',        desc:'Score 200+ in a quick game',             icon:'👑'},
-  {id:'sd_qu33ph',     label:'Sudden QU33PH',        desc:'Land a QU33PH triple in sudden death',   icon:'⚡'},
-  {id:'first_olympics',label:'Olympic Debut',        desc:'Enter your first Olympics',              icon:'🏆'},
-  {id:'first_qf_win',  label:'Quarter-Finalist',     desc:'Win your first quarter-final',           icon:'🥉'},
-  {id:'first_sf_win',  label:'Semi-Finalist',        desc:'Win your first semi-final',              icon:'🥈'},
-  {id:'first_gold',    label:'Olympic Gold',         desc:'Win your first gold medal',              icon:'🥇'},
-  {id:'first_silver',  label:'Olympic Silver',       desc:'Win your first silver medal',            icon:'🥈'},
-  {id:'first_bronze',  label:'Olympic Bronze',       desc:'Win your first bronze medal',            icon:'🥉'},
-  {id:'three_golds',   label:'Golden Era',           desc:'Win 3 Olympic gold medals',              icon:'🌟'},
-  {id:'five_golds',    label:'Dynasty',              desc:'Win 5 Olympic gold medals',              icon:'⭐'},
-  {id:'ten_golds',     label:'Qu33ph Empire',        desc:'Win 10 Olympic gold medals',             icon:'👑'},
-  {id:'medals_5',      label:'Medal Collector',      desc:'Earn 5 Olympic medals (any)',            icon:'🎗️'},
-  {id:'medals_10',     label:'Medal Hoarder',        desc:'Earn 10 Olympic medals (any)',           icon:'🏅'},
-  {id:'nations_5',     label:'World Traveller',      desc:'Compete as 5 different nations',         icon:'🌍'},
-  {id:'play_special',  label:'Special Competitor',   desc:'Enter the Special Olympics',             icon:'🎖️'},
-  {id:'special_gold',  label:'Special Champion',     desc:'Win Special Olympics gold',              icon:'🏅'},
-  {id:'first_spin',    label:'One-Armed Bandit',     desc:'Spin the slot machine',                  icon:'🎰'},
-  {id:'first_slot_win',label:'Lucky Spin',           desc:'Win something on the slots',             icon:'🍀'},
-  {id:'slot_jackpot',  label:'JACKPOT!',             desc:'Hit the jackpot on the slots',           icon:'💰'},
-  {id:'slot_trio',     label:'Qu33ph Trio',          desc:'Land a QU33PH TRIO on the slots',        icon:'🎪'},
-  {id:'spins_25',      label:'Slot Regular',         desc:'Spin the slots 25 times',                icon:'🔄'},
-  {id:'spins_100',     label:'Slot Obsessed',        desc:'Spin the slots 100 times',               icon:'🎲'},
-  {id:'coins_50',      label:'Coin Collector',       desc:'Earn 50 coins lifetime',                 icon:'🪙'},
-  {id:'coins_200',     label:'Coin Hoarder',         desc:'Earn 200 coins lifetime',                icon:'💎'},
-  {id:'coins_500',     label:'Coin Baron',           desc:'Earn 500 coins lifetime',                icon:'💰'},
-  {id:'games_10',      label:'Regular',              desc:'Play 10 games total',                    icon:'📅'},
-  {id:'games_25',      label:'Veteran',              desc:'Play 25 games total',                    icon:'🎖️'},
-  {id:'games_50',      label:'Qu33ph Addict',        desc:'Play 50 games total',                    icon:'🏆'},
-  {id:'games_100',     label:'Qu33ph Devotee',       desc:'Play 100 games total',                   icon:'🌠'},
-  {id:'theme_unlock',  label:'Style Icon',           desc:'Unlock a non-default theme',             icon:'🎨'},
-  {id:'night_owl',     label:'Night Owl',            desc:'Play between midnight and 4am',          icon:'🦉'},
-  {id:'negative_score',label:'Peef Storm',           desc:'Finish a game with a negative score',    icon:'📉'},
-];
-
-function getUnlockedAchievements(){ return getCareer().achievements||[]; }
-
-function unlockAchievement(id){
-  let c=getCareer();
-  if(!c.achievements) c.achievements=[];
-  if(c.achievements.includes(id)) return false;
-  c.achievements.push(id);
-  saveCareer(c);
-  addCoins(1);
-  let ach=ACHIEVEMENTS.find(a=>a.id===id);
-  if(ach) showAchievementToast(ach);
-  haptic([40,30,80]);
-  return true;
-}
-
-function checkAchievements(extras){
-  // extras: {score, suddenDeath, qu33ph, sdQu33ph, slotWin, slotTrio, slotJackpot}
-  extras=extras||{};
-  let c=getCareer();
-  let u=id=>{ if(!(c.achievements||[]).includes(id)){ unlockAchievement(id); if(!c.achievements)c.achievements=[]; c.achievements.push(id); } };
-
-  if((c.gamesPlayed||0)>=1)   u('first_game');
-  if((c.gamesPlayed||0)>=10)  u('games_10');
-  if((c.gamesPlayed||0)>=25)  u('games_25');
-  if((c.gamesPlayed||0)>=50)  u('games_50');
-  if((c.gamesPlayed||0)>=100) u('games_100');
-  if((c.qu33phs||0)>=1)       u('first_qu33ph');
-  if((c.megaQu33phs||0)>=1)   u('first_mega');
-  if((c.megaQu33phs||0)>=5)   u('five_mega');
-  if((c.megaQu33phs||0)>=10)  u('ten_mega');
-  if((c.peefs||0)>=1)         u('first_peef');
-  if((c.peefs||0)>=10)        u('ten_peef');
-  if((c.sdScores||0)>=1)      u('sudden_score');
-  if(extras.score>=50)        u('score_50');
-  if(extras.score>=100)       u('score_100');
-  if(extras.score>=150)       u('score_150');
-  if(extras.score>=200)       u('score_200');
-  if(extras.sdQu33ph)         u('sd_qu33ph');
-  if((c.negativeScores||0)>=1) u('negative_score');
-  if((c.olympicsPlayed||0)>=1)  u('first_olympics');
-  if((c.qfWins||0)>=1)          u('first_qf_win');
-  if((c.sfWins||0)>=1)          u('first_sf_win');
-  if((c.goldMedals||0)>=1)      u('first_gold');
-  if((c.goldMedals||0)>=3)      u('three_golds');
-  if((c.goldMedals||0)>=5)      u('five_golds');
-  if((c.goldMedals||0)>=10)     u('ten_golds');
-  if((c.silverMedals||0)>=1)    u('first_silver');
-  if((c.bronzeMedals||0)>=1)    u('first_bronze');
-  let tm=(c.goldMedals||0)+(c.silverMedals||0)+(c.bronzeMedals||0);
-  if(tm>=5)  u('medals_5');
-  if(tm>=10) u('medals_10');
-  if(Object.keys(c.nations||{}).length>=5) u('nations_5');
-  if((c.specialOlympicsPlayed||0)>=1) u('play_special');
-  if((c.specialGolds||0)>=1)    u('special_gold');
-  if((c.slotSpins||0)>=1)       u('first_spin');
-  if((c.slotWins||0)>=1)        u('first_slot_win');
-  if((c.slotJackpots||0)>=1)    u('slot_jackpot');
-  if((c.slotTrios||0)>=1)       u('slot_trio');
-  if((c.slotSpins||0)>=25)      u('spins_25');
-  if((c.slotSpins||0)>=100)     u('spins_100');
-  if((c.coinsEarned||0)>=50)    u('coins_50');
-  if((c.coinsEarned||0)>=200)   u('coins_200');
-  if((c.coinsEarned||0)>=500)   u('coins_500');
-  if(unlockedThemes().length>1)  u('theme_unlock');
-  let h=new Date().getHours();
-  if(h>=0&&h<4) u('night_owl');
-}
-
-function showAchievementToast(ach){
-  let old=document.getElementById("achToast");
-  if(old) old.remove();
-  let div=document.createElement("div");
-  div.id="achToast";
-  div.innerHTML=`<span style="font-size:22px">${ach.icon}</span>
-    <div><div style="font-size:9px;color:#888;letter-spacing:2px;">ACHIEVEMENT UNLOCKED · +1🪙</div>
-    <div style="font-weight:bold;font-size:12px;color:#ffd700">${ach.label}</div>
-    <div style="font-size:9px;color:#666;margin-top:1px">${ach.desc}</div></div>`;
-  document.body.appendChild(div);
-  setTimeout(()=>{if(div.parentNode)div.remove();},4000);
-}
-
-// ─── CAREER SCREEN ────────────────────────────────────────────────────────
-function showCareer(tab){
-  document.getElementById("titleScreen").style.display="none";
-  document.getElementById("titleCoins").style.display="none";
-  document.getElementById("slotBtn").style.display="none";
-  document.getElementById("careerScreen").style.display="flex";
-  showCareerTab(tab||"stats");
-}
-
-function showCareerTab(tab){
-  ["tabStats","tabMedals","tabAch"].forEach(id=>document.getElementById(id).classList.remove("active"));
-  let c=getCareer();
-  let content=document.getElementById("careerContent");
-  if(tab==="stats"){
-    document.getElementById("tabStats").classList.add("active");
-    let gp=c.gamesPlayed||0, hs=c.highScore||0, qu=c.qu33phs||0,
-        mq=c.megaQu33phs||0, pf=c.peefs||0,
-        go=c.goldMedals||0, si=c.silverMedals||0, br=c.bronzeMedals||0,
-        sp=c.slotSpins||0, sw=c.slotWins||0, ce=c.coinsEarned||0,
-        ach=(c.achievements||[]).length;
-    content.innerHTML=`<div class="stat-grid">
-      <div class="stat-card"><div class="stat-val">${gp}</div><div class="stat-label">GAMES PLAYED</div></div>
-      <div class="stat-card"><div class="stat-val">${hs}</div><div class="stat-label">HIGH SCORE</div></div>
-      <div class="stat-card"><div class="stat-val">${qu}</div><div class="stat-label">QU33PHs</div></div>
-      <div class="stat-card"><div class="stat-val">${mq}</div><div class="stat-label">MEGA QU33PHs</div></div>
-      <div class="stat-card"><div class="stat-val">${pf}</div><div class="stat-label">PEEFs</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:#ffd700">${go}🥇${si}🥈${br}🥉</div><div class="stat-label">MEDALS</div></div>
-      <div class="stat-card"><div class="stat-val">${sp}</div><div class="stat-label">SLOT SPINS</div></div>
-      <div class="stat-card"><div class="stat-val">${sw}</div><div class="stat-label">SLOT WINS</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:#ffd700">${ce}</div><div class="stat-label">COINS EARNED</div></div>
-      <div class="stat-card"><div class="stat-val">${ach}/${ACHIEVEMENTS.length}</div><div class="stat-label">ACHIEVEMENTS</div></div>
-    </div>`;
-  } else if(tab==="medals"){
-    document.getElementById("tabMedals").classList.add("active");
-    let medals=c.medals||[];
-    if(medals.length===0){
-      content.innerHTML=`<div style="font-family:'Courier New',monospace;color:#333;font-size:12px;letter-spacing:2px;margin-top:32px;text-align:center;">NO MEDALS YET<br><br>ENTER THE OLYMPICS</div>`;
-    } else {
-      content.innerHTML=medals.map(m=>{
-        let medalIcon=m.medal==="gold"?"🥇":m.medal==="silver"?"🥈":m.medal==="bronze"?"🥉":"❌";
-        let modeStr=m.mode==="specialolympics"?"Special Olympics":"Olympics";
-        return `<div class="medal-entry">
-          <div class="medal-entry-icon">${medalIcon}</div>
-          <div class="medal-entry-info">
-            <div class="medal-entry-name">${m.flag} ${m.nation}</div>
-            <div class="medal-entry-meta">${modeStr} · ${m.date||""}</div>
-          </div>
-        </div>`;
-      }).join("");
-    }
-  } else if(tab==="achievements"){
-    document.getElementById("tabAch").classList.add("active");
-    let unlocked=c.achievements||[];
-    let uCount=unlocked.length;
-    document.getElementById("careerSub").innerText=`${uCount}/${ACHIEVEMENTS.length} UNLOCKED`;
-    content.innerHTML=`<div class="ach-grid">`+ACHIEVEMENTS.map(a=>{
-      let isUnlocked=unlocked.includes(a.id);
-      return `<div class="ach-card ${isUnlocked?"unlocked":"locked"}">
-        <div class="ach-icon">${a.icon}</div>
-        <div class="ach-text">
-          <div class="ach-name">${a.label}</div>
-          <div class="ach-desc">${a.desc}</div>
-        </div>
-      </div>`;
-    }).join("")+`</div>`;
-  }
-}
-
 // ─── IMAGES ───────────────────────────────────────────────────────────────
 const markerImages = { red:new Image(), green:new Image(), blue:new Image() };
 markerImages.red.src="red.png";
@@ -1413,7 +1058,6 @@ function setReelImg(img, reelId, sym){
 function spinSlot(){
   if(slotSpinning||coins<SLOT_COST) return;
   addCoins(-SLOT_COST);
-  bumpCareer({slotSpins:1});
   document.getElementById("slotCoinCount").innerText=coins;
   document.getElementById("slotResult").innerText="";
   slotSpinning=true;
@@ -1444,9 +1088,6 @@ function spinSlot(){
           let resultEl=document.getElementById("slotResult");
           if(won){
             addCoins(won.win);
-            bumpCareer({slotWins:1, coinsEarned:won.win});
-            if(won.label==="JACKPOT") bumpCareer({slotJackpots:1});
-            if(won.label==="TRIO · BLUE 3RD"||won.label==="TRIO · MIXED ORDER") bumpCareer({slotTrios:1});
             document.getElementById("slotCoinCount").innerText=coins;
             resultEl.style.color="#ffd700";
             resultEl.innerHTML=won.label+"! +"+won.win+' <img src="coin.png" onerror="this.src=\'coin.jpg\'" style="width:14px;height:14px;object-fit:contain;vertical-align:middle;">';
@@ -1455,8 +1096,6 @@ function spinSlot(){
               setTimeout(()=>document.getElementById(r).parentElement.style.borderColor="#333",1500);
             });
             startSlotWinStars(won.win);
-            haptic([30,20,30,20,100]);
-            checkAchievements();
           } else {
             resultEl.style.color="#555";
             resultEl.innerText="no match — try again";
@@ -1546,9 +1185,7 @@ function showTitle(){
   document.getElementById("nationScreen").style.display="none";
   document.getElementById("medalScreen").style.display="none";
   document.getElementById("themeScreen").style.display="none";
-  document.getElementById("careerScreen").style.display="none";
   document.getElementById("slotScreen").style.display="none";
-  if(_slotWinAnimId){ cancelAnimationFrame(_slotWinAnimId); _slotWinAnimId=null; const sc=document.getElementById("slotWinCanvas"); if(sc){const sx=sc.getContext("2d");sx.clearRect(0,0,sc.width,sc.height);} }
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   updateLogo();
   document.getElementById("rotateBtn").style.display="none";
@@ -2134,8 +1771,6 @@ function triggerMegaQu33ph(m){
   totalScore+=10;
   addShake(20);
   explosions.push({x:redDot.x,y:redDot.y,radius:10,life:30,text:"MEGA QU33PH",mega:true});
-  bumpCareer({megaQu33phs:1});
-  haptic([20,10,20,10,150]);
 }
 
 // ─── ROUND SYSTEM ─────────────────────────────────────────────────────────
@@ -2159,9 +1794,6 @@ function tryAdvanceRound(){
     if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
       explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
       addShake(8);
-      bumpCareer({qu33phs:1});
-      if(suddenDeath){ bumpCareer({sdScores:1}); checkAchievements({sdQu33ph:true}); }
-      haptic([50,20,50,20,100]);
     }
     markers=[];
     current=0;
@@ -2407,8 +2039,6 @@ function update(){
           text:"-"+deduction,
           life:50, peef:true, shakeAmt:5,
         });
-        bumpCareer({peefs:1});
-        haptic([10,5,10,5,30]);
       }
       m.fallen=true;
     }
@@ -2433,15 +2063,6 @@ function update(){
 function endGame(){
   shake=0;
   // Career: bump games played, track high score
-  bumpCareer({gamesPlayed:1});
-  if(totalScore>highScore){
-    highScore=totalScore;
-    localStorage.setItem("qu33phHigh",highScore);
-    bumpCareer({highScore:totalScore});
-  }
-  if(totalScore<0) bumpCareer({negativeScores:1});
-  // Check score achievements
-  checkAchievements({score: gameMode==="single"?totalScore:0});
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
 
@@ -2456,35 +2077,27 @@ function endGame(){
     let isSpecial = gameMode==="specialolympics";
 
     if(os.round===1){
-      bumpCareer(isSpecial?{specialOlympicsPlayed:1}:{olympicsPlayed:1});
-      if(playerNation) recordNation(playerNation.name);
       os.qf4Score=totalScore; os.qf4Opp=oppScore;
       os.sf1s1=simulatedScore(); os.sf1s2=simulatedScore();
       while(os.sf1s1===os.sf1s2) os.sf1s2=simulatedScore();
       if(totalScore<=oppScore){
         os.playerEliminated=true;
-        haptic([80,40,40,40,80]);
       } else {
         addCoins(rewards[1]);
         os.coinsWonThisRun += rewards[1];
         os.lastRoundReward = rewards[1];
         os.coinHistory.push({label:"QF4", amt:rewards[1]});
-        bumpCareer({qfWins:1, coinsEarned:rewards[1]});
-        haptic([50,30,100]);
       }
       os.round=2;
     } else if(os.round===2){
       os.sf2Score=totalScore; os.sf2Opp=oppScore;
       if(totalScore<=oppScore){
         os.playerEliminated=true;
-        haptic([80,40,40,40,80]);
       } else {
         addCoins(rewards[2]);
         os.coinsWonThisRun += rewards[2];
         os.lastRoundReward = rewards[2];
         os.coinHistory.push({label:"SEMI", amt:rewards[2]});
-        bumpCareer({sfWins:1, coinsEarned:rewards[2]});
-        haptic([50,30,50,30,100]);
       }
       os.round=3;
     } else if(os.round===3){
@@ -2495,32 +2108,21 @@ function endGame(){
         os.coinsWonThisRun += rewards[3];
         os.lastRoundReward = rewards[3];
         os.coinHistory.push({label:"FINAL", amt:rewards[3]});
-        bumpCareer(isSpecial?{specialGolds:1,coinsEarned:rewards[3]}:{goldMedals:1,coinsEarned:rewards[3]});
-        pushMedalRecord({medal:"gold",nation:playerNation.name,flag:playerNation.flag,mode:gameMode,date:new Date().toLocaleDateString()});
-        haptic([100,50,100,50,200]);
       } else {
         // Final loss = silver
-        bumpCareer({silverMedals:1});
-        pushMedalRecord({medal:"silver",nation:playerNation.name,flag:playerNation.flag,mode:gameMode,date:new Date().toLocaleDateString()});
-        haptic([80,40,40]);
       }
     }
 
     // Bronze: eliminated in SF (round reaches 3 after SF loss, playerEliminated=true)
     if(os.playerEliminated && os.round===3){
-      bumpCareer({bronzeMedals:1});
-      pushMedalRecord({medal:"bronze",nation:playerNation.name,flag:playerNation.flag,mode:gameMode,date:new Date().toLocaleDateString()});
     }
 
-    checkAchievements();
     gameState="end";
     showBracket();
     return;
   }
 
   gameState="end";
-  checkAchievements({score:totalScore});
-  haptic([30,15,60]);
 }
 
 // ─── DRAW MARKER ──────────────────────────────────────────────────────────
@@ -2598,4 +2200,563 @@ function draw(){
   ctx.save();
   ctx.translate(shakeX,shakeY);
 
-  ctx.fillStyle
+  ctx.fillStyle="#d8cfc4";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  if((gameMode==="olympics"||gameMode==="specialolympics") && olympicsState){
+    let headerY = canvas.height*0.03;
+    ctx.fillStyle="#3d4a44";
+    ctx.font="bold 13px 'Courier New',monospace";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    let headerText = gameMode==="specialolympics"
+      ? "QU33PH SPECIAL OLYMPICS"
+      : "QU33PH OLYMPICS";
+    ctx.fillText(headerText, (LEFT_EDGE+RIGHT_WALL)/2, headerY);
+
+    // Player flag in left teal panel
+    if(playerNation){
+      // Subtle nation-color glow strip on left cabinet
+      ctx.save();
+      ctx.globalAlpha=0.22;
+      ctx.fillStyle=nc;
+      ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
+      ctx.restore();
+      // Player flag emoji
+      ctx.save();
+      ctx.font=`${Math.round(LEFT_EDGE*0.55)}px Arial`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.globalAlpha=0.85;
+      ctx.fillText(playerNation.flag, LEFT_EDGE/2, canvas.height*0.55);
+      ctx.restore();
+    }
+
+    // Opponent flag — who are we playing?
+    let os=olympicsState;
+    let opp=null;
+    if(os.round===1) opp=os.n[6];
+    else if(os.round===2){ let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5]; opp=qf3w; }
+    else if(os.round===3){ let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];opp=os.sf1s1>os.sf1s2?qf1w:qf2w; }
+    if(opp){
+      // Opponent color tint on right window wall strip
+      ctx.save();
+      ctx.globalAlpha=0.15;
+      ctx.fillStyle=oc;
+      ctx.fillRect(RIGHT_WALL, 0, canvas.width-RIGHT_WALL, canvas.height);
+      ctx.restore();
+      // Opponent flag small in top-right corner
+      ctx.save();
+      ctx.font=`${Math.round((canvas.width-RIGHT_WALL)*0.55)}px Arial`;
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      ctx.globalAlpha=0.7;
+      ctx.fillText(opp.flag, RIGHT_WALL+(canvas.width-RIGHT_WALL)/2, canvas.height*0.03);
+      ctx.restore();
+    }
+  }
+
+  drawWindowScene(elapsed);
+  drawWindowFrame();
+
+  ctx.fillStyle="#3d6b62";
+  ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
+
+  let cLeft  = LEFT_EDGE;
+  let cRight = RIGHT_WALL;
+  let cTop   = canvas.height * 0.06;
+  let cBot   = canvas.height * 0.97;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cLeft, cTop);
+  ctx.lineTo(cRight, cTop);
+  ctx.lineTo(cRight, cBot);
+  ctx.lineTo(cLeft, cBot);
+  ctx.closePath();
+
+  let surfGrad = ctx.createLinearGradient(0, cTop, 0, cBot);
+  surfGrad.addColorStop(0, "#8fa8a4");
+  surfGrad.addColorStop(0.3, "#9ab4af");
+  surfGrad.addColorStop(0.7, "#a8bebb");
+  surfGrad.addColorStop(1, "#b0c4c1");
+  ctx.fillStyle = surfGrad;
+  ctx.fill();
+
+  let sheenGrad = ctx.createLinearGradient(cLeft, 0, cRight, 0);
+  sheenGrad.addColorStop(0,"rgba(255,255,255,0)");
+  sheenGrad.addColorStop(0.4,"rgba(255,255,255,0.07)");
+  sheenGrad.addColorStop(1,"rgba(255,255,255,0)");
+  ctx.fillStyle=sheenGrad;
+  ctx.fill();
+
+  ctx.restore();
+
+  let faceTop = cBot;
+  let faceBot = cBot + canvas.height*0.025;
+  let faceGrad = ctx.createLinearGradient(0,faceTop,0,faceBot);
+  faceGrad.addColorStop(0,"#7a9490");
+  faceGrad.addColorStop(0.5,"#8ea8a4");
+  faceGrad.addColorStop(1,"#5a7470");
+  ctx.fillStyle=faceGrad;
+  ctx.fillRect(cLeft, faceTop, cRight-cLeft, faceBot-faceTop);
+  ctx.fillStyle="#b8c8c4";
+  ctx.fillRect(cLeft, faceTop, cRight-cLeft, 3);
+
+  ctx.fillStyle="#a8bebb";
+  ctx.fillRect(cLeft, cBot, cRight-cLeft, canvas.height-cBot);
+  ctx.fillStyle="#b8c8c4";
+  ctx.fillRect(cLeft, cBot, cRight-cLeft, 3);
+
+  ctx.fillStyle="#c8b89a";
+  ctx.fillRect(0, canvas.height*0.97, canvas.width, canvas.height*0.03);
+
+  ctx.fillStyle="#3d6b62";
+  ctx.fillRect(cLeft, cTop, cRight-cLeft, canvas.height*0.05);
+  ctx.fillStyle="#4a7d73";
+  ctx.fillRect(cLeft, cTop, cRight-cLeft, 3);
+
+  let acBrownR = cRight;
+  let acT2 = cTop  + (cBot-cTop)*0.77;
+  let acB2 = cTop  + (cBot-cTop)*0.93;
+  let acH2 = acB2 - acT2;
+  let acTotalW = acBrownR - cLeft;
+
+  ctx.fillStyle="rgba(0,0,0,0.25)";
+  ctx.fillRect(cLeft-2, acT2-3, acTotalW+4, acH2+6);
+
+  let acGrad = ctx.createLinearGradient(0, acT2, 0, acB2);
+  acGrad.addColorStop(0,"#b89878");
+  acGrad.addColorStop(0.5,"#c0a085");
+  acGrad.addColorStop(1,"#907060");
+  ctx.fillStyle=acGrad;
+  ctx.fillRect(cLeft, acT2, acTotalW, acH2);
+
+  ctx.strokeStyle="rgba(70,48,28,0.7)"; ctx.lineWidth=2;
+  ctx.strokeRect(cLeft+3, acT2+3, acTotalW-6, acH2-6);
+  ctx.strokeStyle="rgba(180,150,110,0.2)"; ctx.lineWidth=1;
+  ctx.strokeRect(cLeft+5, acT2+5, acTotalW-10, acH2-10);
+
+  let slatSectionR = cLeft + acTotalW*0.30;
+  ctx.fillStyle="#2a1c10";
+  ctx.fillRect(cLeft+6, acT2+6, slatSectionR-cLeft-6, acH2-12);
+
+  let numGroups = 5;
+  let groupH = (acH2-12) / numGroups;
+  let gapH = groupH * 0.18;
+  let slatAreaT = acT2+6;
+  let slatAreaL = cLeft+7;
+  let slatAreaR = slatSectionR-4;
+  let slatAreaW = slatAreaR - slatAreaL;
+
+  for(let gi=0; gi<numGroups; gi++){
+    let gy = slatAreaT + gi*groupH;
+    let gSlatsT = gy + gapH*0.5;
+    let gSlatsB = gy + groupH - gapH*0.5;
+    let gSlatsH = gSlatsB - gSlatsT;
+
+    ctx.fillStyle="#a07858";
+    ctx.fillRect(slatAreaL, gy, slatAreaW, gapH*0.5);
+
+    let slatW=4, slatGap=3;
+    for(let sx=slatAreaL+2; sx<slatAreaR-2; sx+=slatW+slatGap){
+      let sg=ctx.createLinearGradient(sx,0,sx+slatW,0);
+      sg.addColorStop(0,"#4a2e14");
+      sg.addColorStop(0.4,"#7a5030");
+      sg.addColorStop(1,"#4a2e14");
+      ctx.fillStyle=sg;
+      ctx.fillRect(sx, gSlatsT, slatW, gSlatsH);
+      ctx.fillStyle="rgba(0,0,0,0.55)";
+      ctx.fillRect(sx+slatW, gSlatsT, slatGap-1, gSlatsH);
+    }
+  }
+  ctx.fillStyle="#a07858";
+  ctx.fillRect(slatAreaL, slatAreaT+(numGroups-1)*groupH+groupH-gapH*0.5, slatAreaW, gapH*0.5);
+
+  ctx.strokeStyle="rgba(60,40,20,0.45)"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cLeft,acT2); ctx.lineTo(acBrownR,acT2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cLeft,acB2); ctx.lineTo(acBrownR,acB2); ctx.stroke();
+
+  ctx.fillStyle="#0e0e0e";
+  ctx.fillRect(RIGHT_WALL, cTop, 13, cBot-cTop);
+
+  let wallStripX = RIGHT_WALL + 13;
+  let wallStripW = canvas.width - wallStripX;
+  let wallStripBot = cTop + canvas.height * 0.08;
+  ctx.fillStyle="#cdc8bc";
+  ctx.fillRect(wallStripX, cTop, wallStripW, wallStripBot - cTop);
+
+  let dotCX = redDot.x;
+  let dotCY = redDot.y;
+  let dotR = 7;
+
+  let cardW = dotR*2 + 10;
+  let cardH = dotR*3 + 14;
+
+  // During Olympics, clip the card/dot to inside the medal border so it
+  // never spills past the gold/silver/bronze frame line.
+  let clipForOlympics = (gameMode==="olympics" && olympicsState);
+  if(clipForOlympics){
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cLeft, cTop, cRight-cLeft-3, cBot-cTop);
+    ctx.clip();
+  }
+
+  ctx.fillStyle="#f5f5f0";
+  ctx.fillRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
+  ctx.strokeStyle="rgba(180,175,165,0.6)"; ctx.lineWidth=1;
+  ctx.strokeRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
+
+  ctx.fillStyle="#111";
+  ctx.beginPath(); ctx.arc(dotCX, dotCY, dotR+2, 0, Math.PI*2); ctx.fill();
+
+  let rg = ctx.createRadialGradient(dotCX-2, dotCY-2, 1, dotCX, dotCY, dotR);
+  rg.addColorStop(0,"#ff5555");
+  rg.addColorStop(0.5,"#dd1111");
+  rg.addColorStop(1,"#990000");
+  ctx.fillStyle=rg;
+  ctx.beginPath(); ctx.arc(dotCX, dotCY, dotR, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.beginPath(); ctx.arc(dotCX-2, dotCY-2, dotR*0.35, 0, Math.PI*2); ctx.fill();
+
+  if(clipForOlympics) ctx.restore();
+
+  ctx.fillStyle="rgba(255,255,255,0.15)";
+  ctx.fillRect(cLeft, cTop+32, cRight-cLeft, 2);
+
+  if(gameMode==="olympics" && olympicsState){
+    let round = olympicsState.round;
+    let borderColor, glowColor, borderW;
+    if(round===1){
+      borderColor="#cd7f32"; glowColor="rgba(205,127,50,0.4)"; borderW=4;
+    } else if(round===2){
+      borderColor="#c0c0c0"; glowColor="rgba(192,192,192,0.4)"; borderW=5;
+    } else {
+      borderColor="#ffd700"; glowColor="rgba(255,215,0,0.5)"; borderW=6;
+    }
+    ctx.save();
+    ctx.shadowColor=glowColor; ctx.shadowBlur=18;
+    ctx.strokeStyle=borderColor; ctx.lineWidth=borderW;
+    ctx.strokeRect(cLeft+2, cTop+2, cRight-cLeft-4, cBot-cTop-4);
+    ctx.restore();
+
+    if(round===3){
+      let t=Date.now()/1000;
+      let numStars=16;
+      let bLeft=cLeft+3, bRight=cRight-3, bTop=cTop+3, bBot=cBot-3;
+      let perimeter = 2*((bRight-bLeft)+(bBot-bTop));
+
+      for(let i=0;i<numStars;i++){
+        let dist = ((i/numStars)*perimeter + t*120) % perimeter;
+        let px,py;
+        let top=bRight-bLeft, right=bBot-bTop, bottom=bRight-bLeft, left=bBot-bTop;
+        if(dist<top){ px=bLeft+dist; py=bTop; }
+        else if(dist<top+right){ px=bRight; py=bTop+(dist-top); }
+        else if(dist<top+right+bottom){ px=bRight-(dist-top-right); py=bBot; }
+        else { px=bLeft; py=bBot-(dist-top-right-bottom); }
+
+        let pulse=0.5+0.5*Math.sin(t*4+i*1.1);
+        let size=3+pulse*4;
+        ctx.save();
+        ctx.globalAlpha=0.5+pulse*0.5;
+        ctx.fillStyle="#ffd700";
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=12;
+        ctx.translate(px,py); ctx.rotate(t*2+i);
+        ctx.beginPath();
+        for(let p=0;p<5;p++){
+          let a=p*Math.PI*2/5-Math.PI/2;
+          let b=a+Math.PI/5;
+          p===0?ctx.moveTo(Math.cos(a)*size,Math.sin(a)*size):ctx.lineTo(Math.cos(a)*size,Math.sin(a)*size);
+          ctx.lineTo(Math.cos(b)*size*0.4,Math.sin(b)*size*0.4);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    let medalEmoji = round===1?"🥉":round===2?"🥈":"🥇";
+    let roundName = round===1?"QUARTER-FINAL":round===2?"SEMI-FINAL":"GRAND FINAL";
+    let prefix = gameMode==="specialolympics" ? "SPECIAL · " : "";
+    let cabMidY = cTop + canvas.height*0.025;
+    ctx.fillStyle=borderColor;
+    ctx.font="bold 12px 'Courier New',monospace";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(medalEmoji+" "+prefix+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
+  }
+
+  if(current===3&&markers.every(m=>m.stopped||m.fallen)){
+    ctx.fillStyle="white";
+    ctx.font="bold 24px 'Courier New',monospace";
+    ctx.textAlign="center";
+    ctx.textBaseline="bottom";
+    ctx.fillText("tap anywhere on field to advance",(LEFT_EDGE+RIGHT_WALL)/2,END_LINE_Y-20);
+  }
+
+  ctx.restore();
+
+  if(suddenDeath){
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.translate(chair.x, chair.y);
+    if(chairImg.complete && chairImg.naturalWidth){
+      let cw=50, ch=50;
+      ctx.drawImage(chairImg, -cw/2, -ch/2, cw, ch);
+    }
+    ctx.restore();
+  }
+
+  explosions.forEach(e=>{
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
+    ctx.strokeStyle="white";
+    ctx.lineWidth=4;
+    ctx.globalAlpha=e.life/30;
+    ctx.stroke();
+    ctx.globalAlpha=e.life/30;
+    ctx.fillStyle="white";
+    ctx.font=e.mega?"bold 50px Arial":"bold 60px Arial";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(e.text||"QU33PH",e.x,e.y);
+    ctx.globalAlpha=1;
+  });
+
+  scorePopups.forEach(p=>{
+    ctx.save();
+    if(p.peef){
+      let shake2 = p.shakeAmt ? (Math.random()-0.5)*p.shakeAmt*(p.life/55) : 0;
+      ctx.globalAlpha = Math.min(1, p.life/25);
+      ctx.fillStyle="#ff2222";
+      ctx.font=`bold ${p.text==="PEEF"?"36px":"18px"} 'Courier New',monospace`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(p.text, p.x + shake2, p.y + shake2*0.5);
+    } else {
+      ctx.globalAlpha=p.life/40;
+      ctx.fillStyle="white";
+      ctx.font="bold 30px 'Courier New',monospace";
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(p.text,p.x,p.y);
+    }
+    ctx.restore();
+  });
+
+  let previewAngleStd =
+    currentOrientation==="vertical"   ? Math.PI/3 :
+    currentOrientation==="angled"     ? Math.PI/2 :
+    0;
+  let previewAngleBlue =
+    currentOrientation==="vertical"   ? Math.PI/3 + Math.PI/4 :
+    currentOrientation==="angled"     ? Math.PI/2 + Math.PI/4 :
+    0;
+
+  previewMarkers.forEach((p,i)=>{
+    if(p.used) return;
+    const img = getMarkerImg(p.color);
+    if(!img||!img.complete||!img.naturalWidth) return;
+    let cx = (LEFT_EDGE+RIGHT_WALL)/2;
+    let cy = START_LINE_Y - 55 - i*58;
+    let pw = p.color==="blue" ? 80 : 50;
+    let ph = 50;
+    let angle = p.color==="blue" ? previewAngleBlue : previewAngleStd;
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  });
+
+  markers.forEach(m=>{
+    if(m.fallen) return;
+    ctx.shadowColor=isTouchingAny(m)?"lime":"red";
+    ctx.shadowBlur=20;
+    drawMarker(m);
+    ctx.shadowBlur=0;
+  });
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.textAlign="left";
+  ctx.textBaseline="top";
+
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.font="11px 'Courier New',monospace";
+  ctx.fillText("Time",20,16);
+  if(!suddenDeath){
+    ctx.fillStyle="white";
+    ctx.font="bold 18px 'Courier New',monospace";
+    ctx.fillText(Math.max(0,ROUND_TIME-Math.floor(elapsed)),20,30);
+  } else {
+    ctx.fillStyle="red";
+    ctx.font="bold 16px 'Courier New',monospace";
+    ctx.fillText("SD:"+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),20,30);
+  }
+
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.font="11px 'Courier New',monospace";
+  ctx.fillText("Score",20,52);
+  ctx.fillStyle="white";
+  ctx.font="bold 18px 'Courier New',monospace";
+  ctx.fillText(totalScore,20,66);
+
+  if(coinImg.complete && coinImg.naturalWidth){
+    let coinSize = Math.round(LEFT_EDGE * 0.5);
+    let coinX = (LEFT_EDGE - coinSize) / 2;
+    let coinY = 94;
+    ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
+    ctx.fillStyle="#ffd700";
+    ctx.font=`bold ${Math.round(LEFT_EDGE*0.26)}px 'Courier New',monospace`;
+    ctx.textAlign="center";
+    ctx.fillText(coins, LEFT_EDGE/2, coinY + coinSize + 4);
+    ctx.textAlign="left";
+  }
+
+  if((gameMode==="olympics"||gameMode==="specialolympics")&&olympicsState){
+    let rLabel = olympicsState.round===1?"QF":olympicsState.round===2?"SEMI":"FINAL";
+    let modeLabel = gameMode==="specialolympics"?"SPECIAL":"OLYMPICS";
+    ctx.save();
+    ctx.fillStyle="rgba(255,255,255,0.5)";
+    ctx.font="bold 10px 'Courier New',monospace";
+    ctx.textAlign="center";
+    ctx.translate(LEFT_EDGE*0.5, canvas.height*0.78);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText(modeLabel+" · "+rLabel, 0, 0);
+    ctx.restore();
+  }
+}
+
+// ─── INIT & LOOP ──────────────────────────────────────────────────────────
+randomizeSky();
+showTitle();
+
+function loop(){
+  update();
+  draw();
+  if(gameState==="playing"){
+    applyThemeOverlay();
+
+    if(currentTheme==="cartoon"){
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        const img=cartoonImages[m.color];
+        if(!img||!img.complete||!img.naturalWidth) return;
+        ctx.save();
+        ctx.translate(m.x,m.y);
+        ctx.rotate(m.rotation);
+        let w=m.color==="blue"?80:50, h=50;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalCompositeOperation="screen";
+        ctx.globalAlpha=0.25;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.restore();
+      });
+      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        const img=cartoonImages[p.color];
+        if(!img||!img.complete||!img.naturalWidth) return;
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let pw=p.color==="blue"?80:50, ph=50;
+        let angle=p.color==="blue"?blueA:stdA;
+        ctx.save();
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.globalAlpha=1;
+        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalCompositeOperation="screen";
+        ctx.globalAlpha=0.3;
+        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.restore();
+      });
+      let dotCX=redDot.x, dotCY=redDot.y, dotR=7;
+      ctx.save();
+      ctx.fillStyle="#111";
+      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR+2,0,Math.PI*2); ctx.fill();
+      let rg=ctx.createRadialGradient(dotCX-2,dotCY-2,1,dotCX,dotCY,dotR);
+      rg.addColorStop(0,"#ff5555"); rg.addColorStop(0.5,"#dd1111"); rg.addColorStop(1,"#990000");
+      ctx.fillStyle=rg;
+      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.5)";
+      ctx.beginPath(); ctx.arc(dotCX-2,dotCY-2,dotR*0.35,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+      if(suddenDeath && chairImg.complete && chairImg.naturalWidth){
+        ctx.save();
+        ctx.translate(chair.x, chair.y);
+        ctx.shadowColor="#ff2200"; ctx.shadowBlur=15;
+        ctx.drawImage(chairImg,-25,-25,50,50);
+        ctx.restore();
+      }
+    }
+
+    if(currentTheme==="neon"){
+      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        const img=getMarkerImg(p.color);
+        if(!img||!img.complete) return;
+        let gc=p.color==="red"?"#ff0044":p.color==="green"?"#00ff88":"#0099ff";
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let pw=p.color==="blue"?80:50, ph=50;
+        let angle=p.color==="blue"?blueA:stdA;
+        ctx.save();
+        ctx.shadowColor=gc; ctx.shadowBlur=60;
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.globalAlpha=1; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalAlpha=0.7; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalAlpha=0.5; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.restore();
+      });
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        const img=getMarkerImg(m.color);
+        if(!img||!img.complete) return;
+        let gc=m.color==="red"?"#ff0044":m.color==="green"?"#00ff88":"#0099ff";
+        let touching=isTouchingAny(m);
+        ctx.save();
+        ctx.shadowColor=touching?"#00ff00":gc;
+        ctx.shadowBlur=touching?80:70;
+        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
+        let w=m.color==="blue"?80:50, h=50;
+        ctx.globalAlpha=1;   ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.7; ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.5; ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.3; ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.restore();
+      });
+    }
+
+    if(currentTheme==="sunset"){
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        let tipX = m.color==="blue" ? -35 : -20;
+        ctx.save();
+        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
+        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.95;
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=0.3;
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+      let stdA2 = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA2 = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let tipX = p.color==="blue" ? -35 : -20;
+        let angle=p.color==="blue"?blueA2:stdA2;
+        ctx.save();
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=18;
+        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.9;
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=0.3;
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+    }
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
