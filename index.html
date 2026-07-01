@@ -329,7 +329,7 @@
 <div id="titleScreen">
   <div class="title-logo" id="logoContainer"><img id="logoImg" src="logo.jpg" alt="Qu33ph" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"></div>
   <div id="logoFallback" style="display:none; font-family:Helvetica, Arial, sans-serif; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;">Qu33ph</div>
-  <div class="title-sub">arcade edition</div>
+  <div class="title-sub">arcade edition · v10</div>
 
   <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
     <span class="mode-icon">🎯</span>
@@ -1379,14 +1379,21 @@ function showTitle(){
 }
 
 function startMode(mode){
-  gameMode=mode;
-  document.getElementById("titleScreen").style.display="none";
-  document.getElementById("titleCoins").style.display="none";
-  document.getElementById("slotBtn").style.display="none";
-  if(mode==="single"){
-    startGame();
-  } else {
-    showNationSelect();
+  try {
+    gameMode=mode;
+    document.getElementById("titleScreen").style.display="none";
+    document.getElementById("titleCoins").style.display="none";
+    document.getElementById("slotBtn").style.display="none";
+    if(mode==="single"){
+      startGame();
+    } else {
+      showNationSelect();
+    }
+  } catch(e) {
+    let d=document.createElement('div');
+    d.style.cssText='position:fixed;top:0;left:0;width:100%;background:red;color:#fff;font-size:12px;padding:8px;z-index:99999;';
+    d.innerText='startMode crashed: '+e.message;
+    document.body.appendChild(d);
   }
 }
 
@@ -2656,16 +2663,4 @@ function draw(){
   }
 
   if(current===3&&markers.every(m=>m.stopped||m.fallen)){
-    ctx.fillStyle="white";
-    ctx.font="bold 24px Helvetica, Arial, sans-serif";
-    ctx.textAlign="center";
-    ctx.textBaseline="bottom";
-    ctx.fillText("tap anywhere on field to advance",(LEFT_EDGE+RIGHT_WALL)/2,END_LINE_Y-20);
-  }
-
-  ctx.restore();
-
-  if(suddenDeath){
-    ctx.save();
-    ctx.setTransform(1,0,0,1,0,0);
-   
+    ctx.fillStyle="white"
