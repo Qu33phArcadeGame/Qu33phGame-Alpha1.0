@@ -364,17 +364,12 @@
     </span>
   </button>
 
+
   <button class="mode-btn" onclick="showAchievementsScreen()">
-    <span class="mode-icon">🏅</span>
-    <span class="mode-text">
-      <span class="mode-name">ACHIEVEMENTS</span>
-      <span class="mode-desc">unlock rewards · earn coins · track progress</span>
-    </span>
+    <span class="mode-icon">&#127345;</span>
+    <span class="mode-text"><span class="mode-name">ACHIEVEMENTS</span><span class="mode-desc">unlock rewards · earn coins · track progress</span></span>
   </button>
-
-
   <div class="high-score-title" id="titleHighScore"></div>
-  <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;color:#222;margin-top:4px;letter-spacing:2px;">v.ACH1</div>
 </div>
 
 <!-- THEME SELECT SCREEN -->
@@ -471,14 +466,7 @@
   </div>
 </div>
 
-<!-- ACHIEVEMENTS SCREEN -->
-<div id="achScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:30px;box-sizing:border-box;">
-  <div style="width:100%;text-align:center;padding:28px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:clamp(20px,5vw,28px);font-weight:bold;color:#fff;letter-spacing:4px;">ACHIEVEMENTS</div>
-  <div id="achSubtitle" style="font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;letter-spacing:3px;margin-bottom:16px;">0/0 UNLOCKED</div>
-  <div id="achGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(400px,92vw);"></div>
-  <button onclick="showTitle()" style="width:min(400px,92vw);margin-top:20px;padding:14px;background:transparent;color:#444;border:1px solid #222;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;border-radius:4px;cursor:pointer;">BACK</button>
-</div>
-
+<div id="achScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:30px;box-sizing:border-box;"><div style="width:100%;text-align:center;padding:28px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:26px;font-weight:bold;color:#fff;letter-spacing:4px;">ACHIEVEMENTS</div><div id="achGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(400px,92vw);margin-top:12px;"></div><button onclick="showTitle()" style="width:min(400px,92vw);margin-top:20px;padding:14px;background:transparent;color:#444;border:1px solid #222;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;border-radius:4px;cursor:pointer;">BACK</button></div>
 <script>
 // ─── IMAGES ───────────────────────────────────────────────────────────────
 const markerImages = { red:new Image(), green:new Image(), blue:new Image() };
@@ -1098,7 +1086,6 @@ function setReelImg(img, reelId, sym){
 function spinSlot(){
   if(slotSpinning||coins<SLOT_COST) return;
   addCoins(-SLOT_COST);
-  qsb('spins');
   document.getElementById("slotCoinCount").innerText=coins;
   document.getElementById("slotResult").innerText="";
   slotSpinning=true;
@@ -1129,10 +1116,6 @@ function spinSlot(){
           let resultEl=document.getElementById("slotResult");
           if(won){
             addCoins(won.win);
-            qsb('slotWins'); qsb('cEarned', won.win);
-            if(won.label==="JACKPOT") qsb('jackpots');
-            if(won.label==="TRIO · BLUE 3RD"||won.label==="TRIO · MIXED ORDER") qsb('trios');
-            checkAch();
             document.getElementById("slotCoinCount").innerText=coins;
             resultEl.style.color="#ffd700";
             resultEl.innerHTML=won.label+"! +"+won.win+' <img src="coin.png" onerror="this.src=\'coin.jpg\'" style="width:14px;height:14px;object-fit:contain;vertical-align:middle;">';
@@ -1231,7 +1214,7 @@ function showTitle(){
   document.getElementById("medalScreen").style.display="none";
   document.getElementById("themeScreen").style.display="none";
   document.getElementById("slotScreen").style.display="none";
-  var _as=document.getElementById("achScreen"); if(_as) _as.style.display="none";
+  var _a=document.getElementById("achScreen");if(_a)_a.style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   updateLogo();
   document.getElementById("rotateBtn").style.display="none";
@@ -1817,7 +1800,6 @@ function triggerMegaQu33ph(m){
   totalScore+=10;
   addShake(20);
   explosions.push({x:redDot.x,y:redDot.y,radius:10,life:30,text:"MEGA QU33PH",mega:true});
-  qsb('megas');
 }
 
 // ─── ROUND SYSTEM ─────────────────────────────────────────────────────────
@@ -1841,7 +1823,6 @@ function tryAdvanceRound(){
     if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
       explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
       addShake(8);
-      qsb('qu33phs');
     }
     markers=[];
     current=0;
@@ -2087,7 +2068,6 @@ function update(){
           text:"-"+deduction,
           life:50, peef:true, shakeAmt:5,
         });
-        qsb('peefs');
       }
       m.fallen=true;
     }
@@ -2111,10 +2091,6 @@ function update(){
 // ─── END GAME ─────────────────────────────────────────────────────────────
 function endGame(){
   shake=0;
-  var wasHS = totalScore > highScore;
-  qsb('games');
-  if(totalScore < 0) qsb('negatives');
-  if(suddenDeath && totalScore > 0) qsb('sdScores');
   if(totalScore>highScore){
     highScore=totalScore;
     localStorage.setItem("qu33phHigh",highScore);
@@ -2179,8 +2155,9 @@ function endGame(){
   }
 
   gameState="end";
-  if(gameMode==="single") checkAch({score:totalScore, newHS:wasHS});
 }
+
+// ─── DRAW MARKER ──────────────────────────────────────────────────────────
 function drawMarker(m){
   if(m.trail&&m.trail.length>1){
     let tw=m.color==="red"?3:m.color==="green"?4:6;
@@ -2653,78 +2630,35 @@ function draw(){
   }
 }
 
-// ─── ACHIEVEMENTS ─────────────────────────────────────────────────────────
-const ACHIEVEMENTS = [
-  {id:'first_game',    label:'FIRST SLIDE',         desc:'Play your first game'},
-  {id:'first_qu33ph',  label:'QU33PH',              desc:'Land all 3 markers touching'},
-  {id:'first_mega',    label:'MEGA QU33PH',          desc:'Hit the red dot in sudden death'},
-  {id:'five_mega',     label:'MEGA MACHINE',         desc:'5 MEGA QU33PHs total'},
-  {id:'ten_mega',      label:'MEGA MASTER',          desc:'10 MEGA QU33PHs total'},
-  {id:'first_peef',    label:'FIRST PEEF',           desc:'Drop a marker off the left edge'},
-  {id:'ten_peef',      label:'PEEF VETERAN',         desc:'10 PEEFs career total'},
-  {id:'sudden_score',  label:'SUDDEN DEATH SCORER',  desc:'Score points in sudden death'},
-  {id:'score_50',      label:'DECENT SLIDE',         desc:'Score 50+ in a quick game'},
-  {id:'score_100',     label:'CENTURY SLIDE',        desc:'Score 100+ in a quick game'},
-  {id:'score_150',     label:'ELITE SLIDER',         desc:'Score 150+ in a quick game'},
-  {id:'score_200',     label:'QU33PH LEGEND',        desc:'Score 200+ in a quick game'},
-  {id:'negative',      label:'PEEF STORM',           desc:'Finish with a negative score'},
-  {id:'first_olympics',label:'OLYMPIC DEBUT',        desc:'Enter your first Olympics'},
-  {id:'first_qf_win',  label:'QUARTER-FINALIST',     desc:'Win your first quarter-final'},
-  {id:'first_sf_win',  label:'SEMI-FINALIST',        desc:'Win your first semi-final'},
-  {id:'first_gold',    label:'OLYMPIC GOLD',         desc:'Win your first gold medal'},
-  {id:'first_silver',  label:'OLYMPIC SILVER',       desc:'Win your first silver medal'},
-  {id:'first_bronze',  label:'OLYMPIC BRONZE',       desc:'Win your first bronze medal'},
-  {id:'three_golds',   label:'GOLDEN ERA',           desc:'Win 3 Olympic gold medals'},
-  {id:'five_golds',    label:'DYNASTY',              desc:'Win 5 Olympic gold medals'},
-  {id:'medals_5',      label:'MEDAL COLLECTOR',      desc:'Earn 5 medals total'},
-  {id:'play_special',  label:'SPECIAL COMPETITOR',   desc:'Enter the Special Olympics'},
-  {id:'special_gold',  label:'SPECIAL CHAMPION',     desc:'Win Special Olympics gold'},
-  {id:'first_spin',    label:'ONE-ARMED BANDIT',     desc:'Spin the slot machine'},
-  {id:'first_win',     label:'LUCKY SPIN',           desc:'Win something on the slots'},
-  {id:'jackpot',       label:'JACKPOT',              desc:'Hit the jackpot on the slots'},
-  {id:'slot_trio',     label:'QU33PH TRIO',          desc:'Land a QU33PH TRIO on slots'},
-  {id:'spins_25',      label:'SLOT REGULAR',         desc:'Spin 25 times total'},
-  {id:'games_10',      label:'REGULAR',              desc:'Play 10 games total'},
-  {id:'games_25',      label:'VETERAN',              desc:'Play 25 games total'},
-  {id:'games_50',      label:'QU33PH ADDICT',        desc:'Play 50 games total'},
-  {id:'coins_50',      label:'COIN COLLECTOR',       desc:'Earn 50 coins lifetime'},
-  {id:'coins_200',     label:'COIN HOARDER',         desc:'Earn 200 coins lifetime'},
-  {id:'theme_unlock',  label:'STYLE ICON',           desc:'Unlock a new theme'},
-  {id:'night_owl',     label:'NIGHT OWL',            desc:'Play between midnight and 4am'},
-  {id:'high_score',    label:'PERSONAL BEST',        desc:'Beat your own high score'},
-];
+// ─── INIT & LOOP ──────────────────────────────────────────────────────────
 
-function qs(k){ try{ return parseInt(localStorage.getItem('qs_'+k)||'0'); }catch(e){ return 0; } }
-function qss(k,v){ localStorage.setItem('qs_'+k, v); }
-function qsb(k,n){ qss(k, qs(k)+(n||1)); }
-function achList(){ try{ return JSON.parse(localStorage.getItem('qu33phAch')||'[]'); }catch(e){ return []; } }
-
-function unlockAch(id){
-  var u=achList(); if(u.indexOf(id)>=0) return;
-  u.push(id); localStorage.setItem('qu33phAch',JSON.stringify(u));
-  addCoins(1);
-  var a=ACHIEVEMENTS.filter(function(x){return x.id===id;})[0];
-  if(a) showAchToast(a);
-}
-
-function showAchToast(a){
-  var old=document.getElementById('_at'); if(old) old.remove();
-  var d=document.createElement('div'); d.id='_at';
-  d.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #ffd700;border-radius:8px;padding:10px 16px;font-family:Helvetica,Arial,sans-serif;color:#ffd700;font-size:12px;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 0 20px rgba(255,215,0,0.3);max-width:90vw;white-space:nowrap;';
-  d.innerHTML='<div><div style="font-size:9px;color:#888;letter-spacing:2px;">ACHIEVEMENT UNLOCKED +1 COIN</div><div style="font-weight:bold;letter-spacing:1px;">'+a.label+'</div><div style="font-size:9px;color:#666;">'+a.desc+'</div></div>';
-  document.body.appendChild(d);
-  setTimeout(function(){ if(d.parentNode) d.remove(); }, 4000);
-}
-
-function checkAch(extra){
-  extra=extra||{};
-  var g=qs, u=unlockAch;
-  if(g('games')>=1)    u('first_game');
-  if(g('games')>=10)   u('games_10');
-  if(g('games')>=25)   u('games_25');
-  if(g('games')>=50)   u('games_50');
-  if(g('qu33phs')>=1)  u('first_qu33ph');
-  if(g('megas')>=1)    u('first_mega');
-  if(g('megas')>=5)    u('five_mega');
-  if(g('megas')>=10)   u('ten_mega');
-  if(g('peefs')>=1)    u('first_pee
+function showAchievementsScreen(){
+  document.getElementById('titleScreen').style.display='none';
+  document.getElementById('titleCoins').style.display='none';
+  document.getElementById('slotBtn').style.display='none';
+  var unlocked=[];try{unlocked=JSON.parse(localStorage.getItem('qu33phAch')||'[]');}catch(e){}
+  var html='';
+  var d_first_game=unlocked.indexOf('first_game')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_first_game?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_first_game?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_first_game?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">FIRST SLIDE</div><div style="font-size:8px;color:#444;line-height:1.3;">Play your first game</div></div>';
+  var d_first_qu33ph=unlocked.indexOf('first_qu33ph')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_first_qu33ph?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_first_qu33ph?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_first_qu33ph?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">QU33PH</div><div style="font-size:8px;color:#444;line-height:1.3;">Land all 3 markers touching</div></div>';
+  var d_first_mega=unlocked.indexOf('first_mega')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_first_mega?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_first_mega?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_first_mega?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">MEGA QU33PH</div><div style="font-size:8px;color:#444;line-height:1.3;">Hit the red dot in sudden death</div></div>';
+  var d_five_mega=unlocked.indexOf('five_mega')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_five_mega?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_five_mega?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_five_mega?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">MEGA MACHINE</div><div style="font-size:8px;color:#444;line-height:1.3;">5 MEGA QU33PHs total</div></div>';
+  var d_ten_mega=unlocked.indexOf('ten_mega')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_ten_mega?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_ten_mega?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_ten_mega?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">MEGA MASTER</div><div style="font-size:8px;color:#444;line-height:1.3;">10 MEGA QU33PHs total</div></div>';
+  var d_first_peef=unlocked.indexOf('first_peef')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_first_peef?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_first_peef?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_first_peef?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">FIRST PEEF</div><div style="font-size:8px;color:#444;line-height:1.3;">Drop a marker off the left edge</div></div>';
+  var d_ten_peef=unlocked.indexOf('ten_peef')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_ten_peef?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_ten_peef?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_ten_peef?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">PEEF VETERAN</div><div style="font-size:8px;color:#444;line-height:1.3;">10 PEEFs career total</div></div>';
+  var d_sudden_score=unlocked.indexOf('sudden_score')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_sudden_score?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_sudden_score?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_sudden_score?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">SUDDEN DEATH SCORER</div><div style="font-size:8px;color:#444;line-height:1.3;">Score points in sudden death</div></div>';
+  var d_score_50=unlocked.indexOf('score_50')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_score_50?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_score_50?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_score_50?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">DECENT SLIDE</div><div style="font-size:8px;color:#444;line-height:1.3;">Score 50+ in a quick game</div></div>';
+  var d_score_100=unlocked.indexOf('score_100')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_score_100?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_score_100?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_score_100?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">CENTURY SLIDE</div><div style="font-size:8px;color:#444;line-height:1.3;">Score 100+ in a quick game</div></div>';
+  var d_score_150=unlocked.indexOf('score_150')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_score_150?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;opacity:'+(d_score_150?'1':'0.35')+';"><div style="font-size:10px;color:'+(d_score_150?'#ffd700':'#555')+';font-weight:bold;letter-spacing:1px;">ELITE SLIDER</div><div style="font-size:8px;color:#444;line-height:1.3;">Score 150+ in a quick game</div></div>';
+  var d_score_200=unlocked.indexOf('score_200')>=0;
+  html+='<div style="background:#0e0e0e;border:1px solid '+(d_score_200?'#3a3a1a':'#1a1a1a')+';border-radius:6px;padding:8px 10
