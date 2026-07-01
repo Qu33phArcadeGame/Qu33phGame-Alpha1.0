@@ -4,9 +4,6 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Qu33ph</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { margin:0; overflow:hidden; background:#111; font-family: Helvetica, Arial, sans-serif; }
@@ -119,7 +116,12 @@
       color: #fff;
       letter-spacing: 1px;
       z-index: 200;
-      display: flex;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    #titleCoins img {
       width: 76px; height: 76px;
       object-fit: contain;
     }
@@ -137,7 +139,11 @@
       background: none;
       border: none;
       padding: 0;
-      display: block;
+      display: none;
+      text-align: center;
+      line-height: 1.4;
+    }
+    #slotBtn:active { color: #fff; }
 
     /* OLYMPICS BRACKET SCREEN — full screen canvas, no scroll */
     #bracketScreen {
@@ -359,7 +365,6 @@
   </button>
 
 
-
   <div class="high-score-title" id="titleHighScore"></div>
 </div>
 
@@ -455,11 +460,6 @@
     <div id="bracketRoundLabel"></div>
     <div id="bracketCoinHistory" style="display:flex; gap:10px; margin-top:6px; font-family:Helvetica, Arial, sans-serif; font-size:11px; color:#ffd700; letter-spacing:1px;"></div>
   </div>
-</div>
-
-  <div id="achSubtitle" style="font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;letter-spacing:3px;margin-bottom:16px;">0/0 UNLOCKED</div>
-  <div id="achGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(400px,92vw);"></div>
-  <button onclick="showTitle()" style="width:min(400px,92vw);margin-top:20px;padding:14px;background:transparent;color:#444;border:1px solid #222;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;border-radius:4px;cursor:pointer;">← BACK</button>
 </div>
 
 <script>
@@ -1221,6 +1221,7 @@ function showTitle(){
 }
 
 function startMode(mode){
+  if(Date.now() < titleUnlockedAt) return;
   gameMode=mode;
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("titleCoins").style.display="none";
@@ -1331,7 +1332,7 @@ function renderBracket(){
         let nameStr = "TBD";
         if(p){
           let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
-          nameStr = short+(p.isPlayer?" (you)":"");
+          nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
         }
         let topY = ry + rH*0.26;
         let botY = ry + rH*0.74;
@@ -1357,7 +1358,7 @@ function renderBracket(){
         let nameStr = "TBD";
         if(p){
           let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
-          nameStr = short+(p.isPlayer?" (you)":"");
+          nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
         }
         bx.fillStyle=nameColor;
         bx.font=`${nameSz}px Helvetica, Arial, sans-serif`;
@@ -1456,16 +1457,16 @@ function showMedalScreen(){
   let coinsEarned = os.lastRoundReward || 0; // only THIS round's reward — coins were already awarded in endGame()
   const isSpecial = gameMode==="specialolympics";
   if(os.champion==="player"){
-    medal="GOLD"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
+    medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
   } else if(os.playerEliminated && os.round<=2){
     isEliminated=true;
     canPlaySpecial = !isSpecial;
-    medal="OUT"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
+    medal="❌"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
   } else if(os.playerEliminated && os.round===3){
-    medal="BRNZ"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
+    medal="🥉"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
     canPlaySpecial = !isSpecial;
   } else {
-    medal="SLVR"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
+    medal="🥈"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
     canPlaySpecial = !isSpecial;
   }
 
@@ -1547,7 +1548,7 @@ function showMedalScreen(){
 
     mx2.fillStyle="#fff";
     mx2.font=`bold ${Math.round(mw*0.045)}px Helvetica, Arial, sans-serif`;
-    mx2.fillText(playerNation.name, mw/2, lineY);
+    mx2.fillText(playerNation.flag+" "+playerNation.name, mw/2, lineY);
     lineY += mw*0.07;
 
     if(os.champion==="player"){
@@ -2134,10 +2135,13 @@ function endGame(){
         os.lastRoundReward = rewards[3];
         os.coinHistory.push({label:"FINAL", amt:rewards[3]});
       } else {
+        // Final loss = silver
       }
     }
 
-    // Bronze: eliminated in SF
+    // Bronze: eliminated in SF (round reaches 3 after SF loss, playerEliminated=true)
+    if(os.playerEliminated && os.round===3){
+    }
 
     gameState="end";
     showBracket();
@@ -2234,6 +2238,31 @@ function draw(){
       ? "QU33PH SPECIAL OLYMPICS"
       : "QU33PH OLYMPICS";
     ctx.fillText(headerText, (LEFT_EDGE+RIGHT_WALL)/2, headerY);
+
+    // Player flag in left teal panel
+    if(playerNation){
+      ctx.save();
+      ctx.font=`${Math.round(LEFT_EDGE*0.55)}px Arial`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.globalAlpha=0.85;
+      ctx.fillText(playerNation.flag, LEFT_EDGE/2, canvas.height*0.55);
+      ctx.restore();
+    }
+
+    // Opponent flag — who are we playing?
+    let os=olympicsState;
+    let opp=null;
+    if(os.round===1) opp=os.n[6];
+    else if(os.round===2){ let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5]; opp=qf3w; }
+    else if(os.round===3){ let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];opp=os.sf1s1>os.sf1s2?qf1w:qf2w; }
+    if(opp){
+      ctx.save();
+      ctx.font=`${Math.round((canvas.width-RIGHT_WALL)*0.55)}px Arial`;
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      ctx.globalAlpha=0.7;
+      ctx.fillText(opp.flag, RIGHT_WALL+(canvas.width-RIGHT_WALL)/2, canvas.height*0.03);
+      ctx.restore();
+    }
   }
 
   drawWindowScene(elapsed);
@@ -2444,14 +2473,14 @@ function draw(){
       }
     }
 
-    let medalLabel = round===1?"[QF]":round===2?"[SF]":"[FINAL]";
+    let medalEmoji = round===1?"🥉":round===2?"🥈":"🥇";
     let roundName = round===1?"QUARTER-FINAL":round===2?"SEMI-FINAL":"GRAND FINAL";
     let prefix = gameMode==="specialolympics" ? "SPECIAL · " : "";
     let cabMidY = cTop + canvas.height*0.025;
     ctx.fillStyle=borderColor;
     ctx.font="bold 12px Helvetica, Arial, sans-serif";
     ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(prefix+roundName+" "+medalLabel, (cLeft+cRight)/2, cabMidY);
+    ctx.fillText(medalEmoji+" "+prefix+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
   }
 
   if(current===3&&markers.every(m=>m.stopped||m.fallen)){
