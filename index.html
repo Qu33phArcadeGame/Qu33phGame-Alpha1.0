@@ -2379,16 +2379,6 @@ function draw(){
   let cardW = dotR*2 + 10;
   let cardH = dotR*3 + 14;
 
-  // During Olympics, clip the card/dot to inside the medal border so it
-  // never spills past the gold/silver/bronze frame line.
-  let clipForOlympics = (gameMode==="olympics" && olympicsState);
-  if(clipForOlympics){
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(cLeft, cTop, cRight-cLeft-3, cBot-cTop);
-    ctx.clip();
-  }
-
   ctx.fillStyle="#f5f5f0";
   ctx.fillRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
   ctx.strokeStyle="rgba(180,175,165,0.6)"; ctx.lineWidth=1;
@@ -2406,8 +2396,6 @@ function draw(){
 
   ctx.fillStyle="rgba(255,255,255,0.5)";
   ctx.beginPath(); ctx.arc(dotCX-2, dotCY-2, dotR*0.35, 0, Math.PI*2); ctx.fill();
-
-  if(clipForOlympics) ctx.restore();
 
   ctx.fillStyle="rgba(255,255,255,0.15)";
   ctx.fillRect(cLeft, cTop+32, cRight-cLeft, 2);
@@ -2749,4 +2737,3 @@ function loop(){
 }
 loop();
 </script>
-
