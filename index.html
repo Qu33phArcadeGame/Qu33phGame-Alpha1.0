@@ -365,6 +365,14 @@
   </button>
 
 
+  <button class="mode-btn" onclick="showAchievementsScreen()">
+    <span class="mode-icon">🏅</span>
+    <span class="mode-text">
+      <span class="mode-name">ACHIEVEMENTS</span>
+      <span class="mode-desc">unlock rewards · earn coins · track progress</span>
+    </span>
+  </button>
+
   <div class="high-score-title" id="titleHighScore"></div>
 </div>
 
@@ -462,7 +470,151 @@
   </div>
 </div>
 
+<!-- ACHIEVEMENTS SCREEN -->
+<div id="achScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:30px;box-sizing:border-box;">
+  <div style="width:100%;text-align:center;padding:28px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:clamp(20px,5vw,28px);font-weight:bold;color:#fff;letter-spacing:4px;">ACHIEVEMENTS</div>
+  <div id="achSubtitle" style="font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;letter-spacing:3px;margin-bottom:16px;">0/0 UNLOCKED</div>
+  <div id="achGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(400px,92vw);"></div>
+  <button onclick="showTitle()" style="width:min(400px,92vw);margin-top:20px;padding:14px;background:transparent;color:#444;border:1px solid #222;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;border-radius:4px;cursor:pointer;">← BACK</button>
+</div>
+
 <script>
+// ─── ACHIEVEMENTS ─────────────────────────────────────────────────────────
+const ACHIEVEMENTS = [
+  // Gameplay
+  {id:'first_game',    label:'First Slide',        desc:'Play your first game',               icon:'🎯'},
+  {id:'first_qu33ph',  label:'QU33PH!',            desc:'Land all 3 markers touching',        icon:'✅'},
+  {id:'first_mega',    label:'MEGA QU33PH',         desc:'Hit the red dot in sudden death',    icon:'🔴'},
+  {id:'five_mega',     label:'Mega Machine',        desc:'5 MEGA QU33PHs total',               icon:'🔥'},
+  {id:'ten_mega',      label:'Mega Master',         desc:'10 MEGA QU33PHs total',              icon:'💥'},
+  {id:'first_peef',    label:'First PEEF',          desc:'Drop a marker off the left edge',    icon:'😬'},
+  {id:'ten_peef',      label:'PEEF Veteran',        desc:'10 PEEFs career total',              icon:'😅'},
+  {id:'sudden_score',  label:'Sudden Death Scorer', desc:'Score points in sudden death',       icon:'💀'},
+  {id:'score_50',      label:'Decent Slide',        desc:'Score 50+ in a quick game',          icon:'📈'},
+  {id:'score_100',     label:'Century Slide',       desc:'Score 100+ in a quick game',         icon:'💯'},
+  {id:'score_150',     label:'Elite Slider',        desc:'Score 150+ in a quick game',         icon:'🏅'},
+  {id:'score_200',     label:'Qu33ph Legend',       desc:'Score 200+ in a quick game',         icon:'👑'},
+  {id:'sd_qu33ph',     label:'Sudden QU33PH',       desc:'Triple touch in sudden death',       icon:'⚡'},
+  {id:'negative',      label:'Peef Storm',          desc:'Finish with a negative score',       icon:'📉'},
+  // Olympics
+  {id:'first_olympics',label:'Olympic Debut',       desc:'Enter your first Olympics',          icon:'🏆'},
+  {id:'first_qf_win',  label:'Quarter-Finalist',    desc:'Win your first quarter-final',       icon:'🥉'},
+  {id:'first_sf_win',  label:'Semi-Finalist',       desc:'Win your first semi-final',          icon:'🥈'},
+  {id:'first_gold',    label:'Olympic Gold',        desc:'Win your first gold medal',          icon:'🥇'},
+  {id:'first_silver',  label:'Olympic Silver',      desc:'Win your first silver medal',        icon:'🥈'},
+  {id:'first_bronze',  label:'Olympic Bronze',      desc:'Win your first bronze medal',        icon:'🥉'},
+  {id:'three_golds',   label:'Golden Era',          desc:'Win 3 Olympic gold medals',          icon:'🌟'},
+  {id:'five_golds',    label:'Dynasty',             desc:'Win 5 Olympic gold medals',          icon:'⭐'},
+  {id:'medals_5',      label:'Medal Collector',     desc:'Earn 5 Olympic medals total',        icon:'🎗️'},
+  {id:'play_special',  label:'Special Competitor',  desc:'Enter the Special Olympics',         icon:'🎖️'},
+  {id:'special_gold',  label:'Special Champion',    desc:'Win Special Olympics gold',          icon:'🎖️'},
+  // Slots
+  {id:'first_spin',    label:'One-Armed Bandit',    desc:'Spin the slot machine',              icon:'🎰'},
+  {id:'first_win',     label:'Lucky Spin',          desc:'Win something on the slots',         icon:'🍀'},
+  {id:'jackpot',       label:'JACKPOT!',            desc:'Hit the jackpot on the slots',       icon:'💰'},
+  {id:'slot_trio',     label:'Qu33ph Trio',         desc:'Land a QU33PH TRIO',                 icon:'🎪'},
+  {id:'spins_25',      label:'Slot Regular',        desc:'Spin 25 times total',                icon:'🔄'},
+  // Career
+  {id:'games_10',      label:'Regular',             desc:'Play 10 games total',                icon:'📅'},
+  {id:'games_25',      label:'Veteran',             desc:'Play 25 games total',                icon:'🎖️'},
+  {id:'games_50',      label:'Qu33ph Addict',       desc:'Play 50 games total',                icon:'🏆'},
+  {id:'coins_50',      label:'Coin Collector',      desc:'Earn 50 coins lifetime',             icon:'🪙'},
+  {id:'coins_200',     label:'Coin Hoarder',        desc:'Earn 200 coins lifetime',            icon:'💎'},
+  {id:'theme_unlock',  label:'Style Icon',          desc:'Unlock a new theme',                 icon:'🎨'},
+  {id:'night_owl',     label:'Night Owl',           desc:'Play between midnight and 4am',      icon:'🦉'},
+  {id:'high_score',    label:'Personal Best',       desc:'Beat your own high score',           icon:'📊'},
+];
+
+function getStat(k){ try{ return JSON.parse(localStorage.getItem("qu33phStat_"+k)||"0"); }catch(e){ return 0; } }
+function setStat(k,v){ localStorage.setItem("qu33phStat_"+k, JSON.stringify(v)); }
+function bumpStat(k,n){ setStat(k, getStat(k)+(n||1)); }
+
+function getUnlocked(){ try{ return JSON.parse(localStorage.getItem("qu33phAch")||"[]"); }catch(e){ return []; } }
+function isUnlocked(id){ return getUnlocked().includes(id); }
+
+function unlockAch(id){
+  if(isUnlocked(id)) return;
+  let u=getUnlocked(); u.push(id);
+  localStorage.setItem("qu33phAch", JSON.stringify(u));
+  addCoins(1);
+  let a=ACHIEVEMENTS.find(x=>x.id===id);
+  if(a) showAchToast(a);
+}
+
+function showAchToast(a){
+  let old=document.getElementById("achToast");
+  if(old) old.remove();
+  let d=document.createElement("div");
+  d.id="achToast";
+  d.style.cssText="position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #ffd700;border-radius:8px;padding:10px 16px;font-family:Helvetica,Arial,sans-serif;color:#ffd700;font-size:12px;letter-spacing:1px;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 0 20px rgba(255,215,0,0.3);white-space:nowrap;max-width:90vw;";
+  d.innerHTML=`<span style="font-size:22px">${a.icon}</span><div><div style="font-size:9px;color:#888;letter-spacing:2px;">ACHIEVEMENT +1🪙</div><div style="font-weight:bold">${a.label}</div><div style="font-size:9px;color:#666">${a.desc}</div></div>`;
+  document.body.appendChild(d);
+  setTimeout(()=>{if(d.parentNode)d.remove();},4000);
+}
+
+function checkAch(extras){
+  extras=extras||{};
+  let g=getStat, u=unlockAch;
+  if(g('games')>=1)  u('first_game');
+  if(g('games')>=10) u('games_10');
+  if(g('games')>=25) u('games_25');
+  if(g('games')>=50) u('games_50');
+  if(g('qu33phs')>=1)    u('first_qu33ph');
+  if(g('megas')>=1)      u('first_mega');
+  if(g('megas')>=5)      u('five_mega');
+  if(g('megas')>=10)     u('ten_mega');
+  if(g('peefs')>=1)      u('first_peef');
+  if(g('peefs')>=10)     u('ten_peef');
+  if(g('sdScores')>=1)   u('sudden_score');
+  if(g('negatives')>=1)  u('negative');
+  if(extras.score>=50)   u('score_50');
+  if(extras.score>=100)  u('score_100');
+  if(extras.score>=150)  u('score_150');
+  if(extras.score>=200)  u('score_200');
+  if(extras.sdQu33ph)    u('sd_qu33ph');
+  if(g('olympics')>=1)   u('first_olympics');
+  if(g('qfWins')>=1)     u('first_qf_win');
+  if(g('sfWins')>=1)     u('first_sf_win');
+  if(g('golds')>=1)      u('first_gold');
+  if(g('golds')>=3)      u('three_golds');
+  if(g('golds')>=5)      u('five_golds');
+  if(g('silvers')>=1)    u('first_silver');
+  if(g('bronzes')>=1)    u('first_bronze');
+  if((g('golds')+g('silvers')+g('bronzes'))>=5) u('medals_5');
+  if(g('specials')>=1)   u('play_special');
+  if(g('specGolds')>=1)  u('special_gold');
+  if(g('slotSpins')>=1)  u('first_spin');
+  if(g('slotWins')>=1)   u('first_win');
+  if(g('jackpots')>=1)   u('jackpot');
+  if(g('trios')>=1)      u('slot_trio');
+  if(g('slotSpins')>=25) u('spins_25');
+  let coinsEarned=g('coinsEarned');
+  if(coinsEarned>=50)    u('coins_50');
+  if(coinsEarned>=200)   u('coins_200');
+  if(getUnlocked().filter(t=>!['default'].includes(t)).length>0 || JSON.parse(localStorage.getItem("qu33phThemes")||'["default"]').length>1) u('theme_unlock');
+  let h=new Date().getHours();
+  if(h>=0&&h<4) u('night_owl');
+  if(extras.newHighScore) u('high_score');
+}
+
+function showAchievementsScreen(){
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
+  let unlocked=getUnlocked();
+  document.getElementById("achSubtitle").innerText=unlocked.length+"/"+ACHIEVEMENTS.length+" UNLOCKED · "+unlocked.length+" COINS EARNED";
+  let grid=document.getElementById("achGrid");
+  grid.innerHTML=ACHIEVEMENTS.map(a=>{
+    let done=unlocked.includes(a.id);
+    return `<div style="background:#0e0e0e;border:1px solid ${done?"#3a3a1a":"#1a1a1a"};border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;opacity:${done?1:0.38};">
+      <span style="font-size:20px;flex-shrink:0">${a.icon}</span>
+      <div><div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;color:${done?"#ffd700":"#555"};font-weight:bold;letter-spacing:1px;">${a.label}</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;color:#444;margin-top:2px;line-height:1.3">${a.desc}</div></div>
+    </div>`;
+  }).join("");
+  document.getElementById("achScreen").style.display="flex";
+}
+
 // ─── IMAGES ───────────────────────────────────────────────────────────────
 const markerImages = { red:new Image(), green:new Image(), blue:new Image() };
 markerImages.red.src="red.png";
@@ -1081,6 +1233,7 @@ function setReelImg(img, reelId, sym){
 function spinSlot(){
   if(slotSpinning||coins<SLOT_COST) return;
   addCoins(-SLOT_COST);
+  bumpStat('slotSpins');
   document.getElementById("slotCoinCount").innerText=coins;
   document.getElementById("slotResult").innerText="";
   slotSpinning=true;
@@ -1111,6 +1264,9 @@ function spinSlot(){
           let resultEl=document.getElementById("slotResult");
           if(won){
             addCoins(won.win);
+            bumpStat('slotWins'); bumpStat('coinsEarned',won.win);
+            if(won.label==="JACKPOT") bumpStat('jackpots');
+            if(won.label==="TRIO · BLUE 3RD"||won.label==="TRIO · MIXED ORDER") bumpStat('trios');
             document.getElementById("slotCoinCount").innerText=coins;
             resultEl.style.color="#ffd700";
             resultEl.innerHTML=won.label+"! +"+won.win+' <img src="coin.png" onerror="this.src=\'coin.jpg\'" style="width:14px;height:14px;object-fit:contain;vertical-align:middle;">';
@@ -1119,6 +1275,7 @@ function spinSlot(){
               setTimeout(()=>document.getElementById(r).parentElement.style.borderColor="#333",1500);
             });
             startSlotWinStars(won.win);
+            checkAch();
           } else {
             resultEl.style.color="#555";
             resultEl.innerText="no match — try again";
@@ -1209,6 +1366,7 @@ function showTitle(){
   document.getElementById("medalScreen").style.display="none";
   document.getElementById("themeScreen").style.display="none";
   document.getElementById("slotScreen").style.display="none";
+  document.getElementById("achScreen").style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   updateLogo();
   document.getElementById("rotateBtn").style.display="none";
@@ -1794,6 +1952,7 @@ function triggerMegaQu33ph(m){
   totalScore+=10;
   addShake(20);
   explosions.push({x:redDot.x,y:redDot.y,radius:10,life:30,text:"MEGA QU33PH",mega:true});
+  bumpStat('megas');
 }
 
 // ─── ROUND SYSTEM ─────────────────────────────────────────────────────────
@@ -1817,6 +1976,8 @@ function tryAdvanceRound(){
     if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
       explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
       addShake(8);
+      bumpStat('qu33phs');
+      if(suddenDeath) bumpStat('sdScores');
     }
     markers=[];
     current=0;
@@ -2062,6 +2223,7 @@ function update(){
           text:"-"+deduction,
           life:50, peef:true, shakeAmt:5,
         });
+        bumpStat('peefs');
       }
       m.fallen=true;
     }
@@ -2085,10 +2247,14 @@ function update(){
 // ─── END GAME ─────────────────────────────────────────────────────────────
 function endGame(){
   shake=0;
-  if(totalScore>highScore){
+  bumpStat('games');
+  let newHighScore = totalScore > highScore;
+  if(newHighScore){
     highScore=totalScore;
     localStorage.setItem("qu33phHigh",highScore);
   }
+  if(totalScore<0) bumpStat('negatives');
+  if(suddenDeath && totalScore>0) bumpStat('sdScores');
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
 
@@ -2103,13 +2269,15 @@ function endGame(){
     let isSpecial = gameMode==="specialolympics";
 
     if(os.round===1){
+      bumpStat(isSpecial?'specials':'olympics');
       os.qf4Score=totalScore; os.qf4Opp=oppScore;
       os.sf1s1=simulatedScore(); os.sf1s2=simulatedScore();
       while(os.sf1s1===os.sf1s2) os.sf1s2=simulatedScore();
       if(totalScore<=oppScore){
         os.playerEliminated=true;
       } else {
-        addCoins(rewards[1]);
+        addCoins(rewards[1]); bumpStat('coinsEarned',rewards[1]);
+        bumpStat('qfWins');
         os.coinsWonThisRun += rewards[1];
         os.lastRoundReward = rewards[1];
         os.coinHistory.push({label:"QF4", amt:rewards[1]});
@@ -2120,7 +2288,8 @@ function endGame(){
       if(totalScore<=oppScore){
         os.playerEliminated=true;
       } else {
-        addCoins(rewards[2]);
+        addCoins(rewards[2]); bumpStat('coinsEarned',rewards[2]);
+        bumpStat('sfWins');
         os.coinsWonThisRun += rewards[2];
         os.lastRoundReward = rewards[2];
         os.coinHistory.push({label:"SEMI", amt:rewards[2]});
@@ -2130,24 +2299,28 @@ function endGame(){
       os.finScore=totalScore; os.finOpp=oppScore;
       os.champion=totalScore>oppScore?"player":"cpu";
       if(os.champion==="player"){
-        addCoins(rewards[3]);
+        addCoins(rewards[3]); bumpStat('coinsEarned',rewards[3]);
+        bumpStat(isSpecial?'specGolds':'golds');
         os.coinsWonThisRun += rewards[3];
         os.lastRoundReward = rewards[3];
         os.coinHistory.push({label:"FINAL", amt:rewards[3]});
       } else {
-        // Final loss = silver
+        bumpStat('silvers');
       }
     }
 
-    // Bronze: eliminated in SF (round reaches 3 after SF loss, playerEliminated=true)
+    // Bronze: eliminated in SF
     if(os.playerEliminated && os.round===3){
+      bumpStat('bronzes');
     }
 
+    checkAch();
     gameState="end";
     showBracket();
     return;
   }
 
+  checkAch({score:totalScore, newHighScore});
   gameState="end";
 }
 
@@ -2504,265 +2677,4 @@ function draw(){
     ctx.restore();
   }
 
-  explosions.forEach(e=>{
-    ctx.beginPath();
-    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
-    ctx.strokeStyle="white";
-    ctx.lineWidth=4;
-    ctx.globalAlpha=e.life/30;
-    ctx.stroke();
-    ctx.globalAlpha=e.life/30;
-    ctx.fillStyle="white";
-    ctx.font=e.mega?"bold 50px Arial":"bold 60px Arial";
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    ctx.fillText(e.text||"QU33PH",e.x,e.y);
-    ctx.globalAlpha=1;
-  });
-
-  scorePopups.forEach(p=>{
-    ctx.save();
-    if(p.peef){
-      let shake2 = p.shakeAmt ? (Math.random()-0.5)*p.shakeAmt*(p.life/55) : 0;
-      ctx.globalAlpha = Math.min(1, p.life/25);
-      ctx.fillStyle="#ff2222";
-      ctx.font=`bold ${p.text==="PEEF"?"36px":"18px"} Helvetica, Arial, sans-serif`;
-      ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText(p.text, p.x + shake2, p.y + shake2*0.5);
-    } else {
-      ctx.globalAlpha=p.life/40;
-      ctx.fillStyle="white";
-      ctx.font="bold 30px Helvetica, Arial, sans-serif";
-      ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText(p.text,p.x,p.y);
-    }
-    ctx.restore();
-  });
-
-  let previewAngleStd =
-    currentOrientation==="vertical"   ? Math.PI/3 :
-    currentOrientation==="angled"     ? Math.PI/2 :
-    0;
-  let previewAngleBlue =
-    currentOrientation==="vertical"   ? Math.PI/3 + Math.PI/4 :
-    currentOrientation==="angled"     ? Math.PI/2 + Math.PI/4 :
-    0;
-
-  previewMarkers.forEach((p,i)=>{
-    if(p.used) return;
-    const img = getMarkerImg(p.color);
-    if(!img||!img.complete||!img.naturalWidth) return;
-    let cx = (LEFT_EDGE+RIGHT_WALL)/2;
-    let cy = START_LINE_Y - 55 - i*58;
-    let pw = p.color==="blue" ? 80 : 50;
-    let ph = 50;
-    let angle = p.color==="blue" ? previewAngleBlue : previewAngleStd;
-    ctx.save();
-    ctx.globalAlpha = 0.6;
-    ctx.translate(cx, cy);
-    ctx.rotate(angle);
-    ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
-    ctx.restore();
-    ctx.globalAlpha = 1;
-  });
-
-  markers.forEach(m=>{
-    if(m.fallen) return;
-    ctx.shadowColor=isTouchingAny(m)?"lime":"red";
-    ctx.shadowBlur=20;
-    drawMarker(m);
-    ctx.shadowBlur=0;
-  });
-
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.textAlign="left";
-  ctx.textBaseline="top";
-
-  ctx.fillStyle="rgba(255,255,255,0.5)";
-  ctx.font="11px Helvetica, Arial, sans-serif";
-  ctx.fillText("Time",20,16);
-  if(!suddenDeath){
-    ctx.fillStyle="white";
-    ctx.font="bold 18px Helvetica, Arial, sans-serif";
-    ctx.fillText(Math.max(0,ROUND_TIME-Math.floor(elapsed)),20,30);
-  } else {
-    ctx.fillStyle="red";
-    ctx.font="bold 16px Helvetica, Arial, sans-serif";
-    ctx.fillText("SD:"+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),20,30);
-  }
-
-  ctx.fillStyle="rgba(255,255,255,0.5)";
-  ctx.font="11px Helvetica, Arial, sans-serif";
-  ctx.fillText("Score",20,52);
-  ctx.fillStyle="white";
-  ctx.font="bold 18px Helvetica, Arial, sans-serif";
-  ctx.fillText(totalScore,20,66);
-
-  if(coinImg.complete && coinImg.naturalWidth){
-    let coinSize = Math.round(LEFT_EDGE * 0.5);
-    let coinX = (LEFT_EDGE - coinSize) / 2;
-    let coinY = 94;
-    ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
-    ctx.fillStyle="#ffd700";
-    ctx.font=`bold ${Math.round(LEFT_EDGE*0.26)}px Helvetica, Arial, sans-serif`;
-    ctx.textAlign="center";
-    ctx.fillText(coins, LEFT_EDGE/2, coinY + coinSize + 4);
-    ctx.textAlign="left";
-  }
-
-  if((gameMode==="olympics"||gameMode==="specialolympics")&&olympicsState){
-    let rLabel = olympicsState.round===1?"QF":olympicsState.round===2?"SEMI":"FINAL";
-    let modeLabel = gameMode==="specialolympics"?"SPECIAL":"OLYMPICS";
-    ctx.save();
-    ctx.fillStyle="rgba(255,255,255,0.5)";
-    ctx.font="bold 10px Helvetica, Arial, sans-serif";
-    ctx.textAlign="center";
-    ctx.translate(LEFT_EDGE*0.5, canvas.height*0.78);
-    ctx.rotate(-Math.PI/2);
-    ctx.fillText(modeLabel+" · "+rLabel, 0, 0);
-    ctx.restore();
-  }
-}
-
-// ─── INIT & LOOP ──────────────────────────────────────────────────────────
-randomizeSky();
-showTitle();
-
-function loop(){
-  update();
-  draw();
-  if(gameState==="playing"){
-    applyThemeOverlay();
-
-    if(currentTheme==="cartoon"){
-      markers.forEach(m=>{
-        if(m.fallen) return;
-        const img=cartoonImages[m.color];
-        if(!img||!img.complete||!img.naturalWidth) return;
-        ctx.save();
-        ctx.translate(m.x,m.y);
-        ctx.rotate(m.rotation);
-        let w=m.color==="blue"?80:50, h=50;
-        ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.globalCompositeOperation="screen";
-        ctx.globalAlpha=0.25;
-        ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.restore();
-      });
-      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
-      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
-      previewMarkers.forEach((p,i)=>{
-        if(p.used) return;
-        const img=cartoonImages[p.color];
-        if(!img||!img.complete||!img.naturalWidth) return;
-        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
-        let pw=p.color==="blue"?80:50, ph=50;
-        let angle=p.color==="blue"?blueA:stdA;
-        ctx.save();
-        ctx.translate(cx,cy); ctx.rotate(angle);
-        ctx.globalAlpha=1;
-        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
-        ctx.globalCompositeOperation="screen";
-        ctx.globalAlpha=0.3;
-        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
-        ctx.restore();
-      });
-      // Redraw red dot + card in correct size after cartoon overlay
-      let dotCX=redDot.x, dotCY=redDot.y, dotR=3;
-      let cardW=11, cardH=15;
-      ctx.save();
-      ctx.fillStyle="#fff";
-      ctx.fillRect(dotCX-cardW/2, dotCY-cardH/2, cardW, cardH);
-      ctx.strokeStyle="rgba(80,75,65,0.5)"; ctx.lineWidth=1;
-      ctx.strokeRect(dotCX-cardW/2, dotCY-cardH/2, cardW, cardH);
-      ctx.restore();
-      ctx.save();
-      ctx.fillStyle="#111";
-      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR+1,0,Math.PI*2); ctx.fill();
-      let rg=ctx.createRadialGradient(dotCX-1,dotCY-1,0.5,dotCX,dotCY,dotR);
-      rg.addColorStop(0,"#ff5555"); rg.addColorStop(0.5,"#dd1111"); rg.addColorStop(1,"#990000");
-      ctx.fillStyle=rg;
-      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR,0,Math.PI*2); ctx.fill();
-      ctx.restore();
-      if(suddenDeath && chairImg.complete && chairImg.naturalWidth){
-        ctx.save();
-        ctx.translate(chair.x, chair.y);
-        ctx.shadowColor="#ff2200"; ctx.shadowBlur=15;
-        ctx.drawImage(chairImg,-25,-25,50,50);
-        ctx.restore();
-      }
-    }
-
-    if(currentTheme==="neon"){
-      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
-      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
-      previewMarkers.forEach((p,i)=>{
-        if(p.used) return;
-        const img=getMarkerImg(p.color);
-        if(!img||!img.complete) return;
-        let gc=p.color==="red"?"#ff0044":p.color==="green"?"#00ff88":"#0099ff";
-        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
-        let pw=p.color==="blue"?80:50, ph=50;
-        let angle=p.color==="blue"?blueA:stdA;
-        ctx.save();
-        ctx.shadowColor=gc; ctx.shadowBlur=60;
-        ctx.translate(cx,cy); ctx.rotate(angle);
-        ctx.globalAlpha=1; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
-        ctx.globalAlpha=0.7; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
-        ctx.globalAlpha=0.5; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
-        ctx.restore();
-      });
-      markers.forEach(m=>{
-        if(m.fallen) return;
-        const img=getMarkerImg(m.color);
-        if(!img||!img.complete) return;
-        let gc=m.color==="red"?"#ff0044":m.color==="green"?"#00ff88":"#0099ff";
-        let touching=isTouchingAny(m);
-        ctx.save();
-        ctx.shadowColor=touching?"#00ff00":gc;
-        ctx.shadowBlur=touching?80:70;
-        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
-        let w=m.color==="blue"?80:50, h=50;
-        ctx.globalAlpha=1;   ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.globalAlpha=0.7; ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.globalAlpha=0.5; ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.globalAlpha=0.3; ctx.drawImage(img,-w/2,-h/2,w,h);
-        ctx.restore();
-      });
-    }
-
-    if(currentTheme==="sunset"){
-      markers.forEach(m=>{
-        if(m.fallen) return;
-        let tipX = m.color==="blue" ? -35 : -20;
-        ctx.save();
-        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
-        ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
-        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.95;
-        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
-        ctx.globalAlpha=0.3;
-        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
-      });
-      let stdA2 = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
-      let blueA2 = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
-      previewMarkers.forEach((p,i)=>{
-        if(p.used) return;
-        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
-        let tipX = p.color==="blue" ? -35 : -20;
-        let angle=p.color==="blue"?blueA2:stdA2;
-        ctx.save();
-        ctx.translate(cx,cy); ctx.rotate(angle);
-        ctx.shadowColor="#ffd700"; ctx.shadowBlur=18;
-        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.9;
-        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
-        ctx.globalAlpha=0.3;
-        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
-      });
-    }
-  }
-  requestAnimationFrame(loop);
-}
-loop();
-</script>
+  explosions.
