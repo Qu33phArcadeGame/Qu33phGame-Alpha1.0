@@ -185,13 +185,13 @@
       font-family:Helvetica, Arial, sans-serif;
     }
     .reel-window {
+      aspect-ratio: 1;
       position: relative;
       border: none;
       background: transparent;
       overflow: hidden;
       display: flex;
       align-items: center;
-      justify-content: center;
     }
     .reel-img {
       width: 100%; height: 100%;
@@ -420,19 +420,12 @@
     <button id="spinBtn" onclick="spinSlot()" style="width:min(260px,80vw); padding:12px; background:#ffd700; color:#000; font-family:Helvetica, Arial, sans-serif; font-size:14px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">SPIN — 1 <img src="coin.png" width="18" height="18" style="object-fit:contain;" onerror="this.src='coin.jpg'"></button>
   </div>
 
-    <!-- Paytable button -->
-    <button onclick="showPaytableScreen()" style="margin-top:8px;margin-bottom:8px;padding:10px 24px;background:transparent;border:1px solid #333;color:#666;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:3px;border-radius:4px;cursor:pointer;">VIEW PAYTABLE</button>
-
-</div>
-
-<!-- PAYTABLE SCREEN -->
-<div id="paytableScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#08080a;display:none;flex-direction:column;align-items:center;z-index:200;overflow-y:auto;padding-bottom:24px;box-sizing:border-box;">
-  <div style="width:100%;display:flex;align-items:center;padding:12px 16px 8px;box-sizing:border-box;flex-shrink:0;">
-    <button onclick="hidePaytableScreen()" style="background:none;border:none;color:#888;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;cursor:pointer;">← BACK</button>
-    <div style="margin-left:auto;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:#444;letter-spacing:3px;">SPIN COSTS 1 <img src="coin.png" width="14" height="14" style="object-fit:contain;vertical-align:middle;" onerror="this.src='coin.jpg'"></div>
+  <!-- Paytable -->
+  <div style="width:min(340px,92vw); border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; flex-shrink:0; margin-top:6px; margin-bottom:8px;">
+    <div style="background:#111; padding:5px 12px; font-family:Helvetica, Arial, sans-serif; font-size:9px; color:#555; letter-spacing:3px; display:flex; align-items:center; gap:4px;">PAYTABLE · SPIN COSTS 1 <img src="coin.png" width="12" height="12" style="object-fit:contain;" onerror="this.src='coin.jpg'"></div>
+    <div id="paytable" style="padding:1px 0;"></div>
   </div>
-  <div style="font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:20px;color:#fff;letter-spacing:4px;margin-bottom:12px;">PAYTABLE</div>
-  <div id="paytable" style="width:min(380px,92vw);display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 8px;box-sizing:border-box;"></div>
+
 </div>
 
 <!-- NATION SELECT SCREEN -->
@@ -1008,6 +1001,7 @@ function showSlotMachine(){
   document.getElementById("slotScreen").style.display="flex";
   document.getElementById("slotCoinCount").innerText=coins;
   document.getElementById("slotResult").innerText="";
+  buildPaytable();
   updateSpinBtn();
   applyReelOffsets();
 }
@@ -1017,14 +1011,6 @@ function updateSpinBtn(){
   btn.disabled=coins<SLOT_COST||slotSpinning;
   btn.style.background=coins<SLOT_COST?"#222":"#fff";
   btn.style.color=coins<SLOT_COST?"#444":"#000";
-}
-
-function showPaytableScreen(){
-  buildPaytable();
-  document.getElementById("paytableScreen").style.display="flex";
-}
-function hidePaytableScreen(){
-  document.getElementById("paytableScreen").style.display="none";
 }
 
 function buildPaytable(){
@@ -1039,7 +1025,7 @@ function buildPaytable(){
       let sym=SLOT_SYMBOLS.find(x=>x.id===s);
       return `<img src="${sym.src}" title="${sym.label}">`;
     }).join("");
-    div.innerHTML=`<div class="paytable-icons">${icons}</div><span class="paytable-label" style="color:#888;flex:1;">${row.label}</span><span class="paytable-win">+${row.win}<img src="coin.png" onerror="this.src='coin.jpg'" style="width:10px;height:10px;object-fit:contain;vertical-align:middle;margin-left:2px;"></span>`;
+    div.innerHTML=`<div class="paytable-icons">${icons}</div><span class="paytable-label" style="color:#888;">${row.label}</span><span class="paytable-win">+${row.win}<img src="coin.png" onerror="this.src='coin.jpg'" style="width:10px;height:10px;object-fit:contain;vertical-align:middle;margin-left:2px;"></span>`;
     pt.appendChild(div);
   });
 }
@@ -1223,7 +1209,6 @@ function showTitle(){
   document.getElementById("medalScreen").style.display="none";
   document.getElementById("themeScreen").style.display="none";
   document.getElementById("slotScreen").style.display="none";
-  if(document.getElementById("paytableScreen")) document.getElementById("paytableScreen").style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   updateLogo();
   document.getElementById("rotateBtn").style.display="none";
@@ -2249,35 +2234,6 @@ function draw(){
       ? "QU33PH SPECIAL OLYMPICS"
       : "QU33PH OLYMPICS";
     ctx.fillText(headerText, (LEFT_EDGE+RIGHT_WALL)/2, headerY);
-
-    // Player flag in left teal panel
-    if(playerNation){
-      try {
-        ctx.save();
-        ctx.font=`${Math.round(LEFT_EDGE*0.55)}px Arial`;
-        ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.globalAlpha=0.85;
-        ctx.fillText(playerNation.flag, LEFT_EDGE/2, canvas.height*0.55);
-        ctx.restore();
-      } catch(e) { ctx.restore(); }
-    }
-
-    // Opponent flag
-    let os=olympicsState;
-    let opp=null;
-    if(os.round===1) opp=os.n[6];
-    else if(os.round===2){ let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5]; opp=qf3w; }
-    else if(os.round===3){ let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];opp=os.sf1s1>os.sf1s2?qf1w:qf2w; }
-    if(opp){
-      try {
-        ctx.save();
-        ctx.font=`${Math.round((canvas.width-RIGHT_WALL)*0.55)}px Arial`;
-        ctx.textAlign="center"; ctx.textBaseline="top";
-        ctx.globalAlpha=0.7;
-        ctx.fillText(opp.flag, RIGHT_WALL+(canvas.width-RIGHT_WALL)/2, canvas.height*0.03);
-        ctx.restore();
-      } catch(e) { ctx.restore(); }
-    }
   }
 
   drawWindowScene(elapsed);
@@ -2766,4 +2722,18 @@ function loop(){
         let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
         let tipX = p.color==="blue" ? -35 : -20;
         let angle=p.color==="blue"?blueA2:stdA2;
-        ctx.save()
+        ctx.save();
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=18;
+        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.9;
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=0.3;
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+    }
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
