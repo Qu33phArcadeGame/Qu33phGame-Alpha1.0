@@ -6,7 +6,7 @@
   <title>Qu33ph</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { margin:0; overflow:hidden; background:#111; font-family: 'Courier New', monospace; }
+    body { margin:0; overflow:hidden; background:#111; font-family: Helvetica, Arial, sans-serif; }
     canvas { display:block; touch-action:none; }
 
     #rotateBtn {
@@ -18,7 +18,7 @@
       border-radius:10px;
       border:2px solid #444;
       font-size:14px;
-      font-family: 'Courier New', monospace;
+      font-family: Helvetica, Arial, sans-serif;
       background:#1a1a1a;
       color:#ccc;
       letter-spacing:1px;
@@ -83,7 +83,7 @@
       border: 1px solid #333;
       background: #111;
       color: #eee;
-      font-family: 'Courier New', monospace;
+      font-family: Helvetica, Arial, sans-serif;
       font-size: clamp(12px, 3vw, 15px);
       letter-spacing: 2px;
       text-align: left;
@@ -110,7 +110,7 @@
       top: 16px;
       left: 0;
       width: 88px;
-      font-family: 'Courier New', monospace;
+      font-family: Helvetica, Arial, sans-serif;
       font-size: 16px;
       font-weight: bold;
       color: #fff;
@@ -130,7 +130,7 @@
       top: 110px;
       left: 0;
       width: 88px;
-      font-family: 'Courier New', monospace;
+      font-family: Helvetica, Arial, sans-serif;
       font-size: 9px;
       color: #aaa;
       letter-spacing: 0px;
@@ -174,7 +174,7 @@
       padding:17px;
       background:#ffffff;
       color:#000;
-      font-family:'Courier New',monospace;
+      font-family:Helvetica, Arial, sans-serif;
       font-size:15px;
       font-weight:bold;
       letter-spacing:2px;
@@ -188,7 +188,7 @@
       font-size:10px;
       color:#333;
       letter-spacing:3px;
-      font-family:'Courier New',monospace;
+      font-family:Helvetica, Arial, sans-serif;
     }
     .reel-window {
       aspect-ratio: 1;
@@ -208,7 +208,7 @@
       display: flex; align-items: center; gap: 4px;
       padding: 1px 6px;
       border-bottom: 1px solid #0f0f0f;
-      font-family: 'Courier New', monospace; font-size: 8px;
+      font-family: Helvetica, Arial, sans-serif; font-size: 8px;
       color: #666;
       min-height: 19px;
     }
@@ -226,7 +226,7 @@
     #medalCanvas { width:100%; flex:1; display:block; }
     .medal-btn {
       width:min(360px,88vw); padding:17px; margin:0 0 32px;
-      background:#fff; color:#000; font-family:'Courier New',monospace;
+      background:#fff; color:#000; font-family:Helvetica, Arial, sans-serif;
       font-size:15px; font-weight:bold; letter-spacing:2px;
       border:none; border-radius:4px; cursor:pointer; flex-shrink:0;
     }
@@ -239,7 +239,7 @@
     }
     .nation-header {
       width:100%; text-align:center; padding:24px 0 12px;
-      font-family:'Courier New',monospace;
+      font-family:Helvetica, Arial, sans-serif;
     }
     .nation-title {
       font-size:clamp(18px,5vw,26px); color:#fff;
@@ -256,7 +256,7 @@
       display:flex; flex-direction:column; align-items:center;
       gap:4px; padding:14px 8px; background:#0e0e0e;
       border:1px solid #222; border-radius:6px; cursor:pointer;
-      font-family:'Courier New',monospace; color:#888;
+      font-family:Helvetica, Arial, sans-serif; color:#888;
       transition:all 0.12s; font-size:11px; letter-spacing:1px;
     }
     .nation-btn:hover, .nation-btn:active {
@@ -270,7 +270,7 @@
     .nation-confirm {
       width:min(400px,92vw); margin-top:16px;
       padding:16px; background:#c8a840; color:#000;
-      font-family:'Courier New',monospace; font-size:15px;
+      font-family:Helvetica, Arial, sans-serif; font-size:15px;
       font-weight:bold; letter-spacing:2px; border:none;
       border-radius:4px; cursor:pointer; display:none;
     }
@@ -279,7 +279,7 @@
       width:min(340px,80vw); margin:6px 0;
       padding:14px 24px; border:1px solid #333;
       background:#111; color:#eee;
-      font-family:'Courier New',monospace;
+      font-family:Helvetica, Arial, sans-serif;
       font-size:14px; letter-spacing:2px;
       cursor:pointer; border-radius:6px;
       display:flex; align-items:center; gap:14px;
@@ -295,11 +295,11 @@
       align-items:center; padding:40px 0 20px; z-index:100;
     }
     .theme-screen-title {
-      font-family:'Courier New',monospace; font-size:22px;
+      font-family:Helvetica, Arial, sans-serif; font-size:22px;
       color:#fff; letter-spacing:4px; font-weight:bold; margin-bottom:6px;
     }
     .theme-screen-sub {
-      font-family:'Courier New',monospace; font-size:10px;
+      font-family:Helvetica, Arial, sans-serif; font-size:10px;
       color:#444; letter-spacing:3px; margin-bottom:32px;
     }
     .theme-option {
@@ -307,7 +307,7 @@
       padding:18px 20px; border:1px solid #222;
       background:#0e0e0e; border-radius:6px; cursor:pointer;
       display:flex; align-items:center; gap:16px;
-      font-family:'Courier New',monospace; color:#888;
+      font-family:Helvetica, Arial, sans-serif; color:#888;
     }
     .theme-option:active { background:#1a1a1a; }
     .theme-option.selected { border-color:#fff; color:#fff; }
@@ -317,7 +317,7 @@
     .theme-back {
       width:min(340px,80vw); margin-top:20px; padding:14px;
       background:transparent; color:#444; border:1px solid #222;
-      font-family:'Courier New',monospace; font-size:12px;
+      font-family:Helvetica, Arial, sans-serif; font-size:12px;
       letter-spacing:2px; border-radius:4px; cursor:pointer;
     }
   </style>
@@ -337,7 +337,7 @@
 <!-- TITLE SCREEN -->
 <div id="titleScreen">
   <div class="title-logo" id="logoContainer"><img id="logoImg" src="logo.jpg" alt="Qu33ph" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"></div>
-  <div id="logoFallback" style="display:none; font-family:'Courier New',monospace; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;">Qu33ph</div>
+  <div id="logoFallback" style="display:none; font-family:Helvetica, Arial, sans-serif; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;">Qu33ph</div>
   <div class="title-sub">arcade edition</div>
 
   <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
@@ -390,7 +390,7 @@
     <span><span class="theme-name" id="tname-sunset">GOLDEN HOUR</span><span class="theme-desc" id="tdesc-sunset">warm amber · late afternoon vibes</span></span>
   </div>
 
-  <div id="themeCoinsDisplay" style="margin-top:14px; font-family:'Courier New',monospace; font-size:12px; color:#888; letter-spacing:2px;"></div>
+  <div id="themeCoinsDisplay" style="margin-top:14px; font-family:Helvetica, Arial, sans-serif; font-size:12px; color:#888; letter-spacing:2px;"></div>
   <button class="theme-back" onclick="showTitle()">← BACK</button>
 </div>
 
@@ -401,8 +401,8 @@
 
   <!-- Top bar -->
   <div style="width:100%; display:flex; align-items:center; padding:10px 16px 0; box-sizing:border-box; flex-shrink:0; position:relative; z-index:10;">
-    <button onclick="showTitle()" style="background:none; border:none; color:#888; font-family:'Courier New',monospace; font-size:13px; letter-spacing:2px; cursor:pointer;">← BACK</button>
-    <div style="margin-left:auto; font-family:'Courier New',monospace; font-size:16px; font-weight:bold; color:#fff; display:flex; flex-direction:column; align-items:center; gap:2px;">
+    <button onclick="showTitle()" style="background:none; border:none; color:#888; font-family:Helvetica, Arial, sans-serif; font-size:13px; letter-spacing:2px; cursor:pointer;">← BACK</button>
+    <div style="margin-left:auto; font-family:Helvetica, Arial, sans-serif; font-size:16px; font-weight:bold; color:#fff; display:flex; flex-direction:column; align-items:center; gap:2px;">
       <img src="coin.png" width="76" height="76" style="object-fit:contain;" onerror="this.src='coin.jpg'">
       <span id="slotCoinCount">0</span>
     </div>
@@ -421,13 +421,13 @@
 
   <!-- Result + spin -->
   <div style="flex-shrink:0; text-align:center; padding:4px 0;">
-    <div id="slotResult" style="font-family:'Courier New',monospace; font-size:13px; color:#fff; letter-spacing:2px; min-height:18px; margin-bottom:6px;"></div>
-    <button id="spinBtn" onclick="spinSlot()" style="width:min(260px,80vw); padding:12px; background:#ffd700; color:#000; font-family:'Courier New',monospace; font-size:14px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">SPIN — 1 <img src="coin.png" width="18" height="18" style="object-fit:contain;" onerror="this.src='coin.jpg'"></button>
+    <div id="slotResult" style="font-family:Helvetica, Arial, sans-serif; font-size:13px; color:#fff; letter-spacing:2px; min-height:18px; margin-bottom:6px;"></div>
+    <button id="spinBtn" onclick="spinSlot()" style="width:min(260px,80vw); padding:12px; background:#ffd700; color:#000; font-family:Helvetica, Arial, sans-serif; font-size:14px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">SPIN — 1 <img src="coin.png" width="18" height="18" style="object-fit:contain;" onerror="this.src='coin.jpg'"></button>
   </div>
 
   <!-- Paytable -->
   <div style="width:min(340px,92vw); border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; flex-shrink:0; margin-top:6px; margin-bottom:8px;">
-    <div style="background:#111; padding:5px 12px; font-family:'Courier New',monospace; font-size:9px; color:#555; letter-spacing:3px; display:flex; align-items:center; gap:4px;">PAYTABLE · SPIN COSTS 1 <img src="coin.png" width="12" height="12" style="object-fit:contain;" onerror="this.src='coin.jpg'"></div>
+    <div style="background:#111; padding:5px 12px; font-family:Helvetica, Arial, sans-serif; font-size:9px; color:#555; letter-spacing:3px; display:flex; align-items:center; gap:4px;">PAYTABLE · SPIN COSTS 1 <img src="coin.png" width="12" height="12" style="object-fit:contain;" onerror="this.src='coin.jpg'"></div>
     <div id="paytable" style="padding:1px 0;"></div>
   </div>
 
@@ -458,7 +458,7 @@
   <div class="bracket-play-btn">
     <button id="playNextBtn">PLAY →</button>
     <div id="bracketRoundLabel"></div>
-    <div id="bracketCoinHistory" style="display:flex; gap:10px; margin-top:6px; font-family:'Courier New',monospace; font-size:11px; color:#ffd700; letter-spacing:1px;"></div>
+    <div id="bracketCoinHistory" style="display:flex; gap:10px; margin-top:6px; font-family:Helvetica, Arial, sans-serif; font-size:11px; color:#ffd700; letter-spacing:1px;"></div>
   </div>
 </div>
 
@@ -700,8 +700,32 @@ function updateLogo(){
           : "logo.jpg";
   img.src = src;
   img.style.display = "block";
-  // Comic logo has white background — multiply blends it away on dark screen
-  img.style.mixBlendMode = currentTheme==="cartoon" ? "multiply" : "normal";
+
+  // Remove any existing halftone overlay
+  let old = container.querySelector('.logo-halftone');
+  if(old) old.remove();
+
+  if(currentTheme==="cartoon"){
+    // Greyscale + contrast boost + multiply to dissolve white jpg background
+    img.style.filter = "grayscale(1) contrast(1.5)";
+    img.style.mixBlendMode = "multiply";
+    // Halftone dot overlay matching the in-game comic effect
+    let dots = document.createElement('div');
+    dots.className = 'logo-halftone';
+    dots.style.cssText = [
+      'position:absolute','top:0','left:0','right:0','bottom:0',
+      'background-image:radial-gradient(circle,rgba(0,0,0,0.13) 1.2px,transparent 1.2px)',
+      'background-size:7px 7px',
+      'pointer-events:none',
+      'mix-blend-mode:multiply',
+      'border-radius:4px',
+    ].join(';');
+    container.appendChild(dots);
+  } else {
+    img.style.filter = "";
+    img.style.mixBlendMode = "normal";
+  }
+
   if(fallback) fallback.style.display = "none";
   if(currentTheme==="sunset"){
     container.classList.add("golden-border");
@@ -1238,10 +1262,10 @@ function renderBracket(){
 
   bx.textAlign="center"; bx.textBaseline="top";
   bx.fillStyle="#ffffff";
-  bx.font=`bold ${Math.round(bw*0.07)}px 'Courier New',monospace`;
+  bx.font=`bold ${Math.round(bw*0.07)}px Helvetica, Arial, sans-serif`;
   bx.fillText("QU33PH",bw/2,10);
   bx.fillStyle="#c8a840";
-  bx.font=`bold ${Math.round(bw*0.045)}px 'Courier New',monospace`;
+  bx.font=`bold ${Math.round(bw*0.045)}px Helvetica, Arial, sans-serif`;
   bx.fillText(gameMode==="specialolympics"?"SPECIAL OLYMPICS":"OLYMPICS",bw/2,10+bw*0.076);
   bx.fillStyle="#c8a840";
   bx.fillRect(bw*0.15, 10+bw*0.128, bw*0.7, 2);
@@ -1279,7 +1303,7 @@ function renderBracket(){
 
     if(label){
       bx.fillStyle=active?"#fff":"#444";
-      bx.font=`${labelSz}px 'Courier New',monospace`;
+      bx.font=`${labelSz}px Helvetica, Arial, sans-serif`;
       bx.textAlign="left"; bx.textBaseline="bottom";
       bx.fillText(label, x, y-2);
     }
@@ -1317,7 +1341,7 @@ function renderBracket(){
         let botY = ry + rH*0.74;
 
         bx.fillStyle=nameColor;
-        bx.font=`${Math.round(nameSz*0.72)}px 'Courier New',monospace`;
+        bx.font=`${Math.round(nameSz*0.72)}px Helvetica, Arial, sans-serif`;
         bx.textAlign="left"; bx.textBaseline="middle";
         bx.save();
         bx.beginPath(); bx.rect(x+3,ry+1,colW-6,rH*0.48); bx.clip();
@@ -1326,7 +1350,7 @@ function renderBracket(){
 
         let sc = pi===0 ? s1 : s2;
         bx.fillStyle = isWin?"#44ee44":"#cc3333";
-        bx.font=`bold ${Math.round(scoreSz*0.75)}px 'Courier New',monospace`;
+        bx.font=`bold ${Math.round(scoreSz*0.75)}px Helvetica, Arial, sans-serif`;
         bx.textAlign="right"; bx.textBaseline="middle";
         bx.save();
         bx.beginPath(); bx.rect(x+2,ry+1,colW-4,rH-2); bx.clip();
@@ -1340,7 +1364,7 @@ function renderBracket(){
           nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
         }
         bx.fillStyle=nameColor;
-        bx.font=`${nameSz}px 'Courier New',monospace`;
+        bx.font=`${nameSz}px Helvetica, Arial, sans-serif`;
         bx.textAlign="left"; bx.textBaseline="middle";
         bx.save();
         bx.beginPath(); bx.rect(x+3,ry+1,colW-6,rH-2); bx.clip();
@@ -1506,7 +1530,7 @@ function showMedalScreen(){
     mx2.restore();
 
     mx2.fillStyle=medalColor;
-    mx2.font=`bold ${Math.round(mw*0.07)}px 'Courier New',monospace`;
+    mx2.font=`bold ${Math.round(mw*0.07)}px Helvetica, Arial, sans-serif`;
     mx2.textAlign="center"; mx2.textBaseline="top";
     mx2.fillText(medalText, mw/2, mh*0.72);
 
@@ -1518,7 +1542,7 @@ function showMedalScreen(){
         mx2.drawImage(coinImg, mw/2 - coinSz*1.4, lineY, coinSz, coinSz);
       }
       mx2.fillStyle="#ffd700";
-      mx2.font=`bold ${Math.round(mw*0.05)}px 'Courier New',monospace`;
+      mx2.font=`bold ${Math.round(mw*0.05)}px Helvetica, Arial, sans-serif`;
       mx2.textAlign="left";
       mx2.fillText("+"+coinsEarned, mw/2 - coinSz*0.2, lineY+coinSz*0.1);
       mx2.textAlign="center";
@@ -1526,13 +1550,13 @@ function showMedalScreen(){
     }
 
     mx2.fillStyle="#fff";
-    mx2.font=`bold ${Math.round(mw*0.045)}px 'Courier New',monospace`;
+    mx2.font=`bold ${Math.round(mw*0.045)}px Helvetica, Arial, sans-serif`;
     mx2.fillText(playerNation.flag+" "+playerNation.name, mw/2, lineY);
     lineY += mw*0.07;
 
     if(os.champion==="player"){
       mx2.fillStyle="#888";
-      mx2.font=`${Math.round(mw*0.032)}px 'Courier New',monospace`;
+      mx2.font=`${Math.round(mw*0.032)}px Helvetica, Arial, sans-serif`;
       mx2.fillText("QU33PH OLYMPIC CHAMPION", mw/2, lineY);
     }
 
@@ -2165,15 +2189,15 @@ function draw(){
     ctx.textAlign="center";
     ctx.textBaseline="top";
     ctx.fillStyle="#fff";
-    ctx.font="bold 60px 'Courier New',monospace";
+    ctx.font="bold 60px Helvetica, Arial, sans-serif";
     ctx.fillText("Qu33ph",canvas.width/2,130);
-    ctx.font="22px 'Courier New',monospace";
+    ctx.font="22px Helvetica, Arial, sans-serif";
     ctx.fillStyle="#aaa";
     ctx.fillText("SCORE: "+totalScore,canvas.width/2,210);
     ctx.fillStyle="#555";
     ctx.fillText("HIGH SCORE: "+highScore,canvas.width/2,244);
     ctx.fillStyle="#333";
-    ctx.font="16px 'Courier New',monospace";
+    ctx.font="16px Helvetica, Arial, sans-serif";
     ctx.fillText("tap anywhere to return to menu",canvas.width/2,310);
     return;
   }
@@ -2185,15 +2209,15 @@ function draw(){
     ctx.textAlign="center";
     ctx.textBaseline="middle";
     ctx.fillStyle="#fff";
-    ctx.font="bold 28px 'Courier New',monospace";
+    ctx.font="bold 28px Helvetica, Arial, sans-serif";
     ctx.fillText(olympicsResultMsg,canvas.width/2,canvas.height/2-30);
     if(olympicsResultSub){
       ctx.fillStyle="#555";
-      ctx.font="16px 'Courier New',monospace";
+      ctx.font="16px Helvetica, Arial, sans-serif";
       ctx.fillText(olympicsResultSub,canvas.width/2,canvas.height/2+20);
     }
     ctx.fillStyle="#333";
-    ctx.font="14px 'Courier New',monospace";
+    ctx.font="14px Helvetica, Arial, sans-serif";
     ctx.fillText("tap to return to menu",canvas.width/2,canvas.height/2+70);
     return;
   }
@@ -2211,7 +2235,7 @@ function draw(){
   if((gameMode==="olympics"||gameMode==="specialolympics") && olympicsState){
     let headerY = canvas.height*0.03;
     ctx.fillStyle="#3d4a44";
-    ctx.font="bold 13px 'Courier New',monospace";
+    ctx.font="bold 13px Helvetica, Arial, sans-serif";
     ctx.textAlign="center"; ctx.textBaseline="middle";
     let headerText = gameMode==="specialolympics"
       ? "QU33PH SPECIAL OLYMPICS"
@@ -2457,14 +2481,14 @@ function draw(){
     let prefix = gameMode==="specialolympics" ? "SPECIAL · " : "";
     let cabMidY = cTop + canvas.height*0.025;
     ctx.fillStyle=borderColor;
-    ctx.font="bold 12px 'Courier New',monospace";
+    ctx.font="bold 12px Helvetica, Arial, sans-serif";
     ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillText(medalEmoji+" "+prefix+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
   }
 
   if(current===3&&markers.every(m=>m.stopped||m.fallen)){
     ctx.fillStyle="white";
-    ctx.font="bold 24px 'Courier New',monospace";
+    ctx.font="bold 24px Helvetica, Arial, sans-serif";
     ctx.textAlign="center";
     ctx.textBaseline="bottom";
     ctx.fillText("tap anywhere on field to advance",(LEFT_EDGE+RIGHT_WALL)/2,END_LINE_Y-20);
@@ -2505,13 +2529,13 @@ function draw(){
       let shake2 = p.shakeAmt ? (Math.random()-0.5)*p.shakeAmt*(p.life/55) : 0;
       ctx.globalAlpha = Math.min(1, p.life/25);
       ctx.fillStyle="#ff2222";
-      ctx.font=`bold ${p.text==="PEEF"?"36px":"18px"} 'Courier New',monospace`;
+      ctx.font=`bold ${p.text==="PEEF"?"36px":"18px"} Helvetica, Arial, sans-serif`;
       ctx.textAlign="center"; ctx.textBaseline="middle";
       ctx.fillText(p.text, p.x + shake2, p.y + shake2*0.5);
     } else {
       ctx.globalAlpha=p.life/40;
       ctx.fillStyle="white";
-      ctx.font="bold 30px 'Courier New',monospace";
+      ctx.font="bold 30px Helvetica, Arial, sans-serif";
       ctx.textAlign="center"; ctx.textBaseline="middle";
       ctx.fillText(p.text,p.x,p.y);
     }
@@ -2558,23 +2582,23 @@ function draw(){
   ctx.textBaseline="top";
 
   ctx.fillStyle="rgba(255,255,255,0.5)";
-  ctx.font="11px 'Courier New',monospace";
+  ctx.font="11px Helvetica, Arial, sans-serif";
   ctx.fillText("Time",20,16);
   if(!suddenDeath){
     ctx.fillStyle="white";
-    ctx.font="bold 18px 'Courier New',monospace";
+    ctx.font="bold 18px Helvetica, Arial, sans-serif";
     ctx.fillText(Math.max(0,ROUND_TIME-Math.floor(elapsed)),20,30);
   } else {
     ctx.fillStyle="red";
-    ctx.font="bold 16px 'Courier New',monospace";
+    ctx.font="bold 16px Helvetica, Arial, sans-serif";
     ctx.fillText("SD:"+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),20,30);
   }
 
   ctx.fillStyle="rgba(255,255,255,0.5)";
-  ctx.font="11px 'Courier New',monospace";
+  ctx.font="11px Helvetica, Arial, sans-serif";
   ctx.fillText("Score",20,52);
   ctx.fillStyle="white";
-  ctx.font="bold 18px 'Courier New',monospace";
+  ctx.font="bold 18px Helvetica, Arial, sans-serif";
   ctx.fillText(totalScore,20,66);
 
   if(coinImg.complete && coinImg.naturalWidth){
@@ -2583,7 +2607,7 @@ function draw(){
     let coinY = 94;
     ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
     ctx.fillStyle="#ffd700";
-    ctx.font=`bold ${Math.round(LEFT_EDGE*0.26)}px 'Courier New',monospace`;
+    ctx.font=`bold ${Math.round(LEFT_EDGE*0.26)}px Helvetica, Arial, sans-serif`;
     ctx.textAlign="center";
     ctx.fillText(coins, LEFT_EDGE/2, coinY + coinSize + 4);
     ctx.textAlign="left";
@@ -2594,7 +2618,7 @@ function draw(){
     let modeLabel = gameMode==="specialolympics"?"SPECIAL":"OLYMPICS";
     ctx.save();
     ctx.fillStyle="rgba(255,255,255,0.5)";
-    ctx.font="bold 10px 'Courier New',monospace";
+    ctx.font="bold 10px Helvetica, Arial, sans-serif";
     ctx.textAlign="center";
     ctx.translate(LEFT_EDGE*0.5, canvas.height*0.78);
     ctx.rotate(-Math.PI/2);
