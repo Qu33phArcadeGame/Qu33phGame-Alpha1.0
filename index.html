@@ -700,6 +700,8 @@ function updateLogo(){
           : "logo.jpg";
   img.src = src;
   img.style.display = "block";
+  // Comic logo has white background — multiply blends it away on dark screen
+  img.style.mixBlendMode = currentTheme==="cartoon" ? "multiply" : "normal";
   if(fallback) fallback.style.display = "none";
   if(currentTheme==="sunset"){
     container.classList.add("golden-border");
@@ -2644,16 +2646,22 @@ function loop(){
         ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
         ctx.restore();
       });
-      let dotCX=redDot.x, dotCY=redDot.y, dotR=7;
+      // Redraw red dot + card in correct size after cartoon overlay
+      let dotCX=redDot.x, dotCY=redDot.y, dotR=3;
+      let cardW=11, cardH=15;
+      ctx.save();
+      ctx.fillStyle="#fff";
+      ctx.fillRect(dotCX-cardW/2, dotCY-cardH/2, cardW, cardH);
+      ctx.strokeStyle="rgba(80,75,65,0.5)"; ctx.lineWidth=1;
+      ctx.strokeRect(dotCX-cardW/2, dotCY-cardH/2, cardW, cardH);
+      ctx.restore();
       ctx.save();
       ctx.fillStyle="#111";
-      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR+2,0,Math.PI*2); ctx.fill();
-      let rg=ctx.createRadialGradient(dotCX-2,dotCY-2,1,dotCX,dotCY,dotR);
+      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR+1,0,Math.PI*2); ctx.fill();
+      let rg=ctx.createRadialGradient(dotCX-1,dotCY-1,0.5,dotCX,dotCY,dotR);
       rg.addColorStop(0,"#ff5555"); rg.addColorStop(0.5,"#dd1111"); rg.addColorStop(1,"#990000");
       ctx.fillStyle=rg;
       ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle="rgba(255,255,255,0.5)";
-      ctx.beginPath(); ctx.arc(dotCX-2,dotCY-2,dotR*0.35,0,Math.PI*2); ctx.fill();
       ctx.restore();
       if(suddenDeath && chairImg.complete && chairImg.naturalWidth){
         ctx.save();
