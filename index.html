@@ -109,7 +109,7 @@
       position: absolute;
       top: 16px;
       left: 0;
-      width: 56px;
+      width: 88px;
       font-family: 'Courier New', monospace;
       font-size: 16px;
       font-weight: bold;
@@ -2062,7 +2062,10 @@ function update(){
 // ─── END GAME ─────────────────────────────────────────────────────────────
 function endGame(){
   shake=0;
-  // Career: bump games played, track high score
+  if(totalScore>highScore){
+    highScore=totalScore;
+    localStorage.setItem("qu33phHigh",highScore);
+  }
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
 
@@ -2215,13 +2218,6 @@ function draw(){
 
     // Player flag in left teal panel
     if(playerNation){
-      // Subtle nation-color glow strip on left cabinet
-      ctx.save();
-      ctx.globalAlpha=0.22;
-      ctx.fillStyle=nc;
-      ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
-      ctx.restore();
-      // Player flag emoji
       ctx.save();
       ctx.font=`${Math.round(LEFT_EDGE*0.55)}px Arial`;
       ctx.textAlign="center"; ctx.textBaseline="middle";
@@ -2237,13 +2233,6 @@ function draw(){
     else if(os.round===2){ let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5]; opp=qf3w; }
     else if(os.round===3){ let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];opp=os.sf1s1>os.sf1s2?qf1w:qf2w; }
     if(opp){
-      // Opponent color tint on right window wall strip
-      ctx.save();
-      ctx.globalAlpha=0.15;
-      ctx.fillStyle=oc;
-      ctx.fillRect(RIGHT_WALL, 0, canvas.width-RIGHT_WALL, canvas.height);
-      ctx.restore();
-      // Opponent flag small in top-right corner
       ctx.save();
       ctx.font=`${Math.round((canvas.width-RIGHT_WALL)*0.55)}px Arial`;
       ctx.textAlign="center"; ctx.textBaseline="top";
@@ -2760,3 +2749,4 @@ function loop(){
 }
 loop();
 </script>
+
