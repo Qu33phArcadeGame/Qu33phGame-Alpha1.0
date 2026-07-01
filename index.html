@@ -331,7 +331,7 @@
   <div id="logoFallback" style="display:none; font-family:Helvetica, Arial, sans-serif; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;">Qu33ph</div>
   <div class="title-sub">arcade edition</div>
 
-  <button class="mode-btn" id="btn1Round" onclick="document.getElementById('_clickTest').innerText='CLICK WORKS! NOW TAPPING: QUICK GAME'; startMode('single')">
+  <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
     <span class="mode-icon">🎯</span>
     <span class="mode-text">
       <span class="mode-name">QUICK GAME</span>
@@ -365,7 +365,6 @@
   </button>
 
   <div class="high-score-title" id="titleHighScore"></div>
-  <div id="_clickTest" style="font-size:10px;color:#ff4444;margin-top:8px;letter-spacing:1px;min-height:14px;"></div>
 </div>
 
 <!-- THEME SELECT SCREEN -->
@@ -1380,7 +1379,6 @@ function showTitle(){
 }
 
 function startMode(mode){
-  if(Date.now() < titleUnlockedAt) return;
   gameMode=mode;
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("titleCoins").style.display="none";
@@ -2660,3 +2658,14 @@ function draw(){
   if(current===3&&markers.every(m=>m.stopped||m.fallen)){
     ctx.fillStyle="white";
     ctx.font="bold 24px Helvetica, Arial, sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="bottom";
+    ctx.fillText("tap anywhere on field to advance",(LEFT_EDGE+RIGHT_WALL)/2,END_LINE_Y-20);
+  }
+
+  ctx.restore();
+
+  if(suddenDeath){
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+   
