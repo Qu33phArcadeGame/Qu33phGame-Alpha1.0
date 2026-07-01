@@ -1230,7 +1230,7 @@ function showTitle(){
   document.getElementById("medalScreen").style.display="none";
   document.getElementById("themeScreen").style.display="none";
   document.getElementById("slotScreen").style.display="none";
-  document.getElementById("achScreen").style.display="none";
+  var _as=document.getElementById("achScreen"); if(_as) _as.style.display="none";
   if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
   updateLogo();
   document.getElementById("rotateBtn").style.display="none";
@@ -2730,4 +2730,4 @@ function checkAch(extra){
   if(g('peefs')>=10)   u('ten_peef');
   if(g('sdScores')>=1) u('sudden_score');
   if(g('negatives')>=1)u('negative');
-  if(extra.score>=50)  u(
+  if
