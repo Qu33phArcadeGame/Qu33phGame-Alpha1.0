@@ -1331,7 +1331,7 @@ function renderBracket(){
         let nameStr = "TBD";
         if(p){
           let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
-          nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
+          nameStr = short+(p.isPlayer?" (you)":"");
         }
         let topY = ry + rH*0.26;
         let botY = ry + rH*0.74;
@@ -1357,7 +1357,7 @@ function renderBracket(){
         let nameStr = "TBD";
         if(p){
           let short = p.name.length>6 ? p.name.slice(0,6) : p.name;
-          nameStr = p.flag+" "+short+(p.isPlayer?" 🎮(you)":"");
+          nameStr = short+(p.isPlayer?" (you)":"");
         }
         bx.fillStyle=nameColor;
         bx.font=`${nameSz}px Helvetica, Arial, sans-serif`;
@@ -1456,16 +1456,16 @@ function showMedalScreen(){
   let coinsEarned = os.lastRoundReward || 0; // only THIS round's reward — coins were already awarded in endGame()
   const isSpecial = gameMode==="specialolympics";
   if(os.champion==="player"){
-    medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
+    medal="GOLD"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
   } else if(os.playerEliminated && os.round<=2){
     isEliminated=true;
     canPlaySpecial = !isSpecial;
-    medal="❌"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
+    medal="OUT"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
   } else if(os.playerEliminated && os.round===3){
-    medal="🥉"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
+    medal="BRNZ"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
     canPlaySpecial = !isSpecial;
   } else {
-    medal="🥈"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
+    medal="SLVR"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
     canPlaySpecial = !isSpecial;
   }
 
@@ -1547,7 +1547,7 @@ function showMedalScreen(){
 
     mx2.fillStyle="#fff";
     mx2.font=`bold ${Math.round(mw*0.045)}px Helvetica, Arial, sans-serif`;
-    mx2.fillText(playerNation.flag+" "+playerNation.name, mw/2, lineY);
+    mx2.fillText(playerNation.name, mw/2, lineY);
     lineY += mw*0.07;
 
     if(os.champion==="player"){
@@ -2737,3 +2737,4 @@ function loop(){
 }
 loop();
 </script>
+
