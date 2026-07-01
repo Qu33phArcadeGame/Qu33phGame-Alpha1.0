@@ -706,18 +706,15 @@ function updateLogo(){
   if(old) old.remove();
 
   if(currentTheme==="cartoon"){
-    // Greyscale + contrast boost + multiply to dissolve white jpg background
     img.style.filter = "grayscale(1) contrast(1.5)";
     img.style.mixBlendMode = "multiply";
-    // Halftone dot overlay matching the in-game comic effect
     let dots = document.createElement('div');
     dots.className = 'logo-halftone';
     dots.style.cssText = [
       'position:absolute','top:0','left:0','right:0','bottom:0',
-      'background-image:radial-gradient(circle,rgba(0,0,0,0.13) 1.2px,transparent 1.2px)',
+      'background-image:radial-gradient(circle,rgba(255,255,255,0.09) 1.4px,transparent 1.4px)',
       'background-size:7px 7px',
       'pointer-events:none',
-      'mix-blend-mode:multiply',
       'border-radius:4px',
     ].join(';');
     container.appendChild(dots);
@@ -1354,7 +1351,7 @@ function renderBracket(){
         bx.textAlign="right"; bx.textBaseline="middle";
         bx.save();
         bx.beginPath(); bx.rect(x+2,ry+1,colW-4,rH-2); bx.clip();
-        bx.fillText(sc, x+colW-5, botY);
+        bx.fillText(Math.round(sc), x+colW-5, botY);
         bx.restore();
 
       } else {
