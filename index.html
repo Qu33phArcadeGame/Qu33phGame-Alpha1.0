@@ -470,6 +470,15 @@
 </div>
 
 <script>
+// Catch ALL errors and show on screen
+window.onerror = function(msg, src, line) {
+  let d = document.getElementById('_errBanner') || document.createElement('div');
+  d.id = '_errBanner';
+  d.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:#fff;font-size:11px;padding:6px;z-index:99999;word-break:break-all;';
+  d.innerText = 'JS ERR line ' + line + ': ' + msg;
+  document.body.appendChild(d);
+  return false;
+};
 // ─── ACHIEVEMENTS ─────────────────────────────────────────────────────────
 const ACHIEVEMENTS = [
   // Gameplay
@@ -2658,21 +2667,4 @@ function draw(){
   ctx.restore();
 
   if(suddenDeath){
-    ctx.save();
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.translate(chair.x, chair.y);
-    if(chairImg.complete && chairImg.naturalWidth){
-      let cw=50, ch=50;
-      ctx.drawImage(chairImg, -cw/2, -ch/2, cw, ch);
-    }
-    ctx.restore();
-  }
-
-  explosions.forEach(e=>{
-    ctx.beginPath();
-    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
-    ctx.strokeStyle="white";
-    ctx.lineWidth=4;
-    ctx.globalAlpha=e.life/30;
-    ctx.stroke();
-    ctx.globalAlp
+    ctx.sav
