@@ -422,7 +422,6 @@
 
     <!-- Paytable button -->
     <button onclick="showPaytableScreen()" style="margin-top:8px;margin-bottom:8px;padding:10px 24px;background:transparent;border:1px solid #333;color:#666;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:3px;border-radius:4px;cursor:pointer;">VIEW PAYTABLE</button>
-  </div>
 
 </div>
 
@@ -2767,4 +2766,4 @@ function loop(){
         let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
         let tipX = p.color==="blue" ? -35 : -20;
         let angle=p.color==="blue"?blueA2:stdA2;
-        c
+        ctx.save()
