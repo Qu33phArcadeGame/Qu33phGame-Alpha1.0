@@ -554,6 +554,33 @@
   <button class="overlay-back" onclick="showTitle()">← BACK</button>
 </div>
 
+<!-- DEBUG CONSOLE - catches errors from main script loading -->
+<script>
+(function(){
+  let box = document.createElement("div");
+  box.id = "mobileDebug";
+  box.style.cssText = "position:fixed;bottom:0;left:0;width:100%;max-height:200px;overflow-y:auto;background:rgba(0,0,0,0.95);color:#ff4444;font-family:monospace;font-size:12px;padding:8px;z-index:99999;border-top:3px solid #ff4444;word-break:break-all;";
+  document.body.appendChild(box);
+  function log(type, msg){
+    let line = document.createElement("div");
+    line.style.cssText = "border-bottom:1px solid #330000;padding:3px 0;color:"+(type==="error"?"#ff4444":type==="warn"?"#ffaa00":"#44ff44")+";";
+    line.innerText = "["+type.toUpperCase()+"] "+msg;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+  window.onerror = function(msg,src,line,col,err){
+    log("error", msg+" — line "+line);
+    return false;
+  };
+  window.onunhandledrejection = function(e){ log("error","Promise: "+e.reason); };
+  let oe=console.error, ow=console.warn;
+  console.error=function(){ log("error",Array.from(arguments).join(" ")); oe.apply(console,arguments); };
+  console.warn=function(){ log("warn",Array.from(arguments).join(" ")); ow.apply(console,arguments); };
+  box.addEventListener("click",()=>box.remove());
+  log("log","v3 DEBUG READY — tap to dismiss");
+})();
+</script>
+
 <script>
 // ─── HAPTICS ──────────────────────────────────────────────────────────────
 function haptic(pattern){ if(navigator.vibrate) navigator.vibrate(pattern); }
@@ -2571,40 +2598,4 @@ function draw(){
   ctx.save();
   ctx.translate(shakeX,shakeY);
 
-  ctx.fillStyle="#d8cfc4";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  if((gameMode==="olympics"||gameMode==="specialolympics") && olympicsState){
-    let headerY = canvas.height*0.03;
-    ctx.fillStyle="#3d4a44";
-    ctx.font="bold 13px 'Courier New',monospace";
-    ctx.textAlign="center"; ctx.textBaseline="middle";
-    let headerText = gameMode==="specialolympics"
-      ? "QU33PH SPECIAL OLYMPICS"
-      : "QU33PH OLYMPICS";
-    ctx.fillText(headerText, (LEFT_EDGE+RIGHT_WALL)/2, headerY);
-
-    // Player flag in left teal panel
-    if(playerNation){
-      let nc = getNationColor(playerNation.name);
-      // Subtle nation-color glow strip on left cabinet
-      ctx.save();
-      ctx.globalAlpha=0.22;
-      ctx.fillStyle=nc;
-      ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
-      ctx.restore();
-      // Player flag emoji
-      ctx.save();
-      ctx.font=`${Math.round(LEFT_EDGE*0.55)}px Arial`;
-      ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.globalAlpha=0.85;
-      ctx.fillText(playerNation.flag, LEFT_EDGE/2, canvas.height*0.55);
-      ctx.restore();
-    }
-
-    // Opponent flag — who are we playing?
-    let os=olympicsState;
-    let opp=null;
-    if(os.round===1) opp=os.n[6];
-    else if(os.round===2){ let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5]; opp=qf3w; }
-    else if(os.round===3){ let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os
+  ctx.fillStyle=
