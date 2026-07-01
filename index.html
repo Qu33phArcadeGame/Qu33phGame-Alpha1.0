@@ -2444,14 +2444,14 @@ function draw(){
       }
     }
 
-    let medalEmoji = round===1?"🥉":round===2?"🥈":"🥇";
+    let medalLabel = round===1?"[QF]":round===2?"[SF]":"[FINAL]";
     let roundName = round===1?"QUARTER-FINAL":round===2?"SEMI-FINAL":"GRAND FINAL";
     let prefix = gameMode==="specialolympics" ? "SPECIAL · " : "";
     let cabMidY = cTop + canvas.height*0.025;
     ctx.fillStyle=borderColor;
     ctx.font="bold 12px Helvetica, Arial, sans-serif";
     ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(medalEmoji+" "+prefix+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
+    ctx.fillText(prefix+roundName+" "+medalLabel, (cLeft+cRight)/2, cabMidY);
   }
 
   if(current===3&&markers.every(m=>m.stopped||m.fallen)){
