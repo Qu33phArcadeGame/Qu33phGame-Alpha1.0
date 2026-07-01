@@ -116,12 +116,7 @@
       color: #fff;
       letter-spacing: 1px;
       z-index: 200;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-    }
-    #titleCoins img {
+      display: flex;
       width: 76px; height: 76px;
       object-fit: contain;
     }
@@ -139,11 +134,7 @@
       background: none;
       border: none;
       padding: 0;
-      display: none;
-      text-align: center;
-      line-height: 1.4;
-    }
-    #slotBtn:active { color: #fff; }
+      display: block;
 
     /* OLYMPICS BRACKET SCREEN — full screen canvas, no scroll */
     #bracketScreen {
@@ -2677,4 +2668,11 @@ function draw(){
     ctx.restore();
   }
 
-  explosions.
+  explosions.forEach(e=>{
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
+    ctx.strokeStyle="white";
+    ctx.lineWidth=4;
+    ctx.globalAlpha=e.life/30;
+    ctx.stroke();
+    ctx.globalAlp
