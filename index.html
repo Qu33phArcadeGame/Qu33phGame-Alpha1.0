@@ -1,0 +1,3606 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qu33ph</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { margin:0; overflow:hidden; background:#111; font-family: Helvetica, Arial, sans-serif; }
+    canvas { display:block; touch-action:none; }
+
+    #rotateBtn {
+      position:absolute;
+      bottom:20px;
+      left:50%;
+      transform:translateX(-50%);
+      padding:12px 20px;
+      border-radius:10px;
+      border:2px solid #444;
+      font-size:14px;
+      font-family: Helvetica, Arial, sans-serif;
+      background:#1a1a1a;
+      color:#ccc;
+      letter-spacing:1px;
+      display:none;
+    }
+    #timeline {
+      position:absolute;
+      top:10px;
+      left:10%;
+      width:80%;
+      height:6px;
+      background:#333;
+      border-radius:10px;
+      overflow:hidden;
+      display:none;
+    }
+    #progress {
+      height:100%;
+      width:0%;
+      background:lime;
+      transition: background 0.5s;
+    }
+
+    /* TITLE SCREEN */
+    #titleScreen {
+      position:absolute;
+      top:0; left:0; width:100%; height:100%;
+      background:#0a0a0a;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      z-index:100;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+      padding: 24px 0;
+      box-sizing:border-box;
+    }
+    @media (max-height:720px){
+      #titleScreen { justify-content:flex-start; }
+    }
+    .title-logo {
+      width: min(200px, 55vw);
+      margin-bottom: 4px;
+      position: relative;
+    }
+    .title-logo img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .title-logo.golden-border img {
+      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px rgba(255,215,0,0.5));
+    }
+    .title-sub {
+      font-size: clamp(9px, 2vw, 12px);
+      color: #555;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    /* ── MARKER MENU BUTTONS (black body, white outline) ────── */
+    .mode-btn {
+      position: relative;
+      width: min(316px, 80vw);
+      min-height: 66px;
+      margin: 12px 0 12px 38px;                      /* room for the cap on the left */
+      padding: 13px 18px 13px 22px;
+      border: 2px solid #ffffff;
+      border-radius: 4px 8px 8px 4px;                /* squared-off ends */
+      background: #000000;
+      color: #fff;
+      font-family: Helvetica, Arial, sans-serif;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: visible;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.55);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mode-btn::before {   /* CAP — black with white outline */
+      content:"";
+      position:absolute;
+      left:-34px; top:2px; bottom:2px;
+      width:36px;
+      background:#000000;
+      border:2px solid #ffffff;
+      border-radius:6px 2px 2px 6px;
+    }
+    .mode-btn:active { background:#161616; }
+
+    /* every other marker faces the opposite way (cap on the right) */
+    #titleScreen .mode-btn:nth-of-type(even){
+      margin: 12px 38px 12px 0;
+      padding: 13px 22px 13px 18px;
+      border-radius: 8px 4px 4px 8px;
+    }
+    #titleScreen .mode-btn:nth-of-type(even)::before{
+      left:auto; right:-34px;
+      border-radius:2px 6px 6px 2px;
+    }
+
+    .mode-icon { font-size: 20px; flex-shrink:0; z-index:1; }
+    .mode-text {
+      display:flex; flex-direction:column; gap:2px;
+      flex:1;
+    }
+    .mode-name { font-weight:bold; font-size:clamp(12px,3vw,15px); letter-spacing:1.5px; color:#fff; }
+    .mode-desc { font-size: 9px; color:#888; letter-spacing:1px; }
+    .high-score-title {
+      margin-top: 12px;
+      font-size: 10px;
+      color: #333;
+      letter-spacing: 3px;
+      color: #fff;
+    }
+    #titleCoins {
+      position: absolute;
+      top: 16px;
+      left: 0;
+      width: 88px;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      letter-spacing: 1px;
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    #titleCoins img {
+      width: 76px; height: 76px;
+      object-fit: contain;
+    }
+    #slotBtn {
+      position: absolute;
+      top: 110px;
+      left: 0;
+      width: 88px;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 9px;
+      color: #aaa;
+      letter-spacing: 0px;
+      cursor: pointer;
+      z-index: 200;
+      background: none;
+      border: none;
+      padding: 0;
+      display: none;
+      text-align: center;
+      line-height: 1.4;
+    }
+    #slotBtn:active { color: #fff; }
+
+    /* OLYMPICS BRACKET SCREEN — full screen canvas, no scroll */
+    #bracketScreen {
+      position:absolute;
+      top:0; left:0; width:100%; height:100%;
+      background:#08080a;
+      display:none;
+      flex-direction:column;
+      align-items:center;
+      justify-content:space-between;
+      overflow:hidden;
+      z-index:100;
+    }
+    #bracketCanvas {
+      flex:1; width:100%; display:block;
+    }
+    .bracket-play-btn {
+      width:100%;
+      padding:0 24px 32px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      flex-shrink:0;
+    }
+    #playNextBtn {
+      width:min(360px,88vw);
+      padding:17px;
+      background:#ffffff;
+      color:#000;
+      font-family:Helvetica, Arial, sans-serif;
+      font-size:15px;
+      font-weight:bold;
+      letter-spacing:2px;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+    }
+    #playNextBtn:active { background:#e0e0e0; }
+    #playNextBtn.elim { background:#181818; color:#333; cursor:default; }
+    #bracketRoundLabel {
+      font-size:10px;
+      color:#333;
+      letter-spacing:3px;
+      font-family:Helvetica, Arial, sans-serif;
+    }
+    .reel-window {
+      aspect-ratio: 1;
+      position: relative;
+      border: none;
+      background: transparent;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+    .reel-img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .paytable-row {
+      display: flex; align-items: center; gap: 4px;
+      padding: 1px 6px;
+      border-bottom: 1px solid #0f0f0f;
+      font-family: Helvetica, Arial, sans-serif; font-size: 8px;
+      color: #666;
+      min-height: 19px;
+    }
+    .paytable-row:last-child { border-bottom: none; }
+    .paytable-icons { display: flex; gap: 1px; flex-shrink:0; }
+    .paytable-icons img { width: 11px; height: 11px; object-fit: contain; }
+    .paytable-label { line-height:1.1; }
+    .paytable-win { margin-left: auto; color: #ffd700; font-weight: bold; font-size: 9px; white-space:nowrap; flex-shrink:0; }
+    #paytable { display: grid; grid-template-columns: 1fr 1fr; }
+    #medalScreen {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      background:#08080a; display:none; flex-direction:column;
+      align-items:center; justify-content:center; z-index:100;
+    }
+    #medalCanvas { width:100%; flex:1; display:block; }
+    .medal-btn {
+      width:min(360px,88vw); padding:17px; margin:0 0 32px;
+      background:#fff; color:#000; font-family:Helvetica, Arial, sans-serif;
+      font-size:15px; font-weight:bold; letter-spacing:2px;
+      border:none; border-radius:4px; cursor:pointer; flex-shrink:0;
+    }
+    .medal-btn:active { background:#e0e0e0; }
+    #nationScreen {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      background:#08080a; display:none; flex-direction:column;
+      align-items:center; z-index:100; overflow-y:auto;
+      padding-bottom:20px;
+    }
+    .nation-header {
+      width:100%; text-align:center; padding:24px 0 12px;
+      font-family:Helvetica, Arial, sans-serif;
+    }
+    .nation-title {
+      font-size:clamp(18px,5vw,26px); color:#fff;
+      letter-spacing:4px; font-weight:bold; display:block;
+    }
+    .nation-sub {
+      font-size:10px; color:#444; letter-spacing:3px; display:block; margin-top:4px;
+    }
+    .nation-grid {
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:8px; width:min(400px,92vw); margin-top:16px;
+    }
+    .nation-btn {
+      display:flex; flex-direction:column; align-items:center;
+      gap:4px; padding:14px 8px; background:#0e0e0e;
+      border:1px solid #222; border-radius:6px; cursor:pointer;
+      font-family:Helvetica, Arial, sans-serif; color:#888;
+      transition:all 0.12s; font-size:11px; letter-spacing:1px;
+    }
+    .nation-btn:hover, .nation-btn:active {
+      background:#1a1a1a; border-color:#888; color:#fff;
+    }
+    .nation-btn.selected {
+      background:#1a1a1a; border-color:#c8a840; color:#c8a840;
+    }
+    .nation-flag { font-size:28px; line-height:1; }
+    .nation-name { font-size:10px; text-align:center; line-height:1.3; }
+    .nation-confirm {
+      width:min(400px,92vw); margin-top:16px;
+      padding:16px; background:#c8a840; color:#000;
+      font-family:Helvetica, Arial, sans-serif; font-size:15px;
+      font-weight:bold; letter-spacing:2px; border:none;
+      border-radius:4px; cursor:pointer; display:none;
+    }
+    /* THEME BUTTON */
+    .theme-btn {
+      width:min(340px,80vw); margin:6px 0;
+      padding:14px 24px; border:1px solid #333;
+      background:#111; color:#eee;
+      font-family:Helvetica, Arial, sans-serif;
+      font-size:14px; letter-spacing:2px;
+      cursor:pointer; border-radius:6px;
+      display:flex; align-items:center; gap:14px;
+      text-align:left;
+    }
+    .theme-btn:active { background:#1a1a1a; }
+    .theme-btn.active-theme { border-color:#fff; color:#fff; }
+
+    /* THEME SELECT SCREEN */
+    #themeScreen {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      background:#08080a; display:none; flex-direction:column;
+      align-items:center; padding:40px 0 20px; z-index:100;
+    }
+    .theme-screen-title {
+      font-family:Helvetica, Arial, sans-serif; font-size:22px;
+      color:#fff; letter-spacing:4px; font-weight:bold; margin-bottom:6px;
+    }
+    .theme-screen-sub {
+      font-family:Helvetica, Arial, sans-serif; font-size:10px;
+      color:#444; letter-spacing:3px; margin-bottom:32px;
+    }
+    .theme-option {
+      width:min(340px,80vw); margin:8px 0;
+      padding:18px 20px; border:1px solid #222;
+      background:#0e0e0e; border-radius:6px; cursor:pointer;
+      display:flex; align-items:center; gap:16px;
+      font-family:Helvetica, Arial, sans-serif; color:#888;
+    }
+    .theme-option:active { background:#1a1a1a; }
+    .theme-option.selected { border-color:#fff; color:#fff; }
+    .theme-icon { font-size:28px; }
+    .theme-name { font-size:15px; letter-spacing:2px; font-weight:bold; display:block; }
+    .theme-desc { font-size:10px; letter-spacing:1px; color:#555; display:block; margin-top:3px; }
+    .theme-back {
+      width:min(340px,80vw); margin-top:20px; padding:14px;
+      background:transparent; color:#444; border:1px solid #222;
+      font-family:Helvetica, Arial, sans-serif; font-size:12px;
+      letter-spacing:2px; border-radius:4px; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v116</div>
+
+<canvas id="game"></canvas>
+<button id="rotateBtn">Orientation: vertical</button>
+<div id="timeline"><div id="progress"></div></div>
+
+<div id="titleCoins">
+  <img src="coin.png" alt="coins">
+  <span id="titleCoinCount">0</span>
+</div>
+<button id="slotBtn" onclick="showSlotMachine()"><img src="slotoverlay.png" width="76" height="76" style="object-fit:contain;"><br>SLOT</button>
+
+<!-- TITLE SCREEN -->
+<div id="titleScreen">
+  <button id="settingsBtn" onclick="showSettings()" style="position:absolute;top:14px;right:14px;background:none;border:none;font-size:26px;line-height:1;cursor:pointer;z-index:6;padding:6px;-webkit-tap-highlight-color:transparent;">⚙️</button>
+  <div class="title-logo" id="logoContainer"><img id="logoImg" src="logo.jpg" alt="Qu33ph" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"></div>
+  <div id="logoFallback" style="display:none; font-family:Helvetica, Arial, sans-serif; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;">Qu33ph</div>
+  <div class="title-sub">arcade edition</div>
+
+  <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
+    <span class="mode-icon">🎯</span>
+    <span class="mode-text">
+      <span class="mode-name">QUICK GAME</span>
+      <span class="mode-desc">one round · 45 seconds · go for high score</span>
+    </span>
+  </button>
+
+  <button class="mode-btn" id="btnOlympics" onclick="startMode('olympics')">
+    <span class="mode-icon">🏆</span>
+    <span class="mode-text">
+      <span class="mode-name">QU33PH OLYMPICS</span>
+      <span class="mode-desc">tournament bracket · 8 nations · 3 rounds</span>
+    </span>
+  </button>
+
+  <button class="mode-btn" onclick="showThemeScreen()" id="btnThemes">
+    <span class="mode-icon">🎨</span>
+    <span class="mode-text">
+      <span class="mode-name" id="themeLabel">THEME · DEFAULT</span>
+      <span class="mode-desc">change the look of the game</span>
+    </span>
+  </button>
+
+
+  <button class="mode-btn" onclick="showAchievementsScreen()" id="btnAch">
+    <span class="mode-icon">⭐</span>
+    <span class="mode-text">
+      <span class="mode-name">ACHIEVEMENTS</span>
+      <span class="mode-desc">unlock rewards · track your progress</span>
+    </span>
+  </button>
+
+  <button class="mode-btn" onclick="showCareer()" id="btnCareer">
+    <span class="mode-icon">📊</span>
+    <span class="mode-text">
+      <span class="mode-name">CAREER RECORD</span>
+      <span class="mode-desc">lifetime stats · totals · personal bests</span>
+    </span>
+  </button>
+
+  <div class="high-score-title" id="titleHighScore"></div>
+</div>
+
+<!-- ACHIEVEMENTS SCREEN -->
+<div id="achScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:30px;box-sizing:border-box;">
+  <div style="padding:28px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:26px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">ACHIEVEMENTS</div>
+  <div id="achGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(400px,92vw);margin-top:12px;"></div>
+  <button onclick="showTitle()" style="width:min(400px,92vw);margin-top:20px;padding:14px;background:transparent;color:#444;border:1px solid #222;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;border-radius:4px;cursor:pointer;">← BACK</button>
+</div>
+
+<!-- CAREER RECORD SCREEN -->
+<div id="careerScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:30px;box-sizing:border-box;">
+  <div style="padding:28px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:26px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">CAREER RECORD</div>
+  <div id="careerBody" style="width:min(400px,92vw);margin-top:14px;"></div>
+  <button onclick="showTitle()" style="width:min(400px,92vw);margin-top:20px;padding:14px;background:transparent;color:#444;border:1px solid #222;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;border-radius:4px;cursor:pointer;">← BACK</button>
+</div>
+
+<!-- MEDAL SHOWCASE SCREEN -->
+<div id="medalShowcaseScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:30px;box-sizing:border-box;">
+  <div style="padding:28px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:26px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">MEDAL SHOWCASE</div>
+  <div id="medalShowcaseBody" style="width:min(400px,92vw);margin-top:14px;"></div>
+  <button onclick="showCareer()" style="width:min(400px,92vw);margin-top:20px;padding:14px;background:transparent;color:#444;border:1px solid #222;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;border-radius:4px;cursor:pointer;">← BACK TO CAREER</button>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div id="settingsScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:30px;box-sizing:border-box;">
+  <div style="padding:30px 0 6px;font-family:Helvetica,Arial,sans-serif;font-size:26px;font-weight:bold;color:#fff;letter-spacing:4px;">SETTINGS</div>
+  <div id="settingsBody" style="width:min(400px,92vw);margin-top:16px;display:flex;flex-direction:column;gap:12px;"></div>
+  <button onclick="showTitle()" style="width:min(400px,92vw);margin-top:22px;padding:14px;background:transparent;color:#444;border:1px solid #222;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:2px;border-radius:4px;cursor:pointer;">← BACK</button>
+</div>
+
+<!-- THEME SELECT SCREEN -->
+<div id="themeScreen">
+  <div class="theme-screen-title">THEME</div>
+  <div class="theme-screen-sub">CHOOSE YOUR STYLE</div>
+
+  <div class="theme-option" id="theme-default" onclick="selectTheme('default')">
+    <span class="theme-icon">🎮</span>
+    <span><span class="theme-name">DEFAULT</span><span class="theme-desc">classic qu33ph look · always free</span></span>
+  </div>
+  <div class="theme-option" id="theme-cartoon" onclick="selectTheme('cartoon')">
+    <span class="theme-icon">✏️</span>
+    <span><span class="theme-name" id="tname-cartoon">COMIC</span><span class="theme-desc" id="tdesc-cartoon">black & white · comic style · custom markers</span></span>
+  </div>
+  <div class="theme-option" id="theme-neon" onclick="selectTheme('neon')">
+    <span class="theme-icon">⚡</span>
+    <span><span class="theme-name" id="tname-neon">NEON</span><span class="theme-desc" id="tdesc-neon">synthwave · glowing colours · dark room</span></span>
+  </div>
+  <div class="theme-option" id="theme-sunset" onclick="selectTheme('sunset')">
+    <span class="theme-icon">🌅</span>
+    <span><span class="theme-name" id="tname-sunset">GOLDEN HOUR</span><span class="theme-desc" id="tdesc-sunset">warm amber · late afternoon vibes</span></span>
+  </div>
+
+  <div class="theme-option" id="theme-galaxy" onclick="selectTheme('galaxy')">
+    <span class="theme-icon">🌌</span>
+    <span><span class="theme-name" id="tname-galaxy">GALAXY</span><span class="theme-desc" id="tdesc-galaxy">deep space · starfield · cosmic glow</span></span>
+  </div>
+
+  <div id="themeCoinsDisplay" style="margin-top:14px; font-family:Helvetica, Arial, sans-serif; font-size:12px; color:#888; letter-spacing:2px;"></div>
+  <button class="theme-back" onclick="showTitle()">← BACK</button>
+</div>
+
+<!-- SLOT MACHINE SCREEN -->
+<div id="slotScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#08080a; flex-direction:column; align-items:center; z-index:100; overflow:hidden; box-sizing:border-box;">
+  <!-- Win star border canvas — sits on top of everything, pointer-events:none -->
+  <canvas id="slotWinCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;"></canvas>
+
+  <!-- Top bar -->
+  <div style="width:100%; display:flex; align-items:center; padding:10px 16px 0; box-sizing:border-box; flex-shrink:0; position:relative; z-index:10;">
+    <button onclick="showTitle()" style="background:none; border:none; color:#888; font-family:Helvetica, Arial, sans-serif; font-size:13px; letter-spacing:2px; cursor:pointer;">← BACK</button>
+    <div style="margin-left:auto; font-family:Helvetica, Arial, sans-serif; font-size:16px; font-weight:bold; color:#fff; display:flex; flex-direction:column; align-items:center; gap:2px;">
+      <img src="coin.png" width="76" height="76" style="object-fit:contain;" onerror="this.src='coin.jpg'">
+      <span id="slotCoinCount">0</span>
+    </div>
+  </div>
+
+    <!-- Slot machine overlay with reels inside -->
+    <div id="slotMachine" style="position:relative; width:min(320px,88vw); flex-shrink:0;">
+      <img src="slotoverlay.png" style="width:100%; display:block; object-fit:contain;">
+      <!-- Reels positioned inside the window squares - upper portion of machine -->
+      <div id="slotReels" style="position:absolute; top:37.5%; left:25%; width:48%; height:10.5%; display:flex; gap:2.5%; align-items:stretch;">
+        <div class="reel-window" style="flex:1; height:100%; justify-content:center; align-items:center;"><img id="reel0" class="reel-img" src="slotred.jpg" style="width:72%; height:72%; object-fit:contain; margin:auto; display:block;"></div>
+        <div class="reel-window" style="flex:1; height:100%; justify-content:center; align-items:center;"><img id="reel1" class="reel-img" src="slotgreen.jpg" style="width:72%; height:72%; object-fit:contain; margin:auto; display:block;"></div>
+        <div class="reel-window" style="flex:1; height:100%; justify-content:center; align-items:center;"><img id="reel2" class="reel-img" src="slotblue.jpg" style="width:72%; height:72%; object-fit:contain; margin:auto; display:block;"></div>
+      </div>
+    </div>
+
+  <!-- Result + spin -->
+  <div style="flex-shrink:0; text-align:center; padding:4px 0;">
+    <div id="slotResult" style="font-family:Helvetica, Arial, sans-serif; font-size:13px; color:#fff; letter-spacing:2px; min-height:18px; margin-bottom:6px;"></div>
+    <button id="spinBtn" onclick="spinSlot()" style="width:min(260px,80vw); padding:12px; background:#ffd700; color:#000; font-family:Helvetica, Arial, sans-serif; font-size:14px; font-weight:bold; letter-spacing:3px; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">SPIN — 1 <img src="coin.png" width="18" height="18" style="object-fit:contain;" onerror="this.src='coin.jpg'"></button>
+  </div>
+
+  <!-- View paytable button -->
+  <button onclick="showPaytable()" style="width:min(260px,80vw); margin-top:10px; padding:11px; background:#111; color:#ffd700; font-family:Helvetica, Arial, sans-serif; font-size:12px; font-weight:bold; letter-spacing:2px; border:1px solid #333; border-radius:4px; cursor:pointer;">📋 VIEW PAYTABLE</button>
+
+</div>
+
+<!-- PAYTABLE SCREEN -->
+<div id="paytableScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#08080a; flex-direction:column; align-items:center; z-index:100; overflow-y:auto; box-sizing:border-box; padding-bottom:24px;">
+  <div style="width:100%; display:flex; align-items:center; padding:14px 16px 6px; box-sizing:border-box; flex-shrink:0;">
+    <button onclick="hidePaytable()" style="background:none; border:none; color:#888; font-family:Helvetica, Arial, sans-serif; font-size:13px; letter-spacing:2px; cursor:pointer;">← BACK</button>
+  </div>
+  <div style="font-family:Helvetica, Arial, sans-serif; font-size:22px; font-weight:bold; color:#fff; letter-spacing:4px; margin-bottom:2px;">PAYTABLE</div>
+  <div style="font-family:Helvetica, Arial, sans-serif; font-size:9px; color:#555; letter-spacing:3px; display:flex; align-items:center; gap:4px; margin-bottom:14px;">SPIN COSTS 1 <img src="coin.png" width="11" height="11" style="object-fit:contain;" onerror="this.src='coin.jpg'"></div>
+  <div style="width:min(360px,94vw); border:1px solid #1a1a1a; border-radius:6px; overflow:hidden;">
+    <div id="paytable" style="padding:1px 0;"></div>
+  </div>
+</div>
+
+<!-- NATION SELECT SCREEN -->
+<div id="nationScreen">
+  <div class="nation-header">
+    <span class="nation-title">CHOOSE YOUR NATION</span>
+    <span class="nation-sub">QU33PH OLYMPICS</span>
+  </div>
+  <div class="nation-grid" id="nationGrid"></div>
+  <button class="nation-confirm" id="nationConfirm" onclick="confirmNation()">ENTER TOURNAMENT →</button>
+</div>
+
+<!-- MEDAL SCREEN -->
+<div id="medalScreen">
+  <canvas id="medalCanvas"></canvas>
+  <div style="width:min(360px,88vw); display:flex; flex-direction:column; gap:10px; margin-bottom:32px;">
+    <button class="medal-btn" id="medalSpecialBtn" style="display:none; background:#1a1a1a; color:#ffd700; border:2px solid #ffd700;" onclick="startSpecialOlympics()">🏅 PLAY SPECIAL OLYMPICS</button>
+    <button class="medal-btn" onclick="showTitle()">← BACK TO MENU</button>
+  </div>
+</div>
+
+<!-- OLYMPICS BRACKET SCREEN -->
+<div id="bracketScreen" style="display:none; flex-direction:column;">
+  <canvas id="bracketCanvas"></canvas>
+  <div class="bracket-play-btn">
+    <button id="playNextBtn">PLAY →</button>
+    <div id="bracketRoundLabel"></div>
+    <div id="bracketCoinHistory" style="display:flex; gap:10px; margin-top:6px; font-family:Helvetica, Arial, sans-serif; font-size:11px; color:#ffd700; letter-spacing:1px;"></div>
+  </div>
+</div>
+
+<script>
+// ─── IMAGES ───────────────────────────────────────────────────────────────
+const markerImages = { red:new Image(), green:new Image(), blue:new Image() };
+markerImages.red.src="red.png";
+markerImages.green.src="green.png";
+markerImages.blue.src="blue.png";
+
+const cartoonImages = { red:new Image(), green:new Image(), blue:new Image() };
+cartoonImages.red.src="redC.png";
+cartoonImages.green.src="greenC.png";
+cartoonImages.blue.src="blueC.png";
+
+const chairImg = new Image();
+chairImg.src = "Chair.png";
+
+let currentTheme = "default"; // "default" | "cartoon" | "neon" | "sunset"
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+// ─── LAYOUT ───────────────────────────────────────────────────────────────
+const LEFT_EDGE=canvas.width*0.2;
+const RIGHT_WALL=canvas.width*0.75;
+const END_LINE_Y=canvas.height*0.11;
+const START_LINE_Y=canvas.height-80;
+
+// LINE OF DESTINY = AC unit position in game coords
+const LINE_OF_DESTINY = canvas.height*0.06 + (canvas.height*0.97 - canvas.height*0.06)*0.77;
+
+const redDot={x:RIGHT_WALL+6, y:canvas.height*0.08 + canvas.height*0.09};
+const chair={x:(LEFT_EDGE+RIGHT_WALL)/2,y:canvas.height*0.13,radius:35};
+
+// ─── GAME MODE STATE ──────────────────────────────────────────────────────
+let gameMode = null;
+let olympicsState = null;
+let playerNation = null;
+let selectedNationIdx = -1;
+
+// ─── NATION SELECT ────────────────────────────────────────────────────────
+function showNationSelect(){
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
+  document.getElementById("nationScreen").style.display="flex";
+  selectedNationIdx = -1;
+  document.getElementById("nationConfirm").style.display="none";
+
+  const grid = document.getElementById("nationGrid");
+  grid.innerHTML = "";
+  NATIONS.forEach((n,i)=>{
+    const btn = document.createElement("button");
+    btn.className="nation-btn";
+    btn.innerHTML=`<span class="nation-flag">${n.flag}</span><span class="nation-name">${n.name}</span>`;
+    btn.onclick=()=>{
+      document.querySelectorAll(".nation-btn").forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedNationIdx=i;
+      document.getElementById("nationConfirm").style.display="block";
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function confirmNation(){
+  if(selectedNationIdx<0) return;
+  playerNation = { ...NATIONS[selectedNationIdx], isPlayer:true };
+  document.getElementById("nationScreen").style.display="none";
+  olympicsState=buildOlympicsState();
+  showBracket();
+}
+
+// ─── NATIONS / STEPLADDER ─────────────────────────────────────────────────
+const NATIONS = [
+  { name:"Ireland",      flag:"🇮🇪" },
+  { name:"Israel",       flag:"🇮🇱" },
+  { name:"USA",          flag:"🇺🇸" },
+  { name:"South Africa", flag:"🇿🇦" },
+  { name:"England",      flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  { name:"Scotland",     flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
+  { name:"Norway",       flag:"🇳🇴" },
+  { name:"Japan",        flag:"🇯🇵" },
+  { name:"Germany",      flag:"🇩🇪" },
+  { name:"Brazil",       flag:"🇧🇷" },
+  { name:"Australia",    flag:"🇦🇺" },
+  { name:"Canada",       flag:"🇨🇦" },
+  { name:"France",       flag:"🇫🇷" },
+  { name:"Netherlands",  flag:"🇳🇱" },
+  { name:"Sweden",       flag:"🇸🇪" },
+  { name:"Russia",       flag:"🇷🇺" },
+  { name:"Iran",         flag:"🇮🇷" },
+  { name:"China",        flag:"🇨🇳" },
+];
+
+function buildOlympicsState(){
+  let pool = NATIONS.filter(n=>n.name!==playerNation.name);
+  shuffle(pool);
+  let nations = pool.slice(0,7);
+
+  let qf1s1=simulatedScore(), qf1s2=simulatedScore();
+  let qf2s1=simulatedScore(), qf2s2=simulatedScore();
+  let qf3s1=simulatedScore(), qf3s2=simulatedScore();
+  if(qf1s1===qf1s2) qf1s2++;
+  if(qf2s1===qf2s2) qf2s2++;
+  if(qf3s1===qf3s2) qf3s2++;
+
+  return {
+    n: [...nations, playerNation],
+    qf1s1,qf1s2,qf2s1,qf2s2,qf3s1,qf3s2,
+    qf4Score:null,qf4Opp:null,
+    sf2Score:null,sf2Opp:null,
+    finScore:null,finOpp:null,
+    sf1s1:null,sf1s2:null,
+    round:1,
+    playerEliminated:false,
+    champion:null,
+    coinsWonThisRun:0,
+    coinHistory:[],
+  };
+}
+
+function getQFWinner(os, qf){
+  if(qf===1) return os.qf1s1>os.qf1s2 ? os.n[0] : os.n[1];
+  if(qf===2) return os.qf2s1>os.qf2s2 ? os.n[2] : os.n[3];
+  if(qf===3) return os.qf3s1>os.qf3s2 ? os.n[4] : os.n[5];
+  if(qf===4) return os.qf4Score!==null && os.qf4Score>os.qf4Opp ? playerNation : os.n[6];
+}
+function getSF1Winner(os){ return os.sf1s1>os.sf1s2 ? getQFWinner(os,1) : getQFWinner(os,2); }
+function getSF2Winner(os){ return os.sf2Score!==null && os.sf2Score>os.sf2Opp ? playerNation : (os.qf4Score!==null?getQFWinner(os,3):null); }
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    let j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+
+function simulatedScore(){
+  let base = 85 + Math.floor(Math.random()*45);
+  if(Math.random()<0.7) base = 90 + Math.floor(Math.random()*30);
+  return base;
+}
+
+// ─── GAME STATE ────────────────────────────────────────────────────────────
+let speedMultiplier=1;
+let gameState="title";
+let markers=[];
+let current=0;
+let totalScore=0;
+let highScore=localStorage.getItem("qu33phHigh")||0;
+let coins = parseInt(localStorage.getItem("qu33phCoins")||0);
+// ── HAPTICS ──────────────────────────────────────────────────────────────
+let hapticsOn = localStorage.getItem("qu33phHaptics") !== "off";
+let hapticStrength = localStorage.getItem("qu33phHapticStrength") || "medium"; // light|medium|strong
+let reduceMotion = localStorage.getItem("qu33phReduceMotion") === "on";
+let mirrorMode = localStorage.getItem("qu33phMirror") === "on";
+let _mirDraw = false;
+function setBase(){ if(mirrorMode){ ctx.setTransform(-1,0,0,1,canvas.width,0); } else { ctx.setTransform(1,0,0,1,0,0); } }
+if(typeof CanvasRenderingContext2D!=="undefined"){
+  const _P=CanvasRenderingContext2D.prototype, _of=_P.fillText, _os=_P.strokeText;
+  _P.fillText=function(t,x,y,mw){ if(_mirDraw){ let a=this.textAlign,s=(a==="left"||a==="start")?"right":(a==="right"||a==="end")?"left":a; this.save(); this.translate(x,0); this.scale(-1,1); this.textAlign=s; (mw===undefined?_of.call(this,t,0,y):_of.call(this,t,0,y,mw)); this.restore(); } else { (mw===undefined?_of.call(this,t,x,y):_of.call(this,t,x,y,mw)); } };
+  _P.strokeText=function(t,x,y,mw){ if(_mirDraw){ let a=this.textAlign,s=(a==="left"||a==="start")?"right":(a==="right"||a==="end")?"left":a; this.save(); this.translate(x,0); this.scale(-1,1); this.textAlign=s; (mw===undefined?_os.call(this,t,0,y):_os.call(this,t,0,y,mw)); this.restore(); } else { (mw===undefined?_os.call(this,t,x,y):_os.call(this,t,x,y,mw)); } };
+}
+let colorblind = localStorage.getItem("qu33phColorblind") === "on";
+function haptic(pattern){
+  if(!hapticsOn) return;
+  let f = hapticStrength==="light" ? 0.5 : hapticStrength==="strong" ? 1.7 : 1;
+  let s = Array.isArray(pattern) ? pattern.map(v=>Math.max(1,Math.round(v*f))) : Math.max(1,Math.round(pattern*f));
+  try { if(navigator && navigator.vibrate) navigator.vibrate(s); } catch(e){}
+}
+const THEME_COST = 50;
+const unlockedThemes = ()=>{
+  let u = JSON.parse(localStorage.getItem("qu33phThemes")||'["default"]');
+  return u;
+};
+function unlockTheme(t){
+  let u=unlockedThemes();
+  if(!u.includes(t)){ u.push(t); localStorage.setItem("qu33phThemes",JSON.stringify(u)); try{ trackAch("theme"); }catch(e){} }
+}
+function addCoins(n){
+  coins+=n;
+  localStorage.setItem("qu33phCoins",coins);
+  if(n>0){ try{ trackAch("coins", n); }catch(e){} }
+}
+
+const coinImg = new Image();
+coinImg.src="coin.png";
+let chairLocked=false;
+let startTime=Date.now();
+let suddenDeath=false;
+let explosions=[];
+let scorePopups=[];
+let previewMarkers=[
+  {color:"green",x:0,used:false},
+  {color:"red",x:0,used:false},
+  {color:"blue",x:0,used:false}
+];
+let shake=0;
+
+let ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer")||"30");
+let TOTAL_TIME = Math.round(ROUND_TIME*1.5);  // sudden-death extension scales with the round
+
+const orientations=["vertical","angled","horizontal"];
+let orientationIndex=0;
+let currentOrientation="vertical";
+
+// ─── TITLE SCREEN ─────────────────────────────────────────────────────────
+function showThemeScreen(){
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
+  document.getElementById("themeScreen").style.display="flex";
+  let u=unlockedThemes();
+  ["default","cartoon","neon","sunset","galaxy"].forEach(t=>{
+    let el=document.getElementById("theme-"+t);
+    let unlocked = u.includes(t);
+    let active = t===currentTheme;
+    el.classList.toggle("selected", active);
+    el.style.opacity = unlocked ? "1" : "0.5";
+    if(t!=="default"){
+      let nameEl=document.getElementById("tname-"+t);
+      let descEl=document.getElementById("tdesc-"+t);
+      const names={cartoon:"COMIC",neon:"NEON",sunset:"GOLDEN HOUR",galaxy:"GALAXY"};
+      const descs={cartoon:"black & white · comic style · custom markers",neon:"synthwave · glowing colours · dark room",sunset:"warm amber · late afternoon vibes",galaxy:"deep space · starfield · cosmic glow"};
+      if(nameEl) nameEl.innerText = unlocked ? names[t] : "🔒 "+names[t];
+      if(descEl) descEl.innerText = unlocked ? descs[t] : "50 🪙 to unlock";
+    }
+  });
+  document.getElementById("themeCoinsDisplay").innerText="🪙 "+coins+" COINS";
+}
+
+function selectTheme(t){
+  let u=unlockedThemes();
+  if(!u.includes(t)){
+    if(coins>=THEME_COST){
+      addCoins(-THEME_COST);
+      unlockTheme(t);
+      document.getElementById("themeCoinsDisplay").innerText="🪙 "+coins+" COINS — UNLOCKED!";
+      showThemeScreen();
+    } else {
+      document.getElementById("themeCoinsDisplay").innerText="🪙 NEED "+THEME_COST+" COINS (YOU HAVE "+coins+")";
+    }
+    return;
+  }
+  setTheme(t);
+}
+
+function updateLogo(){
+  const img = document.getElementById("logoImg");
+  const container = document.getElementById("logoContainer");
+  const fallback = document.getElementById("logoFallback");
+  if(!img) return;
+  let src = currentTheme==="cartoon" ? "logoC.jpg"
+          : currentTheme==="neon"    ? "logoneon.jpg"
+          : "logo.jpg";
+  img.src = src;
+  img.style.display = "block";
+
+  // Remove any existing halftone overlay
+  let old = container.querySelector('.logo-halftone');
+  if(old) old.remove();
+
+  if(currentTheme==="cartoon"){
+    img.style.filter = "grayscale(1) contrast(1.5)";
+    img.style.mixBlendMode = "multiply";
+    let dots = document.createElement('div');
+    dots.className = 'logo-halftone';
+    dots.style.cssText = [
+      'position:absolute','top:0','left:0','right:0','bottom:0',
+      'background-image:radial-gradient(circle,rgba(255,255,255,0.09) 1.4px,transparent 1.4px)',
+      'background-size:7px 7px',
+      'pointer-events:none',
+      'border-radius:4px',
+    ].join(';');
+    container.appendChild(dots);
+  } else {
+    img.style.filter = "";
+    img.style.mixBlendMode = "normal";
+  }
+
+  img.style.borderRadius = (currentTheme==="neon") ? "50%" : "0";
+  if(fallback) fallback.style.display = "none";
+  if(currentTheme==="sunset"){
+    container.classList.add("golden-border");
+  } else {
+    container.classList.remove("golden-border");
+  }
+}
+
+function setTheme(t){
+  currentTheme=t;
+  const names={default:"DEFAULT",cartoon:"COMIC",neon:"NEON",sunset:"GOLDEN HOUR",galaxy:"GALAXY"};
+  document.getElementById("themeLabel").innerText="THEME · "+names[t];
+  ["default","cartoon","neon","sunset","galaxy"].forEach(id=>{
+    document.getElementById("theme-"+id).classList.toggle("selected", id===t);
+  });
+  updateLogo();
+  showTitle();
+}
+
+function getMarkerImg(color){
+  if(currentTheme==="cartoon") return cartoonImages[color];
+  return markerImages[color];
+}
+
+function applyThemeOverlay(){
+  if(currentTheme==="default") return;
+  let cw=canvas.width, ch=canvas.height;
+  let t=Date.now()/1000;
+
+  if(currentTheme==="cartoon"){
+    ctx.save();
+    ctx.globalCompositeOperation="saturation";
+    ctx.fillStyle="rgba(128,128,128,1)";
+    ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+    ctx.save();
+    ctx.globalCompositeOperation="multiply";
+    ctx.fillStyle="rgba(0,0,0,0.25)";
+    ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha=0.06;
+    ctx.fillStyle="#000";
+    for(let dy=0;dy<ch;dy+=8){
+      for(let dx=0;dx<cw;dx+=8){
+        ctx.beginPath();
+        ctx.arc(dx,dy,1.5,0,Math.PI*2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle="#000"; ctx.lineWidth=18;
+    ctx.strokeRect(0,0,cw,ch);
+    ctx.restore();
+
+  } else if(currentTheme==="neon"){
+    ctx.save();
+    ctx.globalCompositeOperation="multiply";
+    ctx.fillStyle="rgba(8,0,25,0.45)";
+    ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    let cg2=ctx.createLinearGradient(cw*0.2,0,cw*0.75,0);
+    cg2.addColorStop(0,"rgba(0,255,120,0.6)");
+    cg2.addColorStop(0.5,"rgba(0,255,120,0.75)");
+    cg2.addColorStop(1,"rgba(0,255,120,0.6)");
+    ctx.fillStyle=cg2; ctx.fillRect(cw*0.2,0,cw*0.55,ch);
+    ctx.fillStyle=cg2; ctx.fillRect(cw*0.2,0,cw*0.55,ch);
+    let lg=ctx.createLinearGradient(0,0,cw*0.22,0);
+    lg.addColorStop(0,"rgba(0,255,255,0.8)");
+    lg.addColorStop(1,"rgba(0,255,255,0.2)");
+    ctx.fillStyle=lg; ctx.fillRect(0,0,cw*0.22,ch);
+    ctx.fillStyle=lg; ctx.fillRect(0,0,cw*0.22,ch);
+    let rg2=ctx.createLinearGradient(cw*0.75,0,cw,0);
+    rg2.addColorStop(0,"rgba(255,0,200,0.3)");
+    rg2.addColorStop(1,"rgba(200,0,255,0.9)");
+    ctx.fillStyle=rg2; ctx.fillRect(cw*0.75,0,cw*0.25,ch);
+    ctx.fillStyle=rg2; ctx.fillRect(cw*0.75,0,cw*0.25,ch);
+    let ag=ctx.createRadialGradient(cw*0.1,ch*0.8,0,cw*0.1,ch*0.8,ch*0.22);
+    ag.addColorStop(0,"rgba(255,50,150,0.9)");
+    ag.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,cw*0.25,ch*0.45);
+    ctx.fillStyle=ag; ctx.fillRect(0,ch*0.55,cw*0.25,ch*0.45);
+    ctx.restore();
+
+    // (neon red dot removed - standard card+dot redrawn on top in drawHudReadable)
+
+    let glassTop2=ch*0.58+10;
+    let horizonX2=RIGHT_WALL+10+(canvas.width-RIGHT_WALL-10)*0.45;
+    ctx.save();
+    let sunX2=canvas.width-(canvas.width-horizonX2)*(0.15+(Date.now()/60000%1)*0.7);
+    let sunY2=glassTop2+(ch-glassTop2)*0.25;
+    ctx.shadowColor="#ffffff"; ctx.shadowBlur=40;
+    ctx.fillStyle="#ffffaa";
+    ctx.beginPath(); ctx.arc(sunX2,sunY2,14,0,Math.PI*2); ctx.fill();
+    ctx.shadowColor="#ffff00"; ctx.shadowBlur=80;
+    ctx.globalAlpha=0.5;
+    ctx.beginPath(); ctx.arc(sunX2,sunY2,20,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.shadowColor="#ffffff"; ctx.shadowBlur=20;
+    ctx.fillStyle="rgba(200,255,255,0.7)";
+    clouds.forEach(c=>{
+      let cx2=horizonX2+(c.x-RIGHT_WALL-10)/(canvas.width-RIGHT_WALL-10)*(canvas.width-horizonX2);
+      let cy2=glassTop2+(c.y/ch)*(ch-glassTop2);
+      ctx.beginPath(); ctx.ellipse(cx2,cy2,c.w*0.28,c.w*0.12,0,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+    ctx.save();
+    ctx.shadowColor="#00ff44"; ctx.shadowBlur=25;
+    ctx.fillStyle="rgba(0,255,80,0.35)";
+    let treeW2=canvas.width*0.06;
+    ctx.fillRect(horizonX2-treeW2*0.5, glassTop2, treeW2, ch-glassTop2);
+    ctx.restore();
+
+    let pulse2=0.18+0.1*Math.sin(t*2.5);
+    let eg=ctx.createRadialGradient(cw/2,ch/2,ch*0.25,cw/2,ch/2,ch);
+    eg.addColorStop(0,"rgba(0,0,0,0)");
+    eg.addColorStop(1,`rgba(150,0,255,${pulse2})`);
+    ctx.fillStyle=eg; ctx.fillRect(0,0,cw,ch);
+    ctx.save();
+    ctx.globalAlpha=0.06;
+    ctx.strokeStyle="#fff"; ctx.lineWidth=1;
+    for(let sy=0;sy<ch;sy+=3){
+      ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(cw,sy); ctx.stroke();
+    }
+    ctx.restore();
+
+  } else if(currentTheme==="sunset"){
+    ctx.save();
+    ctx.globalCompositeOperation="multiply";
+    ctx.fillStyle="rgba(255,160,20,0.52)";
+    ctx.fillRect(cw*0.2,0,cw*0.55,ch);
+    ctx.fillStyle="rgba(220,100,0,0.45)";
+    ctx.fillRect(0,0,cw*0.2,ch);
+    ctx.fillStyle="rgba(255,210,80,0.4)";
+    ctx.fillRect(cw*0.75,0,cw*0.25,ch);
+    ctx.restore();
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    ctx.fillStyle="rgba(255,180,0,0.18)";
+    ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    let bloom=ctx.createRadialGradient(cw*0.7,0,0,cw*0.7,0,ch*0.9);
+    bloom.addColorStop(0,"rgba(255,220,60,0.3)");
+    bloom.addColorStop(0.4,"rgba(255,140,0,0.1)");
+    bloom.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=bloom; ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+    ctx.save();
+    for(let i=0;i<22;i++){
+      let cx2=cw*(0.2+0.6*((i*73)%100)/100);
+      let cy2=ch*(0.1+0.8*((i*53)%100)/100);
+      let orbitR=30+((i*37)%80);
+      let speed=0.3+((i*17)%10)/20;
+      let angle=t*speed+i*0.85;
+      let sx=cx2+Math.cos(angle)*orbitR;
+      let sy=ch*(0.05+((i*29)%90)/100);
+      sy=(sy+t*18*(0.3+((i*11)%10)/20))%ch;
+      let pulse2=0.3+0.7*Math.abs(Math.sin(t*1.2+i*0.6));
+      let size=1.5+pulse2*4;
+      ctx.globalAlpha=pulse2*0.85;
+      ctx.fillStyle=i%3===0?"#ffd700":i%3===1?"#ffb300":"#ffe066";
+      ctx.shadowColor="#ffd700"; ctx.shadowBlur=14;
+      ctx.save();
+      ctx.translate(sx,sy); ctx.rotate(t*0.8+i);
+      ctx.beginPath();
+      for(let p=0;p<5;p++){
+        let a=p*Math.PI*2/5-Math.PI/2;
+        let b=a+Math.PI/5;
+        p===0?ctx.moveTo(Math.cos(a)*size,Math.sin(a)*size):ctx.lineTo(Math.cos(a)*size,Math.sin(a)*size);
+        ctx.lineTo(Math.cos(b)*size*0.4,Math.sin(b)*size*0.4);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+    let sweepX=(Math.sin(t*0.35)*0.5+0.5)*cw;
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    ctx.globalAlpha=0.14;
+    let sw=ctx.createLinearGradient(sweepX-100,0,sweepX+100,0);
+    sw.addColorStop(0,"rgba(255,215,0,0)");
+    sw.addColorStop(0.5,"rgba(255,215,0,1)");
+    sw.addColorStop(1,"rgba(255,215,0,0)");
+    ctx.fillStyle=sw; ctx.fillRect(sweepX-100,0,200,ch);
+    ctx.restore();
+  } else if(currentTheme==="galaxy"){
+    ctx.save();
+    ctx.globalCompositeOperation="multiply";
+    let g=ctx.createLinearGradient(0,0,0,ch);
+    g.addColorStop(0,"#241640"); g.addColorStop(0.5,"#0d0d33"); g.addColorStop(1,"#06060f");
+    ctx.fillStyle=g; ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+    // transparent spinning galaxy in the middle of the field
+    (function(){
+      let gcx=(LEFT_EDGE+RIGHT_WALL)/2, gcy=ch*0.5;
+      let gR=(RIGHT_WALL-LEFT_EDGE)*0.42;
+      ctx.save();
+      ctx.globalCompositeOperation="screen";
+      ctx.translate(gcx,gcy); ctx.rotate(t*0.15);
+      let core=ctx.createRadialGradient(0,0,0,0,0,gR);
+      core.addColorStop(0,"rgba(255,240,220,0.5)");
+      core.addColorStop(0.18,"rgba(220,150,255,0.28)");
+      core.addColorStop(1,"rgba(60,40,120,0)");
+      ctx.globalAlpha=0.85; ctx.fillStyle=core;
+      ctx.beginPath(); ctx.arc(0,0,gR,0,Math.PI*2); ctx.fill();
+      for(let arm=0;arm<2;arm++){
+        for(let i=1;i<64;i++){
+          let a=arm*Math.PI + i*0.26, rr=i/64*gR;
+          let px=Math.cos(a)*rr, py=Math.sin(a)*rr*0.55;
+          ctx.globalAlpha=0.28*(1-i/64);
+          ctx.fillStyle=(i%4===0)?"#ffffff":"#d9b8ff";
+          ctx.beginPath(); ctx.arc(px,py, 1.6*(1-i/80)+0.5, 0, Math.PI*2); ctx.fill();
+        }
+      }
+      ctx.restore();
+    })();
+    // moon in the window — waxes over the round, blood-red in sudden death
+    (function(){
+      let el=(Date.now()-startTime)/1000;
+      let wx=RIGHT_WALL+10, glassTop=ch*0.58+10;
+      let mR=(cw-wx)*0.20, mX=wx+(cw-wx)*0.5, mY=glassTop+(ch-glassTop)*0.28;
+      let sd=suddenDeath, p = sd ? 1 : Math.min(el/ROUND_TIME,1);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(wx, glassTop, cw-wx, ch-glassTop-8); ctx.clip();
+      ctx.shadowColor = sd ? "#ff2020" : "rgba(190,200,240,0.9)";
+      ctx.shadowBlur = sd ? 42 : 20;
+      ctx.fillStyle = sd ? "#8b0000" : "#e8eaf4";
+      ctx.beginPath(); ctx.arc(mX,mY,mR,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+      if(sd){
+        ctx.fillStyle="rgba(70,0,0,0.55)";
+        ctx.beginPath(); ctx.arc(mX-mR*0.3,mY-mR*0.2,mR*0.28,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(mX+mR*0.25,mY+mR*0.3,mR*0.20,0,Math.PI*2); ctx.fill();
+      } else {
+        ctx.fillStyle="rgba(150,160,200,0.5)";
+        ctx.beginPath(); ctx.arc(mX-mR*0.25,mY-mR*0.15,mR*0.18,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(mX+mR*0.2,mY+mR*0.25,mR*0.13,0,Math.PI*2); ctx.fill();
+        if(p<0.97){
+          ctx.beginPath(); ctx.arc(mX,mY,mR,0,Math.PI*2); ctx.clip();
+          ctx.fillStyle="rgba(8,8,22,0.93)";
+          let off=p*2*mR;
+          ctx.beginPath(); ctx.arc(mX-off, mY, mR, 0, Math.PI*2); ctx.fill();
+        }
+      }
+      ctx.restore();
+    })();
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+    let neb=ctx.createRadialGradient(cw*0.72,ch*0.32,8,cw*0.72,ch*0.32,cw*0.7);
+    neb.addColorStop(0,"rgba(170,60,220,0.30)"); neb.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=neb; ctx.fillRect(0,0,cw,ch);
+    let neb2=ctx.createRadialGradient(cw*0.28,ch*0.72,8,cw*0.28,ch*0.72,cw*0.6);
+    neb2.addColorStop(0,"rgba(40,120,230,0.26)"); neb2.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=neb2; ctx.fillRect(0,0,cw,ch);
+    ctx.fillStyle="#ffffff";
+    for(let i=0;i<64;i++){
+      let sx=((i*73)%100)/100*cw;
+      let sy=((i*137)%100)/100*ch;
+      let tw=0.35+0.65*Math.abs(Math.sin(t*2+i*0.7));
+      ctx.globalAlpha=tw*0.9;
+      let r=(i%9===0)?1.7:(i%3===0?1.1:0.7);
+      ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    ctx.restore();
+  }
+}
+
+// ─── SLOT MACHINE ────────────────────────────────────────────────────────
+const SLOT_SYMBOLS = [
+  { id:"logo",  src:"slotlogo.jpg",  label:"LOGO",  weight:1 },
+  { id:"mega",  src:"slotmega.jpg",  label:"MEGA",  weight:2 },
+  { id:"coin",  src:"slotcoin.jpg",  label:"COIN",  weight:4 },
+  { id:"chair", src:"slotchair.jpg", label:"CHAIR", weight:5 },
+  { id:"red",   src:"slotred.jpg",   label:"RED",   weight:8 },
+  { id:"green", src:"slotgreen.jpg", label:"GREEN", weight:8 },
+  { id:"blue",  src:"slotblue.jpg",  label:"BLUE",  weight:8 },
+];
+const SLOT_COST = 1;
+
+const PAYTABLE = [
+  { syms:["logo","logo","logo"],   win:200, label:"JACKPOT" },
+  { syms:["mega","mega","mega"],   win:50,  label:"MEGA QU33PH" },
+  { syms:["coin","coin","coin"],   win:30,  label:"TRIPLE COIN" },
+  { syms:["chair","chair","chair"],win:20,  label:"CHAIR SPIN" },
+  { syms:["logo","logo",null],     win:15,  label:"DOUBLE LOGO" },
+  { syms:["red","green","blue"],   win:10,  label:"TRIO · BLUE 3RD" },
+  { syms:["mega","mega",null],     win:8,   label:"DOUBLE MEGA" },
+  { syms:["chair","chair",null],   win:6,   label:"DOUBLE CHAIR" },
+  { syms:[null,null,null],         win:6,   label:"TRIO · ANY ORDER" }, // placeholder row, handled specially in checkWin
+  { syms:["coin","coin",null],     win:5,   label:"DOUBLE COIN" },
+  { syms:["red","red","red"],      win:4,   label:"RED TRIPLE" },
+  { syms:["green","green","green"],win:4,   label:"GREEN TRIPLE" },
+  { syms:["blue","blue","blue"],   win:4,   label:"BLUE TRIPLE" },
+  { syms:[null,"logo",null],       win:3,   label:"ANY LOGO" },
+  { syms:["red","red",null],       win:2,   label:"DOUBLE RED" },
+  { syms:["green","green",null],   win:2,   label:"DOUBLE GREEN" },
+  { syms:["blue","blue",null],     win:2,   label:"DOUBLE BLUE" },
+  { syms:[null,"coin",null],       win:2,   label:"ANY COIN" },
+  { syms:[null,"chair",null],      win:1,   label:"ANY CHAIR" },
+];
+
+function pickSymbol(){
+  let total=SLOT_SYMBOLS.reduce((a,s)=>a+s.weight,0);
+  let r=Math.random()*total;
+  for(let s of SLOT_SYMBOLS){ r-=s.weight; if(r<=0) return s; }
+  return SLOT_SYMBOLS[SLOT_SYMBOLS.length-1];
+}
+
+function checkWin(results){
+  let ids=results.map(s=>s.id);
+
+  // QU33PH TRIO — any order of red/green/blue wins something.
+  // Full payout only if blue lands in the 3rd (rightmost) reel; any other
+  // arrangement still pays, just less.
+  let markerColors=["red","green","blue"];
+  if(markerColors.includes(ids[0]) && markerColors.includes(ids[1]) && markerColors.includes(ids[2])
+     && new Set(ids).size===3){
+    if(ids[2]==="blue") return {win:10, label:"TRIO · BLUE 3RD"};
+    return {win:5, label:"TRIO · MIXED ORDER"};
+  }
+
+  for(let row of PAYTABLE){
+    if(row.syms[0]===null && row.syms[1]===null && row.syms[2]===null) continue; // skip the TRIO placeholder row
+    let match=true;
+    for(let i=0;i<3;i++){
+      if(row.syms[i]!==null && row.syms[i]!==ids[i]){ match=false; break; }
+    }
+    if(match) return row;
+  }
+  return null;
+}
+
+
+let slotSpinning=false;
+
+function showPaytable(){
+  document.getElementById("slotScreen").style.display="none";
+  document.getElementById("paytableScreen").style.display="flex";
+  buildPaytable();
+}
+function hidePaytable(){
+  document.getElementById("paytableScreen").style.display="none";
+  document.getElementById("slotScreen").style.display="flex";
+}
+function showSlotMachine(){
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
+  document.getElementById("slotScreen").style.display="flex";
+  document.getElementById("slotCoinCount").innerText=coins;
+  document.getElementById("slotResult").innerText="";
+  buildPaytable();
+  updateSpinBtn();
+  applyReelOffsets();
+}
+
+function updateSpinBtn(){
+  let btn=document.getElementById("spinBtn");
+  btn.disabled=coins<SLOT_COST||slotSpinning;
+  btn.style.background=coins<SLOT_COST?"#222":"#fff";
+  btn.style.color=coins<SLOT_COST?"#444":"#000";
+}
+
+function buildPaytable(){
+  let pt=document.getElementById("paytable");
+  pt.innerHTML="";
+  let sorted=[...PAYTABLE].sort((a,b)=>b.win-a.win);
+  sorted.forEach(row=>{
+    let div=document.createElement("div");
+    div.className="paytable-row";
+    let icons=row.syms.map(s=>{
+      if(!s) return `<span style="font-size:18px;opacity:0.3">❓</span>`;
+      let sym=SLOT_SYMBOLS.find(x=>x.id===s);
+      return `<img src="${sym.src}" title="${sym.label}">`;
+    }).join("");
+    div.innerHTML=`<div class="paytable-icons">${icons}</div><span class="paytable-label" style="color:#888;">${row.label}</span><span class="paytable-win">+${row.win}<img src="coin.png" onerror="this.src='coin.jpg'" style="width:10px;height:10px;object-fit:contain;vertical-align:middle;margin-left:2px;"></span>`;
+    pt.appendChild(div);
+  });
+}
+
+// All symbols are centred and inset within their reel window so they never
+// touch or bleed past the golden frame border, regardless of source image shape.
+// ─── SLOT REEL ALIGNMENT — single source of truth ─────────────────────────
+// Positive = shift symbol right, Negative = shift symbol left.
+// Tune these three numbers only — both the static (idle) reels and the
+// spin animation read from here, so they always stay in sync.
+const REEL_OFFSET = { reel0: -30, reel1: 2, reel2: 29 }; // red, green, blue (in %)
+const REEL_SIZE = { reel0: 72, reel1: 72, reel2: 60 }; // blue shrunk so it has room to shift right without clipping
+
+function applyReelOffsets(){
+  Object.keys(REEL_OFFSET).forEach(id=>{
+    let img = document.getElementById(id);
+    if(img){
+      let sz = REEL_SIZE[id] || 72;
+      img.style.width = sz+"%";
+      img.style.height = sz+"%";
+      img.style.transform = `translateX(${REEL_OFFSET[id]}%)`;
+    }
+  });
+}
+
+// Per-symbol, per-reel offsets for non-marker icons.
+// Tune by: { symbolId: { reel0, reel1, reel2 } }
+const NONMARKER_OFFSET = {
+  logo:  { reel0: -22, reel1:  0, reel2: 32 },
+  mega:  { reel0: -24, reel1:  0, reel2: 26 },
+  coin:  { reel0: -30, reel1:  0, reel2: 26 },
+  chair: { reel0: -32, reel1:  0, reel2: 26 },
+};
+
+function setReelImg(img, reelId, sym){
+  img.src = sym.src;
+  img.parentElement.style.overflow = "hidden";
+  let isMarker = (sym.id==="red" || sym.id==="green" || sym.id==="blue");
+  if(isMarker){
+    let offset = REEL_OFFSET[reelId] || 0;
+    let sz = REEL_SIZE[reelId] || 72;
+    img.style.cssText = `width:${sz}%; height:${sz}%; object-fit:contain; margin:auto; display:block; transform:translateX(${offset}%);`;
+  } else {
+    // Non-marker icons (logo, mega, coin, chair) are already centered/symmetric —
+    // don't apply the marker-only nudge or it clips them off-frame. Sized a bit
+    // smaller than markers since their solid-color shapes read as overflowing
+    // the window even when technically contained.
+    let nOffset = (NONMARKER_OFFSET[sym.id] && NONMARKER_OFFSET[sym.id][reelId]) || 0;
+    img.style.cssText = `width:60%; height:60%; object-fit:contain; margin:auto; display:block; transform:translateX(${nOffset}%);`;
+  }
+}
+
+function spinSlot(){
+  if(slotSpinning||coins<SLOT_COST) return;
+  addCoins(-SLOT_COST);
+  document.getElementById("slotCoinCount").innerText=coins;
+  document.getElementById("slotResult").innerText="";
+  slotSpinning=true;
+  updateSpinBtn();
+  trackAch("slotspin");
+
+  let results=[null,null,null];
+  let settled=0;
+  const reelIds=["reel0","reel1","reel2"];
+  const delays=[600,900,1200];
+
+  reelIds.forEach((id,i)=>{
+    let img=document.getElementById(id);
+    let ticks=0;
+    let maxTicks=12+i*6;
+    let interval=setInterval(()=>{
+      let sym=pickSymbol();
+      setReelImg(img, id, sym);
+      ticks++;
+      if(ticks>=maxTicks){
+        clearInterval(interval);
+        let final=pickSymbol();
+        results[i]=final;
+        setReelImg(img, id, final);
+        settled++;
+        if(settled===3){
+          slotSpinning=false;
+          let won=checkWin(results);
+          let resultEl=document.getElementById("slotResult");
+          if(won){
+            addCoins(won.win);
+            document.getElementById("slotCoinCount").innerText=coins;
+            resultEl.style.color="#ffd700";
+            resultEl.innerHTML=won.label+"! +"+won.win+' <img src="coin.png" onerror="this.src=\'coin.jpg\'" style="width:14px;height:14px;object-fit:contain;vertical-align:middle;">';
+            reelIds.forEach(r=>{
+              document.getElementById(r).parentElement.style.borderColor="#ffd700";
+              setTimeout(()=>document.getElementById(r).parentElement.style.borderColor="#333",1500);
+            });
+            startSlotWinStars(won.win);
+            haptic(won.win>=200 ? [40,30,40,30,120] : won.win>=20 ? [25,35,60] : [20,30,40]);
+            trackAch("slotwin");
+            if(won.win>=200 || won.label==="JACKPOT") trackAch("slotjackpot");
+          } else {
+            resultEl.style.color="#555";
+            resultEl.innerText="no match — try again";
+          }
+          document.getElementById("slotCoinCount").innerText=coins;
+          updateSpinBtn();
+        }
+      }
+    }, 80);
+  });
+}
+
+// ─── SLOT WIN STAR BORDER ─────────────────────────────────────────────────
+let _slotWinAnimId = null;
+
+function roundRectPath(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);
+  c.arcTo(x+w,y,x+w,y+h,r);
+  c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);
+  c.arcTo(x,y,x+w,y,r);
+  c.closePath();
+}
+function pointOnRect(x,y,w,h,d){
+  let top=w, right=h, bottom=w;
+  if(d<top) return {x:x+d, y:y};
+  d-=top;
+  if(d<right) return {x:x+w, y:y+d};
+  d-=right;
+  if(d<bottom) return {x:x+w-d, y:y+h};
+  d-=bottom;
+  return {x:x, y:y+h-d};
+}
+function startSlotWinStars(winAmt){
+  const sc = document.getElementById("slotWinCanvas");
+  if(!sc) return;
+  sc.width = window.innerWidth;
+  sc.height = window.innerHeight;
+  const sx = sc.getContext("2d");
+  if(_slotWinAnimId){ cancelAnimationFrame(_slotWinAnimId); _slotWinAnimId=null; }
+
+  let bx0, by0, bw, bh;
+  let machine = document.getElementById("slotMachine");
+  if(machine && machine.getBoundingClientRect){
+    let r = machine.getBoundingClientRect();
+    let padX = 12;
+    let insetTop = Math.round(r.height*0.11);  // top comes down to reach the machine's top
+    let insetBot = Math.round(r.height*0.03);  // bottom hugs the base
+    bx0 = r.left - padX;
+    by0 = r.top + insetTop;
+    bw  = r.width + padX*2;
+    bh  = r.height - insetTop - insetBot;
+  } else {
+    bx0 = sc.width*0.1; by0 = sc.height*0.22; bw = sc.width*0.8; bh = sc.height*0.44;
+  }
+  let rad = 18;
+  let perimeter = 2*(bw+bh);
+
+  let numStars = Math.min(12 + Math.floor(winAmt/4), 44);
+  let duration = Math.min(1500 + winAmt*20, 5000);
+  let startT = Date.now();
+  let borderCol = winAmt >= 200 ? "#ffffff" : "#ffd700";
+
+  function frame(){
+    let elapsed = Date.now() - startT;
+    if(elapsed > duration){ sx.clearRect(0,0,sc.width,sc.height); _slotWinAnimId=null; return; }
+    sx.clearRect(0,0,sc.width,sc.height);
+    let t = elapsed/1000;
+    let fade = elapsed < duration*0.8 ? 1 : 1 - (elapsed - duration*0.8)/(duration*0.2);
+    let pulse = 0.6+0.4*Math.sin(t*3);
+
+    sx.save();
+    sx.globalAlpha = fade;
+    sx.lineJoin="round";
+    sx.shadowColor="#ffcc33"; sx.shadowBlur=20*pulse;
+    sx.strokeStyle=borderCol; sx.lineWidth=3;
+    roundRectPath(sx, bx0,by0,bw,bh, rad); sx.stroke();
+    sx.globalAlpha = fade*0.4*pulse; sx.lineWidth=7;
+    roundRectPath(sx, bx0,by0,bw,bh, rad); sx.stroke();
+    sx.restore();
+
+    for(let i=0;i<numStars;i++){
+      let speed = 90 + winAmt*0.6;
+      let dist = ((i/numStars)*perimeter + t*speed) % perimeter;
+      let p = pointOnRect(bx0,by0,bw,bh,dist);
+      let pu = 0.5+0.5*Math.sin(t*4+i*1.1);
+      let size = 3+pu*5;
+      sx.save();
+      sx.globalAlpha = fade*(0.5+pu*0.5);
+      sx.fillStyle = i%3===0 ? "#fff2b0" : i%3===1 ? "#ffd700" : "#ffb300";
+      sx.shadowColor="#ffd700"; sx.shadowBlur=14;
+      sx.translate(p.x,p.y); sx.rotate(t*2+i);
+      sx.beginPath();
+      for(let q=0;q<5;q++){
+        let a=q*Math.PI*2/5-Math.PI/2, b=a+Math.PI/5;
+        q===0?sx.moveTo(Math.cos(a)*size,Math.sin(a)*size):sx.lineTo(Math.cos(a)*size,Math.sin(a)*size);
+        sx.lineTo(Math.cos(b)*size*0.4,Math.sin(b)*size*0.4);
+      }
+      sx.closePath(); sx.fill();
+      sx.restore();
+    }
+    _slotWinAnimId = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function showTitle(){
+  gameState="title";
+  titleUnlockedAt = Date.now() + 800;
+  gameMode=null;
+  document.getElementById("titleScreen").style.display="flex";
+  document.getElementById("bracketScreen").style.display="none";
+  document.getElementById("nationScreen").style.display="none";
+  document.getElementById("medalScreen").style.display="none";
+  document.getElementById("themeScreen").style.display="none";
+  document.getElementById("slotScreen").style.display="none";
+  var _ac=document.getElementById("achScreen"); if(_ac) _ac.style.display="none";
+  var _pt=document.getElementById("paytableScreen"); if(_pt) _pt.style.display="none";
+  var _cr=document.getElementById("careerScreen"); if(_cr) _cr.style.display="none";
+  var _msc=document.getElementById("medalShowcaseScreen"); if(_msc) _msc.style.display="none";
+  var _set=document.getElementById("settingsScreen"); if(_set) _set.style.display="none";
+  if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
+  updateLogo();
+  document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("timeline").style.display="none";
+  let hs=localStorage.getItem("qu33phHigh")||0;
+  document.getElementById("titleHighScore").innerText=hs>0?"HIGH SCORE: "+hs:"";
+  document.getElementById("titleCoinCount").innerText=coins;
+  document.getElementById("titleCoins").style.display="flex";
+  document.getElementById("slotBtn").style.display="block";
+}
+
+function startMode(mode){
+  if(Date.now() < titleUnlockedAt) return;
+  gameMode=mode;
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("slotBtn").style.display="none";
+  if(mode==="single"){
+    startGame();
+  } else {
+    showNationSelect();
+  }
+}
+
+// ─── BRACKET SCREEN ────────────────────────────────────────────────────────
+function showBracket(){
+  gameState="bracket";
+  document.getElementById("bracketScreen").style.display="flex";
+  document.getElementById("bracketScreen").style.flexDirection="column";
+  document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("timeline").style.display="none";
+  renderBracket();
+}
+
+function renderBracket(){
+  const os = olympicsState;
+
+  if(os.champion!==null || os.playerEliminated){
+    showMedalScreen(); return;
+  }
+
+  const bc = document.getElementById("bracketCanvas");
+  const bw = window.innerWidth;
+  const bh = window.innerHeight * 0.76;
+  bc.width = bw; bc.height = bh;
+  const bx = bc.getContext("2d");
+  bx.fillStyle="#08080a"; bx.fillRect(0,0,bw,bh);
+
+  bx.textAlign="center"; bx.textBaseline="top";
+  bx.fillStyle="#ffffff";
+  bx.font=`bold ${Math.round(bw*0.07)}px Helvetica, Arial, sans-serif`;
+  bx.fillText("QU33PH",bw/2,10);
+  bx.fillStyle="#c8a840";
+  bx.font=`bold ${Math.round(bw*0.045)}px Helvetica, Arial, sans-serif`;
+  bx.fillText(gameMode==="specialolympics"?"SPECIAL OLYMPICS":"OLYMPICS",bw/2,10+bw*0.076);
+  bx.fillStyle="#c8a840";
+  bx.fillRect(bw*0.15, 10+bw*0.128, bw*0.7, 2);
+
+  const PAD = 6;
+  const topY = bh*0.20;
+  const colW = bw*0.30;
+  const rH = Math.round(bh*0.072);
+  const mH = rH*2+1;
+  const lx = PAD;
+  const rx = bw-PAD-colW;
+  const mx = (bw-colW)/2;
+
+  const qfGap = bh*0.06;
+  const qf1y = topY;
+  const qf2y = topY + mH + qfGap;
+  const sf1y = topY + (mH+qfGap)/2;
+  const qf3y = topY;
+  const qf4y = topY + mH + qfGap;
+  const sf2y = sf1y;
+  const finy = qf2y + mH + qfGap*0.8;
+
+  const labelSz = Math.round(bw*0.025);
+  const nameSz  = Math.round(bw*0.028);
+  const scoreSz = Math.round(bw*0.03);
+
+  function truncate(n, maxChars){
+    if(!n) return "TBD";
+    return n.length > maxChars ? n.slice(0,maxChars) : n;
+  }
+
+  function drawMatch(x,y,p1,p2,s1,s2,active,label){
+    let done = s1!==null && s2!==null;
+    let winIdx = done ? (s1>s2?0:1) : -1;
+
+    if(label){
+      bx.fillStyle=active?"#fff":"#444";
+      bx.font=`${labelSz}px Helvetica, Arial, sans-serif`;
+      bx.textAlign="left"; bx.textBaseline="bottom";
+      bx.fillText(label, x, y-2);
+    }
+
+    bx.strokeStyle=active?"#fff":done?"#888":"#222";
+    bx.lineWidth=active?2:done?1.5:1;
+    bx.strokeRect(x,y,colW,mH);
+
+    [p1,p2].forEach((p,pi)=>{
+      let ry = y + pi*(rH+1);
+      let isWin  = done && winIdx===pi;
+      let isLoss = done && winIdx!==pi;
+      let isYou  = p && p.isPlayer;
+      let isPending = !p;
+
+      if(isYou && !isLoss){
+        bx.fillStyle="rgba(68,238,68,0.06)";
+        bx.fillRect(x+1, ry+1, colW-2, rH-1);
+      }
+
+      let nameColor;
+      if(isPending)   nameColor="#2a2a2a";
+      else if(isWin)  nameColor="#44ee44";
+      else if(isLoss) nameColor="#cc3333";
+      else if(isYou)  nameColor="#44ee44";
+      else            nameColor="#777";
+
+      let nameStr;
+      if(!p) nameStr="TBD";
+      else { let short = p.name.length>7 ? p.name.slice(0,7) : p.name; nameStr = short + (p.isPlayer?" (you)":""); }
+
+      // small colour flag (emoji flags don't render on Android)
+      let fw2 = Math.round(rH*0.30), fh2 = Math.round(fw2*0.62);
+      let textX = x+4;
+      let flagCY = done ? (ry + rH*0.28) : (ry + rH*0.5);
+      if(p){ drawMiniFlag(bx, x+4, flagCY - fh2/2, fw2, fh2, p.name); textX = x+4+fw2+4; }
+
+      if(done){
+        let topY = ry + rH*0.28;
+        let botY = ry + rH*0.74;
+        bx.fillStyle=nameColor;
+        bx.font=`${Math.round(nameSz*0.72)}px Helvetica, Arial, sans-serif`;
+        bx.textAlign="left"; bx.textBaseline="middle";
+        bx.save();
+        bx.beginPath(); bx.rect(textX,ry+1,(x+colW-3)-textX,rH*0.46); bx.clip();
+        bx.fillText(nameStr, textX, topY);
+        bx.restore();
+
+        let sc = pi===0 ? s1 : s2;
+        bx.fillStyle = isWin?"#44ee44":"#cc3333";
+        bx.font=`bold ${Math.round(scoreSz*0.75)}px Helvetica, Arial, sans-serif`;
+        bx.textAlign="right"; bx.textBaseline="middle";
+        bx.save();
+        bx.beginPath(); bx.rect(x+2, ry+rH*0.52, colW-4, rH*0.48-1); bx.clip();  // score kept to bottom half
+        bx.fillText(Math.round(sc), x+colW-5, botY);
+        bx.restore();
+
+      } else {
+        bx.fillStyle=nameColor;
+        bx.font=`${nameSz}px Helvetica, Arial, sans-serif`;
+        bx.textAlign="left"; bx.textBaseline="middle";
+        bx.save();
+        bx.beginPath(); bx.rect(textX,ry+1,(x+colW-3)-textX,rH-2); bx.clip();
+        bx.fillText(nameStr, textX, ry+rH/2);
+        bx.restore();
+      }
+    });
+
+    bx.strokeStyle="#1a1a1a"; bx.lineWidth=1;
+    bx.beginPath(); bx.moveTo(x+1,y+rH); bx.lineTo(x+colW-1,y+rH); bx.stroke();
+  }
+
+  function connector(x1,y1,x2,y2){
+    bx.strokeStyle="#2a2a2a"; bx.lineWidth=1.5;
+    let midX=(x1+x2)/2;
+    bx.beginPath();
+    bx.moveTo(x1,y1); bx.lineTo(midX,y1); bx.lineTo(midX,y2); bx.lineTo(x2,y2);
+    bx.stroke();
+  }
+
+  let qf1w = os.qf1s1>os.qf1s2 ? os.n[0] : os.n[1];
+  let qf2w = os.qf2s1>os.qf2s2 ? os.n[2] : os.n[3];
+  let qf3w = os.qf3s1>os.qf3s2 ? os.n[4] : os.n[5];
+  let qf4done = os.qf4Score!==null;
+  let qf4w = qf4done ? (os.qf4Score>os.qf4Opp ? playerNation : os.n[6]) : null;
+  let sf1done = os.sf1s1!==null;
+  let sf1w = sf1done ? (os.sf1s1>os.sf1s2 ? qf1w : qf2w) : null;
+  let sf2done = os.sf2Score!==null;
+  let sf2w = sf2done ? (os.sf2Score>os.sf2Opp ? playerNation : qf3w) : null;
+  let finDone = os.finScore!==null;
+
+  drawMatch(lx, qf1y, os.n[0],os.n[1], os.qf1s1,os.qf1s2, false,"QF1");
+  drawMatch(lx, qf2y, os.n[2],os.n[3], os.qf2s1,os.qf2s2, false,"QF2");
+
+  drawMatch(mx, sf1y, qf1w, qf2w, os.sf1s1, os.sf1s2, false,"SF1");
+
+  drawMatch(rx, qf3y, os.n[4],os.n[5], os.qf3s1,os.qf3s2, false,"QF3");
+  drawMatch(rx, qf4y, os.n[6],playerNation, qf4done?os.qf4Opp:null, qf4done?os.qf4Score:null,
+    os.round===1,"QF4");
+
+  let sf2p1 = qf4done ? qf3w : null;
+  let sf2p2 = qf4done ? qf4w : null;
+  drawMatch(mx, sf2y, sf2p1, sf2p2, sf2done?os.sf2Opp:null, sf2done?os.sf2Score:null,
+    os.round===2&&!os.playerEliminated,"SF2");
+
+  let finp1 = sf1done ? sf1w : null;
+  let finp2 = sf2done ? sf2w : null;
+  drawMatch(mx, finy, finp1, finp2, finDone?os.finOpp:null, finDone?os.finScore:null,
+    os.round===3&&!os.playerEliminated,"FINAL");
+
+  connector(lx+colW, qf1y+rH, mx, sf1y+rH);
+  connector(lx+colW, qf2y+rH, mx, sf1y+rH);
+  connector(rx,      qf3y+rH, mx+colW, sf2y+rH);
+  connector(rx,      qf4y+rH, mx+colW, sf2y+rH);
+  connector(mx+colW, sf1y+rH, mx, finy+rH);
+  connector(mx,      sf2y+rH, mx+colW, finy+rH);
+
+  const playBtn=document.getElementById("playNextBtn");
+  const roundLabel=document.getElementById("bracketRoundLabel");
+
+  if(os.champion!==null || os.playerEliminated){
+    playBtn.className="";
+    playBtn.innerText="SEE RESULT →";
+    playBtn.onclick=()=>showMedalScreen();
+    roundLabel.innerText=os.champion==="player"?"🏆 CHAMPION":
+      os.round<=2?"ELIMINATED":os.round===3?"🥉 BRONZE":"🥈 SILVER";
+  } else {
+    playBtn.className="";
+    let lbl=os.round===1?"PLAY QF4 →":os.round===2?"PLAY SEMI-FINAL →":"PLAY GRAND FINAL →";
+    playBtn.innerText=lbl;
+    playBtn.onclick=()=>{document.getElementById("bracketScreen").style.display="none";startGame();};
+    roundLabel.innerText=os.round===1?"QUARTER-FINAL":os.round===2?"SEMI-FINAL":"GRAND FINAL";
+  }
+
+  const coinHistEl = document.getElementById("bracketCoinHistory");
+  if(coinHistEl){
+    coinHistEl.innerHTML = (os.coinHistory||[]).map(h=>
+      `<span>${h.label} +${h.amt}🪙</span>`
+    ).join("");
+  }
+}
+
+// ─── ROUND-BY-ROUND COIN REWARDS ──────────────────────────────────────────
+const OLYMPICS_REWARDS = { 1:5, 2:10, 3:15 };       // win QF4=5, win SF2=10, win FINAL=15
+const SPECIAL_OLYMPICS_REWARDS = { 1:1, 2:2, 3:3 }; // smaller payout in special olympics
+
+function showMedalScreen(){
+  const os = olympicsState;
+  document.getElementById("bracketScreen").style.display="none";
+  document.getElementById("medalScreen").style.display="flex";
+
+  let medal, medalText, medalColor, bgColor, isEliminated=false, canPlaySpecial=false;
+  let coinsEarned = os.lastRoundReward || 0; // only THIS round's reward — coins were already awarded in endGame()
+  const isSpecial = gameMode==="specialolympics";
+  if(os.champion==="player"){
+    medal="🥇"; medalText="GOLD MEDAL"; medalColor="#ffd700"; bgColor="rgba(255,215,0,";
+  } else if(os.playerEliminated && os.round<=2){
+    isEliminated=true;
+    canPlaySpecial = !isSpecial;
+    medal="❌"; medalText="ELIMINATED"; medalColor="#cc3333"; bgColor="rgba(200,50,50,";
+  } else if(os.playerEliminated && os.round===3){
+    medal="🥉"; medalText="BRONZE MEDAL"; medalColor="#cd7f32"; bgColor="rgba(205,127,50,";
+    canPlaySpecial = !isSpecial;
+  } else {
+    medal="🥈"; medalText="SILVER MEDAL"; medalColor="#c0c0c0"; bgColor="rgba(192,192,192,";
+    canPlaySpecial = !isSpecial;
+  }
+
+  if(os.champion==="player") trackAch("medal","gold");
+  else if(os.playerEliminated && os.round===3) trackAch("medal","bronze");
+  else if(os.champion==="cpu") trackAch("medal","silver");
+
+  try {
+    if(!os.medalRecorded){
+      let mtype = os.champion==="player" ? "gold"
+                : (os.playerEliminated && os.round===3) ? "bronze"
+                : (os.champion==="cpu") ? "silver" : null;
+      if(mtype){
+        let hist = JSON.parse(localStorage.getItem("qu33phMedals")||"[]");
+        hist.push({ type:mtype, country:playerNation.name, flag:playerNation.flag,
+                    mode: gameMode==="specialolympics"?"special":"olympics", ts:Date.now() });
+        localStorage.setItem("qu33phMedals", JSON.stringify(hist));
+      }
+      os.medalRecorded = true;
+    }
+  } catch(e){}
+
+  const mc = document.getElementById("medalCanvas");
+  const mw = window.innerWidth;
+  const mh = window.innerHeight * 0.82;
+  mc.width=mw; mc.height=mh;
+  const mx2 = mc.getContext("2d");
+
+  let particles = [];
+  for(let i=0;i<28;i++){
+    particles.push({
+      x: mw*0.2 + Math.random()*mw*0.6,
+      y: mh*0.1 + Math.random()*mh*0.7,
+      vx: (Math.random()-0.5)*1.2,
+      vy: -0.5-Math.random()*1.5,
+      size: 3+Math.random()*6,
+      life: Math.random(),
+      speed: 0.008+Math.random()*0.012,
+      angle: Math.random()*Math.PI*2,
+      spin: (Math.random()-0.5)*0.15,
+    });
+  }
+
+  let frame=0;
+  let animId;
+
+  function drawMedal(){
+    mx2.fillStyle="#08080a"; mx2.fillRect(0,0,mw,mh);
+    frame++;
+
+    for(let r=3;r>=1;r--){
+      let pulse = 0.5+0.5*Math.sin(frame*0.04);
+      let radius = mw*0.28 + r*18 + pulse*12;
+      let grad = mx2.createRadialGradient(mw/2,mh*0.42,0,mw/2,mh*0.42,radius);
+      grad.addColorStop(0, bgColor+(0.08*r*pulse)+")");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      mx2.fillStyle=grad; mx2.beginPath();
+      mx2.arc(mw/2,mh*0.42,radius,0,Math.PI*2); mx2.fill();
+    }
+
+    mx2.font=`${Math.round(mw*0.42)}px Arial`;
+    mx2.textAlign="center"; mx2.textBaseline="middle";
+    let bounce = Math.sin(frame*0.05)*6;
+    mx2.fillText(medal, mw/2, mh*0.42+bounce);
+
+    let sweepX = mw/2 + Math.cos(frame*0.03)*mw*0.12;
+    let sweepGrad = mx2.createLinearGradient(sweepX-40,0,sweepX+40,0);
+    sweepGrad.addColorStop(0,"rgba(255,255,255,0)");
+    sweepGrad.addColorStop(0.5,"rgba(255,255,255,0.18)");
+    sweepGrad.addColorStop(1,"rgba(255,255,255,0)");
+    mx2.save();
+    mx2.beginPath();
+    mx2.arc(mw/2,mh*0.42,mw*0.2,0,Math.PI*2);
+    mx2.clip();
+    mx2.fillStyle=sweepGrad;
+    mx2.fillRect(sweepX-40,mh*0.25,80,mh*0.35);
+    mx2.restore();
+
+    mx2.fillStyle=medalColor;
+    mx2.font=`bold ${Math.round(mw*0.07)}px Helvetica, Arial, sans-serif`;
+    mx2.textAlign="center"; mx2.textBaseline="top";
+    mx2.fillText(medalText, mw/2, mh*0.72);
+
+    let lineY = mh*0.72 + mw*0.1;
+
+    if(coinsEarned>0){
+      let coinSz = Math.round(mw*0.06);
+      if(coinImg.complete && coinImg.naturalWidth){
+        mx2.drawImage(coinImg, mw/2 - coinSz*1.4, lineY, coinSz, coinSz);
+      }
+      mx2.fillStyle="#ffd700";
+      mx2.font=`bold ${Math.round(mw*0.05)}px Helvetica, Arial, sans-serif`;
+      mx2.textAlign="left";
+      mx2.fillText("+"+coinsEarned, mw/2 - coinSz*0.2, lineY+coinSz*0.1);
+      mx2.textAlign="center";
+      lineY += coinSz*1.4;
+    }
+
+    mx2.fillStyle="#fff";
+    mx2.font=`bold ${Math.round(mw*0.045)}px Helvetica, Arial, sans-serif`;
+    mx2.fillText(playerNation.flag+" "+playerNation.name, mw/2, lineY);
+    lineY += mw*0.07;
+
+    if(os.champion==="player"){
+      mx2.fillStyle="#888";
+      mx2.font=`${Math.round(mw*0.032)}px Helvetica, Arial, sans-serif`;
+      mx2.fillText("QU33PH OLYMPIC CHAMPION", mw/2, lineY);
+    }
+
+    particles.forEach(p=>{
+      p.life += p.speed;
+      if(p.life>1){ p.life=0; p.x=mw*0.1+Math.random()*mw*0.8; p.y=mh*0.15+Math.random()*mh*0.6; }
+      p.x += p.vx; p.y += p.vy;
+      p.angle += p.spin;
+      let alpha = Math.sin(p.life*Math.PI);
+
+      mx2.save();
+      mx2.globalAlpha=alpha*0.9;
+      mx2.translate(p.x,p.y);
+      mx2.rotate(p.angle);
+      mx2.fillStyle=medalColor;
+      mx2.shadowColor=medalColor; mx2.shadowBlur=8;
+      mx2.beginPath();
+      let s=p.size;
+      mx2.moveTo(0,-s); mx2.lineTo(s*0.25,-s*0.25);
+      mx2.lineTo(s,0);  mx2.lineTo(s*0.25,s*0.25);
+      mx2.lineTo(0,s);  mx2.lineTo(-s*0.25,s*0.25);
+      mx2.lineTo(-s,0); mx2.lineTo(-s*0.25,-s*0.25);
+      mx2.closePath(); mx2.fill();
+      mx2.restore();
+    });
+
+    animId = requestAnimationFrame(drawMedal);
+  }
+
+  document.getElementById("medalScreen").dataset.animId = "";
+  if(window._medalAnimId) cancelAnimationFrame(window._medalAnimId);
+  drawMedal();
+  window._medalAnimId = animId;
+
+  document.getElementById("medalSpecialBtn").style.display = canPlaySpecial ? "block" : "none";
+}
+
+function getMainBracketLosers(){
+  const os = olympicsState;
+  let losers = [];
+
+  losers.push(os.qf1s1>os.qf1s2 ? os.n[1] : os.n[0]);
+  losers.push(os.qf2s1>os.qf2s2 ? os.n[3] : os.n[2]);
+  losers.push(os.qf3s1>os.qf3s2 ? os.n[5] : os.n[4]);
+
+  if(os.qf4Score!==null){
+    losers.push(os.qf4Score>os.qf4Opp ? os.n[6] : playerNation);
+  } else {
+    losers.push(os.n[6]);
+  }
+
+  if(os.sf1s1!==null){
+    let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];
+    let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];
+    losers.push(os.sf1s1>os.sf1s2 ? qf2w : qf1w);
+  }
+
+  if(os.sf2Score!==null){
+    let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5];
+    losers.push(os.sf2Score>os.sf2Opp ? qf3w : playerNation);
+  }
+
+  return losers.filter(n=>!n.isPlayer);
+}
+
+function startSpecialOlympics(){
+  const losers = getMainBracketLosers();
+  gameMode="specialolympics";
+
+  let pool = [...losers];
+  if(pool.length < 7){
+    let extras = NATIONS.filter(n=>!pool.find(p=>p.name===n.name)&&n.name!==playerNation.name);
+    shuffle(extras);
+    pool = [...pool, ...extras].slice(0,7);
+  }
+  shuffle(pool);
+
+  let qf1s1=simulatedScore(), qf1s2=simulatedScore();
+  let qf2s1=simulatedScore(), qf2s2=simulatedScore();
+  let qf3s1=simulatedScore(), qf3s2=simulatedScore();
+  if(qf1s1===qf1s2) qf1s2++;
+  if(qf2s1===qf2s2) qf2s2++;
+  if(qf3s1===qf3s2) qf3s2++;
+
+  olympicsState = {
+    n: [...pool.slice(0,7), playerNation],
+    qf1s1,qf1s2,qf2s1,qf2s2,qf3s1,qf3s2,
+    qf4Score:null,qf4Opp:null,
+    sf2Score:null,sf2Opp:null,
+    finScore:null,finOpp:null,
+    sf1s1:null,sf1s2:null,
+    round:1,
+    playerEliminated:false,
+    champion:null,
+    coinsWonThisRun:0,
+    coinHistory:[],
+  };
+
+  document.getElementById("medalScreen").style.display="none";
+  if(window._medalAnimId){ cancelAnimationFrame(window._medalAnimId); window._medalAnimId=null; }
+  showBracket();
+}
+
+let olympicsResultMsg="";
+let olympicsResultSub="";
+
+function playNextMatch(){
+  document.getElementById("bracketScreen").style.display="none";
+  startGame();
+}
+
+// ─── GAME START ────────────────────────────────────────────────────────────
+function startGame(){
+  trackAch("game");
+  markers=[];
+  current=0;
+  totalScore=0;
+  startTime=Date.now();
+  suddenDeath=false;
+  chairLocked=false;
+  explosions=[];
+  scorePopups=[];
+  previewMarkers=[
+    {color:"green",x:0,used:false},
+    {color:"red",x:0,used:false},
+    {color:"blue",x:0,used:false}
+  ];
+  shake=0;
+  let _defOri = localStorage.getItem("qu33phOrientation")||"vertical";
+  orientationIndex = Math.max(0, orientations.indexOf(_defOri));
+  currentOrientation = orientations[orientationIndex];
+  document.getElementById("rotateBtn").style.display="block";
+  document.getElementById("rotateBtn").innerText="Orientation: "+currentOrientation;
+  document.getElementById("timeline").style.display="block";
+  document.getElementById("progress").style.width="0%";
+  document.getElementById("progress").style.background="lime";
+  randomizeSky();
+  gameState="playing";
+}
+
+// ─── ORIENTATION BTN ──────────────────────────────────────────────────────
+document.getElementById("rotateBtn").onclick=()=>{
+  orientationIndex=(orientationIndex+1)%orientations.length;
+  currentOrientation=orientations[orientationIndex];
+  document.getElementById("rotateBtn").innerText="Orientation: "+currentOrientation;
+};
+
+// ─── INPUT ────────────────────────────────────────────────────────────────
+let dragging=false,startX,startY,currentX,currentY;
+const colors=["green","red","blue"];
+const lengths=[60,60,90];
+
+canvas.addEventListener("pointerdown",e=>{
+  if(gameState==="title"||gameState==="bracket") return;
+
+  if(gameState==="end"||gameState==="olympicsResult"){
+    if(gameMode==="single"){
+      showTitle();
+    } else {
+      showTitle();
+    }
+    return;
+  }
+
+  if(gameState!=="playing") return;
+
+  if(current===3 && markers.every(m=>m.stopped||m.fallen)){
+    tryAdvanceRound();
+    return;
+  }
+
+  if(current>=3 && markers.length===0) return;
+
+  dragging=true;
+  startX = mirrorMode ? (canvas.width - e.clientX) : e.clientX;
+  startY=e.clientY;
+  currentX=startX;
+  currentY=startY;
+});
+
+canvas.addEventListener("pointermove",e=>{
+  if(!dragging) return;
+  currentX = mirrorMode ? (canvas.width - e.clientX) : e.clientX;
+  currentY=e.clientY;
+});
+
+canvas.addEventListener("pointerup",()=>{
+  if(!dragging) return;
+  dragging=false;
+
+  if(gameState!=="playing") return;
+  if(current>=3) return;
+
+  let dx=currentX-startX;
+  let dy=currentY-startY;
+
+  let baseRot=
+    currentOrientation==="vertical"?Math.PI/3:
+    currentOrientation==="angled"?Math.PI/2:
+    0;
+
+  markers.push({
+    x:canvas.width/2,
+    y:canvas.height-50,
+    usedPreview:current,
+    vx:dx*0.2,
+    vy:dy*0.2,
+    curve:dx*0.0003,
+    angleType:currentOrientation,
+    color:colors[current],
+    length:lengths[current],
+    stopped:false,
+    fallen:false,
+    trail:[],
+    rotation:baseRot,
+    spinVelocity:
+      currentOrientation==="vertical"?0.08:
+      currentOrientation==="angled"?0.12:0.18,
+    chairBoost:false,
+    megaTriggered:false,
+    armed:false,
+    life:0,
+    passedDestiny:false,
+    deducted:false,
+  });
+
+  haptic(18);
+  current++;
+  previewMarkers[current-1].used=true;
+});
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function touching(a,b){ return Math.hypot(a.x-b.x,a.y-b.y)<45; }
+function isTouchingAny(m){ return markers.some(n=>n!==m&&!n.fallen&&touching(m,n)); }
+function touchingChair(m){ return Math.hypot(m.x-chair.x,m.y-chair.y)<chair.radius; }
+function addShake(amount){ shake=Math.max(shake, reduceMotion?amount*0.15:amount); }
+
+function triggerMegaQu33ph(m){
+  m.x=redDot.x; m.y=redDot.y;
+  m.vx=0; m.vy=0; m.stopped=true;
+  totalScore+=10;
+  addShake(20);
+  explosions.push({x:redDot.x,y:redDot.y,radius:10,life:30,text:"MEGA QU33PH",mega:true});
+  haptic([30,40,80]);
+  trackAch("mega");
+}
+
+// ─── ROUND SYSTEM ─────────────────────────────────────────────────────────
+function tryAdvanceRound(){
+  if(gameState!=="playing") return;
+  if(current===3 && markers.every(m=>m.stopped||m.fallen)){
+    let g=markers[0], r=markers[1], b=markers[2];
+
+    if(b && !b.fallen && suddenDeath){
+      if(b.y > chair.y){
+        totalScore = totalScore - 2;
+        scorePopups.push({x:(LEFT_EDGE+RIGHT_WALL)/2, y:canvas.height*0.45, text:"PEEF", life:55, peef:true, shakeAmt:7});
+        scorePopups.push({x:(LEFT_EDGE+RIGHT_WALL)/2, y:canvas.height*0.45+30, text:"-2 BLUE MISSED CHAIR", life:55, peef:true, shakeAmt:4});
+        haptic([50,40,50]);
+        trackAch("peef");
+        addShake(8);
+      }
+    }
+
+    let roundScore=calculateScore();
+    totalScore+=roundScore;
+    scorePopups.push({x:canvas.width/2,y:canvas.height/2,text:"+"+roundScore,life:40});
+    if(g&&r&&b&&touching(g,r)&&touching(r,b)&&touching(g,b)){
+      explosions.push({x:(g.x+r.x+b.x)/3,y:(g.y+r.y+b.y)/3,radius:10,life:20,text:"QU33PH"});
+      haptic([25,30,50]);
+      trackAch("qu33ph");
+      if(suddenDeath) trackAch("qu33ph_sd");
+      addShake(8);
+    }
+    markers=[];
+    current=0;
+    previewMarkers=[
+      {color:"green",x:0,used:false},
+      {color:"red",x:0,used:false},
+      {color:"blue",x:0,used:false}
+    ];
+  }
+}
+
+function calculateScore(){
+  if(markers.length<3) return 0;
+  let g=markers[0],r=markers[1],b=markers[2];
+  if(!g||!r||!b) return 0;
+  if(!(g.armed&&r.armed&&b.armed)) return 0;
+  let gr=touching(g,r), rb=touching(r,b), gb=touching(g,b);
+  if(suddenDeath){
+    if(gr&&rb&&gb) return 10;
+    if(rb) return 5;
+    if(gb) return 5;
+    if(gr) return 3;
+    return 0;
+  } else {
+    if(gr&&rb&&gb) return 3;
+    if(rb) return 2;
+    if(gb) return 2;
+    if(gr) return 0.5;
+    return 0;
+  }
+}
+
+// ─── SKY ──────────────────────────────────────────────────────────────────
+let clouds=[];
+let trees=[];
+
+function randomizeSky(){
+  let wx = RIGHT_WALL + 5;
+  let ww = canvas.width - wx;
+
+  clouds=[];
+  for(let i=0;i<5;i++){
+    clouds.push({
+      x: wx + Math.random()*ww,
+      y: END_LINE_Y + Math.random() * (canvas.height * 0.55 - END_LINE_Y),
+      w: 30 + Math.random()*50,
+      speed: 0.05 + Math.random()*0.08,
+      wx, ww
+    });
+  }
+
+  trees=[];
+  for(let i=0;i<8;i++){
+    trees.push({
+      x: wx + Math.random()*ww,
+      h: canvas.height * (0.07 + Math.random()*0.09)
+    });
+  }
+}
+
+function lerpRGB(a,b,t){
+  return [
+    Math.round(a[0]+(b[0]-a[0])*t),
+    Math.round(a[1]+(b[1]-a[1])*t),
+    Math.round(a[2]+(b[2]-a[2])*t)
+  ];
+}
+
+function drawWindowScene(elapsed){
+  let t = Math.min(elapsed/TOTAL_TIME, 1);
+  let wx = RIGHT_WALL + 10;
+  let ww = canvas.width - wx;
+  let wh = canvas.height;
+
+  let glassTop = wh * 0.58 + 10;
+  let horizonX = wx + ww * 0.45;
+
+  let groundColor = t<0.66
+    ? lerpRGB([55,105,45],[30,60,25],t/0.66)
+    : lerpRGB([30,60,25],[12,22,10],(t-0.66)/0.34);
+  ctx.fillStyle=`rgb(${groundColor})`;
+  ctx.fillRect(wx, glassTop, horizonX-wx, wh-glassTop);
+
+  let skyTop2, skyBot2;
+  if(t < 0.66){
+    let d=t/0.66;
+    skyTop2=lerpRGB([82,148,210],[210,130,50],d);
+    skyBot2=lerpRGB([140,195,235],[240,180,80],d);
+  } else {
+    let d=(t-0.66)/0.34;
+    skyTop2=lerpRGB([210,130,50],[15,8,35],d);
+    skyBot2=lerpRGB([240,180,80],[160,45,20],d);
+  }
+  let skyGrad = ctx.createLinearGradient(horizonX, 0, canvas.width, 0);
+  skyGrad.addColorStop(0, `rgb(${skyBot2})`);
+  skyGrad.addColorStop(1, `rgb(${skyTop2})`);
+  ctx.fillStyle=skyGrad;
+  ctx.fillRect(horizonX, glassTop, canvas.width-horizonX, wh-glassTop);
+
+  let sunX = canvas.width - (canvas.width - horizonX) * (0.15 + t * 0.7);
+  let sunY = glassTop + (wh-glassTop)*0.25;
+  let sunR = t<0.66 ? 12 : 9;
+  let glowG = ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*4);
+  glowG.addColorStop(0, t<0.66?`rgba(255,240,120,0.3)`:`rgba(200,50,10,0.35)`);
+  glowG.addColorStop(1,`rgba(0,0,0,0)`);
+  ctx.fillStyle=glowG;
+  ctx.beginPath(); ctx.arc(sunX,sunY,sunR*4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=t<0.66?`rgba(255,245,170,0.95)`:`rgba(215,70,30,0.9)`;
+  ctx.beginPath(); ctx.arc(sunX,sunY,sunR,0,Math.PI*2); ctx.fill();
+
+  let treeW = ww * 0.2;
+  let treeL = horizonX - treeW*0.55;
+  let treGrad = ctx.createLinearGradient(treeL, 0, treeL+treeW, 0);
+  treGrad.addColorStop(0, `rgba(0,0,0,0)`);
+  treGrad.addColorStop(0.2, t<0.66?`rgba(22,55,18,0.85)`:`rgba(8,14,6,0.9)`);
+  treGrad.addColorStop(0.8, t<0.66?`rgba(28,65,22,0.95)`:`rgba(10,18,8,0.97)`);
+  treGrad.addColorStop(1, `rgba(0,0,0,0)`);
+  ctx.fillStyle=treGrad;
+  ctx.fillRect(treeL, glassTop, treeW, wh-glassTop);
+  ctx.fillStyle=t<0.66?`rgba(22,55,18,0.88)`:`rgba(8,14,6,0.92)`;
+  for(let ty=glassTop; ty<wh; ty+=6){
+    let bump=Math.sin(ty*0.4)*3+Math.sin(ty*0.8)*2;
+    ctx.fillRect(horizonX-treeW*0.22+bump, ty, treeW*0.22-bump+2, 6);
+  }
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(horizonX+2, glassTop, canvas.width-horizonX-2, wh-glassTop); ctx.clip();
+  let cloudCol = t<0.66
+    ? `rgba(255,255,255,${0.75-(t/0.66)*0.25})`
+    : `rgba(190,110,70,${Math.max(0,0.4-(t-0.66)/0.34*0.3)})`;
+  clouds.forEach(c=>{
+    let cy2 = glassTop + (c.x - wx) / (canvas.width - wx) * (wh - glassTop);
+    let cx2 = horizonX + 10 + (c.w % (canvas.width - horizonX - 20));
+    let cw2 = c.w * 0.55;
+    ctx.fillStyle=cloudCol;
+    ctx.beginPath(); ctx.ellipse(cx2, cy2, cw2*0.22, cw2*0.5, 0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx2+cw2*0.06, cy2-cw2*0.22, cw2*0.16, cw2*0.3, 0,0,Math.PI*2); ctx.fill();
+    c.x += c.speed;
+    if(c.x > canvas.width + c.w) c.x = wx - c.w;
+  });
+  ctx.restore();
+
+}
+
+function drawWindowFrame(){
+  let wx = RIGHT_WALL;
+  let ww = canvas.width - wx;
+  let wh = canvas.height;
+
+  let slimH    = wh * 0.08;
+  let blindTop = slimH;
+  let blindBot = slimH + wh * 0.30;
+  let wallTop  = blindBot;
+  let wallBot  = wallTop + wh * 0.20;
+  let glassTop2 = wallBot;
+
+  ctx.fillStyle="#cdc8bc";
+  ctx.fillRect(wx+10, 0, ww-10, slimH);
+
+  let blindGrad = ctx.createLinearGradient(0,blindTop,0,blindBot);
+  blindGrad.addColorStop(0,"#a89878");
+  blindGrad.addColorStop(1,"#988868");
+  ctx.fillStyle=blindGrad;
+  let blindH = blindBot - blindTop;
+  ctx.fillRect(wx+10, blindTop, ww-10, blindH);
+  ctx.strokeStyle="rgba(60,45,25,0.5)"; ctx.lineWidth=2;
+  for(let sx=wx+10+8; sx<canvas.width; sx+=8){
+    ctx.beginPath(); ctx.moveTo(sx,blindTop); ctx.lineTo(sx,blindBot); ctx.stroke();
+  }
+  ctx.strokeStyle="rgba(200,185,155,0.4)"; ctx.lineWidth=1;
+  for(let sx=wx+10+8; sx<canvas.width; sx+=8){
+    ctx.beginPath(); ctx.moveTo(sx-2,blindTop); ctx.lineTo(sx-2,blindBot); ctx.stroke();
+  }
+  ctx.fillStyle="#7a7060";
+  ctx.fillRect(wx+10, blindBot-5, ww-10, 7);
+
+  let wallGrad = ctx.createLinearGradient(0,wallTop,0,wallBot);
+  wallGrad.addColorStop(0,"#edeae4");
+  wallGrad.addColorStop(1,"#e0ddd6");
+  ctx.fillStyle=wallGrad;
+  ctx.fillRect(wx+10, wallTop, ww-10, wallBot-wallTop);
+
+  ctx.fillStyle="#181818";
+  ctx.fillRect(wx, 0, 10, wh);
+
+  ctx.fillRect(wx+10, wallBot, ww-10, 10);
+
+  ctx.fillRect(wx+10, wh-8, ww-10, 8);
+
+  let col1 = wx + ww*0.38;
+  let col2 = wx + ww*0.72;
+  ctx.fillRect(col1-4, glassTop2, 8, wh-glassTop2);
+  ctx.fillRect(col2-4, glassTop2, 8, wh-glassTop2);
+
+  ctx.fillRect(wx+10, glassTop2+(wh-glassTop2)*0.5, ww-10, 7);
+}
+
+// ─── UPDATE ───────────────────────────────────────────────────────────────
+function update(){
+  if(gameState!=="playing") return;
+
+  if(shake>0){ shake*=0.9; if(shake<0.05) shake=0; }
+
+  let elapsed=(Date.now()-startTime)/1000;
+
+  if(elapsed>ROUND_TIME&&elapsed<=TOTAL_TIME){ suddenDeath=true; }
+  if(!chairLocked&&suddenDeath){ chairLocked=true; chair.x=(LEFT_EDGE+RIGHT_WALL)/2; chair.y=END_LINE_Y+90; }
+  if(elapsed>TOTAL_TIME){ endGame(); return; }
+
+  markers.forEach(m=>{
+    if(m.stopped||m.fallen) return;
+    m.life+=1/60;
+    if(m.life>=1){ m.stopped=true; m.vx=0; m.vy=0; }
+    m.vx+=m.curve;
+    m.x+=m.vx*speedMultiplier;
+    m.y+=m.vy*speedMultiplier;
+    if(!m.armed&&m.y<START_LINE_Y) m.armed=true;
+    m.vx*=0.94; m.vy*=0.94;
+    m.rotation+=m.spinVelocity*speedMultiplier;
+    m.spinVelocity*=0.96;
+    if(suddenDeath&&!m.megaTriggered&&touchingChair(m)){
+      if(Math.random()<0.25) triggerMegaQu33ph(m);
+      m.megaTriggered=true;
+    }
+    m.trail.push({x:m.x,y:m.y});
+    if(m.trail.length>20) m.trail.shift();
+
+    if(m.x<LEFT_EDGE){
+      if(!m.deducted){
+        let deduction = suddenDeath ? 5 : 2;
+        totalScore = totalScore - deduction;
+        m.deducted=true;
+        haptic([50,40,50]);
+        trackAch("peef");
+        addShake(12);
+        scorePopups.push({
+          x: LEFT_EDGE + 80 + Math.random()*40,
+          y: Math.min(Math.max(m.y, END_LINE_Y+40), canvas.height*0.8),
+          text:"PEEF",
+          life:55, peef:true, shakeAmt:9,
+        });
+        scorePopups.push({
+          x: LEFT_EDGE + 80 + Math.random()*40,
+          y: Math.min(Math.max(m.y+30, END_LINE_Y+70), canvas.height*0.8+30),
+          text:"-"+deduction,
+          life:50, peef:true, shakeAmt:5,
+        });
+      }
+      m.fallen=true;
+    }
+    if(m.x>RIGHT_WALL){ m.x=RIGHT_WALL; m.vx*=-0.4; }
+    if(m.y<END_LINE_Y){ m.y=END_LINE_Y; m.vy*=-0.2; }
+    if(Math.abs(m.vx)<0.05&&Math.abs(m.vy)<0.05) m.stopped=true;
+
+    let progress=Math.min(elapsed/TOTAL_TIME,1);
+    document.getElementById("progress").style.width=(progress*100)+"%";
+    if(elapsed>ROUND_TIME) document.getElementById("progress").style.background="red";
+  });
+
+  explosions.forEach(e=>{ e.radius+=e.mega?6:4; e.life--; });
+  explosions=explosions.filter(e=>e.life>0);
+  scorePopups.forEach(p=>{ p.y -= p.peef ? 0.8 : 1; p.life--; });
+  scorePopups=scorePopups.filter(p=>p.life>0);
+
+  if(current===3&&markers.every(m=>m.stopped||m.fallen)) tryAdvanceRound();
+}
+
+// ─── END GAME ─────────────────────────────────────────────────────────────
+function endGame(){
+  shake=0;
+  trackAch("score", totalScore);
+  if(totalScore>highScore){
+    highScore=totalScore;
+    localStorage.setItem("qu33phHigh",highScore);
+  }
+  document.getElementById("rotateBtn").style.display="none";
+  document.getElementById("timeline").style.display="none";
+
+  if(gameMode==="olympics" || gameMode==="specialolympics"){
+    const os=olympicsState;
+    if(os.coinsWonThisRun===undefined) os.coinsWonThisRun=0;
+    if(os.coinHistory===undefined) os.coinHistory=[];
+    os.lastRoundReward = 0;
+    let oppScore=simulatedScore();
+    while(oppScore===totalScore) oppScore=simulatedScore();
+    const rewards = gameMode==="specialolympics" ? SPECIAL_OLYMPICS_REWARDS : OLYMPICS_REWARDS;
+    let isSpecial = gameMode==="specialolympics";
+
+    if(os.round===1){
+      os.qf4Score=totalScore; os.qf4Opp=oppScore;
+      os.sf1s1=simulatedScore(); os.sf1s2=simulatedScore();
+      while(os.sf1s1===os.sf1s2) os.sf1s2=simulatedScore();
+      if(totalScore<=oppScore){
+        os.playerEliminated=true;
+      } else {
+        addCoins(rewards[1]);
+        os.coinsWonThisRun += rewards[1];
+        os.lastRoundReward = rewards[1];
+        os.coinHistory.push({label:"QF4", amt:rewards[1]});
+      }
+      os.round=2;
+    } else if(os.round===2){
+      os.sf2Score=totalScore; os.sf2Opp=oppScore;
+      if(totalScore<=oppScore){
+        os.playerEliminated=true;
+      } else {
+        addCoins(rewards[2]);
+        os.coinsWonThisRun += rewards[2];
+        os.lastRoundReward = rewards[2];
+        os.coinHistory.push({label:"SEMI", amt:rewards[2]});
+      }
+      os.round=3;
+    } else if(os.round===3){
+      os.finScore=totalScore; os.finOpp=oppScore;
+      os.champion=totalScore>oppScore?"player":"cpu";
+      if(os.champion==="player"){
+        addCoins(rewards[3]);
+        os.coinsWonThisRun += rewards[3];
+        os.lastRoundReward = rewards[3];
+        os.coinHistory.push({label:"FINAL", amt:rewards[3]});
+      } else {
+        // Final loss = silver
+      }
+    }
+
+    // Bronze: eliminated in SF (round reaches 3 after SF loss, playerEliminated=true)
+    if(os.playerEliminated && os.round===3){
+    }
+
+    gameState="end";
+    showBracket();
+    return;
+  }
+
+  gameState="end";
+}
+
+// ─── DRAW MARKER ──────────────────────────────────────────────────────────
+function drawMarker(m){
+  if(m.trail&&m.trail.length>1){
+    let tw=m.color==="red"?3:m.color==="green"?4:6;
+    ctx.beginPath();
+    ctx.moveTo(m.trail[0].x,m.trail[0].y);
+    for(let i=1;i<m.trail.length;i++) ctx.lineTo(m.trail[i].x,m.trail[i].y);
+    ctx.strokeStyle=m.color;
+    ctx.lineWidth=tw;
+    ctx.globalAlpha=0.6;
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  const img=getMarkerImg(m.color);
+  if(!img||!img.complete||!img.naturalWidth) return;
+  ctx.save();
+  ctx.translate(m.x,m.y);
+  ctx.rotate(m.rotation);
+  let w=50,h=50;
+  if(m.color==="blue"){w=80;h=50;}
+  ctx.drawImage(img,-w/2,-h/2,w,h);
+  ctx.restore();
+}
+
+// ─── NATION COLOURS / MINI FLAGS ──────────────────────────────────────────
+// (flag emoji don't render on Android, so we draw simple colour flags instead)
+const NATION_FLAGS = {
+  "Ireland":     {t:"v", c:["#169b62","#ffffff","#ff883e"]},
+  "France":      {t:"v", c:["#0055a4","#ffffff","#ef4135"]},
+  "Germany":     {t:"h", c:["#000000","#dd0000","#ffce00"]},
+  "Netherlands": {t:"h", c:["#ae1c28","#ffffff","#21468b"]},
+  "Russia":      {t:"h", c:["#ffffff","#0039a6","#d52b1e"]},
+  "Iran":        {t:"h", c:["#239f40","#ffffff","#da0000"]},
+  "USA":         {t:"usa"},
+  "Japan":       {t:"circle", bg:"#ffffff", fg:"#bc002d"},
+  "China":       {t:"china"},
+  "Norway":      {t:"nordic", bg:"#ef2b2d", cross:"#ffffff", inner:"#002868"},
+  "Sweden":      {t:"nordic", bg:"#006aa7", cross:"#fecc00"},
+  "Scotland":    {t:"saltire", bg:"#0065bd", cross:"#ffffff"},
+  "England":     {t:"cross", bg:"#ffffff", cross:"#ce1124"},
+  "Australia":   {t:"canton", bg:"#00247d"},
+  "Canada":      {t:"canada"},
+  "Brazil":      {t:"brazil"},
+  "Israel":      {t:"israel"},
+  "South Africa":{t:"sa"},
+};
+const NATION_ABBR = {
+  "Ireland":"IRL","France":"FRA","Germany":"GER","Netherlands":"NED","Russia":"RUS","Iran":"IRN",
+  "USA":"USA","Japan":"JPN","China":"CHN","Norway":"NOR","Sweden":"SWE","Scotland":"SCO",
+  "England":"ENG","Australia":"AUS","Canada":"CAN","Brazil":"BRA","Israel":"ISR","South Africa":"RSA"
+};
+function fstar(c,cx,cy,r){
+  c.beginPath();
+  for(let p=0;p<5;p++){
+    let a=p*Math.PI*2/5-Math.PI/2, b=a+Math.PI/5;
+    p===0?c.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):c.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    c.lineTo(cx+Math.cos(b)*r*0.42,cy+Math.sin(b)*r*0.42);
+  }
+  c.closePath(); c.fill();
+}
+function drawMiniFlag(c, x, y, w, h, name){
+  let s = NATION_FLAGS[name] || {t:"v", c:["#888","#bbb","#888"]};
+  c.save();
+  c.beginPath(); c.rect(x,y,w,h); c.clip();
+  c.fillStyle="#ffffff"; c.fillRect(x,y,w,h);
+  let t=s.t;
+  if(t==="v"){
+    let n=s.c.length, sw=w/n;
+    for(let i=0;i<n;i++){ c.fillStyle=s.c[i]; c.fillRect(x+i*sw,y,sw+0.6,h); }
+  } else if(t==="h"){
+    let n=s.c.length, sh=h/n;
+    for(let i=0;i<n;i++){ c.fillStyle=s.c[i]; c.fillRect(x,y+i*sh,w,sh+0.6); }
+  } else if(t==="usa"){
+    let stripes=7, sh=h/stripes;
+    for(let i=0;i<stripes;i++){ c.fillStyle=i%2===0?"#b22234":"#ffffff"; c.fillRect(x,y+i*sh,w,sh+0.6); }
+    let cw=w*0.44, ch=h*0.54;
+    c.fillStyle="#3c3b6e"; c.fillRect(x,y,cw,ch);
+    c.fillStyle="#ffffff";
+    let r=Math.max(0.5,h*0.05);
+    for(let ry=0;ry<3;ry++) for(let rx=0;rx<3;rx++){
+      c.beginPath(); c.arc(x+cw*(0.2+rx*0.3), y+ch*(0.24+ry*0.26), r,0,Math.PI*2); c.fill();
+    }
+  } else if(t==="circle"){
+    c.fillStyle=s.bg; c.fillRect(x,y,w,h);
+    c.fillStyle=s.fg; c.beginPath(); c.arc(x+w/2,y+h/2, Math.min(w,h)*0.30,0,Math.PI*2); c.fill();
+  } else if(t==="china"){
+    c.fillStyle="#de2910"; c.fillRect(x,y,w,h);
+    c.fillStyle="#ffde00";
+    fstar(c, x+w*0.22, y+h*0.34, Math.min(w,h)*0.22);
+    for(let i=0;i<4;i++){ c.beginPath(); c.arc(x+w*(0.44+(i%2)*0.05), y+h*(0.16+i*0.12), Math.max(0.5,h*0.05),0,Math.PI*2); c.fill(); }
+  } else if(t==="nordic"){
+    c.fillStyle=s.bg; c.fillRect(x,y,w,h);
+    let vx=x+w*0.30, vw=Math.max(2,w*0.16);
+    let hy=y+h*0.40, hh=Math.max(2,h*0.20);
+    c.fillStyle=s.cross; c.fillRect(vx,y,vw,h); c.fillRect(x,hy,w,hh);
+    if(s.inner){
+      let ivx=vx+vw*0.30, ivw=vw*0.40, ihy=hy+hh*0.30, ihh=hh*0.40;
+      c.fillStyle=s.inner; c.fillRect(ivx,y,ivw,h); c.fillRect(x,ihy,w,ihh);
+    }
+  } else if(t==="saltire"){
+    c.fillStyle=s.bg; c.fillRect(x,y,w,h);
+    c.strokeStyle=s.cross; c.lineWidth=Math.max(1.5,h*0.18);
+    c.beginPath(); c.moveTo(x,y); c.lineTo(x+w,y+h); c.moveTo(x+w,y); c.lineTo(x,y+h); c.stroke();
+  } else if(t==="cross"){
+    c.fillStyle=s.bg; c.fillRect(x,y,w,h);
+    c.fillStyle=s.cross;
+    let vw=Math.max(2,w*0.20), hh=Math.max(2,h*0.22);
+    c.fillRect(x+w/2-vw/2,y,vw,h); c.fillRect(x,y+h/2-hh/2,w,hh);
+  } else if(t==="canton"){
+    c.fillStyle=s.bg; c.fillRect(x,y,w,h);
+    c.fillStyle="#ffffff"; c.fillRect(x,y,w*0.46,h*0.5);
+    c.strokeStyle="#cf142b"; c.lineWidth=Math.max(1,h*0.08);
+    c.beginPath(); c.moveTo(x,y); c.lineTo(x+w*0.46,y+h*0.5); c.moveTo(x+w*0.46,y); c.lineTo(x,y+h*0.5); c.stroke();
+    c.fillStyle="#ffffff"; fstar(c, x+w*0.70, y+h*0.68, Math.min(w,h)*0.18);
+  } else if(t==="canada"){
+    c.fillStyle="#ff0000"; c.fillRect(x,y,w*0.26,h); c.fillRect(x+w*0.74,y,w*0.26,h);
+    c.fillStyle="#ffffff"; c.fillRect(x+w*0.26,y,w*0.48,h);
+    c.fillStyle="#ff0000"; c.beginPath(); c.arc(x+w*0.5,y+h*0.5, Math.min(w,h)*0.18,0,Math.PI*2); c.fill();
+  } else if(t==="brazil"){
+    c.fillStyle="#009c3b"; c.fillRect(x,y,w,h);
+    c.fillStyle="#ffdf00";
+    c.beginPath(); c.moveTo(x+w/2,y+h*0.12); c.lineTo(x+w*0.86,y+h/2); c.lineTo(x+w/2,y+h*0.88); c.lineTo(x+w*0.14,y+h/2); c.closePath(); c.fill();
+    c.fillStyle="#002776"; c.beginPath(); c.arc(x+w/2,y+h/2, Math.min(w,h)*0.18,0,Math.PI*2); c.fill();
+  } else if(t==="israel"){
+    c.fillStyle="#ffffff"; c.fillRect(x,y,w,h);
+    c.fillStyle="#0038b8";
+    c.fillRect(x,y+h*0.14,w,h*0.15); c.fillRect(x,y+h*0.71,w,h*0.15);
+    c.strokeStyle="#0038b8"; c.lineWidth=Math.max(1,h*0.06);
+    c.beginPath(); c.moveTo(x+w/2,y+h*0.34); c.lineTo(x+w*0.62,y+h*0.60); c.lineTo(x+w*0.38,y+h*0.60); c.closePath(); c.stroke();
+    c.beginPath(); c.moveTo(x+w/2,y+h*0.66); c.lineTo(x+w*0.62,y+h*0.40); c.lineTo(x+w*0.38,y+h*0.40); c.closePath(); c.stroke();
+  } else if(t==="sa"){
+    c.fillStyle="#de3831"; c.fillRect(x+w*0.35,y,w*0.65,h*0.5);
+    c.fillStyle="#002395"; c.fillRect(x+w*0.35,y+h*0.5,w*0.65,h*0.5);
+    c.fillStyle="#007a4d"; c.beginPath(); c.moveTo(x,y); c.lineTo(x+w*0.55,y+h/2); c.lineTo(x,y+h); c.closePath(); c.fill();
+    c.fillStyle="#ffb612"; c.beginPath(); c.moveTo(x,y+h*0.14); c.lineTo(x+w*0.40,y+h/2); c.lineTo(x,y+h*0.86); c.closePath(); c.fill();
+    c.fillStyle="#000000"; c.beginPath(); c.moveTo(x,y+h*0.28); c.lineTo(x+w*0.26,y+h/2); c.lineTo(x,y+h*0.72); c.closePath(); c.fill();
+  } else {
+    let cols=s.c||["#888","#bbb","#888"]; let n=cols.length, sw=w/n;
+    for(let i=0;i<n;i++){ c.fillStyle=cols[i]; c.fillRect(x+i*sw,y,sw+0.6,h); }
+  }
+  c.restore();
+  c.strokeStyle="rgba(0,0,0,0.55)"; c.lineWidth=1;
+  c.strokeRect(x+0.5,y+0.5,w-1,h-1);
+  if(typeof colorblind!=="undefined" && colorblind){
+    let ab = NATION_ABBR[name] || (name?name.slice(0,3).toUpperCase():"");
+    c.save();
+    c.font="bold "+Math.max(6,Math.round(h*0.62))+"px Helvetica, Arial, sans-serif";
+    c.textAlign="center"; c.textBaseline="middle";
+    c.lineWidth=Math.max(2,h*0.18); c.strokeStyle="rgba(0,0,0,0.85)"; c.lineJoin="round";
+    c.strokeText(ab, x+w/2, y+h/2+0.5);
+    c.fillStyle="#ffffff"; c.fillText(ab, x+w/2, y+h/2+0.5);
+    c.restore();
+  }
+}
+
+// ─── DRAW ─────────────────────────────────────────────────────────────────
+function draw(){
+  if(gameState==="title"||gameState==="bracket") return;
+
+  if(gameState==="end"){
+    ctx.fillStyle="#000";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.textAlign="center";
+    ctx.textBaseline="top";
+    ctx.fillStyle="#fff";
+    ctx.font="bold 60px Helvetica, Arial, sans-serif";
+    ctx.fillText("Qu33ph",canvas.width/2,130);
+    ctx.font="22px Helvetica, Arial, sans-serif";
+    ctx.fillStyle="#aaa";
+    ctx.fillText("SCORE: "+totalScore,canvas.width/2,210);
+    ctx.fillStyle="#555";
+    ctx.fillText("HIGH SCORE: "+highScore,canvas.width/2,244);
+    ctx.fillStyle="#333";
+    ctx.font="16px Helvetica, Arial, sans-serif";
+    ctx.fillText("tap anywhere to return to menu",canvas.width/2,310);
+    return;
+  }
+
+  if(gameState==="olympicsResult"){
+    ctx.fillStyle="#000";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillStyle="#fff";
+    ctx.font="bold 28px Helvetica, Arial, sans-serif";
+    ctx.fillText(olympicsResultMsg,canvas.width/2,canvas.height/2-30);
+    if(olympicsResultSub){
+      ctx.fillStyle="#555";
+      ctx.font="16px Helvetica, Arial, sans-serif";
+      ctx.fillText(olympicsResultSub,canvas.width/2,canvas.height/2+20);
+    }
+    ctx.fillStyle="#333";
+    ctx.font="14px Helvetica, Arial, sans-serif";
+    ctx.fillText("tap to return to menu",canvas.width/2,canvas.height/2+70);
+    return;
+  }
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  let elapsed=(Date.now()-startTime)/1000;
+  _mirDraw = mirrorMode;
+  setBase();
+  let shakeX=(Math.random()-0.5)*shake;
+  let shakeY=(Math.random()-0.5)*shake;
+  ctx.save();
+  ctx.translate(shakeX,shakeY);
+
+  ctx.fillStyle="#d8cfc4";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  if((gameMode==="olympics"||gameMode==="specialolympics") && olympicsState){
+    let headerY = canvas.height*0.03;
+    ctx.fillStyle="#3d4a44";
+    ctx.font="bold 13px Helvetica, Arial, sans-serif";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    let headerText = gameMode==="specialolympics"
+      ? "QU33PH SPECIAL OLYMPICS"
+      : "QU33PH OLYMPICS";
+    ctx.font="bold 11px Helvetica, Arial, sans-serif";
+    ctx.fillText(headerText, (LEFT_EDGE+RIGHT_WALL)/2, canvas.height*0.021);
+
+    // Determine opponent for this round
+    let os=olympicsState;
+    let opp=null;
+    if(os.round===1) opp=os.n[6];
+    else if(os.round===2){ let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5]; opp=qf3w; }
+    else if(os.round===3){ let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];opp=os.sf1s1>os.sf1s2?qf1w:qf2w; }
+
+    // Matchup banner:  [flag] PLAYER  vs  OPP [flag]
+    let midX=(LEFT_EDGE+RIGHT_WALL)/2;
+    let bY=canvas.height*0.05;
+    let fw=Math.max(18, LEFT_EDGE*0.26), fh=Math.round(fw*0.62);
+    ctx.textBaseline="middle";
+    ctx.fillStyle="#2a3a34";
+    ctx.font="bold 12px Helvetica, Arial, sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("VS", midX, bY);
+    if(playerNation){
+      let pName=(playerNation.name.length>8?playerNation.name.slice(0,8):playerNation.name).toUpperCase();
+      ctx.font="bold 10px Helvetica, Arial, sans-serif";
+      ctx.textAlign="right"; ctx.fillStyle="#1e2a26";
+      ctx.fillText(pName, midX-16, bY);
+      let nameW=ctx.measureText(pName).width;
+      drawMiniFlag(ctx, midX-16-nameW-6-fw, bY-fh/2, fw, fh, playerNation.name);
+    }
+    if(opp){
+      let oName=(opp.name.length>8?opp.name.slice(0,8):opp.name).toUpperCase();
+      ctx.font="bold 10px Helvetica, Arial, sans-serif";
+      ctx.textAlign="left"; ctx.fillStyle="#1e2a26";
+      ctx.fillText(oName, midX+16, bY);
+      let nameW=ctx.measureText(oName).width;
+      drawMiniFlag(ctx, midX+16+nameW+6, bY-fh/2, fw, fh, opp.name);
+    }
+  }
+
+  drawWindowScene(elapsed);
+  drawWindowFrame();
+
+  ctx.fillStyle="#3d6b62";
+  ctx.fillRect(0, 0, LEFT_EDGE, canvas.height);
+
+  let cLeft  = LEFT_EDGE;
+  let cRight = RIGHT_WALL;
+  let cTop   = canvas.height * 0.06;
+  let cBot   = canvas.height * 0.97;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cLeft, cTop);
+  ctx.lineTo(cRight, cTop);
+  ctx.lineTo(cRight, cBot);
+  ctx.lineTo(cLeft, cBot);
+  ctx.closePath();
+
+  let surfGrad = ctx.createLinearGradient(0, cTop, 0, cBot);
+  surfGrad.addColorStop(0, "#8fa8a4");
+  surfGrad.addColorStop(0.3, "#9ab4af");
+  surfGrad.addColorStop(0.7, "#a8bebb");
+  surfGrad.addColorStop(1, "#b0c4c1");
+  ctx.fillStyle = surfGrad;
+  ctx.fill();
+
+  let sheenGrad = ctx.createLinearGradient(cLeft, 0, cRight, 0);
+  sheenGrad.addColorStop(0,"rgba(255,255,255,0)");
+  sheenGrad.addColorStop(0.4,"rgba(255,255,255,0.07)");
+  sheenGrad.addColorStop(1,"rgba(255,255,255,0)");
+  ctx.fillStyle=sheenGrad;
+  ctx.fill();
+
+  ctx.restore();
+
+  let faceTop = cBot;
+  let faceBot = cBot + canvas.height*0.025;
+  let faceGrad = ctx.createLinearGradient(0,faceTop,0,faceBot);
+  faceGrad.addColorStop(0,"#7a9490");
+  faceGrad.addColorStop(0.5,"#8ea8a4");
+  faceGrad.addColorStop(1,"#5a7470");
+  ctx.fillStyle=faceGrad;
+  ctx.fillRect(cLeft, faceTop, cRight-cLeft, faceBot-faceTop);
+  ctx.fillStyle="#b8c8c4";
+  ctx.fillRect(cLeft, faceTop, cRight-cLeft, 3);
+
+  ctx.fillStyle="#a8bebb";
+  ctx.fillRect(cLeft, cBot, cRight-cLeft, canvas.height-cBot);
+  ctx.fillStyle="#b8c8c4";
+  ctx.fillRect(cLeft, cBot, cRight-cLeft, 3);
+
+  ctx.fillStyle="#c8b89a";
+  ctx.fillRect(0, canvas.height*0.97, canvas.width, canvas.height*0.03);
+
+  ctx.fillStyle="#3d6b62";
+  ctx.fillRect(cLeft, cTop, cRight-cLeft, canvas.height*0.05);
+  ctx.fillStyle="#4a7d73";
+  ctx.fillRect(cLeft, cTop, cRight-cLeft, 3);
+
+  let acBrownR = cRight;
+  let acT2 = cTop  + (cBot-cTop)*0.77;
+  let acB2 = cTop  + (cBot-cTop)*0.93;
+  let acH2 = acB2 - acT2;
+  let acTotalW = acBrownR - cLeft;
+
+  ctx.fillStyle="rgba(0,0,0,0.25)";
+  ctx.fillRect(cLeft-2, acT2-3, acTotalW+4, acH2+6);
+
+  let acGrad = ctx.createLinearGradient(0, acT2, 0, acB2);
+  acGrad.addColorStop(0,"#b89878");
+  acGrad.addColorStop(0.5,"#c0a085");
+  acGrad.addColorStop(1,"#907060");
+  ctx.fillStyle=acGrad;
+  ctx.fillRect(cLeft, acT2, acTotalW, acH2);
+
+  ctx.strokeStyle="rgba(70,48,28,0.7)"; ctx.lineWidth=2;
+  ctx.strokeRect(cLeft+3, acT2+3, acTotalW-6, acH2-6);
+  ctx.strokeStyle="rgba(180,150,110,0.2)"; ctx.lineWidth=1;
+  ctx.strokeRect(cLeft+5, acT2+5, acTotalW-10, acH2-10);
+
+  let slatSectionR = cLeft + acTotalW*0.30;
+  ctx.fillStyle="#2a1c10";
+  ctx.fillRect(cLeft+6, acT2+6, slatSectionR-cLeft-6, acH2-12);
+
+  let numGroups = 5;
+  let groupH = (acH2-12) / numGroups;
+  let gapH = groupH * 0.18;
+  let slatAreaT = acT2+6;
+  let slatAreaL = cLeft+7;
+  let slatAreaR = slatSectionR-4;
+  let slatAreaW = slatAreaR - slatAreaL;
+
+  for(let gi=0; gi<numGroups; gi++){
+    let gy = slatAreaT + gi*groupH;
+    let gSlatsT = gy + gapH*0.5;
+    let gSlatsB = gy + groupH - gapH*0.5;
+    let gSlatsH = gSlatsB - gSlatsT;
+
+    ctx.fillStyle="#a07858";
+    ctx.fillRect(slatAreaL, gy, slatAreaW, gapH*0.5);
+
+    let slatW=4, slatGap=3;
+    for(let sx=slatAreaL+2; sx<slatAreaR-2; sx+=slatW+slatGap){
+      let sg=ctx.createLinearGradient(sx,0,sx+slatW,0);
+      sg.addColorStop(0,"#4a2e14");
+      sg.addColorStop(0.4,"#7a5030");
+      sg.addColorStop(1,"#4a2e14");
+      ctx.fillStyle=sg;
+      ctx.fillRect(sx, gSlatsT, slatW, gSlatsH);
+      ctx.fillStyle="rgba(0,0,0,0.55)";
+      ctx.fillRect(sx+slatW, gSlatsT, slatGap-1, gSlatsH);
+    }
+  }
+  ctx.fillStyle="#a07858";
+  ctx.fillRect(slatAreaL, slatAreaT+(numGroups-1)*groupH+groupH-gapH*0.5, slatAreaW, gapH*0.5);
+
+  ctx.strokeStyle="rgba(60,40,20,0.45)"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cLeft,acT2); ctx.lineTo(acBrownR,acT2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cLeft,acB2); ctx.lineTo(acBrownR,acB2); ctx.stroke();
+
+  ctx.fillStyle="#0e0e0e";
+  ctx.fillRect(RIGHT_WALL, cTop, 13, cBot-cTop);
+
+  let wallStripX = RIGHT_WALL + 13;
+  let wallStripW = canvas.width - wallStripX;
+  let wallStripBot = cTop + canvas.height * 0.08;
+  ctx.fillStyle="#cdc8bc";
+  ctx.fillRect(wallStripX, cTop, wallStripW, wallStripBot - cTop);
+
+  let dotCX = redDot.x;
+  let dotCY = redDot.y;
+  let dotR = 3;
+
+  let cardW = 11;
+  let cardH = 15;
+
+  ctx.fillStyle="#f5f5f0";
+  ctx.fillRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
+  ctx.strokeStyle="rgba(180,175,165,0.6)"; ctx.lineWidth=1;
+  ctx.strokeRect(dotCX - cardW/2, dotCY - cardH/2, cardW, cardH);
+
+  ctx.fillStyle="#111";
+  ctx.beginPath(); ctx.arc(dotCX, dotCY, dotR+2, 0, Math.PI*2); ctx.fill();
+
+  let rg = ctx.createRadialGradient(dotCX-2, dotCY-2, 1, dotCX, dotCY, dotR);
+  rg.addColorStop(0,"#ff5555");
+  rg.addColorStop(0.5,"#dd1111");
+  rg.addColorStop(1,"#990000");
+  ctx.fillStyle=rg;
+  ctx.beginPath(); ctx.arc(dotCX, dotCY, dotR, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.beginPath(); ctx.arc(dotCX-2, dotCY-2, dotR*0.35, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle="rgba(255,255,255,0.15)";
+  ctx.fillRect(cLeft, cTop+32, cRight-cLeft, 2);
+
+  if(gameMode==="olympics" && olympicsState){
+    let round = olympicsState.round;
+    let borderColor, glowColor, borderW;
+    if(round===1){
+      borderColor="#cd7f32"; glowColor="rgba(205,127,50,0.4)"; borderW=4;
+    } else if(round===2){
+      borderColor="#c0c0c0"; glowColor="rgba(192,192,192,0.4)"; borderW=5;
+    } else {
+      borderColor="#ffd700"; glowColor="rgba(255,215,0,0.5)"; borderW=6;
+    }
+    ctx.save();
+    ctx.shadowColor=glowColor; ctx.shadowBlur=18;
+    ctx.strokeStyle=borderColor; ctx.lineWidth=borderW;
+    ctx.strokeRect(cLeft+2, cTop+2, cRight-cLeft-4, cBot-cTop-4);
+    ctx.restore();
+
+    if(round===3){
+      let t=Date.now()/1000;
+      let numStars=16;
+      let bLeft=cLeft+3, bRight=cRight-3, bTop=cTop+3, bBot=cBot-3;
+      let perimeter = 2*((bRight-bLeft)+(bBot-bTop));
+
+      for(let i=0;i<numStars;i++){
+        let dist = ((i/numStars)*perimeter + t*120) % perimeter;
+        let px,py;
+        let top=bRight-bLeft, right=bBot-bTop, bottom=bRight-bLeft, left=bBot-bTop;
+        if(dist<top){ px=bLeft+dist; py=bTop; }
+        else if(dist<top+right){ px=bRight; py=bTop+(dist-top); }
+        else if(dist<top+right+bottom){ px=bRight-(dist-top-right); py=bBot; }
+        else { px=bLeft; py=bBot-(dist-top-right-bottom); }
+
+        let pulse=0.5+0.5*Math.sin(t*4+i*1.1);
+        let size=3+pulse*4;
+        ctx.save();
+        ctx.globalAlpha=0.5+pulse*0.5;
+        ctx.fillStyle="#ffd700";
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=12;
+        ctx.translate(px,py); ctx.rotate(t*2+i);
+        ctx.beginPath();
+        for(let p=0;p<5;p++){
+          let a=p*Math.PI*2/5-Math.PI/2;
+          let b=a+Math.PI/5;
+          p===0?ctx.moveTo(Math.cos(a)*size,Math.sin(a)*size):ctx.lineTo(Math.cos(a)*size,Math.sin(a)*size);
+          ctx.lineTo(Math.cos(b)*size*0.4,Math.sin(b)*size*0.4);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    let medalEmoji = round===1?"🥉":round===2?"🥈":"🥇";
+    let roundName = round===1?"QUARTER-FINAL":round===2?"SEMI-FINAL":"GRAND FINAL";
+    let prefix = gameMode==="specialolympics" ? "SPECIAL · " : "";
+    let cabMidY = cTop + canvas.height*0.025;
+    ctx.fillStyle=borderColor;
+    ctx.font="bold 12px Helvetica, Arial, sans-serif";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(medalEmoji+" "+prefix+roundName+" "+medalEmoji, (cLeft+cRight)/2, cabMidY);
+  }
+
+  if(current===3&&markers.every(m=>m.stopped||m.fallen)){
+    ctx.fillStyle="white";
+    ctx.font="bold 24px Helvetica, Arial, sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="bottom";
+    ctx.fillText("tap anywhere on field to advance",(LEFT_EDGE+RIGHT_WALL)/2,END_LINE_Y-20);
+  }
+
+  ctx.restore();
+
+  if(suddenDeath){
+    ctx.save();
+    setBase();
+    ctx.translate(chair.x, chair.y);
+    if(chairImg.complete && chairImg.naturalWidth){
+      let cw=50, ch=50;
+      ctx.drawImage(chairImg, -cw/2, -ch/2, cw, ch);
+    }
+    ctx.restore();
+  }
+
+  explosions.forEach(e=>{
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
+    ctx.strokeStyle="white";
+    ctx.lineWidth=4;
+    ctx.globalAlpha=e.life/30;
+    ctx.stroke();
+    ctx.globalAlpha=e.life/30;
+    ctx.fillStyle="white";
+    ctx.font=e.mega?"bold 50px Arial":"bold 60px Arial";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(e.text||"QU33PH",e.x,e.y);
+    ctx.globalAlpha=1;
+  });
+
+  scorePopups.forEach(p=>{
+    ctx.save();
+    if(p.peef){
+      let shake2 = (p.shakeAmt && !reduceMotion) ? (Math.random()-0.5)*p.shakeAmt*(p.life/55) : 0;
+      ctx.globalAlpha = Math.min(1, p.life/25);
+      ctx.fillStyle="#ff2222";
+      ctx.font=`bold ${p.text==="PEEF"?"36px":"18px"} Helvetica, Arial, sans-serif`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(p.text, p.x + shake2, p.y + shake2*0.5);
+    } else {
+      ctx.globalAlpha=p.life/40;
+      ctx.fillStyle="white";
+      ctx.font="bold 30px Helvetica, Arial, sans-serif";
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(p.text,p.x,p.y);
+    }
+    ctx.restore();
+  });
+
+  let previewAngleStd =
+    currentOrientation==="vertical"   ? Math.PI/3 :
+    currentOrientation==="angled"     ? Math.PI/2 :
+    0;
+  let previewAngleBlue =
+    currentOrientation==="vertical"   ? Math.PI/3 + Math.PI/4 :
+    currentOrientation==="angled"     ? Math.PI/2 + Math.PI/4 :
+    0;
+
+  previewMarkers.forEach((p,i)=>{
+    if(p.used) return;
+    const img = getMarkerImg(p.color);
+    if(!img||!img.complete||!img.naturalWidth) return;
+    let cx = (LEFT_EDGE+RIGHT_WALL)/2;
+    let cy = START_LINE_Y - 55 - i*58;
+    let pw = p.color==="blue" ? 80 : 50;
+    let ph = 50;
+    let angle = p.color==="blue" ? previewAngleBlue : previewAngleStd;
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.drawImage(img, -pw/2, -ph/2, pw, ph);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  });
+
+  markers.forEach(m=>{
+    if(m.fallen) return;
+    ctx.shadowColor=isTouchingAny(m)?"lime":"red";
+    ctx.shadowBlur=20;
+    drawMarker(m);
+    ctx.shadowBlur=0;
+  });
+
+  setBase();
+  ctx.textAlign="left";
+  ctx.textBaseline="top";
+  let hud0 = 0;
+
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.font="11px Helvetica, Arial, sans-serif";
+  ctx.fillText("Time",hud0+20,16);
+  if(!suddenDeath){
+    ctx.fillStyle="white";
+    ctx.font="bold 18px Helvetica, Arial, sans-serif";
+    ctx.fillText(Math.max(0,ROUND_TIME-Math.floor(elapsed)),hud0+20,30);
+  } else {
+    ctx.fillStyle="red";
+    ctx.font="bold 16px Helvetica, Arial, sans-serif";
+    ctx.fillText("SD:"+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),hud0+20,30);
+  }
+
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.font="11px Helvetica, Arial, sans-serif";
+  ctx.fillText("Score",hud0+20,52);
+  ctx.fillStyle="white";
+  ctx.font="bold 18px Helvetica, Arial, sans-serif";
+  ctx.fillText(totalScore,hud0+20,66);
+
+  if(coinImg.complete && coinImg.naturalWidth){
+    let coinSize = Math.round(LEFT_EDGE * 0.5);
+    let coinX = hud0 + (LEFT_EDGE - coinSize) / 2;
+    let coinY = 94;
+    ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
+    ctx.fillStyle="#ffd700";
+    ctx.font=`bold ${Math.round(LEFT_EDGE*0.26)}px Helvetica, Arial, sans-serif`;
+    ctx.textAlign="center";
+    ctx.fillText(coins, hud0+LEFT_EDGE/2, coinY + coinSize + 4);
+    ctx.textAlign="left";
+  }
+
+  if((gameMode==="olympics"||gameMode==="specialolympics")&&olympicsState){
+    let rLabel = olympicsState.round===1?"QF":olympicsState.round===2?"SEMI":"FINAL";
+    let modeLabel = gameMode==="specialolympics"?"SPECIAL":"OLYMPICS";
+    ctx.save();
+    ctx.fillStyle="rgba(255,255,255,0.5)";
+    ctx.font="bold 10px Helvetica, Arial, sans-serif";
+    ctx.textAlign="center";
+    ctx.translate(hud0+LEFT_EDGE*0.5, canvas.height*0.78);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText(modeLabel+" · "+rLabel, 0, 0);
+    ctx.restore();
+  }
+}
+
+// ─── READABLE HUD OVERLAY (drawn on top of theme overlays) ─────
+function drawHudReadable(){
+  try {
+    let elapsed=(Date.now()-startTime)/1000;
+    ctx.save();
+    setBase();
+    ctx.lineJoin="round";
+    function ot(txt,x,y){ ctx.lineWidth=3.2; ctx.strokeStyle="rgba(0,0,0,0.9)"; ctx.strokeText(txt,x,y); ctx.fillText(txt,x,y); }
+
+    let dotCX=redDot.x, dotCY=redDot.y, dotR=3, cardW=11, cardH=15;
+    ctx.fillStyle="#f5f5f0"; ctx.fillRect(dotCX-cardW/2, dotCY-cardH/2, cardW, cardH);
+    ctx.strokeStyle="rgba(180,175,165,0.6)"; ctx.lineWidth=1; ctx.strokeRect(dotCX-cardW/2, dotCY-cardH/2, cardW, cardH);
+    ctx.fillStyle="#111"; ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR+2,0,Math.PI*2); ctx.fill();
+    let rgc=ctx.createRadialGradient(dotCX-2,dotCY-2,1,dotCX,dotCY,dotR);
+    rgc.addColorStop(0,"#ff5555"); rgc.addColorStop(0.5,"#dd1111"); rgc.addColorStop(1,"#990000");
+    ctx.fillStyle=rgc; ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,0.5)"; ctx.beginPath(); ctx.arc(dotCX-2,dotCY-2,dotR*0.35,0,Math.PI*2); ctx.fill();
+
+    ctx.textAlign="left"; ctx.textBaseline="top";
+    let hud0 = 0;
+    ctx.font="11px Helvetica, Arial, sans-serif"; ctx.fillStyle="#e6e6e6"; ot("Time",hud0+20,16);
+    if(!suddenDeath){ ctx.font="bold 18px Helvetica, Arial, sans-serif"; ctx.fillStyle="#fff"; ot(String(Math.max(0,ROUND_TIME-Math.floor(elapsed))),hud0+20,30); }
+    else { ctx.font="bold 16px Helvetica, Arial, sans-serif"; ctx.fillStyle="#ff5555"; ot("SD:"+Math.max(0,TOTAL_TIME-Math.floor(elapsed)),hud0+20,30); }
+    ctx.font="11px Helvetica, Arial, sans-serif"; ctx.fillStyle="#e6e6e6"; ot("Score",hud0+20,52);
+    ctx.font="bold 18px Helvetica, Arial, sans-serif"; ctx.fillStyle="#fff"; ot(String(totalScore),hud0+20,66);
+    if(coinImg.complete && coinImg.naturalWidth){
+      let coinSize=Math.round(LEFT_EDGE*0.5), coinX=hud0+(LEFT_EDGE-coinSize)/2, coinY=94;
+      ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
+      ctx.font="bold "+Math.round(LEFT_EDGE*0.26)+"px Helvetica, Arial, sans-serif";
+      ctx.fillStyle="#ffd700"; ctx.textAlign="center"; ot(String(coins), hud0+LEFT_EDGE/2, coinY+coinSize+4); ctx.textAlign="left";
+    }
+    if((gameMode==="olympics"||gameMode==="specialolympics")&&olympicsState){
+      let os=olympicsState, opp=null;
+      if(os.round===1) opp=os.n[6];
+      else if(os.round===2){ let qf3w=os.qf3s1>os.qf3s2?os.n[4]:os.n[5]; opp=qf3w; }
+      else if(os.round===3){ let qf1w=os.qf1s1>os.qf1s2?os.n[0]:os.n[1];let qf2w=os.qf2s1>os.qf2s2?os.n[2]:os.n[3];opp=os.sf1s1>os.sf1s2?qf1w:qf2w; }
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.font="bold 11px Helvetica, Arial, sans-serif"; ctx.fillStyle="#dff"; ot(gameMode==="specialolympics"?"QU33PH SPECIAL OLYMPICS":"QU33PH OLYMPICS",(LEFT_EDGE+RIGHT_WALL)/2, canvas.height*0.021);
+      let midX=(LEFT_EDGE+RIGHT_WALL)/2, bY=canvas.height*0.05, fw=Math.max(18,LEFT_EDGE*0.26), fh=Math.round(fw*0.62);
+      ctx.font="bold 12px Helvetica, Arial, sans-serif"; ctx.fillStyle="#fff"; ot("VS", midX, bY);
+      if(playerNation){
+        let pN=(playerNation.name.length>8?playerNation.name.slice(0,8):playerNation.name).toUpperCase();
+        ctx.font="bold 10px Helvetica, Arial, sans-serif"; ctx.textAlign="right"; ctx.fillStyle="#fff"; ot(pN, midX-16, bY);
+        let w=ctx.measureText(pN).width; drawMiniFlag(ctx, midX-16-w-6-fw, bY-fh/2, fw, fh, playerNation.name);
+      }
+      if(opp){
+        let oN=(opp.name.length>8?opp.name.slice(0,8):opp.name).toUpperCase();
+        ctx.font="bold 10px Helvetica, Arial, sans-serif"; ctx.textAlign="left"; ctx.fillStyle="#fff"; ot(oN, midX+16, bY);
+        let w=ctx.measureText(oN).width; drawMiniFlag(ctx, midX+16+w+6, bY-fh/2, fw, fh, opp.name);
+      }
+      let round=os.round;
+      let bc = round===1?"#cd7f32":round===2?"#c0c0c0":"#ffd700";
+      let me2 = round===1?"🥉":round===2?"🥈":"🥇";
+      let rn = round===1?"QUARTER-FINAL":round===2?"SEMI-FINAL":"GRAND FINAL";
+      let pf = gameMode==="specialolympics"?"SPECIAL · ":"";
+      ctx.font="bold 12px Helvetica, Arial, sans-serif"; ctx.fillStyle=bc; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ot(me2+" "+pf+rn+" "+me2, (LEFT_EDGE+RIGHT_WALL)/2, canvas.height*0.085);
+      ctx.save();
+      ctx.font="bold 10px Helvetica, Arial, sans-serif"; ctx.fillStyle="#e6e6e6";
+      ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+      ctx.translate(LEFT_EDGE*0.5, canvas.height*0.78); ctx.rotate(-Math.PI/2);
+      ot((gameMode==="specialolympics"?"SPECIAL":"OLYMPICS")+" · "+(round===1?"QF":round===2?"SEMI":"FINAL"), 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+  } catch(e){}
+}
+
+// ─── INIT & LOOP ──────
+(function(){ let _dt=localStorage.getItem("qu33phDefaultTheme"); if(_dt && ["default","cartoon","neon","sunset","galaxy"].indexOf(_dt)>=0){ try{ setTheme(_dt); }catch(e){ currentTheme=_dt; } } })();
+randomizeSky();
+showTitle();
+
+function loop(){
+  update();
+  draw();
+  if(gameState==="playing"){
+    applyThemeOverlay();
+
+    if(currentTheme==="cartoon"){
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        const img=cartoonImages[m.color];
+        if(!img||!img.complete||!img.naturalWidth) return;
+        ctx.save();
+        ctx.translate(m.x,m.y);
+        ctx.rotate(m.rotation);
+        let w=m.color==="blue"?80:50, h=50;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalCompositeOperation="screen";
+        ctx.globalAlpha=0.25;
+        ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.restore();
+      });
+      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        const img=cartoonImages[p.color];
+        if(!img||!img.complete||!img.naturalWidth) return;
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let pw=p.color==="blue"?80:50, ph=50;
+        let angle=p.color==="blue"?blueA:stdA;
+        ctx.save();
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.globalAlpha=1;
+        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalCompositeOperation="screen";
+        ctx.globalAlpha=0.3;
+        ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.restore();
+      });
+      // Redraw red dot + card in correct size after cartoon overlay
+      let dotCX=redDot.x, dotCY=redDot.y, dotR=3;
+      let cardW=11, cardH=15;
+      ctx.save();
+      ctx.fillStyle="#fff";
+      ctx.fillRect(dotCX-cardW/2, dotCY-cardH/2, cardW, cardH);
+      ctx.strokeStyle="rgba(80,75,65,0.5)"; ctx.lineWidth=1;
+      ctx.strokeRect(dotCX-cardW/2, dotCY-cardH/2, cardW, cardH);
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle="#111";
+      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR+1,0,Math.PI*2); ctx.fill();
+      let rg=ctx.createRadialGradient(dotCX-1,dotCY-1,0.5,dotCX,dotCY,dotR);
+      rg.addColorStop(0,"#ff5555"); rg.addColorStop(0.5,"#dd1111"); rg.addColorStop(1,"#990000");
+      ctx.fillStyle=rg;
+      ctx.beginPath(); ctx.arc(dotCX,dotCY,dotR,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+      if(suddenDeath && chairImg.complete && chairImg.naturalWidth){
+        ctx.save();
+        ctx.translate(chair.x, chair.y);
+        ctx.shadowColor="#ff2200"; ctx.shadowBlur=15;
+        ctx.drawImage(chairImg,-25,-25,50,50);
+        ctx.restore();
+      }
+    }
+
+    if(currentTheme==="neon" || currentTheme==="galaxy"){
+      let stdA = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        const img=getMarkerImg(p.color);
+        if(!img||!img.complete) return;
+        let gc=p.color==="red"?"#ff0044":p.color==="green"?"#00ff88":"#0099ff";
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let pw=p.color==="blue"?80:50, ph=50;
+        let angle=p.color==="blue"?blueA:stdA;
+        ctx.save();
+        ctx.shadowColor=gc; ctx.shadowBlur=60;
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.globalAlpha=1; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalAlpha=0.7; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.globalAlpha=0.5; ctx.drawImage(img,-pw/2,-ph/2,pw,ph);
+        ctx.restore();
+      });
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        const img=getMarkerImg(m.color);
+        if(!img||!img.complete) return;
+        let gc=m.color==="red"?"#ff2d2d":m.color==="green"?"#00ff88":"#2b8bff";
+        let touching=isTouchingAny(m);
+        let w=m.color==="blue"?80:50, h=50;
+        // always glow the whole marker in its OWN colour
+        ctx.save();
+        ctx.shadowColor=gc; ctx.shadowBlur=70;
+        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
+        ctx.globalAlpha=1;   ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.7; ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.globalAlpha=0.5; ctx.drawImage(img,-w/2,-h/2,w,h);
+        ctx.restore();
+        // touching another marker: add a GREEN glow OVER the coloured glow
+        if(touching){
+          ctx.save();
+          ctx.shadowColor="#00ff00"; ctx.shadowBlur=90;
+          ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
+          ctx.globalAlpha=0.9; ctx.drawImage(img,-w/2,-h/2,w,h);
+          ctx.globalAlpha=0.6; ctx.drawImage(img,-w/2,-h/2,w,h);
+          ctx.restore();
+        }
+      });
+      if(suddenDeath && chairImg.complete && chairImg.naturalWidth){
+        ctx.save();
+        ctx.translate(chair.x, chair.y);
+        ctx.shadowColor="#ff1a55"; ctx.shadowBlur=48;
+        ctx.drawImage(chairImg,-25,-25,50,50);
+        ctx.shadowColor="#ff4d7a"; ctx.shadowBlur=26;
+        ctx.drawImage(chairImg,-25,-25,50,50);
+        ctx.restore();
+      }
+    }
+
+    if(currentTheme==="sunset"){
+      markers.forEach(m=>{
+        if(m.fallen) return;
+        let tipX = m.color==="blue" ? -35 : -20;
+        ctx.save();
+        ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
+        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.95;
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=0.3;
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+      let stdA2 = currentOrientation==="vertical"?Math.PI/3:currentOrientation==="angled"?Math.PI/2:0;
+      let blueA2 = currentOrientation==="vertical"?Math.PI/3+Math.PI/4:currentOrientation==="angled"?Math.PI/2+Math.PI/4:0;
+      previewMarkers.forEach((p,i)=>{
+        if(p.used) return;
+        let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=START_LINE_Y-55-i*58;
+        let tipX = p.color==="blue" ? -35 : -20;
+        let angle=p.color==="blue"?blueA2:stdA2;
+        ctx.save();
+        ctx.translate(cx,cy); ctx.rotate(angle);
+        ctx.shadowColor="#ffd700"; ctx.shadowBlur=18;
+        ctx.fillStyle="#ffd700"; ctx.globalAlpha=0.9;
+        ctx.beginPath(); ctx.arc(tipX, 0, 4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=0.3;
+        ctx.beginPath(); ctx.arc(tipX, 0, 9, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+    }
+    if(currentTheme!=="default") drawHudReadable();
+    _mirDraw=false;
+  }
+  requestAnimationFrame(loop);
+}
+// ─── ACHIEVEMENTS (self-contained · fully guarded · cannot break the game) ──
+const ACHIEVEMENTS = [
+  { id:"first_game",   name:"FIRST SLIDE",  desc:"Play your first game" },
+  { id:"first_qu33ph", name:"QU33PH",       desc:"Land all 3 markers touching" },
+  { id:"first_mega",   name:"MEGA QU33PH",  desc:"Hit the red dot in sudden death" },
+  { id:"five_mega",    name:"MEGA MACHINE", desc:"5 MEGA QU33PHs total" },
+  { id:"ten_mega",     name:"MEGA MASTER",  desc:"10 MEGA QU33PHs total" },
+  { id:"first_peef",   name:"FIRST PEEF",   desc:"Drop a marker off the left edge" },
+  { id:"ten_peef",     name:"PEEF VETERAN", desc:"10 PEEFs career total" },
+  { id:"ten_games",    name:"REGULAR",      desc:"Play 10 games" },
+  { id:"fifty_games",  name:"DEDICATED",    desc:"Play 50 games" },
+  { id:"ten_qu33ph",   name:"QU33PH PRO",   desc:"Land 10 qu33phs total" },
+  { id:"sd_qu33ph",    name:"CLUTCH",       desc:"Land a qu33ph in sudden death" },
+  { id:"mega_25",      name:"MEGA LEGEND",  desc:"25 MEGA QU33PHs total" },
+  { id:"fifty_peef",   name:"PEEF LORD",    desc:"50 PEEFs career total" },
+  { id:"score_10",     name:"DOUBLE DIGITS",desc:"Score 10+ in a game" },
+  { id:"score_25",     name:"HIGH ROLLER",  desc:"Score 25+ in a game" },
+  { id:"first_medal",  name:"PODIUM",       desc:"Win any Olympic medal" },
+  { id:"gold_medal",   name:"OLYMPIC GOLD", desc:"Win Olympic gold" },
+  { id:"slot_spin",    name:"ONE-ARMED",    desc:"Spin the slot machine" },
+  { id:"slot_win",     name:"LUCKY",        desc:"Win on the slot machine" },
+  { id:"slot_jackpot", name:"JACKPOT!",     desc:"Hit the slot jackpot" },
+  { id:"coins_100",    name:"SAVER",        desc:"Earn 100 coins total" },
+  { id:"coins_500",    name:"HIGH SOCIETY", desc:"Earn 500 coins total" },
+  { id:"unlock_theme", name:"STYLIST",      desc:"Unlock a new theme" },
+];
+
+function getUnlockedAch(){
+  try { return JSON.parse(localStorage.getItem("qu33phAch")||"[]"); }
+  catch(e){ return []; }
+}
+function unlockAch(id){
+  try {
+    let u = getUnlockedAch();
+    if(!u.includes(id)){
+      u.push(id);
+      localStorage.setItem("qu33phAch", JSON.stringify(u));
+      // reward: +1 coin per achievement (added directly, not via addCoins,
+      // so it doesn't loop back into the coins-earned achievement chain)
+      coins += 1;
+      try { localStorage.setItem("qu33phCoins", coins); } catch(e){}
+      var _tc=document.getElementById("titleCoinCount"); if(_tc) _tc.innerText=coins;
+      var _sc=document.getElementById("slotCoinCount");  if(_sc) _sc.innerText=coins;
+      haptic([15,25,45]);
+      showAchToast(id);
+    }
+  } catch(e){}
+}
+function bumpAchCounter(key){
+  try {
+    let n = (parseInt(localStorage.getItem(key)||"0",10)||0) + 1;
+    localStorage.setItem(key, n);
+    return n;
+  } catch(e){ return 0; }
+}
+// Every in-game hook funnels through here. Wrapped so it can NEVER throw
+// into the game loop — the whole reason achievements broke things before.
+function trackAch(event, val){
+  try {
+    if(event==="game"){
+      unlockAch("first_game");
+      let c = bumpAchCounter("qu33phGameCount");
+      if(c>=10) unlockAch("ten_games");
+      if(c>=50) unlockAch("fifty_games");
+    }
+    else if(event==="qu33ph"){
+      unlockAch("first_qu33ph");
+      let c = bumpAchCounter("qu33phQu33phCount");
+      if(c>=10) unlockAch("ten_qu33ph");
+    }
+    else if(event==="qu33ph_sd"){ unlockAch("sd_qu33ph"); }
+    else if(event==="mega"){
+      unlockAch("first_mega");
+      let c = bumpAchCounter("qu33phMegaCount");
+      if(c>=5)  unlockAch("five_mega");
+      if(c>=10) unlockAch("ten_mega");
+      if(c>=25) unlockAch("mega_25");
+    }
+    else if(event==="peef"){
+      unlockAch("first_peef");
+      let c = bumpAchCounter("qu33phPeefCount");
+      if(c>=10) unlockAch("ten_peef");
+      if(c>=50) unlockAch("fifty_peef");
+    }
+    else if(event==="score"){
+      if(val>=10) unlockAch("score_10");
+      if(val>=25) unlockAch("score_25");
+    }
+    else if(event==="medal"){
+      unlockAch("first_medal");
+      if(val==="gold") unlockAch("gold_medal");
+    }
+    else if(event==="slotspin"){ unlockAch("slot_spin"); bumpAchCounter("qu33phSlotSpins"); }
+    else if(event==="slotwin"){ unlockAch("slot_win"); bumpAchCounter("qu33phSlotWins"); }
+    else if(event==="slotjackpot"){ unlockAch("slot_jackpot"); }
+    else if(event==="coins"){
+      let c = (parseInt(localStorage.getItem("qu33phCoinsEarned")||"0",10)||0) + (val||0);
+      localStorage.setItem("qu33phCoinsEarned", c);
+      if(c>=100) unlockAch("coins_100");
+      if(c>=500) unlockAch("coins_500");
+    }
+    else if(event==="theme"){ unlockAch("unlock_theme"); }
+  } catch(e){}
+}
+
+function showAchToast(id){
+  try {
+    let a = ACHIEVEMENTS.find(x=>x.id===id);
+    if(!a) return;
+    let el = document.createElement("div");
+    el.style.cssText = "position:absolute;top:16px;left:50%;transform:translateX(-50%);"+
+      "background:#111;border:1px solid #ffd700;border-radius:8px;padding:10px 16px;"+
+      "font-family:Helvetica,Arial,sans-serif;color:#ffd700;font-size:12px;letter-spacing:1px;"+
+      "z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.6);text-align:center;pointer-events:none;";
+    el.innerHTML = "\u2b50 ACHIEVEMENT UNLOCKED<br><span style='color:#fff;font-size:13px;font-weight:bold'>"+a.name+"</span><br><span style='color:#ffd700;font-size:11px;letter-spacing:1px'>+1 \ud83e\ude99 COIN</span>";
+    document.body.appendChild(el);
+    setTimeout(function(){ el.style.transition="opacity 0.6s"; el.style.opacity="0"; }, 2400);
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 3100);
+  } catch(e){}
+}
+
+function showAchievementsScreen(){
+  try {
+    document.getElementById("titleScreen").style.display="none";
+    document.getElementById("titleCoins").style.display="none";
+    document.getElementById("slotBtn").style.display="none";
+    document.getElementById("achScreen").style.display="flex";
+    let unlocked = getUnlockedAch();
+    let grid = document.getElementById("achGrid");
+    grid.innerHTML="";
+    ACHIEVEMENTS.forEach(function(a){
+      let got = unlocked.includes(a.id);
+      let d = document.createElement("div");
+      d.style.cssText = "background:#0e0e0e;border:1px solid "+(got?"#3a3a1a":"#1a1a1a")+
+        ";border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:3px;opacity:"+(got?"1":"0.35")+";";
+      d.innerHTML =
+        "<div style='font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1px;color:"+(got?"#ffd700":"#555")+"'>"+(got?"\u2b50 ":"\ud83d\udd12 ")+a.name+"</div>"+
+        "<div style='font-family:Helvetica,Arial,sans-serif;font-size:8px;color:#444;line-height:1.3'>"+a.desc+"</div>";
+      grid.appendChild(d);
+    });
+  } catch(e){}
+}
+
+function statNum(key){ try{ return parseInt(localStorage.getItem(key)||"0",10)||0; }catch(e){ return 0; } }
+
+function buildTrophyCabinet(medals){
+  let gold=medals.filter(function(m){return m.type==="gold";}).length;
+  let silver=medals.filter(function(m){return m.type==="silver";}).length;
+  let bronze=medals.filter(function(m){return m.type==="bronze";}).length;
+
+  // Collect display trophies: golds as trophies first, then silver & bronze medals
+  let items=[];
+  for(let i=0;i<gold;i++)   items.push("\ud83e\udd47");
+  for(let i=0;i<silver;i++) items.push("\ud83e\udd48");
+  for(let i=0;i<bronze;i++) items.push("\ud83e\udd49");
+
+  // Lay out on up to 3 shelves, max 7 per shelf; overflow shown as "+N"
+  let perShelf=7, maxShelves=3, cap=perShelf*maxShelves;
+  let overflow = items.length>cap ? items.length-cap : 0;
+  let shown = items.slice(0, cap);
+
+  let shelvesHtml="";
+  let empty = items.length===0;
+  let shelfCount = empty ? 2 : Math.max(1, Math.ceil(shown.length/perShelf));
+  for(let s=0; s<shelfCount; s++){
+    let row = shown.slice(s*perShelf, s*perShelf+perShelf);
+    let contents = row.map(function(e){
+      return "<span style='font-size:26px;filter:drop-shadow(0 3px 2px rgba(0,0,0,0.6));'>"+e+"</span>";
+    }).join("");
+    if(empty && s===0){
+      contents = "<span style='color:#5a4a2a;font-size:11px;font-family:Helvetica,Arial,sans-serif;letter-spacing:1px;'>empty — win a medal!</span>";
+    }
+    // last shelf gets the +N tag if overflow
+    if(overflow && s===shelfCount-1){
+      contents += "<span style='color:#f0d9a8;font-size:13px;font-weight:bold;font-family:Helvetica,Arial,sans-serif;margin-left:4px;'>+"+overflow+"</span>";
+    }
+    shelvesHtml +=
+      "<div style='position:relative;margin:0 8px 9px;'>"+
+        "<div style='display:flex;justify-content:center;align-items:flex-end;gap:5px;min-height:34px;'>"+contents+"</div>"+
+        "<div style='height:6px;border-radius:2px;background:linear-gradient(#8a5f2e,#4a3016);box-shadow:0 2px 5px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,220,150,0.3);'></div>"+
+      "</div>";
+  }
+
+  return (
+    "<div onclick='showMedalShowcase()' style='cursor:pointer;margin-top:20px;border-radius:12px;overflow:hidden;"+
+      "border:3px solid #5a3d1e;background:linear-gradient(#2a1c0e,#160f07);box-shadow:0 8px 26px rgba(0,0,0,0.6);'>"+
+      "<div style='background:linear-gradient(#7a5228,#4a3218);padding:9px;text-align:center;color:#f0d9a8;"+
+        "font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:3px;font-weight:bold;"+
+        "border-bottom:2px solid #3a2610;'>\ud83c\udfc6 TROPHY CABINET \ud83c\udfc6</div>"+
+      "<div style='padding:16px 6px 6px;background:radial-gradient(ellipse at 50% 0%,rgba(255,220,150,0.06),transparent 70%);'>"+
+        shelvesHtml+
+      "</div>"+
+      "<div style='text-align:center;padding:8px;color:#c8a840;font-size:10px;letter-spacing:2px;"+
+        "font-family:Helvetica,Arial,sans-serif;border-top:1px solid #3a2610;'>TAP TO VIEW ALL MEDALS \u2192</div>"+
+    "</div>"
+  );
+}
+
+function showCareer(){
+  try {
+    document.getElementById("titleScreen").style.display="none";
+    document.getElementById("titleCoins").style.display="none";
+    document.getElementById("slotBtn").style.display="none";
+    var _msc=document.getElementById("medalShowcaseScreen"); if(_msc) _msc.style.display="none";
+    document.getElementById("careerScreen").style.display="flex";
+    let medals=[]; try{ medals=JSON.parse(localStorage.getItem("qu33phMedals")||"[]"); }catch(e){}
+    let gold=medals.filter(function(m){return m.type==="gold";}).length;
+    let silver=medals.filter(function(m){return m.type==="silver";}).length;
+    let bronze=medals.filter(function(m){return m.type==="bronze";}).length;
+    let unlocked=getUnlockedAch().length;
+    let rows=[
+      ["Games played", statNum("qu33phGameCount")],
+      ["High score", statNum("qu33phHigh")],
+      ["QU33PHs landed", statNum("qu33phQu33phCount")],
+      ["MEGA QU33PHs", statNum("qu33phMegaCount")],
+      ["PEEFs", statNum("qu33phPeefCount")],
+      ["Coins earned (lifetime)", statNum("qu33phCoinsEarned")],
+      ["Slot spins", statNum("qu33phSlotSpins")],
+      ["Slot wins", statNum("qu33phSlotWins")],
+      ["Achievements", unlocked+" / "+ACHIEVEMENTS.length],
+      ["\ud83e\udd47 Gold medals", gold],
+      ["\ud83e\udd48 Silver medals", silver],
+      ["\ud83e\udd49 Bronze medals", bronze],
+    ];
+    let statsHtml = rows.map(function(r){
+      return "<div style='display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #161616;font-family:Helvetica,Arial,sans-serif;'>"+
+        "<span style='color:#999;font-size:12px;letter-spacing:1px;'>"+r[0]+"</span>"+
+        "<span style='color:#ffd700;font-size:14px;font-weight:bold;'>"+r[1]+"</span></div>";
+    }).join("");
+    document.getElementById("careerBody").innerHTML = statsHtml + buildTrophyCabinet(medals);
+  } catch(e){}
+}
+
+function showMedalShowcase(){
+  try {
+    document.getElementById("titleScreen").style.display="none";
+    document.getElementById("titleCoins").style.display="none";
+    document.getElementById("slotBtn").style.display="none";
+    var _cr=document.getElementById("careerScreen"); if(_cr) _cr.style.display="none";
+    document.getElementById("medalShowcaseScreen").style.display="flex";
+    let medals=[]; try{ medals=JSON.parse(localStorage.getItem("qu33phMedals")||"[]"); }catch(e){}
+    let body=document.getElementById("medalShowcaseBody");
+    if(medals.length===0){
+      body.innerHTML="<div style='text-align:center;color:#555;font-family:Helvetica,Arial,sans-serif;font-size:13px;padding:40px 20px;line-height:1.6;'>No medals yet.<br>Win an Olympics tournament to earn your first!</div>";
+      return;
+    }
+    let byCountry={};
+    medals.forEach(function(m){
+      if(!byCountry[m.country]) byCountry[m.country]={flag:m.flag,list:[]};
+      byCountry[m.country].list.push(m);
+    });
+    let emoji={gold:"\ud83e\udd47",silver:"\ud83e\udd48",bronze:"\ud83e\udd49"};
+    let html="";
+    Object.keys(byCountry).forEach(function(country){
+      let g=byCountry[country];
+      let gold=g.list.filter(function(m){return m.type==="gold";}).length;
+      let silver=g.list.filter(function(m){return m.type==="silver";}).length;
+      let bronze=g.list.filter(function(m){return m.type==="bronze";}).length;
+      html+="<div style='margin-bottom:14px;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;'>";
+      html+="<div style='display:flex;align-items:center;gap:10px;padding:12px 14px;background:#111;'>"+
+        "<span style='font-size:26px;'>"+g.flag+"</span>"+
+        "<span style='color:#fff;font-size:15px;font-weight:bold;letter-spacing:1px;font-family:Helvetica,Arial,sans-serif;'>"+country+"</span>"+
+        "<span style='margin-left:auto;font-family:Helvetica,Arial,sans-serif;font-size:13px;'>"+
+        (gold?"<span style='color:#ffd700;'>\ud83e\udd47"+gold+"</span> ":"")+
+        (silver?"<span style='color:#c0c0c0;'>\ud83e\udd48"+silver+"</span> ":"")+
+        (bronze?"<span style='color:#cd7f32;'>\ud83e\udd49"+bronze+"</span>":"")+
+        "</span></div>";
+      g.list.slice().reverse().forEach(function(m){
+        let when=""; try{ when=new Date(m.ts).toLocaleDateString(); }catch(e){}
+        html+="<div style='display:flex;align-items:center;gap:8px;padding:9px 14px;border-top:1px solid #161616;font-family:Helvetica,Arial,sans-serif;'>"+
+          "<span style='font-size:18px;'>"+emoji[m.type]+"</span>"+
+          "<span style='color:#aaa;font-size:11px;letter-spacing:1px;text-transform:uppercase;'>"+(m.mode==="special"?"Special Olympics":"Olympics")+"</span>"+
+          "<span style='margin-left:auto;color:#555;font-size:10px;'>"+when+"</span></div>";
+      });
+      html+="</div>";
+    });
+    body.innerHTML=html;
+  } catch(e){}
+}
+function renderSettings(){
+  let body=document.getElementById("settingsBody");
+  if(!body) return;
+  let unlocked=["default"];
+  try { unlocked = JSON.parse(localStorage.getItem("qu33phThemes")||'["default"]'); } catch(e){}
+  let themeOpts=[["default","DEFAULT"],["cartoon","COMIC"],["neon","NEON"],["sunset","GOLDEN"],["galaxy","GALAXY"]].filter(function(o){return unlocked.indexOf(o[0])>=0;});
+
+  function toggleRow(lbl,sub,on,fn){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#0e0e0e;border:1px solid #1a1a1a;border-radius:8px;">'
+      +'<div style="display:flex;flex-direction:column;gap:3px;padding-right:10px;"><span style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#fff;letter-spacing:0.5px;">'+lbl+'</span>'
+      +'<span style="font-family:Helvetica,Arial,sans-serif;font-size:9px;color:#555;letter-spacing:0.5px;">'+sub+'</span></div>'
+      +'<div onclick="'+fn+'" style="width:52px;height:28px;border-radius:14px;background:'+(on?"#3fa34d":"#333")+';position:relative;cursor:pointer;flex-shrink:0;transition:background 0.15s;">'
+      +'<div style="width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(on?"27px":"3px")+';transition:left 0.15s;"></div></div></div>';
+  }
+  function segRow(lbl,sub,opts,cur,fn){
+    let btns=opts.map(function(o){ let sel=o[0]===cur;
+      return '<button onclick="'+fn+'(\''+o[0]+'\')" style="flex:1;padding:9px 2px;border:none;background:'+(sel?"#3fa34d":"#1c1c1c")+';color:'+(sel?"#fff":"#999")+';font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:0.5px;cursor:pointer;">'+o[1]+'</button>';
+    }).join('');
+    return '<div style="padding:12px 14px;background:#0e0e0e;border:1px solid #1a1a1a;border-radius:8px;">'
+      +'<div style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#fff;letter-spacing:0.5px;">'+lbl+'</div>'
+      +'<div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;color:#555;letter-spacing:0.5px;margin:2px 0 10px;">'+sub+'</div>'
+      +'<div style="display:flex;gap:2px;border-radius:6px;overflow:hidden;">'+btns+'</div></div>';
+  }
+
+  let h="";
+  h+=toggleRow("Haptic feedback","vibrate on taps &amp; game events",hapticsOn,"toggleHaptics()");
+  h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
+  h+=toggleRow("Reduce motion","less screen shake &amp; jitter",reduceMotion,"toggleReduceMotion()");
+  h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(ROUND_TIME),"setTimer");
+  if(themeOpts.length>1) h+=segRow("Default theme","which theme loads at startup",themeOpts,currentTheme,"setDefaultTheme");
+  h+=segRow("Default orientation","marker angle at the start of a game",[["vertical","VERT"],["angled","ANGLED"],["horizontal","FLAT"]],(localStorage.getItem("qu33phOrientation")||"vertical"),"setDefaultOrientation");
+  h+=toggleRow("Mirror mode","flip the entire playing field left-to-right",mirrorMode,"toggleMirror()");
+  h+=toggleRow("Colorblind flags","show country codes on the flags",colorblind,"toggleColorblind()");
+  body.innerHTML=h;
+}
+function toggleHaptics(){ hapticsOn=!hapticsOn; try{localStorage.setItem("qu33phHaptics",hapticsOn?"on":"off");}catch(e){} renderSettings(); if(hapticsOn) haptic(20); }
+function setHapticStrength(v){ hapticStrength=v; try{localStorage.setItem("qu33phHapticStrength",v);}catch(e){} renderSettings(); haptic(hapticStrength==="light"?12:hapticStrength==="strong"?45:25); }
+function toggleReduceMotion(){ reduceMotion=!reduceMotion; try{localStorage.setItem("qu33phReduceMotion",reduceMotion?"on":"off");}catch(e){} renderSettings(); }
+function setTimer(v){ ROUND_TIME=parseInt(v); TOTAL_TIME=Math.round(ROUND_TIME*1.5); try{localStorage.setItem("qu33phTimer",String(ROUND_TIME));}catch(e){} renderSettings(); }
+function setDefaultTheme(v){ currentTheme=v; try{localStorage.setItem("qu33phDefaultTheme",v);}catch(e){} try{updateLogo();}catch(e){} renderSettings(); }
+function setDefaultOrientation(v){ try{localStorage.setItem("qu33phOrientation",v);}catch(e){} renderSettings(); }
+function toggleMirror(){ mirrorMode=!mirrorMode; try{localStorage.setItem("qu33phMirror",mirrorMode?"on":"off");}catch(e){} renderSettings(); haptic(15); }
+function toggleColorblind(){ colorblind=!colorblind; try{localStorage.setItem("qu33phColorblind",colorblind?"on":"off");}catch(e){} renderSettings(); }
+function showSettings(){
+  try {
+    document.getElementById("titleScreen").style.display="none";
+    document.getElementById("titleCoins").style.display="none";
+    document.getElementById("slotBtn").style.display="none";
+    document.getElementById("settingsScreen").style.display="flex";
+    renderSettings();
+  } catch(e){}
+}
+
+// Light haptic tap on ANY button press (menus, back, spin, toggles, etc.)
+try {
+  document.addEventListener("click", function(e){
+    if(!hapticsOn) return;
+    let el = e.target;
+    if(el && el.closest && el.closest("button")) haptic(12);
+  }, true);
+} catch(e){}
+
+// ─── END ACHIEVEMENTS ──────────────────────────────────────────────────────
+
+loop();
+      </script>
+
+</body>
+</html>
