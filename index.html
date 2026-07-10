@@ -456,7 +456,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v202</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v203</div>
 
 <canvas id="game"></canvas>
 
@@ -604,6 +604,8 @@
   <div id="pfRightBtn" style="position:absolute;border-radius:50%;z-index:4;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;touch-action:none;"></div>
   <div id="pfJumpBtn" style="position:absolute;border-radius:50%;z-index:4;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;touch-action:none;"></div>
   <div id="pfActionBtn" style="position:absolute;border-radius:50%;z-index:4;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;touch-action:none;"></div>
+  <button id="pfExpandBtn" onclick="toggleArcadeFullscreen()" style="display:none;position:absolute;z-index:7;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:17px;padding:5px 9px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;">&#9974;</button>
+  <div id="pfDpad" style="display:none;position:absolute;z-index:3;pointer-events:none;"></div>
   <button onclick="backFromPlatformer()" class="mk-btn" style="display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:5;">← BACK</button>
 </div>
 
@@ -4036,6 +4038,7 @@ function showArcade(){
   showArcadeMenu();
 }
 function showArcadeMenu(){
+  arcadeFullscreen=false; var _pe=document.getElementById("pfExpandBtn"); if(_pe)_pe.style.display="none"; try{fsClearBtns();}catch(e){}
   document.getElementById("titleScreen").style.display="none";
   var tc=document.getElementById("titleCoins"); if(tc) tc.style.display="none";
   var st=document.getElementById("sideTabs"); if(st) st.style.display="none";
@@ -4132,17 +4135,53 @@ function renderDreamMap(){
 }
 function launchArea(idx){ setDreamArea(idx); document.getElementById("dlMap").style.display="none"; showPlatformer("dream"); }
 function dreamMapBack(){ document.getElementById("dlMap").style.display="none"; showArcadeMenu(); }
+let arcadeFullscreen=false;
+function toggleArcadeFullscreen(){ arcadeFullscreen=!arcadeFullscreen; try{layoutPlatformer();}catch(e){} }
+function fsStyleBtn(id,x,y,w,h,color,label,rad){
+  var el=document.getElementById(id);
+  el.style.left=x+"px"; el.style.top=y+"px"; el.style.width=w+"px"; el.style.height=h+"px";
+  var grad = color==="green"?"radial-gradient(circle at 42% 30%, #86e886, #2f8f2f 68%, #176017)":color==="red"?"radial-gradient(circle at 42% 30%, #ff9a9a, #d62424 65%, #8a1010)":"radial-gradient(circle at 42% 30%, #9ec2ff, #2554d8 65%, #12328c)";
+  el.style.background=grad; el.style.borderRadius=rad; el.style.boxShadow="0 5px 12px rgba(0,0,0,0.6), inset 0 3px 8px rgba(255,255,255,0.4), inset 0 -4px 8px rgba(0,0,0,0.35)"; el.style.border="2px solid rgba(0,0,0,0.4)";
+  el.style.display="flex"; el.style.alignItems="center"; el.style.justifyContent="center"; el.style.color="rgba(255,255,255,0.92)"; el.style.fontFamily="Helvetica,Arial,sans-serif"; el.style.fontWeight="bold"; el.style.fontSize=Math.round(Math.min(w,h)*0.34)+"px"; el.style.textShadow="0 1px 3px rgba(0,0,0,0.7)"; el.innerText=label;
+}
+function fsClearBtns(){ ["pfLeftBtn","pfRightBtn","pfJumpBtn","pfActionBtn"].forEach(function(id){ var el=document.getElementById(id); el.style.background=""; el.style.boxShadow=""; el.style.border=""; el.style.color=""; el.innerText=""; el.style.borderRadius="50%"; el.style.display=""; }); document.getElementById("pfDpad").style.display="none"; }
 function layoutPlatformer(){
-  var sw=window.innerWidth, sh=window.innerHeight;
-  var scale=Math.min(sw/PF_PNG_W, sh/PF_PNG_H), rw=PF_PNG_W*scale, rh=PF_PNG_H*scale, ox=(sw-rw)/2, oy=(sh-rh)/2;
-  var scX=PF_SCREEN[0], scY=PF_SCREEN[1], scW=PF_SCREEN[2]-PF_SCREEN[0], scH=PF_SCREEN[3]-PF_SCREEN[1];
-  var cv=pfCanvas;
-  cv.style.left=(ox+scX*rw)+"px"; cv.style.top=(oy+scY*rh)+"px"; cv.style.width=(scW*rw)+"px"; cv.style.height=(scH*rh)+"px";
-  cv.width=Math.max(120,Math.round(scW*rw)); cv.height=Math.max(80,Math.round(scH*rh));
-  pfctx=cv.getContext("2d");
-  function pc(id,c){ var el=document.getElementById(id); var dw=c[2]*2.3*rw, dh=c[2]*3.4*rw; el.style.left=(ox+(c[0]*rw)-dw/2)+"px"; el.style.top=(oy+(c[1]*rh)-dh/2)+"px"; el.style.width=dw+"px"; el.style.height=dh+"px"; }
-  pc("pfLeftBtn",PF_LEFT); pc("pfRightBtn",PF_RIGHT); pc("pfJumpBtn",PF_JUMP); pc("pfActionBtn",PF_ACT);
-  var _fcb=document.getElementById("fuseContinueBtn"); if(_fcb){ var _cw=0.15*rw; _fcb.style.left=(ox+0.478*rw-_cw/2)+"px"; _fcb.style.top=(oy+0.732*rh)+"px"; _fcb.style.width=_cw+"px"; var _cg=document.getElementById("fuseCoinGlow"); if(_cg) _cg.style.height=(0.036*rh)+"px"; }
+  var sw=window.innerWidth, sh=window.innerHeight, cv=pfCanvas;
+  var bg=document.getElementById("platformerBg"), expand=document.getElementById("pfExpandBtn"), pause=document.getElementById("arcadePauseBtn");
+  var isJump=(arcadeGame==="jump");
+  if(arcadeFullscreen){
+    bg.style.display="none";
+    var cvTop=48, cvH=Math.round(sh*0.54), cvW=sw;
+    cv.style.left="0px"; cv.style.top=cvTop+"px"; cv.style.width=cvW+"px"; cv.style.height=cvH+"px";
+    cv.width=Math.max(120,cvW); cv.height=Math.max(80,cvH); pfctx=cv.getContext("2d");
+    var cy0=cvTop+cvH, ch=sh-cy0;
+    // green D-pad (left half = left, right half = right) bottom-left
+    var dp=Math.min(sw*0.44, ch*0.92), dpX=sw*0.04, dpY=cy0+(ch-dp)/2, dv=document.getElementById("pfDpad");
+    dv.style.display="block"; dv.style.left=dpX+"px"; dv.style.top=dpY+"px"; dv.style.width=dp+"px"; dv.style.height=dp+"px";
+    dv.style.background="radial-gradient(circle at 45% 35%, #6fd66f, #2f8f2f 70%, #176017)";
+    dv.style.clipPath="polygon(34% 0,66% 0,66% 34%,100% 34%,100% 66%,66% 66%,66% 100%,34% 100%,34% 66%,0 66%,0 34%,34% 34%)";
+    dv.style.webkitClipPath=dv.style.clipPath; dv.style.boxShadow="inset 0 3px 10px rgba(255,255,255,0.35), inset 0 -5px 10px rgba(0,0,0,0.4)"; dv.style.borderRadius="10px";
+    // transparent tap halves over the D-pad
+    fsStyleBtn("pfLeftBtn", dpX, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25C0","10px 0 0 10px"); document.getElementById("pfLeftBtn").style.background="transparent"; document.getElementById("pfLeftBtn").style.boxShadow=""; document.getElementById("pfLeftBtn").style.border="";
+    fsStyleBtn("pfRightBtn", dpX+dp*0.5, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25B6","0 10px 10px 0"); document.getElementById("pfRightBtn").style.background="transparent"; document.getElementById("pfRightBtn").style.boxShadow=""; document.getElementById("pfRightBtn").style.border="";
+    // red + blue round buttons bottom-right
+    var br=Math.min(sw*0.19, ch*0.5), byC=cy0+(ch-br)/2;
+    fsStyleBtn("pfJumpBtn", sw*0.55, byC, br, br, "red", isJump?"JUMP":"FUSE","50%");
+    fsStyleBtn("pfActionBtn", sw*0.78, byC, br, br, "blue", isJump?"JUMP":"VIEW","50%");
+    expand.style.display="block"; expand.style.right="10px"; expand.style.left=""; expand.style.top="8px"; expand.innerHTML="&#10005;";
+    pause.style.left="10px"; pause.style.top="8px";
+  } else {
+    bg.style.display=""; fsClearBtns();
+    var scale=Math.min(sw/PF_PNG_W, sh/PF_PNG_H), rw=PF_PNG_W*scale, rh=PF_PNG_H*scale, ox=(sw-rw)/2, oy=(sh-rh)/2;
+    var scX=PF_SCREEN[0], scY=PF_SCREEN[1], scW=PF_SCREEN[2]-PF_SCREEN[0], scH=PF_SCREEN[3]-PF_SCREEN[1];
+    cv.style.left=(ox+scX*rw)+"px"; cv.style.top=(oy+scY*rh)+"px"; cv.style.width=(scW*rw)+"px"; cv.style.height=(scH*rh)+"px";
+    cv.width=Math.max(120,Math.round(scW*rw)); cv.height=Math.max(80,Math.round(scH*rh)); pfctx=cv.getContext("2d");
+    function pc(id,c){ var el=document.getElementById(id); var dw=c[2]*2.3*rw, dh=c[2]*3.4*rw; el.style.left=(ox+(c[0]*rw)-dw/2)+"px"; el.style.top=(oy+(c[1]*rh)-dh/2)+"px"; el.style.width=dw+"px"; el.style.height=dh+"px"; }
+    var L=(arcadeGame==="dream")?[0.205,0.605,0.05]:PF_LEFT, R=(arcadeGame==="dream")?[0.315,0.605,0.05]:PF_RIGHT;   // dream cabinet now has a D-pad
+    pc("pfLeftBtn",L); pc("pfRightBtn",R); pc("pfJumpBtn",PF_JUMP); pc("pfActionBtn",PF_ACT);
+    var _fcb=document.getElementById("fuseContinueBtn"); if(_fcb){ var _cw=0.15*rw; _fcb.style.left=(ox+0.478*rw-_cw/2)+"px"; _fcb.style.top=(oy+0.732*rh)+"px"; _fcb.style.width=_cw+"px"; var _cg=document.getElementById("fuseCoinGlow"); if(_cg) _cg.style.height=(0.036*rh)+"px"; }
+    expand.style.display="block"; expand.style.left=(ox+PF_SCREEN[2]*rw-44)+"px"; expand.style.right=""; expand.style.top=(oy+PF_SCREEN[1]*rh+6)+"px"; expand.innerHTML="&#9974;";
+  }
 }
 function resetPlatformer(){
   var W=pfCanvas.width, H=pfCanvas.height;
@@ -4589,7 +4628,7 @@ const DL_PART_SRC=["coin.png","red.png","green.png","blue.png","redC.png","green
 const DL_PARTS=[];
 function dlPartsReady(){ return DL_PARTS.filter(function(im){ return im&&im.complete&&im.naturalWidth; }); }
 const DL_BG_SRC=["tree1.png","tree2.png","tree3.png","tree4.png","tree5.png","tree6.png","treeP.png"];
-const DL_FRACTAL_SRC=["fractal1.png","fractal2.png","fractal3.png","fractal4.png"];
+const DL_FRACTAL_SRC=(function(){ var a=[]; for(var i=1;i<=20;i++) a.push("fractal"+i+".png"); return a; })();
 const DL_FRACTALS=[];
 function dlFractals(){ return DL_FRACTALS.filter(function(im){ return im&&im.complete&&im.naturalWidth; }); }
 const DL_BG_TREES=[];
@@ -5757,6 +5796,7 @@ function arcadeToMenu(){
 }
 function backFromPlatformer(){
   pfMusicStop();
+  arcadeFullscreen=false; var _e=document.getElementById("pfExpandBtn"); if(_e)_e.style.display="none"; try{fsClearBtns();}catch(e){}
   pfActive=false; if(pfRAF){ cancelAnimationFrame(pfRAF); pfRAF=null; }
   var _b=document.getElementById("dlBinder"); if(_b) _b.style.display="none";
   var _f=document.getElementById("dlFuse"); if(_f) _f.style.display="none";
