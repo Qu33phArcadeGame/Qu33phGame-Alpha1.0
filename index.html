@@ -456,7 +456,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v234</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v235</div>
 
 <canvas id="game"></canvas>
 
@@ -5837,7 +5837,7 @@ function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
 }
 function pbDepth(y){ return 0.45+pbVP(y)*1.15; }                 // things nearer the front (bottom) are bigger
 function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
-function pbBuildTable(){ pbBumpers=[{x:0.32,y:0.05,r:0.105,hit:0},{x:0.47,y:-0.02,r:0.105,hit:0},{x:0.62,y:0.05,r:0.105,hit:0},{x:0.47,y:0.14,r:0.105,hit:0},{x:0.24,y:0.9,r:0.10,hit:0,sling:true},{x:0.66,y:0.9,r:0.10,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
+function pbBuildTable(){ pbBumpers=[{x:0.32,y:0.05,r:0.105,hit:0},{x:0.47,y:-0.02,r:0.105,hit:0},{x:0.62,y:0.05,r:0.105,hit:0},{x:0.47,y:0.14,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.72,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.056;pbBall.vx=-0.013;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
@@ -5865,7 +5865,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
     if(b.x>1.14-PB_R){ b.x=1.14-PB_R; b.vx=-b.vx*PB_DAMP; }        // chute outer wall
     if(b.y<0.42){ b.inChute=false; if(b.vx>-0.02)b.vx=-0.026; }    // exit the chute into the field
   } else {
-    var _f=Math.max(0,Math.min(1,(b.y-0.30)/0.85)), _lw=0.02+_f*0.17, _rw=0.96-_f*0.28;   // walls angle inward toward the flippers
+    var _f=Math.max(0,Math.min(1,(b.y-0.30)/0.85)), _lw=0.02+_f*0.26, _rw=0.96-_f*0.31;   // walls angle inward toward the flippers
     if(b.x<_lw+PB_R){ b.x=_lw+PB_R; b.vx=-b.vx*PB_DAMP; }
     if(b.x>_rw-PB_R){ b.x=_rw-PB_R; b.vx=-b.vx*PB_DAMP; }
   }
@@ -5878,8 +5878,8 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   for(var i=0;i<pbBumpers.length;i++){ if(pbForceDown||b.toMega)break; var bp=pbBumpers[i],dx=b.x-bp.x,dy=b.y-bp.y,d=Math.hypot(dx,dy)||1; if(d<bp.r+PB_R){var nx=dx/d,ny=dy/d;b.x=bp.x+nx*(bp.r+PB_R);b.y=bp.y+ny*(bp.r+PB_R);var dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.vx=b.vx*0.5+nx*0.006;b.vy=b.vy*0.5+ny*0.006;bp.hit=8;pbScore+=(bp.sling?25:100);try{haptic(6);}catch(e){}}}
   if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=140; b.y=pbChair.y-PB_R; b.vx=0.028; b.vy=-0.09; b.toMega=true; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
   if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.vy=0.03; b.vx=(0.5-b.x)*0.04; try{haptic([25,15,35]);}catch(e){} }
-  pbFlipperCollide(0.23,1.02, 0.5-pbFL*1.0, 0.20, b, pbFL);
-  pbFlipperCollide(0.69,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, b, pbFR);
+  pbFlipperCollide(0.20,1.02, 0.5-pbFL*1.0, 0.20, b, pbFL);
+  pbFlipperCollide(0.72,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, b, pbFR);
   if(b.y>1.18){ pbBalls--; if(pbBalls<=0){pbState="over";pbMsg="GAME OVER";pbMsgT=999; if(pbScore>pbHigh){pbHigh=pbScore; try{localStorage.setItem("qu33phPinballHigh",pbHigh);}catch(e){}} } else pbNewBall(); }
 }
 function pbDrawFlipper(px,py,ang,len,mirror){ var c=pbctx,tx=px+Math.cos(ang)*len,ty=py+Math.sin(ang)*len,A=pbProject(px,py),B=pbProject(tx,ty);
@@ -5893,14 +5893,14 @@ function pbDrawQuad(x,y,w,hh){ var c=pbctx,a=pbProject(x,y),b2=pbProject(x+w,y),
 function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   // ---- visible field border (magenta) for alignment ----
   c.save(); c.strokeStyle="#ff3bff"; c.lineWidth=3; c.shadowColor="#ff3bff"; c.shadowBlur=6;
-  c.beginPath(); for(var yy=0.02; yy<=1.18; yy+=0.02){ var f=Math.max(0,Math.min(1,(yy-0.30)/0.85)), lw=0.02+f*0.17, P=pbProject(lw,yy); if(yy<0.03)c.moveTo(P[0],P[1]); else c.lineTo(P[0],P[1]); } c.stroke();
-  c.beginPath(); for(var yy=0.02; yy<=1.18; yy+=0.02){ var f=Math.max(0,Math.min(1,(yy-0.30)/0.85)), rw=0.96-f*0.28, P=pbProject(rw,yy); if(yy<0.03)c.moveTo(P[0],P[1]); else c.lineTo(P[0],P[1]); } c.stroke();
+  c.beginPath(); for(var yy=0.02; yy<=1.18; yy+=0.02){ var f=Math.max(0,Math.min(1,(yy-0.30)/0.85)), lw=0.02+f*0.26, P=pbProject(lw,yy); if(yy<0.03)c.moveTo(P[0],P[1]); else c.lineTo(P[0],P[1]); } c.stroke();
+  c.beginPath(); for(var yy=0.02; yy<=1.18; yy+=0.02){ var f=Math.max(0,Math.min(1,(yy-0.30)/0.85)), rw=0.96-f*0.31, P=pbProject(rw,yy); if(yy<0.03)c.moveTo(P[0],P[1]); else c.lineTo(P[0],P[1]); } c.stroke();
   var TL=pbProject(0.05,0.02),TR=pbProject(0.95,0.02); c.beginPath(); c.moveTo(TL[0],TL[1]); c.lineTo(TR[0],TR[1]); c.stroke();
   c.restore();
   for(var i=0;i<pbBumpers.length;i++){ var bp=pbBumpers[i]; if(bp.sling)continue; var P=pbProject(bp.x,bp.y),rx=pbSizePx(bp.r,bp.y),ry=rx*0.52; c.save();c.strokeStyle=i%2?"#ff3b6a":"#3affea";c.shadowColor=i%2?"#ff3b6a":"#3affea";c.shadowBlur=bp.hit>0?26:13;c.lineWidth=Math.max(2,rx*0.14);c.beginPath();c.ellipse(P[0],P[1],rx,ry,0,0,6.283);c.stroke();c.fillStyle=i%2?"rgba(255,59,106,0.16)":"rgba(58,255,234,0.16)";c.fill();c.restore(); }
   c.save(); if(pbMega.flash>0){c.shadowColor="#ffd24a";c.shadowBlur=22;} c.fillStyle=pbMega.flash>0?"rgba(255,255,255,0.92)":"rgba(230,230,230,0.45)"; pbDrawQuad(pbMega.x,pbMega.y,pbMega.w,pbMega.h);c.fill();c.strokeStyle="#ff2b2b";c.lineWidth=3;c.shadowColor="#ff2b2b";c.shadowBlur=8;c.stroke(); c.restore();
   var mp=pbProject(pbMega.x+pbMega.w/2,pbMega.y-0.005); c.fillStyle="#ff2b2b";c.font="bold "+pbSizePx(0.055,pbMega.y)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="bottom";c.shadowColor="#ff2b2b";c.shadowBlur=6;c.fillText("MEGA",mp[0],mp[1]);c.shadowBlur=0;
-  pbDrawFlipper(0.23,1.02, 0.5-pbFL*1.0, 0.20, true); pbDrawFlipper(0.69,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, false);
+  pbDrawFlipper(0.20,1.02, 0.5-pbFL*1.0, 0.20, true); pbDrawFlipper(0.72,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, false);
   if(b){ var BP=pbProject(b.x,b.y),br=pbSizePx(PB_R,b.y); c.save();c.shadowColor="#fff";c.shadowBlur=10;var bg=c.createRadialGradient(BP[0]-br*0.3,BP[1]-br*0.3,br*0.2,BP[0],BP[1],br);bg.addColorStop(0,"#fff");bg.addColorStop(1,"#8892a0");c.fillStyle=bg;c.beginPath();c.arc(BP[0],BP[1],br,0,6.283);c.fill();c.restore(); }
   c.fillStyle="#8fe0ff";c.textBaseline="middle"; c.font="bold "+(pbImgRW*0.03)+"px Helvetica, Arial, sans-serif"; c.textAlign="right"; c.fillText(pbHigh||0, pbImgOX+0.63*pbImgRW, pbImgOY+0.315*pbImgRH);
   c.font="bold "+(pbImgRW*0.023)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.fillText("SCORE "+pbScore+"    BALLS "+pbBalls, pbImgOX+0.5*pbImgRW, pbImgOY+0.328*pbImgRH);
