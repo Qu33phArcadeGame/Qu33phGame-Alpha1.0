@@ -456,7 +456,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v229</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v230</div>
 
 <canvas id="game"></canvas>
 
@@ -5826,7 +5826,7 @@ function layoutPinball(){
   var fl=document.getElementById("pbFlipLeft"),fr=document.getElementById("pbFlipRight"),lb=document.getElementById("pbLaunchBtn");
   fl.style.left="0px";fl.style.right="";fl.style.bottom="0px";fl.style.width="50%";fl.style.height="40%";
   fr.style.right="0px";fr.style.left="";fr.style.bottom="0px";fr.style.width="50%";fr.style.height="40%";
-  lb.style.left=(pbImgOX+0.70*pbImgRW)+"px";lb.style.right="";lb.style.top=(pbImgOY+0.80*pbImgRH)+"px";lb.style.bottom="";
+  lb.style.left=(pbImgOX+0.70*pbImgRW)+"px";lb.style.right="";lb.style.top=(pbImgOY+0.74*pbImgRH)+"px";lb.style.bottom="";
 }
 function pbVP(y){ var v=y/LH; if(v<-0.13)v=-0.13; if(v>1.15)v=1.15; return v/(1+PB_PERSP*(1-v)); }   // perspective foreshortening
 function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
@@ -5837,7 +5837,7 @@ function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
 }
 function pbDepth(y){ return 0.45+pbVP(y)*1.15; }                 // things nearer the front (bottom) are bigger
 function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
-function pbBuildTable(){ pbBumpers=[{x:0.41,y:0.09,r:0.07,hit:0},{x:0.47,y:0.03,r:0.07,hit:0},{x:0.53,y:0.09,r:0.07,hit:0},{x:0.47,y:0.15,r:0.07,hit:0},{x:0.18,y:0.95,r:0.11,hit:0,sling:true},{x:0.72,y:0.95,r:0.11,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
+function pbBuildTable(){ pbBumpers=[{x:0.41,y:0.075,r:0.082,hit:0},{x:0.47,y:0.015,r:0.082,hit:0},{x:0.53,y:0.075,r:0.082,hit:0},{x:0.47,y:0.135,r:0.082,hit:0},{x:0.18,y:0.95,r:0.11,hit:0,sling:true},{x:0.72,y:0.95,r:0.11,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.056;pbBall.vx=-0.013;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
@@ -5869,9 +5869,9 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
     if(b.x>0.98-PB_R){ b.x=0.98-PB_R; b.vx=-b.vx*PB_DAMP; }        // field right wall
   }
   if(b.y<tw+PB_R){b.y=tw+PB_R;b.vy=-b.vy*PB_DAMP;}
-  if(b.y<0.74){ b.upT=(b.upT||0)+1; } else { b.upT=0; }
-  var pbForceDown = b.upT>110;
-  if(pbForceDown){ b.vy+=0.006; b.vx += (0.5-b.x)*0.003; b.vx*=0.9; }   // anti-trap: never stuck up top → forced down the center to the paddles
+  if(b.y<0.96){ b.upT=(b.upT||0)+1; } else { b.upT=0; }
+  var pbForceDown = b.upT>95;
+  if(pbForceDown){ b.vy+=0.007; b.vx += (0.5-b.x)*0.0035; b.vx*=0.9; }   // anti-trap: never stuck above the paddles → funneled down the center to them
   for(var i=0;i<pbBumpers.length;i++){ if(pbForceDown)break; var bp=pbBumpers[i],dx=b.x-bp.x,dy=b.y-bp.y,d=Math.hypot(dx,dy)||1; if(d<bp.r+PB_R){var nx=dx/d,ny=dy/d;b.x=bp.x+nx*(bp.r+PB_R);b.y=bp.y+ny*(bp.r+PB_R);var dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.vx=b.vx*0.5+nx*0.006;b.vy=b.vy*0.5+ny*0.006;bp.hit=8;pbScore+=(bp.sling?25:100);try{haptic(6);}catch(e){}}}
   if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01){ b.y=pbChair.y-PB_R; b.vx=((pbMega.x+pbMega.w/2)-b.x)*0.04; b.vy=-0.072; b.toMega=true; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
   if(b.toMega && b.x>pbMega.x-PB_R&&b.x<pbMega.x+pbMega.w+PB_R&&b.y<pbMega.y+pbMega.h+PB_R&&b.y>pbMega.y-PB_R){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.vy=Math.abs(b.vy)*0.7+0.008; try{haptic([25,15,35]);}catch(e){} }
