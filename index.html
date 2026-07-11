@@ -456,7 +456,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v228</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v229</div>
 
 <canvas id="game"></canvas>
 
@@ -5805,7 +5805,7 @@ function returnToArcade(){
 }
 // ================= QU33PH PINBALL =================
 var pbCanvas=null,pbctx=null,pbRAF=null,pbActive=false,pbW=0,pbH=0,PB_R=0;
-var pbBall=null,pbScore=0,pbBalls=3,pbState="ready",pbT=0;
+var pbBall=null,pbScore=0,pbBalls=3,pbState="ready",pbT=0,pbHigh=0; try{pbHigh=+(localStorage.getItem("qu33phPinballHigh")||0);}catch(e){}
 var pbFL=0,pbFR=0,pbFLtarget=0,pbFRtarget=0,pbMsg="",pbMsgT=0;
 var pbBumpers=[],pbChair=null,pbMega=null,pbListenersSet=false;
 var PB_GRAV=0.3,PB_DAMP=0.62;
@@ -5826,7 +5826,7 @@ function layoutPinball(){
   var fl=document.getElementById("pbFlipLeft"),fr=document.getElementById("pbFlipRight"),lb=document.getElementById("pbLaunchBtn");
   fl.style.left="0px";fl.style.right="";fl.style.bottom="0px";fl.style.width="50%";fl.style.height="40%";
   fr.style.right="0px";fr.style.left="";fr.style.bottom="0px";fr.style.width="50%";fr.style.height="40%";
-  lb.style.left=(pbImgOX+0.70*pbImgRW)+"px";lb.style.right="";lb.style.top=(pbImgOY+0.72*pbImgRH)+"px";lb.style.bottom="";
+  lb.style.left=(pbImgOX+0.70*pbImgRW)+"px";lb.style.right="";lb.style.top=(pbImgOY+0.80*pbImgRH)+"px";lb.style.bottom="";
 }
 function pbVP(y){ var v=y/LH; if(v<-0.13)v=-0.13; if(v>1.15)v=1.15; return v/(1+PB_PERSP*(1-v)); }   // perspective foreshortening
 function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
@@ -5837,7 +5837,7 @@ function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
 }
 function pbDepth(y){ return 0.45+pbVP(y)*1.15; }                 // things nearer the front (bottom) are bigger
 function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
-function pbBuildTable(){ pbBumpers=[{x:0.35,y:0.09,r:0.072,hit:0},{x:0.47,y:0.03,r:0.072,hit:0},{x:0.59,y:0.09,r:0.072,hit:0},{x:0.41,y:0.18,r:0.058,hit:0},{x:0.53,y:0.18,r:0.058,hit:0},{x:0.22,y:0.95,r:0.11,hit:0,sling:true},{x:0.67,y:0.95,r:0.11,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.295,h:0.16,flash:0}; }
+function pbBuildTable(){ pbBumpers=[{x:0.41,y:0.09,r:0.07,hit:0},{x:0.47,y:0.03,r:0.07,hit:0},{x:0.53,y:0.09,r:0.07,hit:0},{x:0.47,y:0.15,r:0.07,hit:0},{x:0.18,y:0.95,r:0.11,hit:0,sling:true},{x:0.72,y:0.95,r:0.11,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.056;pbBall.vx=-0.013;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
@@ -5877,7 +5877,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   if(b.toMega && b.x>pbMega.x-PB_R&&b.x<pbMega.x+pbMega.w+PB_R&&b.y<pbMega.y+pbMega.h+PB_R&&b.y>pbMega.y-PB_R){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.vy=Math.abs(b.vy)*0.7+0.008; try{haptic([25,15,35]);}catch(e){} }
   pbFlipperCollide(0.23,1.02, 0.5-pbFL*1.0, 0.20, b, pbFL);
   pbFlipperCollide(0.69,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, b, pbFR);
-  if(b.y>1.18){ pbBalls--; if(pbBalls<=0){pbState="over";pbMsg="GAME OVER";pbMsgT=999;} else pbNewBall(); }
+  if(b.y>1.18){ pbBalls--; if(pbBalls<=0){pbState="over";pbMsg="GAME OVER";pbMsgT=999; if(pbScore>pbHigh){pbHigh=pbScore; try{localStorage.setItem("qu33phPinballHigh",pbHigh);}catch(e){}} } else pbNewBall(); }
 }
 function pbDrawFlipper(px,py,ang,len,mirror){ var c=pbctx,tx=px+Math.cos(ang)*len,ty=py+Math.sin(ang)*len,A=pbProject(px,py),B=pbProject(tx,ty);
   var mx=(A[0]+B[0])/2,my=(A[1]+B[1])/2,dx=B[0]-A[0],dy=B[1]-A[1],L=Math.hypot(dx,dy)*1.08,a=Math.atan2(dy,dx),th=pbSizePx(0.145,py);
@@ -5893,7 +5893,8 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   var mp=pbProject(pbMega.x+pbMega.w/2,pbMega.y-0.005); c.fillStyle="#ff2b2b";c.font="bold "+pbSizePx(0.055,pbMega.y)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="bottom";c.shadowColor="#ff2b2b";c.shadowBlur=6;c.fillText("MEGA",mp[0],mp[1]);c.shadowBlur=0;
   pbDrawFlipper(0.23,1.02, 0.5-pbFL*1.0, 0.20, true); pbDrawFlipper(0.69,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, false);
   if(b){ var BP=pbProject(b.x,b.y),br=pbSizePx(PB_R,b.y); c.save();c.shadowColor="#fff";c.shadowBlur=10;var bg=c.createRadialGradient(BP[0]-br*0.3,BP[1]-br*0.3,br*0.2,BP[0],BP[1],br);bg.addColorStop(0,"#fff");bg.addColorStop(1,"#8892a0");c.fillStyle=bg;c.beginPath();c.arc(BP[0],BP[1],br,0,6.283);c.fill();c.restore(); }
-  var hy=pbImgOY+0.328*pbImgRH; c.fillStyle="#8fe0ff";c.font="bold "+(pbImgRW*0.023)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("SCORE "+pbScore+"    BALLS "+pbBalls, pbImgOX+0.5*pbImgRW, hy);
+  c.fillStyle="#8fe0ff";c.textBaseline="middle"; c.font="bold "+(pbImgRW*0.03)+"px Helvetica, Arial, sans-serif"; c.textAlign="right"; c.fillText(pbHigh||0, pbImgOX+0.63*pbImgRW, pbImgOY+0.298*pbImgRH);
+  c.font="bold "+(pbImgRW*0.023)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.fillText("SCORE "+pbScore+"    BALLS "+pbBalls, pbImgOX+0.5*pbImgRW, pbImgOY+0.328*pbImgRH);
   if(pbState==="ready"){ var rp=pbProject(0.86,1.02); c.fillStyle="rgba(255,255,255,0.9)";c.font="bold "+(pbImgRW*0.022)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("LAUNCH \u2192",rp[0],rp[1]); }
   if(pbMsgT>0){ c.textAlign="center";c.textBaseline="middle";c.fillStyle="#ffd24a";c.shadowColor="#ffd24a";c.shadowBlur=14;c.font="bold "+(pbImgRW*0.05)+"px Helvetica, Arial, sans-serif";var msgY=pbImgOY+0.5*pbImgRH;c.fillText(pbMsg, pbW/2, msgY);c.shadowBlur=0; if(pbState==="over"){c.fillStyle="rgba(255,255,255,0.85)";c.font="bold "+(pbImgRW*0.025)+"px Helvetica, Arial, sans-serif";c.fillText("press LAUNCH to restart", pbW/2, msgY+pbImgRW*0.06);} }
 }
