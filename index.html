@@ -456,7 +456,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v231</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v232</div>
 
 <canvas id="game"></canvas>
 
@@ -5837,7 +5837,7 @@ function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
 }
 function pbDepth(y){ return 0.45+pbVP(y)*1.15; }                 // things nearer the front (bottom) are bigger
 function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
-function pbBuildTable(){ pbBumpers=[{x:0.41,y:0.065,r:0.09,hit:0},{x:0.47,y:0.005,r:0.09,hit:0},{x:0.53,y:0.065,r:0.09,hit:0},{x:0.47,y:0.125,r:0.09,hit:0},{x:0.18,y:0.95,r:0.11,hit:0,sling:true},{x:0.72,y:0.95,r:0.11,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
+function pbBuildTable(){ pbBumpers=[{x:0.36,y:0.07,r:0.10,hit:0},{x:0.47,y:0.0,r:0.10,hit:0},{x:0.58,y:0.07,r:0.10,hit:0},{x:0.47,y:0.15,r:0.10,hit:0},{x:0.24,y:0.9,r:0.10,hit:0,sling:true},{x:0.66,y:0.9,r:0.10,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.056;pbBall.vx=-0.013;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
@@ -5865,8 +5865,9 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
     if(b.x>1.14-PB_R){ b.x=1.14-PB_R; b.vx=-b.vx*PB_DAMP; }        // chute outer wall
     if(b.y<0.42){ b.inChute=false; if(b.vx>-0.02)b.vx=-0.026; }    // exit the chute into the field
   } else {
-    if(b.x<0.02+PB_R){ b.x=0.02+PB_R; b.vx=-b.vx*PB_DAMP; }        // field left wall
-    if(b.x>0.98-PB_R){ b.x=0.98-PB_R; b.vx=-b.vx*PB_DAMP; }        // field right wall
+    var _f=Math.max(0,Math.min(1,(b.y-0.30)/0.85)), _lw=0.05+_f*0.16, _rw=0.95-_f*0.16;   // walls angle inward toward the flippers
+    if(b.x<_lw+PB_R){ b.x=_lw+PB_R; b.vx=-b.vx*PB_DAMP; }
+    if(b.x>_rw-PB_R){ b.x=_rw-PB_R; b.vx=-b.vx*PB_DAMP; }
   }
   if(b.y<tw+PB_R){b.y=tw+PB_R;b.vy=-b.vy*PB_DAMP;}
   if(b.toMega){ b.vx += ((pbMega.x+pbMega.w/2)-b.x)*0.006; b.upT=0; }   // curve up the rail to the mega
