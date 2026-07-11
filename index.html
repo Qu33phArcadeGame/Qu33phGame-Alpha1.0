@@ -456,7 +456,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v233</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v234</div>
 
 <canvas id="game"></canvas>
 
@@ -5865,7 +5865,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
     if(b.x>1.14-PB_R){ b.x=1.14-PB_R; b.vx=-b.vx*PB_DAMP; }        // chute outer wall
     if(b.y<0.42){ b.inChute=false; if(b.vx>-0.02)b.vx=-0.026; }    // exit the chute into the field
   } else {
-    var _f=Math.max(0,Math.min(1,(b.y-0.30)/0.85)), _lw=0.05+_f*0.16, _rw=0.95-_f*0.16;   // walls angle inward toward the flippers
+    var _f=Math.max(0,Math.min(1,(b.y-0.30)/0.85)), _lw=0.02+_f*0.17, _rw=0.96-_f*0.28;   // walls angle inward toward the flippers
     if(b.x<_lw+PB_R){ b.x=_lw+PB_R; b.vx=-b.vx*PB_DAMP; }
     if(b.x>_rw-PB_R){ b.x=_rw-PB_R; b.vx=-b.vx*PB_DAMP; }
   }
@@ -5893,8 +5893,8 @@ function pbDrawQuad(x,y,w,hh){ var c=pbctx,a=pbProject(x,y),b2=pbProject(x+w,y),
 function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   // ---- visible field border (magenta) for alignment ----
   c.save(); c.strokeStyle="#ff3bff"; c.lineWidth=3; c.shadowColor="#ff3bff"; c.shadowBlur=6;
-  c.beginPath(); for(var yy=0.02; yy<=1.18; yy+=0.02){ var f=Math.max(0,Math.min(1,(yy-0.30)/0.85)), lw=0.05+f*0.16, P=pbProject(lw,yy); if(yy<0.03)c.moveTo(P[0],P[1]); else c.lineTo(P[0],P[1]); } c.stroke();
-  c.beginPath(); for(var yy=0.02; yy<=1.18; yy+=0.02){ var f=Math.max(0,Math.min(1,(yy-0.30)/0.85)), rw=0.95-f*0.16, P=pbProject(rw,yy); if(yy<0.03)c.moveTo(P[0],P[1]); else c.lineTo(P[0],P[1]); } c.stroke();
+  c.beginPath(); for(var yy=0.02; yy<=1.18; yy+=0.02){ var f=Math.max(0,Math.min(1,(yy-0.30)/0.85)), lw=0.02+f*0.17, P=pbProject(lw,yy); if(yy<0.03)c.moveTo(P[0],P[1]); else c.lineTo(P[0],P[1]); } c.stroke();
+  c.beginPath(); for(var yy=0.02; yy<=1.18; yy+=0.02){ var f=Math.max(0,Math.min(1,(yy-0.30)/0.85)), rw=0.96-f*0.28, P=pbProject(rw,yy); if(yy<0.03)c.moveTo(P[0],P[1]); else c.lineTo(P[0],P[1]); } c.stroke();
   var TL=pbProject(0.05,0.02),TR=pbProject(0.95,0.02); c.beginPath(); c.moveTo(TL[0],TL[1]); c.lineTo(TR[0],TR[1]); c.stroke();
   c.restore();
   for(var i=0;i<pbBumpers.length;i++){ var bp=pbBumpers[i]; if(bp.sling)continue; var P=pbProject(bp.x,bp.y),rx=pbSizePx(bp.r,bp.y),ry=rx*0.52; c.save();c.strokeStyle=i%2?"#ff3b6a":"#3affea";c.shadowColor=i%2?"#ff3b6a":"#3affea";c.shadowBlur=bp.hit>0?26:13;c.lineWidth=Math.max(2,rx*0.14);c.beginPath();c.ellipse(P[0],P[1],rx,ry,0,0,6.283);c.stroke();c.fillStyle=i%2?"rgba(255,59,106,0.16)":"rgba(58,255,234,0.16)";c.fill();c.restore(); }
