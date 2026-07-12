@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v244</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v246</div>
 
 <canvas id="game"></canvas>
 
@@ -3475,7 +3475,7 @@ function draw(){
       let t=Date.now()/1000;
       let numStars=16;
       let _corners = isRZ()
-        ? [[cLeft+8,canvas.height*0.078],[cRight+22,canvas.height*0.09],[cRight+22,canvas.height*0.996],[cLeft+8,canvas.height*0.996]]
+        ? [[cLeft+8,canvas.height*0.078],[cRight+38,canvas.height*0.09],[cRight+38,canvas.height*0.996],[cLeft+8,canvas.height*0.996]]
         : [[cLeft+3,cTop+3],[cRight-3,cTop+3],[cRight-3,cBot-3],[cLeft+3,cBot-3]];
       let _edges=[], perimeter=0;
       for(let _e=0;_e<4;_e++){ let _a=_corners[_e], _bc=_corners[(_e+1)%4]; let _len=Math.hypot(_bc[0]-_a[0],_bc[1]-_a[1]); _edges.push({a:_a,b:_bc,len:_len}); perimeter+=_len; }
@@ -4108,37 +4108,24 @@ function drawJumpMenu(){
   c.font="bold 22px Helvetica, Arial, sans-serif"; c.fillText("QU33PH JUMP", W/2, H*0.06);
   c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold 9px Helvetica, Arial, sans-serif";
   c.fillText("GREEN \u25b2\u25bc   \u2022   RED = PLAY", W/2, H*0.14);
-  // mode rows — each is a custom MARKER button; orientation alternates left/right down the list
-  var top=H*0.22, rowH=Math.min(82, (H*0.68)/PF_MODES.length), rowCols=["red","green","blue","red"];
+  // mode rows
+  var top=H*0.23, rowH=Math.min(72, (H*0.64)/PF_MODES.length);
   for(var i=0;i<PF_MODES.length;i++){
     var m=PF_MODES[i], y=top+i*rowH, sel=(i===jmSel && !jmSettings);
-    var bx=W*0.09, bw=W*0.82, bh=rowH-10, flip=(i%2===1), mimg=markerImages[rowCols[i]];
-    var glow=(rowCols[i]==="red"?"#ff3040":rowCols[i]==="green"?"#30ff70":"#3a7bff");
+    var bx=W*0.1, bw=W*0.8, bh=rowH-12;
     c.save();
-    // marker art fills the button (flipped on alternate rows), clipped to a rounded pill
-    c.save(); if(sel){ c.shadowColor=glow; c.shadowBlur=20; } rrPf(c,bx,y,bw,bh,bh*0.5); c.clip();
-    if(mimg&&mimg.complete&&mimg.naturalWidth){
-      if(flip){ c.translate(bx+bw,y); c.scale(-1,1); c.drawImage(mimg,0,0,bw,bh); }
-      else { c.drawImage(mimg,bx,y,bw,bh); }
-    } else { c.fillStyle=glow; c.fillRect(bx,y,bw,bh); }
-    // dark scrim (heavier on the left) so the text stays legible over the marker
-    var sg=c.createLinearGradient(bx,0,bx+bw,0); sg.addColorStop(0,"rgba(4,6,12,0.82)"); sg.addColorStop(0.62,"rgba(4,6,12,0.5)"); sg.addColorStop(1,"rgba(4,6,12,0.2)");
-    c.fillStyle=sg; c.fillRect(bx,y,bw,bh);
-    if(!sel){ c.fillStyle="rgba(2,3,8,0.28)"; c.fillRect(bx,y,bw,bh); }   // dim the unselected ones
+    if(sel){ c.shadowColor="#8affea"; c.shadowBlur=16; c.fillStyle="rgba(40,255,180,0.16)"; c.strokeStyle="#8affea"; }
+    else { c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.05)"; c.strokeStyle="rgba(255,255,255,0.22)"; }
+    rrPf(c,bx,y,bw,bh,10); c.fill(); c.lineWidth=sel?2.4:1.2; c.stroke();
     c.restore();
-    // neon border
-    c.strokeStyle=sel?"#fff":"rgba(255,255,255,0.35)"; c.lineWidth=sel?2.6:1.2; c.shadowColor=sel?glow:"transparent"; c.shadowBlur=sel?14:0;
-    rrPf(c,bx,y,bw,bh,bh*0.5); c.stroke();
-    c.restore();
-    // labels
     c.textAlign="left"; c.textBaseline="alphabetic";
-    c.fillStyle="#fff"; c.shadowColor="rgba(0,0,0,0.6)"; c.shadowBlur=3; c.font="bold 20px Helvetica, Arial, sans-serif";
-    c.fillText(m.name, bx+18, y+bh*0.44);
-    c.fillStyle="rgba(255,255,255,0.72)"; c.font="bold 9px Helvetica, Arial, sans-serif";
-    c.fillText(m.blurb, bx+18, y+bh*0.74);
+    c.fillStyle=sel?"#8affea":"#fff"; c.font="bold 19px Helvetica, Arial, sans-serif";
+    c.fillText(m.name, bx+16, y+bh*0.44);
+    c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold 9px Helvetica, Arial, sans-serif";
+    c.fillText(m.blurb, bx+16, y+bh*0.76);
     c.textAlign="right"; c.fillStyle="#ffd700"; c.font="bold 12px Helvetica, Arial, sans-serif";
-    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-16, y+bh*0.56);
-    c.shadowBlur=0; c.textAlign="center";
+    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-14, y+bh*0.58);
+    c.textAlign="center";
   }
   // settings gear (top-LEFT corner, away from the fullscreen button on the right)
   c.save(); c.translate(22, 22); c.rotate(jmT*0.01);
@@ -4247,14 +4234,35 @@ function launchArea(idx){ setDreamArea(idx); document.getElementById("dlMap").st
 function dreamMapBack(){ document.getElementById("dlMap").style.display="none"; showArcadeMenu(); }
 let arcadeFullscreen=false;
 function toggleArcadeFullscreen(){ arcadeFullscreen=!arcadeFullscreen; try{layoutPlatformer();}catch(e){} }
+function fsMarkerCapClear(el){ var cap=el.querySelector(".mk-cap"); if(cap) cap.parentNode.removeChild(cap); el.style.position="absolute"; }
 function fsStyleBtn(id,x,y,w,h,color,label,rad){
-  var el=document.getElementById(id);
+  var el=document.getElementById(id); fsMarkerCapClear(el);
   el.style.left=x+"px"; el.style.top=y+"px"; el.style.width=w+"px"; el.style.height=h+"px";
   var grad = color==="green"?"radial-gradient(circle at 42% 30%, #86e886, #2f8f2f 68%, #176017)":color==="red"?"radial-gradient(circle at 42% 30%, #ff9a9a, #d62424 65%, #8a1010)":"radial-gradient(circle at 42% 30%, #9ec2ff, #2554d8 65%, #12328c)";
   el.style.background=grad; el.style.borderRadius=rad; el.style.boxShadow="0 5px 12px rgba(0,0,0,0.6), inset 0 3px 8px rgba(255,255,255,0.4), inset 0 -4px 8px rgba(0,0,0,0.35)"; el.style.border="2px solid rgba(0,0,0,0.4)";
   el.style.display="flex"; el.style.alignItems="center"; el.style.justifyContent="center"; el.style.color="rgba(255,255,255,0.92)"; el.style.fontFamily="Helvetica,Arial,sans-serif"; el.style.fontWeight="bold"; el.style.fontSize=Math.round(Math.min(w,h)*0.34)+"px"; el.style.textShadow="0 1px 3px rgba(0,0,0,0.7)"; el.innerText=label;
 }
-function fsClearBtns(){ ["pfLeftBtn","pfRightBtn","pfJumpBtn","pfActionBtn"].forEach(function(id){ var el=document.getElementById(id); el.style.background=""; el.style.boxShadow=""; el.style.border=""; el.style.color=""; el.innerText=""; el.style.borderRadius="50%"; el.style.display=""; }); document.getElementById("pfDpad").style.display="none"; }
+// the QU33PH main-menu "marker button" look (black body + white/colored border + a cap on the outer side; .flip mirrors it)
+function fsMarkerBtn(id,x,y,w,h,label,flip,color){
+  var el=document.getElementById(id); fsMarkerCapClear(el);
+  var bord = color==="gold"?"#ffd700":color==="red"?"#ff6a6a":color==="blue"?"#7aa6ff":color==="green"?"#6ee66e":"#ffffff";
+  var txt  = color==="gold"?"#ffd700":"#ffffff";
+  el.style.position="absolute"; el.style.left=x+"px"; el.style.top=y+"px"; el.style.width=w+"px"; el.style.height=h+"px";
+  el.style.display="flex"; el.style.alignItems="center"; el.style.justifyContent="center";
+  el.style.background="#000"; el.style.border="3px solid "+bord; el.style.boxSizing="border-box";
+  el.style.borderRadius= flip ? "12px 4px 4px 12px" : "4px 12px 12px 4px";
+  el.style.boxShadow="0 4px 14px rgba(0,0,0,0.55)"; el.style.color=txt;
+  el.style.fontFamily="Helvetica,Arial,sans-serif"; el.style.fontWeight="bold"; el.style.letterSpacing="2px";
+  el.style.fontSize=Math.round(Math.min(w,h)*0.42)+"px"; el.style.textShadow="0 1px 3px rgba(0,0,0,0.6)"; el.innerText=label;
+  var cap=document.createElement("div"); cap.className="mk-cap";
+  var cw=Math.max(14, Math.round(h*0.5));
+  cap.style.position="absolute"; cap.style.top="2px"; cap.style.bottom="2px"; cap.style.width=cw+"px";
+  cap.style.background="#000"; cap.style.border="3px solid "+bord; cap.style.boxSizing="border-box"; cap.style.pointerEvents="none";
+  if(flip){ cap.style.right=(-cw)+"px"; cap.style.left="auto"; cap.style.borderRadius="2px 8px 8px 2px"; }
+  else { cap.style.left=(-cw)+"px"; cap.style.right="auto"; cap.style.borderRadius="8px 2px 2px 8px"; }
+  el.appendChild(cap);
+}
+function fsClearBtns(){ ["pfLeftBtn","pfRightBtn","pfJumpBtn","pfActionBtn"].forEach(function(id){ var el=document.getElementById(id); fsMarkerCapClear(el); el.style.background=""; el.style.boxShadow=""; el.style.border=""; el.style.color=""; el.style.letterSpacing=""; el.innerText=""; el.style.borderRadius="50%"; el.style.display=""; }); document.getElementById("pfDpad").style.display="none"; }
 function layoutPlatformer(){
   var sw=window.innerWidth, sh=window.innerHeight, cv=pfCanvas;
   var bg=document.getElementById("platformerBg"), expand=document.getElementById("pfExpandBtn"), pause=document.getElementById("arcadePauseBtn");
@@ -4265,25 +4273,35 @@ function layoutPlatformer(){
     cv.style.left="0px"; cv.style.top=cvTop+"px"; cv.style.width=cvW+"px"; cv.style.height=cvH+"px";
     cv.width=Math.max(120,cvW); cv.height=Math.max(80,cvH); pfctx=cv.getContext("2d");
     var cy0=cvTop+cvH, ch=sh-cy0;
-    // green D-pad (left half = left, right half = right) bottom-left
-    var dp=Math.min(sw*0.44, ch*0.92), dpX=sw*0.04, dpY=cy0+(ch-dp)/2, dv=document.getElementById("pfDpad");
-    dv.style.display="block"; dv.style.left=dpX+"px"; dv.style.top=dpY+"px"; dv.style.width=dp+"px"; dv.style.height=dp+"px";
-    dv.style.background="radial-gradient(circle at 45% 35%, #6fd66f, #2f8f2f 70%, #176017)";
-    dv.style.clipPath="polygon(34% 0,66% 0,66% 34%,100% 34%,100% 66%,66% 66%,66% 100%,34% 100%,34% 66%,0 66%,0 34%,34% 34%)";
-    dv.style.webkitClipPath=dv.style.clipPath; dv.style.boxShadow="inset 0 3px 10px rgba(255,255,255,0.35), inset 0 -5px 10px rgba(0,0,0,0.4)"; dv.style.borderRadius="10px";
-    // transparent tap halves over the D-pad
-    fsStyleBtn("pfLeftBtn", dpX, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25C0","10px 0 0 10px"); document.getElementById("pfLeftBtn").style.background="transparent"; document.getElementById("pfLeftBtn").style.boxShadow=""; document.getElementById("pfLeftBtn").style.border="";
-    fsStyleBtn("pfRightBtn", dpX+dp*0.5, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25B6","0 10px 10px 0"); document.getElementById("pfRightBtn").style.background="transparent"; document.getElementById("pfRightBtn").style.boxShadow=""; document.getElementById("pfRightBtn").style.border="";
-    // red + blue buttons bottom-right (wider "SELECT" pills in the mode menu so the text fits)
     var isMenu=(arcadeGame==="jumpmenu");
-    var br=Math.min(sw*0.19, ch*0.5), byC=cy0+(ch-br)/2;
     if(isMenu){
-      var bw2=Math.min(sw*0.28, ch*1.1), bh2=Math.min(br, ch*0.62), by2=cy0+(ch-bh2)/2;
-      fsStyleBtn("pfJumpBtn",   sw*0.44, by2, bw2, bh2, "red",  "SELECT","16px");
-      fsStyleBtn("pfActionBtn", sw*0.74, by2, bw2, bh2, "blue", "SELECT","16px");
+      // MODE MENU: four big QU33PH-style marker buttons, orientation alternating (normal / flip / normal / flip)
+      document.getElementById("pfDpad").style.display="none";
+      var mh=Math.min(ch*0.4, 86), gy=Math.min(ch*0.08, 22), cw=Math.round(mh*0.4);
+      var bodyW=Math.min(sw*0.34, 190);
+      var topY=cy0+(ch-(mh*2+gy))/2;
+      var leftX=cw+sw*0.035, rightX=sw-cw-sw*0.035-bodyW;
+      fsMarkerBtn("pfLeftBtn",  leftX,  topY,        bodyW, mh, "\u25B2 UP",   false, "green");
+      fsMarkerBtn("pfRightBtn", leftX,  topY+mh+gy,  bodyW, mh, "\u25BC DOWN", true,  "green");
+      fsMarkerBtn("pfJumpBtn",  rightX, topY,        bodyW, mh, "SELECT",     false, "red");
+      fsMarkerBtn("pfActionBtn",rightX, topY+mh+gy,  bodyW, mh, "SELECT",     true,  "blue");
     } else {
-      fsStyleBtn("pfJumpBtn", sw*0.55, byC, br, br, "red", isJump?"JUMP":"FUSE","50%");
-      fsStyleBtn("pfActionBtn", sw*0.78, byC, br, br, "blue", isJump?"JUMP":"VIEW","50%");
+      // green D-pad (left half = left, right half = right) bottom-left
+      var dp=Math.min(sw*0.44, ch*0.92), dpX=sw*0.04, dpY=cy0+(ch-dp)/2, dv=document.getElementById("pfDpad");
+      dv.style.display="block"; dv.style.left=dpX+"px"; dv.style.top=dpY+"px"; dv.style.width=dp+"px"; dv.style.height=dp+"px";
+      dv.style.background="radial-gradient(circle at 45% 35%, #6fd66f, #2f8f2f 70%, #176017)";
+      dv.style.clipPath="polygon(34% 0,66% 0,66% 34%,100% 34%,100% 66%,66% 66%,66% 100%,34% 100%,34% 66%,0 66%,0 34%,34% 34%)";
+      dv.style.webkitClipPath=dv.style.clipPath; dv.style.boxShadow="inset 0 3px 10px rgba(255,255,255,0.35), inset 0 -5px 10px rgba(0,0,0,0.4)"; dv.style.borderRadius="10px";
+      // transparent tap halves over the D-pad
+      fsStyleBtn("pfLeftBtn", dpX, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25C0","10px 0 0 10px"); document.getElementById("pfLeftBtn").style.background="transparent"; document.getElementById("pfLeftBtn").style.boxShadow=""; document.getElementById("pfLeftBtn").style.border="";
+      fsStyleBtn("pfRightBtn", dpX+dp*0.5, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25B6","0 10px 10px 0"); document.getElementById("pfRightBtn").style.background="transparent"; document.getElementById("pfRightBtn").style.boxShadow=""; document.getElementById("pfRightBtn").style.border="";
+      // red + blue action buttons → marker buttons, bottom-right (alternating orientation)
+      var mah=Math.min(ch*0.62, 92), macw=Math.round(mah*0.38), mabw=Math.min(sw*0.2, 128);
+      var mayY=cy0+(ch-mah)/2;
+      var redL=isJump?"JUMP":"FUSE", blueL=isJump?"JUMP":"VIEW";
+      var aBX=sw-macw-sw*0.03-mabw, aAX=aBX-mabw-macw-sw*0.02;
+      fsMarkerBtn("pfJumpBtn",  aAX, mayY, mabw, mah, redL,  false, "red");
+      fsMarkerBtn("pfActionBtn",aBX, mayY, mabw, mah, blueL, true,  "blue");
     }
     expand.style.display="block"; expand.style.right="10px"; expand.style.left=""; expand.style.top="8px"; expand.innerHTML="&#10005;";
     pause.style.left="10px"; pause.style.top="8px";
@@ -6105,7 +6123,7 @@ function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
 }
 function pbDepth(y){ return 0.45+pbVP(y)*1.15; }                 // things nearer the front (bottom) are bigger
 function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
-function pbBuildTable(){ pbBumpers=[{x:0.31,y:0.0,r:0.105,hit:0},{x:0.49,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.47,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
+function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.485,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.054;pbBall.vx=-0.019;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
