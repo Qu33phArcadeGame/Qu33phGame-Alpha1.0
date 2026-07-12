@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v246</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v247</div>
 
 <canvas id="game"></canvas>
 
@@ -4108,23 +4108,25 @@ function drawJumpMenu(){
   c.font="bold 22px Helvetica, Arial, sans-serif"; c.fillText("QU33PH JUMP", W/2, H*0.06);
   c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold 9px Helvetica, Arial, sans-serif";
   c.fillText("GREEN \u25b2\u25bc   \u2022   RED = PLAY", W/2, H*0.14);
-  // mode rows
+  // mode rows — black & white MARKER buttons (like the main menu), orientation alternating down the list
   var top=H*0.23, rowH=Math.min(72, (H*0.64)/PF_MODES.length);
   for(var i=0;i<PF_MODES.length;i++){
-    var m=PF_MODES[i], y=top+i*rowH, sel=(i===jmSel && !jmSettings);
-    var bx=W*0.1, bw=W*0.8, bh=rowH-12;
+    var m=PF_MODES[i], y=top+i*rowH, sel=(i===jmSel && !jmSettings), flip=(i%2===1);
+    var bx=W*0.12, bw=W*0.76, bh=rowH-12, capW=Math.min(20,bh*0.55), rr=Math.min(9,bh*0.3);
     c.save();
-    if(sel){ c.shadowColor="#8affea"; c.shadowBlur=16; c.fillStyle="rgba(40,255,180,0.16)"; c.strokeStyle="#8affea"; }
-    else { c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.05)"; c.strokeStyle="rgba(255,255,255,0.22)"; }
-    rrPf(c,bx,y,bw,bh,10); c.fill(); c.lineWidth=sel?2.4:1.2; c.stroke();
+    c.fillStyle="#000"; c.strokeStyle=sel?"#ffffff":"rgba(255,255,255,0.5)"; c.lineWidth=sel?3:1.6;
+    if(sel){ c.shadowColor="rgba(255,255,255,0.65)"; c.shadowBlur=15; }
+    var capX=flip?(bx+bw-4):(bx-capW+4);            // cap on the outer side, tucked under the body
+    rrPf(c,capX,y+3,capW,bh-6,rr*0.55); c.fill(); c.stroke();
+    rrPf(c,bx,y,bw,bh,rr); c.fill(); c.stroke();
     c.restore();
     c.textAlign="left"; c.textBaseline="alphabetic";
-    c.fillStyle=sel?"#8affea":"#fff"; c.font="bold 19px Helvetica, Arial, sans-serif";
+    c.fillStyle="#fff"; c.font="bold 19px Helvetica, Arial, sans-serif";
     c.fillText(m.name, bx+16, y+bh*0.44);
-    c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold 9px Helvetica, Arial, sans-serif";
+    c.fillStyle="rgba(255,255,255,0.62)"; c.font="bold 9px Helvetica, Arial, sans-serif";
     c.fillText(m.blurb, bx+16, y+bh*0.76);
-    c.textAlign="right"; c.fillStyle="#ffd700"; c.font="bold 12px Helvetica, Arial, sans-serif";
-    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-14, y+bh*0.58);
+    c.textAlign="right"; c.fillStyle=sel?"#fff":"rgba(255,255,255,0.7)"; c.font="bold 12px Helvetica, Arial, sans-serif";
+    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-16, y+bh*0.58);
     c.textAlign="center";
   }
   // settings gear (top-LEFT corner, away from the fullscreen button on the right)
@@ -4274,35 +4276,19 @@ function layoutPlatformer(){
     cv.width=Math.max(120,cvW); cv.height=Math.max(80,cvH); pfctx=cv.getContext("2d");
     var cy0=cvTop+cvH, ch=sh-cy0;
     var isMenu=(arcadeGame==="jumpmenu");
-    if(isMenu){
-      // MODE MENU: four big QU33PH-style marker buttons, orientation alternating (normal / flip / normal / flip)
-      document.getElementById("pfDpad").style.display="none";
-      var mh=Math.min(ch*0.4, 86), gy=Math.min(ch*0.08, 22), cw=Math.round(mh*0.4);
-      var bodyW=Math.min(sw*0.34, 190);
-      var topY=cy0+(ch-(mh*2+gy))/2;
-      var leftX=cw+sw*0.035, rightX=sw-cw-sw*0.035-bodyW;
-      fsMarkerBtn("pfLeftBtn",  leftX,  topY,        bodyW, mh, "\u25B2 UP",   false, "green");
-      fsMarkerBtn("pfRightBtn", leftX,  topY+mh+gy,  bodyW, mh, "\u25BC DOWN", true,  "green");
-      fsMarkerBtn("pfJumpBtn",  rightX, topY,        bodyW, mh, "SELECT",     false, "red");
-      fsMarkerBtn("pfActionBtn",rightX, topY+mh+gy,  bodyW, mh, "SELECT",     true,  "blue");
-    } else {
-      // green D-pad (left half = left, right half = right) bottom-left
-      var dp=Math.min(sw*0.44, ch*0.92), dpX=sw*0.04, dpY=cy0+(ch-dp)/2, dv=document.getElementById("pfDpad");
-      dv.style.display="block"; dv.style.left=dpX+"px"; dv.style.top=dpY+"px"; dv.style.width=dp+"px"; dv.style.height=dp+"px";
-      dv.style.background="radial-gradient(circle at 45% 35%, #6fd66f, #2f8f2f 70%, #176017)";
-      dv.style.clipPath="polygon(34% 0,66% 0,66% 34%,100% 34%,100% 66%,66% 66%,66% 100%,34% 100%,34% 66%,0 66%,0 34%,34% 34%)";
-      dv.style.webkitClipPath=dv.style.clipPath; dv.style.boxShadow="inset 0 3px 10px rgba(255,255,255,0.35), inset 0 -5px 10px rgba(0,0,0,0.4)"; dv.style.borderRadius="10px";
-      // transparent tap halves over the D-pad
-      fsStyleBtn("pfLeftBtn", dpX, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25C0","10px 0 0 10px"); document.getElementById("pfLeftBtn").style.background="transparent"; document.getElementById("pfLeftBtn").style.boxShadow=""; document.getElementById("pfLeftBtn").style.border="";
-      fsStyleBtn("pfRightBtn", dpX+dp*0.5, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25B6","0 10px 10px 0"); document.getElementById("pfRightBtn").style.background="transparent"; document.getElementById("pfRightBtn").style.boxShadow=""; document.getElementById("pfRightBtn").style.border="";
-      // red + blue action buttons → marker buttons, bottom-right (alternating orientation)
-      var mah=Math.min(ch*0.62, 92), macw=Math.round(mah*0.38), mabw=Math.min(sw*0.2, 128);
-      var mayY=cy0+(ch-mah)/2;
-      var redL=isJump?"JUMP":"FUSE", blueL=isJump?"JUMP":"VIEW";
-      var aBX=sw-macw-sw*0.03-mabw, aAX=aBX-mabw-macw-sw*0.02;
-      fsMarkerBtn("pfJumpBtn",  aAX, mayY, mabw, mah, redL,  false, "red");
-      fsMarkerBtn("pfActionBtn",aBX, mayY, mabw, mah, blueL, true,  "blue");
-    }
+    // painted round cabinet buttons (2 green + red + blue), same in every mode — fullscreen mirrors the cabinet
+    document.getElementById("pfDpad").style.display="none";
+    var br=Math.min(sw*0.17, ch*0.6), byC=cy0+(ch-br)/2, gap=sw*0.02;
+    var dirL,dirR,actR,actB;
+    if(isMenu){ dirL="\u25B2"; dirR="\u25BC"; actR="PLAY"; actB="PLAY"; }
+    else if(isJump){ dirL="\u25C0"; dirR="\u25B6"; actR="JUMP"; actB="JUMP"; }
+    else { dirL="\u25C0"; dirR="\u25B6"; actR="FUSE"; actB="VIEW"; }
+    var g1x=sw*0.06, g2x=g1x+br+gap;
+    fsStyleBtn("pfLeftBtn",  g1x, byC, br, br, "green", dirL, "50%");
+    fsStyleBtn("pfRightBtn", g2x, byC, br, br, "green", dirR, "50%");
+    var b2x=sw*0.94-br, b1x=b2x-br-gap;
+    fsStyleBtn("pfJumpBtn",  b1x, byC, br, br, "red",  actR, "50%");
+    fsStyleBtn("pfActionBtn",b2x, byC, br, br, "blue", actB, "50%");
     expand.style.display="block"; expand.style.right="10px"; expand.style.left=""; expand.style.top="8px"; expand.innerHTML="&#10005;";
     pause.style.left="10px"; pause.style.top="8px";
   } else {
