@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v239</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v242</div>
 
 <canvas id="game"></canvas>
 
@@ -4031,6 +4031,8 @@ let pfProgress=0;
 // chair-launch flight mechanic
 let pfMega=null, pfFlight=false, pfZoom=1, pfZoomT=1, pfCycles=0, pfLastLaunchCycle=-99, pfMegaFlash=0, pfMegaFlashT=0;
 let pfBouncing=false, pfBounceCombo=0, pfBounceFlash=0, pfNoMarkerUntilX=0;
+let pfFlappy=false, pfFlappyFreeze=false, pfPipes=[], pfFlappyFloorY=0, pfFlappyCeilY=0, pfFlappyEndX=0, pfFlappyPassed=0, pfFlappyHint=0;
+const pfFlappySpeed=5.2, PF_FLAP=-9.3;
 const pfMegaImg=new Image(); pfMegaImg.src="slotmega.jpg";
 // ── Qu33ph Jump soundtrack (starts on first tap; mute toggle lives in Settings) ──
 const jumpMusic=new Audio("jumpmusic.mp3"); jumpMusic.loop=true; jumpMusic.volume=0.45; jumpMusic.preload="auto";
@@ -4210,6 +4212,7 @@ function resetPlatformer(){
   pfStartX=startX; pfStartY=startY; pfBestX=startX; pfBestUp=startY-15; pfLastGroundY=startY-15; pfT=0;
   pfMega=null; pfFlight=false; pfZoom=1; pfZoomT=1; pfCycles=0; pfLastLaunchCycle=-99; pfMegaFlash=0;
   pfBouncing=false; pfBounceCombo=0; pfBounceFlash=0; pfNoMarkerUntilX=0; pfUpStart=8;
+  pfFlappy=false; pfFlappyFreeze=false; pfPipes=[]; pfFlappyPassed=0; pfFlappyHint=0;
   pfCamX=pfPlayer.x-W*0.4; pfCamY=pfPlayer.y-H*0.55;
   // the path starts climbing UP from the start pad
   pfGenMode="up"; pfGenX=startX; pfLastPlatX=startX; pfGenY=startY-(48+Math.random()*18); pfSegLeft=6+Math.floor(Math.random()*4);
@@ -4301,9 +4304,11 @@ function pfGenStep(){
     if(pfSegLeft<=0){
       pfCycles++;
       var _roll=Math.random();
-      if(pfProgress>22 && _roll<0.22){
+      if(pfProgress>26 && _roll<0.12){
+        spawnFlappyRun(pfGenX, pfGenY);     // Flappy-Bird pipe gauntlet
+      } else if(pfProgress>22 && _roll<0.34){
         spawnBounceChain(pfGenX, pfGenY);   // Tiny-Wings-style chair bounce chain
-      } else if(pfProgress>16 && _roll<0.5){
+      } else if(pfProgress>16 && _roll<0.6){
         // occasional STAIRWAY — climbs up or heads down, with markers on the steps to jump
         pfGenMode="stairs"; pfStairDir=(Math.random()<0.6?-1:1); pfStairLeft=5+Math.floor(Math.random()*4); pfLastPlatX=pfGenX;
       } else {
@@ -4330,6 +4335,32 @@ function spawnBounceChain(chx, gy0){
   pfGenMode="right"; pfGenX=lastX+W*0.4; pfGenY=sy+rise+20; pfLastPlatX=lastX; pfSegLeft=W*(0.9+Math.random()*0.8);
   pfNoMarkerUntilX=pfGenX+W*0.7;   // no markers right where you land out of the chain
 }
+// ── Flappy-Bird section: run off the ledge onto a launch chair → freeze → tap to flap through marker "pipes" → fall to a landing ──
+function spawnFlappyRun(chx, gy0){
+  var W=pfCanvas.width, H=pfCanvas.height;
+  // lead-in ledge + a launch chair just past it, dropped slightly so the running player lands on it
+  pfPlatforms.push({x:chx-W*0.24, y:gy0, w:W*0.24, ground:true});
+  pfPlatforms.push({x:chx+8, y:gy0+10, w:64, chair:true, flappy:true});
+  var bandY = gy0 - H*0.34;             // pipe corridor sits above the launch
+  pfFlappyFloorY = bandY + H*0.62;      // death floor
+  pfFlappyCeilY  = bandY - H*0.66;      // death ceiling
+  var n = 5+Math.floor(Math.random()*3);
+  var gap = W*0.52, gapH = H*0.42, pw = Math.max(28, W*0.075);
+  var x = chx + W*0.85, cy = bandY, cols=["red","green","blue"], lastX=x;
+  for(var i=0;i<n;i++){
+    cy += (Math.random()-0.5)*H*0.44;
+    cy = Math.max(bandY-H*0.3, Math.min(bandY+H*0.3, cy));
+    pfPipes.push({x:x, w:pw, gapY:cy, gapH:gapH, passed:false, color:cols[i%3]});
+    pfCoinsWorld.push({x:x+pw*0.5, y:cy, got:false});   // a coin floating in each gap
+    lastX=x; x += gap;
+  }
+  pfFlappyEndX = lastX + pw + W*0.12;    // flapping cuts out just past the last pipe
+  // wide landing after the corridor → you drop onto it and the level continues
+  var landX = lastX + gap*0.9, landY = cy + H*0.2;
+  pfPlatforms.push({x:landX-W*0.35, y:landY, w:W*0.75, ground:true});
+  pfGenMode="right"; pfGenX=landX+W*0.4; pfGenY=landY; pfLastPlatX=landX; pfSegLeft=W*(0.9+Math.random()*0.8);
+  pfNoMarkerUntilX=pfGenX+W*0.8;
+}
 function pfGenPath(){
   var W=pfCanvas.width, H=pfCanvas.height, guard=0;
   while(guard++<800){
@@ -4338,10 +4369,11 @@ function pfGenPath(){
     pfGenStep();
   }
   // prune far behind (keep a much bigger vertical margin during flight so landing spots survive)
-  var _pm = pfFlight ? H*3.6 : H*1.7;
+  var _pm = (pfFlight||pfFlappy||pfFlappyFreeze) ? H*3.6 : H*1.7;
   pfPlatforms=pfPlatforms.filter(function(p){ return p.y < pfCamY+_pm && (p.x+p.w) > pfCamX-W*0.7; });
   pfObstacles=pfObstacles.filter(function(o){ return o.y < pfCamY+_pm && o.x > pfCamX-W*0.7; });
   pfCoinsWorld=pfCoinsWorld.filter(function(c){ return c.y < pfCamY+_pm && c.x > pfCamX-W*0.7; });
+  pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-W*0.7; });
 }
 function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   if(arcadeGame==="dream"){ updateDeep(); drawDeep(); }
@@ -4368,7 +4400,20 @@ function updatePlatformer(){
   if(pfBounceFlash>0) pfBounceFlash--;
   pfZoom += (pfZoomT - pfZoom)*0.1;
   var JUMP=-10.4; // ~1.5 platforms high
-  if(pfFlight){
+  if(pfFlappyHint>0) pfFlappyHint--;
+  if(pfFlappyFreeze){
+    // launched off the flappy chair and held mid-air until the first tap
+    p.vx=0; p.vy=0;
+    if(pfJumpQ || pfActionQ){ pfFlappyFreeze=false; pfFlappy=true; pfFlappyHint=150; p.vy=PF_FLAP; p.vx=pfFlappySpeed; try{haptic(12);}catch(e){} }
+    pfJumpQ=false; pfActionQ=false;
+  } else if(pfFlappy){
+    // flappy bird: constant forward glide, tap to flap up, gravity down; flapping cuts out past the last pipe so you fall to the landing
+    p.vx = pfFlappySpeed; p.face=1;
+    var canFlap = p.x < pfFlappyEndX;
+    if((pfJumpQ || pfActionQ) && canFlap){ p.vy=PF_FLAP; try{haptic(9);}catch(e){} }
+    pfJumpQ=false; pfActionQ=false;
+    p.vy += 0.62; if(p.vy>12.5) p.vy=12.5;
+  } else if(pfFlight){
     // glide: steer left/right with the green buttons, floatier gravity, no jump
     p.vx += pfMove*0.5; if(pfMove===0) p.vx*=0.98; if(p.vx>9)p.vx=9; if(p.vx<-9)p.vx=-9;
     if(pfMove!==0) p.face = pfMove>0?1:-1;
@@ -4389,7 +4434,7 @@ function updatePlatformer(){
   }
   var prevBottom=p.y+p.h*0.5;
   p.x += p.vx; p.y += p.vy;
-  if(!pfFlight && !pfBouncing && p.x < pfCamX+8) p.x = pfCamX+8;   // don't slip off the left (except mid-air maneuvers)
+  if(!pfFlight && !pfBouncing && !pfFlappy && !pfFlappyFreeze && p.x < pfCamX+8) p.x = pfCamX+8;   // don't slip off the left (except mid-air maneuvers)
   p.onGround=false;
   if(p.vy>=0){ var nb=p.y+p.h*0.5;
     for(var i=0;i<pfPlatforms.length;i++){ var pl=pfPlatforms[i];
@@ -4398,8 +4443,14 @@ function updatePlatformer(){
           p.y=pl.y-p.h*0.5-1; p.vy=-11; if(p.vx<4)p.vx=4; pfBouncing=true; p.onGround=false;
           pfBounceCombo++; pfBounceFlash=32; try{addCoins(3);}catch(e){} try{haptic([12,18]);}catch(e){} break;
         }
-        if(pl.chair && !pfFlight){ p.y=pl.y-p.h*0.5-1; p.vy=-16; p.vx=8; pfFlight=true; pfZoomT=0.62; try{haptic([20,50,20]);}catch(e){} break; }
+        if(pl.flappy && !pfFlappy && !pfFlappyFreeze){ // flappy launch chair → pop up, freeze, wait for "TAP TO JUMP"
+          p.y=pl.y-p.h*0.5-60; p.vx=0; p.vy=0; pfFlappyFreeze=true; pfFlappyPassed=0; pfZoomT=0.72; try{haptic([20,50,20]);}catch(e){} break; }
+        if(pl.chair && !pfFlight && !pfFlappy && !pfFlappyFreeze){ p.y=pl.y-p.h*0.5-1; p.vy=-16; p.vx=8; pfFlight=true; pfZoomT=0.62; try{haptic([20,50,20]);}catch(e){} break; }
         p.y=pl.y-p.h*0.5; p.vy=0; p.onGround=true; if(pl.dx) p.x+=pl.dx;
+        if(pfFlappy || pfFlappyFreeze){ pfFlappy=false; pfFlappyFreeze=false; pfZoomT=1; pfPipes=[];
+          // fell onto the landing platform → flappy section done, continue the level from here
+          pfGenMode="right"; pfGenX=p.x+20; pfGenY=p.y+p.h*0.5; pfLastPlatX=p.x; pfSegLeft=W*(0.9+Math.random()*0.8); pfNoMarkerUntilX=pfGenX+W*0.7;
+        }
         if(pfFlight){ pfFlight=false; pfZoomT=1;
           pfMega=null;   // landed on a platform → the mega is gone; you had to catch it in the air
           // remove any leftover mega-zone stubs ahead/above the landing so climbing them can't dead-end you
@@ -4414,7 +4465,7 @@ function updatePlatformer(){
   if(p.onGround) pfLastGroundY=p.y;
   // CAMERA: center + zoom out during flight, deadzone otherwise
   var _pcx=pfCamX, _pcy=pfCamY;
-  if(pfFlight){
+  if(pfFlight || pfFlappy || pfFlappyFreeze){
     pfCamX += ((p.x - W*0.5) - pfCamX)*0.12;
     pfCamY += ((p.y - H*0.5) - pfCamY)*0.12;
   } else {
@@ -4444,9 +4495,21 @@ function updatePlatformer(){
     for(var mc=0;mc<14;mc++){ pfCoinsWorld.push({x:pfMega.x+(Math.random()-0.5)*W*0.3, y:pfMega.y+(Math.random()-0.5)*H*0.2, got:false}); }
   }
   if(pfMega && (pfMega.x < pfCamX - W*0.8 || pfMega.y > pfCamY + H*1.9)) pfMega=null;
+  // ── FLAPPY: pipe collision, pass rewards, and its own floor/ceiling death ──
+  if(pfFlappy){
+    for(var pp=0;pp<pfPipes.length;pp++){ var pipe=pfPipes[pp], hg=pipe.gapH*0.5;
+      if(p.x+6>pipe.x && p.x-6<pipe.x+pipe.w){
+        if(p.y-p.h*0.35 < pipe.gapY-hg || p.y+p.h*0.35 > pipe.gapY+hg){ pfFlappy=false; pfZoomT=1; pfGameOver(); return; }
+      }
+      if(!pipe.passed && p.x > pipe.x+pipe.w){ pipe.passed=true; pfFlappyPassed++; try{addCoins(2);}catch(e){} try{haptic(8);}catch(e){} }
+    }
+    if(p.y > pfFlappyFloorY || p.y < pfFlappyCeilY){ pfFlappy=false; pfZoomT=1; pfGameOver(); return; }
+  }
   // fell into a pit — forgiving (bigger margin while gliding), but bounded so a total miss still ends
-  var _pit = (pfFlight||pfBouncing) ? H*1.7 : H*1.0;
-  if(p.y - pfLastGroundY > _pit){ pfFlight=false; pfZoomT=1; pfGameOver(); }
+  if(!pfFlappy && !pfFlappyFreeze){
+    var _pit = (pfFlight||pfBouncing) ? H*1.7 : H*1.0;
+    if(p.y - pfLastGroundY > _pit){ pfFlight=false; pfZoomT=1; pfGameOver(); }
+  }
 }
 function pfLimb(x,y,color,appear,len){
   var c=pfctx, img=markerImages[color];
@@ -4458,12 +4521,12 @@ function pfLimb(x,y,color,appear,len){
 // ---- Custom pixel jump guy (Coby's drawing) + real coin head + animated marker arms ----
 var PF_GUY_H=54;          // on-screen height of the guy (tweakable)
 var PF_GUY_FEET=15;       // how far below player-center the feet sit
-function pfGuy(x,y,face){
+function pfGuy(x,y,face,tilt){
   var img=(face<0)?jumpGuyImg1:jumpGuyImg2;   // left = frame1, right = frame2 (no flicker, no flip)
-  if(!(img&&img.complete&&img.naturalWidth)){ pfGuyProc(x,y,face); return; }
+  if(!(img&&img.complete&&img.naturalWidth)){ pfGuyProc(x,y,face,tilt); return; }
   var c=pfctx, ar=img.naturalWidth/img.naturalHeight;
   var dh=PF_GUY_H, dw=dh*ar, dx=-dw/2, dy=PF_GUY_FEET-dh;
-  c.save(); c.translate(x,y);
+  c.save(); c.translate(x,y); if(tilt){ c.rotate(tilt); }
   if(pfTheme()==="neon"){ // neon outline: green glow silhouette behind him (shadow-only trick)
     c.save(); c.shadowColor="#28ff96"; c.shadowOffsetX=2000;
     c.shadowBlur=11; c.drawImage(img, dx-2000, dy, dw, dh);
@@ -4478,8 +4541,8 @@ function pfGuy(x,y,face){
   } else { var cd2=dh*0.24, ccx2=dx+dw*0.503, ccy2=dy+dh*0.117; c.fillStyle="#ffd24a"; c.beginPath(); c.arc(ccx2,ccy2,cd2/2,0,6.283); c.fill(); }
   c.restore();
 }
-function pfGuyProc(x,y,face){
-  var c=pfctx; c.save(); c.translate(x,y); c.scale(1.45,1.45); c.translate(-x,-y);
+function pfGuyProc(x,y,face,tilt){
+  var c=pfctx; c.save(); if(tilt){ c.translate(x,y); c.rotate(tilt); c.translate(-x,-y); } c.translate(x,y); c.scale(1.45,1.45); c.translate(-x,-y);
   pfLimb(x-2.5,y+7,"red",Math.PI/2+0.32,14);
   pfLimb(x+2.5,y+7,"green",Math.PI/2-0.32,14);
   pfLimb(x-5,y-3,"green",Math.PI*0.72,11);
@@ -4574,6 +4637,30 @@ function pfSlab(x,y,w){
   pfctx.fillStyle="#6a3fff"; pfctx.fillRect(x,y,w,2.6);
   pfctx.fillStyle="rgba(138,255,234,0.35)"; pfctx.fillRect(x,y+2.6,w,1);
 }
+function pfDrawPipes(){
+  if(!pfPipes.length) return;
+  var c=pfctx, H=pfCanvas.height, visT=pfCamY-40, visB=pfCamY+H+40;
+  for(var i=0;i<pfPipes.length;i++){
+    var pipe=pfPipes[i], hg=pipe.gapH*0.5, img=markerImages[pipe.color];
+    var glow=(pipe.color==="red"?"#ff3040":pipe.color==="green"?"#30ff70":"#3a7bff");
+    var topB=pipe.gapY-hg, botT=pipe.gapY+hg;
+    pfPillar(img, glow, pipe.x, Math.max(visT, pfFlappyCeilY-160), topB, pipe.w);   // top pipe
+    pfPillar(img, glow, pipe.x, botT, Math.min(visB, pfFlappyFloorY+160), pipe.w);   // bottom pipe
+    // bright neon caps framing the gap
+    c.save(); c.fillStyle=glow; c.shadowColor=glow; c.shadowBlur=10;
+    c.fillRect(pipe.x-3, topB-6, pipe.w+6, 6); c.fillRect(pipe.x-3, botT, pipe.w+6, 6);
+    c.restore();
+  }
+}
+function pfPillar(img, glow, x, y0, y1, w){
+  if(y1<=y0) return; var c=pfctx;
+  c.save(); c.shadowColor=glow; c.shadowBlur=12;
+  if(img&&img.complete&&img.naturalWidth){
+    var seg=w*(img.naturalHeight/img.naturalWidth); if(seg<10) seg=w;   // stack markers down the pipe
+    for(var yy=y0; yy<y1; yy+=seg){ var hh=Math.min(seg, y1-yy); c.drawImage(img, 0,0, img.naturalWidth, img.naturalHeight*(hh/seg), x, yy, w, hh); }
+  } else { c.fillStyle=glow; c.fillRect(x,y0,w,y1-y0); }
+  c.restore();
+}
 function drawPlatformer(){
   if(!pfctx) return;
   var W=pfCanvas.width, H=pfCanvas.height, p=pfPlayer;
@@ -4589,6 +4676,7 @@ function drawPlatformer(){
       else { pfctx.fillStyle="#c0392b"; pfctx.fillRect(pl.x+pl.w*0.2, pl.y-pl.w*0.7, pl.w*0.6, pl.w*0.7); }
     } else { pfSlab(pl.x,pl.y,pl.w); }
   });
+  pfDrawPipes();
   // MEGA target
   if(pfMega && !pfMega.hit){
     var m=pfMega, pulse=0.5+0.5*Math.sin(pfT*0.14);
@@ -4606,7 +4694,10 @@ function drawPlatformer(){
     else { pfctx.fillStyle=(o.color==="red"?"#ff3030":o.color==="green"?"#30ff60":"#3a7bff"); pfctx.fillRect(-o.w*0.5,-o.h*0.5,o.w,o.h); }
     pfctx.restore();
   });
-  pfGuy(p.x,p.y,p.face);
+  var _tilt=0;
+  if(pfFlappyFreeze) _tilt=-0.5;
+  else if(pfFlappy) _tilt=Math.max(-0.5, Math.min(0.95, p.vy*0.06));   // nose up when flapping, down when falling
+  pfGuy(p.x,p.y,p.face,_tilt);
   pfctx.restore();
   pfHud(W,H);
   if(pfMegaFlash>0){ var a=Math.min(0.5,pfMegaFlash/75*0.5); pfctx.fillStyle="rgba(255,220,90,"+a+")"; pfctx.fillRect(0,0,W,H); pfctx.fillStyle="#fff"; pfctx.textAlign="center"; pfctx.textBaseline="middle"; pfctx.font="bold "+(20+pfMegaFlash*0.15)+"px Helvetica, Arial, sans-serif"; pfctx.globalAlpha=Math.min(1,pfMegaFlash/40); pfctx.fillText("MEGA! +50", W/2, H*0.32); pfctx.globalAlpha=1; }
@@ -4614,6 +4705,18 @@ function drawPlatformer(){
   if(pfBouncing && pfBounceCombo>=1){ pfctx.save(); pfctx.textAlign="center"; pfctx.textBaseline="middle"; pfctx.fillStyle="#8affea"; pfctx.shadowColor="#8affea"; pfctx.shadowBlur=8; pfctx.font="bold "+(16+Math.min(pfBounceCombo,8))+"px Helvetica, Arial, sans-serif"; pfctx.fillText("\u00d7"+pfBounceCombo+" BOUNCE!", W/2, H*0.16); pfctx.restore(); }
   else if(pfBounceFlash>0 && !pfBouncing){ pfctx.save(); pfctx.globalAlpha=Math.min(1,pfBounceFlash/50); pfctx.textAlign="center"; pfctx.textBaseline="middle"; pfctx.fillStyle="#ffd24a"; pfctx.font="bold 15px Helvetica, Arial, sans-serif"; pfctx.fillText("NICE CHAIN!", W/2, H*0.16); pfctx.restore(); }
   if(pfFlight){ pfctx.fillStyle="rgba(255,255,255,0.7)"; pfctx.font="bold 9px Helvetica, Arial, sans-serif"; pfctx.textAlign="center"; pfctx.textBaseline="top"; pfctx.fillText("◄ STEER ►", W/2, H*0.06); }
+  if(pfFlappyFreeze){
+    var fp=0.6+0.4*Math.sin(pfT*0.16);
+    pfctx.save(); pfctx.textAlign="center"; pfctx.textBaseline="middle";
+    pfctx.fillStyle="rgba(255,255,255,"+fp+")"; pfctx.shadowColor="#ffd24a"; pfctx.shadowBlur=14;
+    pfctx.font="bold 22px Helvetica, Arial, sans-serif"; pfctx.fillText("TAP TO JUMP", W/2, H*0.34);
+    pfctx.shadowBlur=0; pfctx.fillStyle="rgba(255,255,255,0.75)"; pfctx.font="bold 10px Helvetica, Arial, sans-serif";
+    pfctx.fillText("keep tapping to fly through the pipes", W/2, H*0.42);
+    pfctx.restore();
+  } else if(pfFlappy){
+    if(pfFlappyHint>0){ pfctx.save(); pfctx.globalAlpha=Math.min(1,pfFlappyHint/40); pfctx.textAlign="center"; pfctx.textBaseline="top"; pfctx.fillStyle="#fff"; pfctx.font="bold 10px Helvetica, Arial, sans-serif"; pfctx.fillText("TAP TO FLAP", W/2, H*0.06); pfctx.restore(); }
+    if(pfFlappyPassed>0){ pfctx.save(); pfctx.textAlign="center"; pfctx.textBaseline="top"; pfctx.fillStyle="#8affea"; pfctx.shadowColor="#8affea"; pfctx.shadowBlur=6; pfctx.font="bold 13px Helvetica, Arial, sans-serif"; pfctx.fillText("\u00d7"+pfFlappyPassed, W/2, H*0.11); pfctx.restore(); }
+  }
   if(pfState==="over") drawPfOver(W,H);
 }
 function drawPfRun(){ drawPlatformer(); }
@@ -5840,7 +5943,7 @@ function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
 }
 function pbDepth(y){ return 0.45+pbVP(y)*1.15; }                 // things nearer the front (bottom) are bigger
 function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
-function pbBuildTable(){ pbBumpers=[{x:0.33,y:0.0,r:0.105,hit:0},{x:0.47,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.49,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
+function pbBuildTable(){ pbBumpers=[{x:0.31,y:0.0,r:0.105,hit:0},{x:0.49,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.47,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.054;pbBall.vx=-0.019;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
@@ -5896,8 +5999,9 @@ function pbDrawQuad(x,y,w,hh){ var c=pbctx,a=pbProject(x,y),b2=pbProject(x+w,y),
 function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   // (field border walls are invisible; physics only)
   for(var i=0;i<pbBumpers.length;i++){ var bp=pbBumpers[i]; if(bp.sling)continue; var P=pbProject(bp.x,bp.y),rx=pbSizePx(bp.r,bp.y),ry=rx*0.52; c.save();c.strokeStyle=i%2?"#ff3b6a":"#3affea";c.shadowColor=i%2?"#ff3b6a":"#3affea";c.shadowBlur=bp.hit>0?13:5;c.lineWidth=Math.max(2,rx*0.14);c.beginPath();c.ellipse(P[0],P[1],rx,ry,0,0,6.283);c.stroke();c.fillStyle=i%2?"rgba(255,59,106,0.16)":"rgba(58,255,234,0.16)";c.fill();c.restore(); }
-  c.save(); if(pbMega.flash>0){c.shadowColor="#ffd24a";c.shadowBlur=10;} c.fillStyle=pbMega.flash>0?"rgba(255,255,255,0.92)":"rgba(230,230,230,0.45)"; pbDrawQuad(pbMega.x,pbMega.y,pbMega.w,pbMega.h);c.fill();c.strokeStyle="#ff2b2b";c.lineWidth=3;c.shadowBlur=0;c.stroke(); c.restore();
-  var mp=pbProject(pbMega.x+pbMega.w/2,pbMega.y-0.005); c.fillStyle="#ff2b2b";c.font="bold "+pbSizePx(0.055,pbMega.y)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="bottom";c.shadowBlur=0;c.fillText("MEGA",mp[0],mp[1]);
+  c.save(); var megaOn=pbMega.flash>0; c.shadowColor="#ffd24a"; c.shadowBlur=megaOn?22:11; c.fillStyle=megaOn?"rgba(255,210,74,0.30)":"rgba(255,210,74,0.12)"; pbDrawQuad(pbMega.x,pbMega.y,pbMega.w,pbMega.h);c.fill();c.strokeStyle=megaOn?"#fff2b0":"#ffd24a";c.lineWidth=megaOn?4:2.5;c.stroke(); c.restore();
+  var mdc=pbProject(pbMega.x+pbMega.w/2,pbMega.y+pbMega.h*0.58), mdr=pbSizePx(0.052,pbMega.y+pbMega.h*0.58); c.save();c.shadowColor="#ff2b3e";c.shadowBlur=megaOn?18:9;c.fillStyle=megaOn?"#ff5a68":"#ff2b3e";c.beginPath();c.ellipse(mdc[0],mdc[1],mdr,mdr*0.52,0,0,6.283);c.fill();c.restore();
+  var mp=pbProject(pbMega.x+pbMega.w/2,pbMega.y-0.005); c.save();c.fillStyle="#ffd24a";c.shadowColor="#ffd24a";c.shadowBlur=8;c.font="bold "+pbSizePx(0.055,pbMega.y)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="bottom";c.fillText("MEGA",mp[0],mp[1]);c.restore();
   pbDrawFlipper(0.22,1.02, 0.5-pbFL*1.0, 0.20, true); pbDrawFlipper(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, false);
   if(b){ var BP=pbProject(b.x,b.y),br=pbSizePx(PB_R,b.y); c.save();c.shadowColor="#fff";c.shadowBlur=4;var bg=c.createRadialGradient(BP[0]-br*0.3,BP[1]-br*0.3,br*0.2,BP[0],BP[1],br);bg.addColorStop(0,"#fff");bg.addColorStop(1,"#8892a0");c.fillStyle=bg;c.beginPath();c.arc(BP[0],BP[1],br,0,6.283);c.fill();c.restore(); }
   c.fillStyle="#8fe0ff";c.textBaseline="middle"; c.font="bold "+(pbImgRW*0.03)+"px Helvetica, Arial, sans-serif"; c.textAlign="right"; c.fillText(pbHigh||0, pbImgOX+0.63*pbImgRW, pbImgOY+0.315*pbImgRH);
