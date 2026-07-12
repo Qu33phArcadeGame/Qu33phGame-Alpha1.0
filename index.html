@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v247</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v248</div>
 
 <canvas id="game"></canvas>
 
@@ -3475,7 +3475,7 @@ function draw(){
       let t=Date.now()/1000;
       let numStars=16;
       let _corners = isRZ()
-        ? [[cLeft+8,canvas.height*0.078],[cRight+38,canvas.height*0.09],[cRight+38,canvas.height*0.996],[cLeft+8,canvas.height*0.996]]
+        ? [[cLeft+2,canvas.height*0.078],[cRight+16,canvas.height*0.09],[cRight+16,canvas.height*0.996],[cLeft+2,canvas.height*0.996]]
         : [[cLeft+3,cTop+3],[cRight-3,cTop+3],[cRight-3,cBot-3],[cLeft+3,cBot-3]];
       let _edges=[], perimeter=0;
       for(let _e=0;_e<4;_e++){ let _a=_corners[_e], _bc=_corners[(_e+1)%4]; let _len=Math.hypot(_bc[0]-_a[0],_bc[1]-_a[1]); _edges.push({a:_a,b:_bc,len:_len}); perimeter+=_len; }
@@ -4371,9 +4371,12 @@ function pfGenStep(){
     pfGenY-=(48+Math.random()*22);
     if(--pfSegLeft<=0){
       if(pfMode==="jump"){
-        // keep climbing — brief ledge then another up-run (no horizontal sections)
-        pfGenY+=22; pfPlatforms.push({x:pfLastPlatX-W*0.16, y:pfGenY, w:W*0.34, ground:true});
-        pfGenMode="up"; pfGenY-=(46+Math.random()*20); pfSegLeft=6+Math.floor(Math.random()*4); pfUpStart=pfSegLeft;
+        if(pfProgress>22 && Math.random()<0.33){ spawnZigzagTower(pfLastPlatX, pfGenY); }   // doodle-jump tower
+        else {
+          // keep climbing — brief ledge then another up-run (no horizontal sections)
+          pfGenY+=22; pfPlatforms.push({x:pfLastPlatX-W*0.16, y:pfGenY, w:W*0.34, ground:true});
+          pfGenMode="up"; pfGenY-=(46+Math.random()*20); pfSegLeft=6+Math.floor(Math.random()*4); pfUpStart=pfSegLeft;
+        }
       } else {
         // turn right: a wide landing ledge, then run rightward at this height
         pfGenY+=26;
@@ -4423,15 +4426,19 @@ function pfGenStep(){
     if(pfSegLeft<=0){
       pfCycles++;
       if(pfMode==="run"){
-        // endless runner — keep laying flat-ish ground with a little vertical drift
-        pfGenY += (Math.random()-0.5)*44; pfGenMode="right"; pfLastPlatX=pfGenX; pfSegLeft=W*(1.1+Math.random()*1.0);
+        if(pfProgress>18 && Math.random()<0.3){ spawnMarkerGauntlet(pfGenX, pfGenY); }   // gap-and-marker gauntlet
+        else { pfGenY += (Math.random()-0.5)*44; pfGenMode="right"; pfLastPlatX=pfGenX; pfSegLeft=W*(1.1+Math.random()*1.0); }
       } else {
       var _roll=Math.random();
       if(pfProgress>26 && _roll<0.12){
         spawnFlappyRun(pfGenX, pfGenY);     // Flappy-Bird pipe gauntlet
-      } else if(pfProgress>22 && _roll<0.34){
+      } else if(pfProgress>22 && _roll<0.28){
         spawnBounceChain(pfGenX, pfGenY);   // Tiny-Wings-style chair bounce chain
-      } else if(pfProgress>16 && _roll<0.6){
+      } else if(pfProgress>20 && _roll<0.42){
+        spawnZigzagTower(pfGenX, pfGenY);   // doodle-jump zigzag tower
+      } else if(pfProgress>18 && _roll<0.56){
+        spawnMarkerGauntlet(pfGenX, pfGenY); // gap-and-marker gauntlet
+      } else if(pfProgress>16 && _roll<0.72){
         // occasional STAIRWAY — climbs up or heads down, with markers on the steps to jump
         pfGenMode="stairs"; pfStairDir=(Math.random()<0.6?-1:1); pfStairLeft=5+Math.floor(Math.random()*4); pfLastPlatX=pfGenX;
       } else {
@@ -4441,6 +4448,44 @@ function pfGenStep(){
       }
     }
   }
+}
+// ── ZIGZAG TOWER: tight doodle-jump climb — small alternating platforms, some sliding, markers to dodge ──
+function spawnZigzagTower(gx, gy){
+  var W=pfCanvas.width, H=pfCanvas.height;
+  var n=5+Math.floor(Math.random()*3), side=(Math.random()<0.5?1:-1), cx=gx, cy=gy;
+  for(var k=0;k<n;k++){
+    var pw=W*0.14+Math.random()*W*0.04;
+    var px=cx + side*(W*0.15+Math.random()*W*0.06) - pw/2;
+    px=Math.max(W*0.07, Math.min(W*0.93-pw, px));
+    var plat={x:px, y:cy, w:pw};
+    if(k>=2 && Math.random()<0.3){ plat.baseX=plat.x; plat.amp=W*(0.06+Math.random()*0.07); plat.spd=0.02+Math.random()*0.02; plat.phase=Math.random()*6.28; }
+    pfPlatforms.push(plat);
+    if(k>0 && k<n-1 && Math.random()<0.42){ pfObstacles.push({x:px+pw*0.5, y:cy, w:18, h:26, color:pfMarkerColor(Math.floor(Math.random()*3))}); }
+    if(Math.random()<0.5) pfCoinsWorld.push({x:px+pw*0.5, y:cy-26, got:false});
+    cx=px+pw/2; cy-=(45+Math.random()*15); side=-side;
+  }
+  var lx=Math.max(W*0.06, Math.min(W*0.94-W*0.34, cx-W*0.17));
+  pfPlatforms.push({x:lx, y:cy, w:W*0.34, ground:true});   // landing ledge to reconnect
+  pfLastPlatX=lx+W*0.17;
+  if(pfMode==="jump"){ pfGenMode="up"; pfGenY=cy-(46+Math.random()*18); pfSegLeft=6+Math.floor(Math.random()*4); pfUpStart=pfSegLeft; }
+  else { pfGenMode="right"; pfGenX=lx+W*0.34; pfGenY=cy; pfSegLeft=W*(1.0+Math.random()*1.0); pfNoMarkerUntilX=lx+W*0.4; }
+}
+// ── MARKER GAUNTLET: run of small platforms split by jumpable gaps, a marker (often patrolling) to leap on each ──
+function spawnMarkerGauntlet(gx, gy){
+  var W=pfCanvas.width, H=pfCanvas.height;
+  var n=4+Math.floor(Math.random()*3), x=gx, y=gy;
+  for(var k=0;k<n;k++){
+    var pw=W*0.2+Math.random()*W*0.1;
+    pfPlatforms.push({x:x, y:y, w:pw, ground:true});
+    var ox=x+pw*(0.38+Math.random()*0.3);
+    var ob={x:ox, y:y, w:20, h:30, color:pfMarkerColor(Math.floor(Math.random()*3))};
+    if(Math.random()<0.5){ var span=Math.min(pw*0.35, W*0.2); ob.patrol=true; ob.minX=Math.max(x+10, ox-span); ob.maxX=Math.min(x+pw-10, ox+span); ob.vx=(0.6+Math.random()*0.7)*(Math.random()<0.5?1:-1); ob.roll=0; }
+    pfObstacles.push(ob);
+    if(Math.random()<0.5) pfCoinsWorld.push({x:x+pw*0.5, y:y-H*(0.13+Math.random()*0.08), got:false});
+    x += pw + W*(0.09+Math.random()*0.08); y += (Math.random()-0.5)*34;   // jumpable gap + slight height change
+  }
+  pfPlatforms.push({x:x, y:y, w:W*0.4, ground:true});   // reconnect landing
+  pfGenMode="right"; pfGenX=x+W*0.4; pfLastPlatX=pfGenX; pfGenY=y; pfSegLeft=W*(0.9+Math.random()*0.9); pfNoMarkerUntilX=x+W*0.3;
 }
 // ── Tiny-Wings-style bounce chain: hop chair-to-chair, aim/steer to keep the combo alive ──
 function spawnBounceChain(chx, gy0){
@@ -6087,6 +6132,7 @@ var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG 
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
 var LW=1.0, LH=1.5, PB_G=0.0011, PB_PERSP=0.5;
+var PB_SHOW_BOUNDS=true;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
   pbCanvas.style.left="0px";pbCanvas.style.top="0px";pbCanvas.style.width=sw+"px";pbCanvas.style.height=sh+"px";
@@ -6172,6 +6218,15 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   c.fillStyle="#8fe0ff";c.textBaseline="middle"; c.font="bold "+(pbImgRW*0.03)+"px Helvetica, Arial, sans-serif"; c.textAlign="right"; c.fillText(pbHigh||0, pbImgOX+0.63*pbImgRW, pbImgOY+0.315*pbImgRH);
   c.font="bold "+(pbImgRW*0.023)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.fillText("SCORE "+pbScore+"    BALLS "+pbBalls, pbImgOX+0.5*pbImgRW, pbImgOY+0.328*pbImgRH);
   if(pbState==="ready"){ var rp=pbProject(0.86,1.02); c.fillStyle="rgba(255,255,255,0.9)";c.font="bold "+(pbImgRW*0.022)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("LAUNCH \u2192",rp[0],rp[1]); }
+  if(typeof PB_SHOW_BOUNDS!=="undefined" && PB_SHOW_BOUNDS){
+    // --- TWEAK OUTLINE: traces the actual ball-collision walls (left/right curve inward) ---
+    var _wy=function(y){ var _t=Math.max(0,y)/1.18,_f=Math.min(1,_t*_t); return [0.02+_f*0.28, 0.96-_f*0.34]; };
+    c.save(); c.strokeStyle="rgba(255,0,210,0.95)"; c.lineWidth=2.4; c.setLineDash([9,6]); c.shadowColor="rgba(255,0,210,0.6)"; c.shadowBlur=6;
+    c.beginPath();
+    for(var s=0;s<=40;s++){ var yy=0.02+(1.18-0.02)*s/40, P=pbProject(_wy(yy)[0], yy); s===0?c.moveTo(P[0],P[1]):c.lineTo(P[0],P[1]); }   // left wall (top→bottom)
+    for(var s=40;s>=0;s--){ var yy=0.02+(1.18-0.02)*s/40, P=pbProject(_wy(yy)[1], yy); c.lineTo(P[0],P[1]); }                            // right wall (bottom→top)
+    c.closePath(); c.stroke(); c.setLineDash([]); c.restore();
+  }
   if(pbMsgT>0){ c.textAlign="center";c.textBaseline="middle";c.fillStyle="#ffd24a";c.shadowColor="#ffd24a";c.shadowBlur=6;c.font="bold "+(pbImgRW*0.05)+"px Helvetica, Arial, sans-serif";var msgY=pbImgOY+0.5*pbImgRH;c.fillText(pbMsg, pbW/2, msgY);c.shadowBlur=0; if(pbState==="over"){c.fillStyle="rgba(255,255,255,0.85)";c.font="bold "+(pbImgRW*0.025)+"px Helvetica, Arial, sans-serif";c.fillText("press LAUNCH to restart", pbW/2, msgY+pbImgRW*0.06);} }
 }
 function arcadeToMenu(){
