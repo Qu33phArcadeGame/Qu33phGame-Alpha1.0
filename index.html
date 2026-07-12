@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v249</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v250</div>
 
 <canvas id="game"></canvas>
 
@@ -4511,12 +4511,12 @@ function spawnFlappyRun(chx, gy0){
   var W=pfCanvas.width, H=pfCanvas.height;
   // lead-in ledge + a launch chair just past it, dropped slightly so the running player lands on it
   pfPlatforms.push({x:chx-W*0.24, y:gy0, w:W*0.24, ground:true});
-  pfPlatforms.push({x:chx+8, y:gy0+10, w:64, chair:true, flappy:true});
+  pfPlatforms.push({x:chx-4, y:gy0+6, w:Math.max(96, W*0.26), chair:true, flappy:true});
   var bandY = gy0 - H*0.34;             // pipe corridor sits above the launch
   pfFlappyFloorY = bandY + H*0.62;      // death floor
   pfFlappyCeilY  = bandY - H*0.66;      // death ceiling
   var n = 5+Math.floor(Math.random()*3);
-  var gap = W*0.52, gapH = H*0.47, pw = Math.max(28, W*0.075);
+  var gap = W*0.52, gapH = H*0.47, pw = Math.max(40, W*0.11);
   var x = chx + W*0.85, cy = bandY, cols=["red","green","blue"], lastX=x;
   for(var i=0;i<n;i++){
     cy += (Math.random()-0.5)*H*0.44;
@@ -4534,7 +4534,7 @@ function spawnFlappyRun(chx, gy0){
 }
 function pfFlapSpawnAhead(){
   var W=pfCanvas.width, H=pfCanvas.height;
-  var gap=W*0.5, gapH=H*0.48, pw=Math.max(28,W*0.075), cols=["red","green","blue"];
+  var gap=W*0.5, gapH=H*0.48, pw=Math.max(40,W*0.11), cols=["red","green","blue"];
   var guard=0;
   while(pfFlapLastX < pfCamX + W*2.2 && guard++<40){
     pfFlapBandY += (Math.random()-0.5)*H*0.42;
@@ -4696,6 +4696,18 @@ function updatePlatformer(){
       if(!pipe.passed && p.x > pipe.x+pipe.w){ pipe.passed=true; pfFlappyPassed++; try{addCoins(2);}catch(e){} try{haptic(8);}catch(e){} }
     }
     if(p.y > pfFlappyFloorY || p.y < pfFlappyCeilY){ pfFlappy=false; pfZoomT=1; pfGameOver(); return; }
+  }
+  // SAFETY NET: never a dead end — if standing on ground with nothing reachable ahead, drop in a bridge to continue
+  if(pfState==="play" && p.onGround && !pfFlappy && !pfFlappyFreeze && !pfFlight && !pfBouncing){
+    var _ahead=false, _pb=p.y+p.h*0.5;
+    for(var _i=0;_i<pfPlatforms.length;_i++){ var _pl=pfPlatforms[_i];
+      if(_pl.x+_pl.w > p.x+12 && _pl.x < p.x+W*0.85 && (_pl.y-_pb) > -H*0.42 && (_pl.y-_pb) < H*0.5){ _ahead=true; break; }
+    }
+    if(!_ahead){
+      var _by=_pb + H*0.06;
+      pfPlatforms.push({x:p.x+W*0.16, y:_by, w:W*0.55, ground:true});   // a reachable bridge onward
+      if(pfGenMode!=="up"){ pfGenMode="right"; pfGenX=p.x+W*0.16+W*0.55; pfGenY=_by; pfLastPlatX=pfGenX-W*0.2; pfSegLeft=W*(0.9+Math.random()*0.7); }
+    }
   }
   // fell into a pit — forgiving (bigger margin while gliding), but bounded so a total miss still ends
   if(!pfFlappy && !pfFlappyFreeze){
@@ -4865,10 +4877,9 @@ function pfDrawPipes(){
 }
 function pfPillar(img, glow, x, y0, y1, w){
   if(y1<=y0) return; var c=pfctx;
-  c.save(); c.shadowColor=glow; c.shadowBlur=12;
+  c.save(); c.shadowColor=glow; c.shadowBlur=14;
   if(img&&img.complete&&img.naturalWidth){
-    var seg=w*(img.naturalHeight/img.naturalWidth); if(seg<10) seg=w;   // stack markers down the pipe
-    for(var yy=y0; yy<y1; yy+=seg){ var hh=Math.min(seg, y1-yy); c.drawImage(img, 0,0, img.naturalWidth, img.naturalHeight*(hh/seg), x, yy, w, hh); }
+    c.drawImage(img, x, y0, w, y1-y0);   // ONE big marker stretched to fill the whole pipe
   } else { c.fillStyle=glow; c.fillRect(x,y0,w,y1-y0); }
   c.restore();
 }
@@ -6133,7 +6144,7 @@ var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  //
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
-var LW=1.0, LH=1.5, PB_G=0.0011, PB_PERSP=0.5;
+var LW=1.0, LH=1.5, PB_G=0.0016, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=true;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
@@ -6195,6 +6206,10 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   if(b.y<0.96 && !b.toMega){ b.upT=(b.upT||0)+1; } else { b.upT=0; }
   var pbForceDown = b.upT>135;
   if(pbForceDown){ b.vy+=0.0035; b.vx += (0.5-b.x)*0.0018; b.vx*=0.97; }   // anti-trap: never stuck above the paddles → funneled down the center to them
+  // UNSTICK: if the ball dawdles anywhere in the field (a pocket, or dead-stops mid-table at the logo), roll it down smooth
+  var _spd=Math.abs(b.vx)+Math.abs(b.vy);
+  if(!b.toMega && !b.inChute && b.y>0.26 && _spd<0.008){ b.stuckT=(b.stuckT||0)+1; } else { b.stuckT=0; }
+  if(b.stuckT>18){ b.vy+=0.006; b.vx += (0.5-b.x)*0.0022; }
   for(var i=0;i<pbBumpers.length;i++){ if(pbForceDown||b.toMega)break; var bp=pbBumpers[i],dx=b.x-bp.x,dy=b.y-bp.y,d=Math.hypot(dx,dy)||1; if(d<bp.r+PB_R){var nx=dx/d,ny=dy/d;b.x=bp.x+nx*(bp.r+PB_R);b.y=bp.y+ny*(bp.r+PB_R);var dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.vx=b.vx*0.5+nx*0.006;b.vy=b.vy*0.5+ny*0.006;bp.hit=8;pbScore+=(bp.sling?25:100);try{haptic(6);}catch(e){}}}
   if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=140; b.y=pbChair.y-PB_R; b.vx=0.028; b.vy=-0.09; b.toMega=true; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
   if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.vy=0.03; b.vx=(0.5-b.x)*0.04; try{haptic([25,15,35]);}catch(e){} }
