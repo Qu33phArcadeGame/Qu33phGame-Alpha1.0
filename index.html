@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v242</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v243</div>
 
 <canvas id="game"></canvas>
 
@@ -4020,8 +4020,21 @@ function updatePlinkoOrientIcon(){
 let pfCanvas=null, pfctx=null, pfActive=false, pfRAF=null;
 let pfPlayer=null, pfPlatforms=[], pfCameraY=0, pfState="play", pfScore=0;
 let arcadeGame="jump", arcadePaused=false, arcadeHintTaps=0;
+let jmSel=0, jmSettings=false, jmT=0;
 function arcadeTapped(){ arcadeHintTaps++; if(arcadeHintTaps>=2){ var h=document.getElementById("arcadeHint"); if(h) h.style.display="none"; } if(arcadeGame==="jump") pfMusicStart(); }
-let pfBest=parseInt(localStorage.getItem("qu33phPfBest")||"0",10)||0;
+let pfMode="combo";   // combo | jump | run | flap  (each endless, each its own high score)
+const PF_MODES=[
+  {id:"combo", name:"COMBO", blurb:"the full mix — climb, run, bounce & flap"},
+  {id:"jump",  name:"JUMP",  blurb:"climb forever — dodge markers, ride platforms"},
+  {id:"run",   name:"RUN",   blurb:"endless runner — dash & leap the markers"},
+  {id:"flap",  name:"FLAP",  blurb:"pure flappy — thread the pipes forever"}
+];
+function pfBestKey(m){ return "qu33phPfBest_"+m; }
+let pfBestByMode={};
+(function(){ var mig=parseInt(localStorage.getItem("qu33phPfBest")||"0",10)||0;
+  PF_MODES.forEach(function(m){ var v=parseInt(localStorage.getItem(pfBestKey(m.id))||"0",10)||0; if(m.id==="combo"&&mig>v)v=mig; pfBestByMode[m.id]=v; }); })();
+let pfBest=pfBestByMode["combo"]||0;
+let pfFlapEndless=false, pfFlapLastX=0, pfFlapBandY=0;
 let pfMove=0, pfJumpQ=false, pfActionQ=false;
 // horizontal (platformer) phase — kicks in after height 100
 let pfObstacles=[], pfCoinsWorld=[], pfCamX=0, pfCamY=0, pfDeco=[];
@@ -4069,7 +4082,72 @@ function showArcadeMenu(){
 }
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
-function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showPlatformer(); }
+function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showJumpMenu(); }
+function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
+function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
+function jmSelect(){
+  if(jmSettings){ setJumpMute(!jumpMusicMuted); try{haptic(10);}catch(e){} return; }
+  pfMode=PF_MODES[jmSel].id; try{haptic([12,18]);}catch(e){}
+  showPlatformer("jump");
+}
+function jmSettingsToggle(){ jmSettings=!jmSettings; try{haptic(6);}catch(e){} }
+function jmCanvasTap(x,y){
+  // tap the gear in the top-right corner to open/close settings
+  var r=pfCanvas.getBoundingClientRect(), lx=x-r.left, ly=y-r.top;
+  if(lx>pfCanvas.width-46 && ly<46){ jmSettingsToggle(); }
+  else if(jmSettings){ jmSettings=false; }   // tap elsewhere closes settings
+}
+function updateJumpMenu(){ jmT++; }
+function drawJumpMenu(){
+  if(!pfctx) return;
+  var W=pfCanvas.width, H=pfCanvas.height, c=pfctx, th=pfTheme();
+  drawPfBg(W,H);
+  c.save(); c.textAlign="center";
+  // title
+  c.fillStyle="#fff"; c.shadowColor="#8affea"; c.shadowBlur=12; c.textBaseline="top";
+  c.font="bold 22px Helvetica, Arial, sans-serif"; c.fillText("QU33PH JUMP", W/2, H*0.06);
+  c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold 9px Helvetica, Arial, sans-serif";
+  c.fillText("GREEN \u25b2\u25bc   \u2022   RED = PLAY", W/2, H*0.14);
+  // mode rows
+  var top=H*0.24, rowH=Math.min(64, (H*0.62)/PF_MODES.length);
+  for(var i=0;i<PF_MODES.length;i++){
+    var m=PF_MODES[i], y=top+i*rowH, sel=(i===jmSel && !jmSettings);
+    var bx=W*0.12, bw=W*0.76, bh=rowH-12;
+    c.save();
+    if(sel){ c.shadowColor="#8affea"; c.shadowBlur=16; c.fillStyle="rgba(40,255,180,0.16)"; c.strokeStyle="#8affea"; }
+    else { c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.05)"; c.strokeStyle="rgba(255,255,255,0.22)"; }
+    rrPf(c,bx,y,bw,bh,10); c.fill(); c.lineWidth=sel?2.4:1.2; c.stroke();
+    c.restore();
+    c.textAlign="left"; c.textBaseline="middle";
+    c.fillStyle=sel?"#8affea":"#fff"; c.font="bold 18px Helvetica, Arial, sans-serif";
+    c.fillText(m.name, bx+16, y+bh*0.36);
+    c.fillStyle="rgba(255,255,255,0.55)"; c.font="bold 8.5px Helvetica, Arial, sans-serif";
+    c.fillText(m.blurb, bx+16, y+bh*0.72);
+    c.textAlign="right"; c.fillStyle="#ffd700"; c.font="bold 11px Helvetica, Arial, sans-serif";
+    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-14, y+bh*0.5);
+    c.textAlign="center";
+  }
+  // settings gear (top-right corner)
+  c.save(); c.translate(W-24, 24); c.rotate(jmT*0.01);
+  c.strokeStyle=jmSettings?"#8affea":"rgba(255,255,255,0.7)"; c.fillStyle=c.strokeStyle; c.lineWidth=2;
+  c.beginPath(); c.arc(0,0,7,0,6.283); c.stroke();
+  for(var g=0;g<8;g++){ var a=g*Math.PI/4; c.beginPath(); c.moveTo(Math.cos(a)*8,Math.sin(a)*8); c.lineTo(Math.cos(a)*11,Math.sin(a)*11); c.stroke(); }
+  c.beginPath(); c.arc(0,0,2.4,0,6.283); c.fill();
+  c.restore();
+  // settings panel
+  if(jmSettings){
+    c.fillStyle="rgba(4,6,14,0.86)"; c.fillRect(0,0,W,H);
+    c.textAlign="center"; c.textBaseline="middle";
+    c.fillStyle="#fff"; c.shadowColor="#8affea"; c.shadowBlur=10; c.font="bold 20px Helvetica, Arial, sans-serif";
+    c.fillText("SETTINGS", W/2, H*0.34); c.shadowBlur=0;
+    var on=!jumpMusicMuted;
+    c.fillStyle=on?"#8affea":"rgba(255,255,255,0.5)"; c.font="bold 22px Helvetica, Arial, sans-serif";
+    c.fillText("MUSIC  "+(on?"ON":"OFF"), W/2, H*0.48);
+    c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold 10px Helvetica, Arial, sans-serif";
+    c.fillText("RED = toggle   \u2022   tap gear / elsewhere to close", W/2, H*0.58);
+  }
+  c.restore();
+}
 function launchDreamon(){
   document.getElementById("arcadeMenu").style.display="none";
   var fr=document.getElementById("dreamonFrame"); if(fr && (!fr.src || fr.src.indexOf("dreamon-7.html")<0)) fr.src="dreamon-7.html";
@@ -4083,8 +4161,8 @@ function exitDreamon(){
 function showPlatformer(game){
   arcadeGame = game||"jump";
   if(arcadeGame!=="jump") pfMusicStop();
-  var nav = (arcadeGame==="levelselect"||arcadeGame==="binder"||arcadeGame==="fusepick");
-  var _bg=document.getElementById("platformerBg"); if(_bg) _bg.src = (arcadeGame==="dream"||nav)?"dreamlingoverlay.png":"qu33phjump.png";
+  var nav = (arcadeGame==="levelselect"||arcadeGame==="binder"||arcadeGame==="fusepick"||arcadeGame==="jumpmenu");
+  var _bg=document.getElementById("platformerBg"); if(_bg) _bg.src = (arcadeGame==="dream"||(nav&&arcadeGame!=="jumpmenu"))?"dreamlingoverlay.png":"qu33phjump.png";
   document.getElementById("arcadeMenu").style.display="none";
   document.getElementById("titleScreen").style.display="none";
   var tc=document.getElementById("titleCoins"); if(tc) tc.style.display="none";
@@ -4094,17 +4172,17 @@ function showPlatformer(game){
   layoutPlatformer();
   if(!pfCanvas._bound){
     pfCanvas._bound=true;
-    var isNavMode=function(){ return arcadeGame==="levelselect"||arcadeGame==="binder"||arcadeGame==="fusepick"; };
+    var isNavMode=function(){ return arcadeGame==="levelselect"||arcadeGame==="binder"||arcadeGame==="fusepick"||arcadeGame==="jumpmenu"; };
     var lb=document.getElementById("pfLeftBtn"), rb=document.getElementById("pfRightBtn");
-    lb.addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="levelselect"){ lsNav(-1); } else if(arcadeGame==="binder"){ binderNav(-1); } else if(arcadeGame==="fusepick"){ fpNav(-1); } else if(arcadeGame==="dream") dmPan=-1; else pfMove=-1; });
+    lb.addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmNav(-1); } else if(arcadeGame==="levelselect"){ lsNav(-1); } else if(arcadeGame==="binder"){ binderNav(-1); } else if(arcadeGame==="fusepick"){ fpNav(-1); } else if(arcadeGame==="dream") dmPan=-1; else pfMove=-1; });
     lb.addEventListener("pointerup",function(){ if(arcadeGame==="dream"){ if(dmPan<0)dmPan=0; } else if(!isNavMode() && pfMove<0) pfMove=0; });
     lb.addEventListener("pointerleave",function(){ if(arcadeGame==="dream"){ if(dmPan<0)dmPan=0; } else if(!isNavMode() && pfMove<0) pfMove=0; });
-    rb.addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="levelselect"){ lsNav(1); } else if(arcadeGame==="binder"){ binderNav(1); } else if(arcadeGame==="fusepick"){ fpNav(1); } else if(arcadeGame==="dream") dmPan=1; else pfMove=1; });
+    rb.addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmNav(1); } else if(arcadeGame==="levelselect"){ lsNav(1); } else if(arcadeGame==="binder"){ binderNav(1); } else if(arcadeGame==="fusepick"){ fpNav(1); } else if(arcadeGame==="dream") dmPan=1; else pfMove=1; });
     rb.addEventListener("pointerup",function(){ if(arcadeGame==="dream"){ if(dmPan>0)dmPan=0; } else if(!isNavMode() && pfMove>0) pfMove=0; });
     rb.addEventListener("pointerleave",function(){ if(arcadeGame==="dream"){ if(dmPan>0)dmPan=0; } else if(!isNavMode() && pfMove>0) pfMove=0; });
-    document.getElementById("pfJumpBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="levelselect"){ lsEnter(); } else if(arcadeGame==="binder"){ binderRed(); } else if(arcadeGame==="fusepick"){ fpConfirm(); } else if(arcadeGame==="dream"){ if(dmState==="boss") dmFuse(); else dmCapture(); } else if(pfState==="over"){ resetPlatformer(); } else { pfJumpQ=true; try{haptic(12);}catch(e){} } });
-    document.getElementById("pfActionBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="levelselect"){ lsBinder(); } else if(arcadeGame==="binder"){ binderBlue(); } else if(arcadeGame==="fusepick"){ fpToggle(); } else if(arcadeGame==="dream"){ dmCapture(); } else pfActionQ=true; });
-    pfCanvas.addEventListener("pointerdown",function(e){ if(arcadeGame==="binder"){ bcCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="fusepick"){ fpCanvasTap(e.clientX,e.clientY); } });
+    document.getElementById("pfJumpBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmSelect(); } else if(arcadeGame==="levelselect"){ lsEnter(); } else if(arcadeGame==="binder"){ binderRed(); } else if(arcadeGame==="fusepick"){ fpConfirm(); } else if(arcadeGame==="dream"){ if(dmState==="boss") dmFuse(); else dmCapture(); } else if(pfState==="over"){ resetPlatformer(); } else { pfJumpQ=true; try{haptic(12);}catch(e){} } });
+    document.getElementById("pfActionBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmSettingsToggle(); } else if(arcadeGame==="levelselect"){ lsBinder(); } else if(arcadeGame==="binder"){ binderBlue(); } else if(arcadeGame==="fusepick"){ fpToggle(); } else if(arcadeGame==="dream"){ dmCapture(); } else pfActionQ=true; });
+    pfCanvas.addEventListener("pointerdown",function(e){ if(arcadeGame==="jumpmenu"){ jmCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="binder"){ bcCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="fusepick"){ fpCanvasTap(e.clientX,e.clientY); } });
   }
   var _bb=document.getElementById("dlBinderBtn"); if(_bb) _bb.style.display = (arcadeGame==="dream")?"block":"none";
   var _pb=document.getElementById("arcadePauseBtn"); if(_pb) _pb.style.display = nav?"none":"block";
@@ -4204,19 +4282,29 @@ function layoutPlatformer(){
 }
 function resetPlatformer(){
   var W=pfCanvas.width, H=pfCanvas.height;
+  pfBest=pfBestByMode[pfMode]||0;
   pfPlatforms=[]; pfObstacles=[]; pfCoinsWorld=[]; pfDeco=[];
   pfScore=0; pfProgress=0; pfState="play"; pfMove=0; pfJumpQ=false; pfActionQ=false;
   var startX=W*0.5, startY=H*0.72;
-  pfPlatforms.push({x:startX-W*0.28, y:startY, w:W*0.56, ground:true});
   pfPlayer={x:startX, y:startY-15, vx:0,vy:0,w:20,h:30,onGround:true,face:1};
   pfStartX=startX; pfStartY=startY; pfBestX=startX; pfBestUp=startY-15; pfLastGroundY=startY-15; pfT=0;
   pfMega=null; pfFlight=false; pfZoom=1; pfZoomT=1; pfCycles=0; pfLastLaunchCycle=-99; pfMegaFlash=0;
   pfBouncing=false; pfBounceCombo=0; pfBounceFlash=0; pfNoMarkerUntilX=0; pfUpStart=8;
-  pfFlappy=false; pfFlappyFreeze=false; pfPipes=[]; pfFlappyPassed=0; pfFlappyHint=0;
+  pfFlappy=false; pfFlappyFreeze=false; pfPipes=[]; pfFlappyPassed=0; pfFlappyHint=0; pfFlapEndless=false;
   pfCamX=pfPlayer.x-W*0.4; pfCamY=pfPlayer.y-H*0.55;
-  // the path starts climbing UP from the start pad
-  pfGenMode="up"; pfGenX=startX; pfLastPlatX=startX; pfGenY=startY-(48+Math.random()*18); pfSegLeft=6+Math.floor(Math.random()*4);
   for(var d=0;d<44;d++) pfDeco.push({x:Math.random(),y:Math.random(),z:0.3+Math.random()*0.7,r:0.6+Math.random()*1.6});
+  if(pfMode==="flap"){
+    // pure flappy: no ground, launch straight into the pipe stream
+    pfFlapEndless=true; pfFlapBandY=startY-H*0.34; pfFlapLastX=startX+W*0.6;
+    pfFlappyFloorY=pfCamY+H+40; pfFlappyCeilY=pfCamY-40; pfFlappyEndX=1e9;
+    pfPlayer.y=pfFlapBandY; pfCamY=pfPlayer.y-H*0.5; pfCamX=pfPlayer.x-W*0.5;
+    pfFlappyFreeze=true;                       // "TAP TO JUMP", then it goes forever
+  } else {
+    // combo/jump/run start on a pad; run begins flat, the others climb
+    pfPlatforms.push({x:startX-W*0.28, y:startY, w:W*0.56, ground:true});
+    if(pfMode==="run"){ pfGenMode="right"; pfGenX=startX+W*0.28; pfGenY=startY; pfLastPlatX=startX; pfSegLeft=W*(1.1+Math.random()*1.0); pfNoMarkerUntilX=startX+W*0.7; }
+    else { pfGenMode="up"; pfGenX=startX; pfLastPlatX=startX; pfGenY=startY-(48+Math.random()*18); pfSegLeft=6+Math.floor(Math.random()*4); }
+  }
   pfGenPath();
 }
 function pfMarkerColor(i){ return ["red","green","blue"][i%3]; }
@@ -4257,10 +4345,16 @@ function pfGenStep(){
     if(Math.random()<0.5) pfCoinsWorld.push({x:px, y:pfGenY-26, got:false});
     pfGenY-=(48+Math.random()*22);
     if(--pfSegLeft<=0){
-      // turn right: a wide landing ledge, then run rightward at this height
-      pfGenY+=26;
-      pfPlatforms.push({x:pfLastPlatX-W*0.12, y:pfGenY, w:W*0.42, ground:true});
-      pfGenMode="right"; pfGenX=pfLastPlatX-W*0.12+W*0.42; pfSegLeft=W*(1.3+Math.random()*1.1);
+      if(pfMode==="jump"){
+        // keep climbing — brief ledge then another up-run (no horizontal sections)
+        pfGenY+=22; pfPlatforms.push({x:pfLastPlatX-W*0.16, y:pfGenY, w:W*0.34, ground:true});
+        pfGenMode="up"; pfGenY-=(46+Math.random()*20); pfSegLeft=6+Math.floor(Math.random()*4); pfUpStart=pfSegLeft;
+      } else {
+        // turn right: a wide landing ledge, then run rightward at this height
+        pfGenY+=26;
+        pfPlatforms.push({x:pfLastPlatX-W*0.12, y:pfGenY, w:W*0.42, ground:true});
+        pfGenMode="right"; pfGenX=pfLastPlatX-W*0.12+W*0.42; pfSegLeft=W*(1.3+Math.random()*1.1);
+      }
     }
   } else {
     var slabW=W*(0.5+Math.random()*0.5);
@@ -4279,8 +4373,8 @@ function pfGenStep(){
       }
     }
     if(Math.random()<0.55) pfCoinsWorld.push({x:pfGenX+slabW*0.5, y:pfGenY-H*(0.14+Math.random()*0.1), got:false});
-    // ── occasional CHAIR LAUNCH toward a far MEGA (every few go-arounds, after a run) ──
-    if(pfCycles>=2 && (pfCycles-pfLastLaunchCycle)>=3 && !pfMega && slabW>W*0.7 && Math.random()<0.7){
+    // ── occasional CHAIR LAUNCH toward a far MEGA (combo mode only, every few go-arounds) ──
+    if(pfMode==="combo" && pfCycles>=2 && (pfCycles-pfLastLaunchCycle)>=3 && !pfMega && slabW>W*0.7 && Math.random()<0.7){
       var chx=pfGenX+slabW*0.5, gy0=pfGenY;
       pfPlatforms.push({x:chx-30, y:gy0-20, w:60, chair:true});                           // raised chair launch pad
       // sits on the descending side of the launch arc — reachable by steering into it, but you must thread it
@@ -4303,6 +4397,10 @@ function pfGenStep(){
     if(pfSegLeft>W*0.5 && Math.random()<0.4){ pfGenX+=W*(0.1+Math.random()*0.12); } // small hop gap
     if(pfSegLeft<=0){
       pfCycles++;
+      if(pfMode==="run"){
+        // endless runner — keep laying flat-ish ground with a little vertical drift
+        pfGenY += (Math.random()-0.5)*44; pfGenMode="right"; pfLastPlatX=pfGenX; pfSegLeft=W*(1.1+Math.random()*1.0);
+      } else {
       var _roll=Math.random();
       if(pfProgress>26 && _roll<0.12){
         spawnFlappyRun(pfGenX, pfGenY);     // Flappy-Bird pipe gauntlet
@@ -4314,6 +4412,7 @@ function pfGenStep(){
       } else {
         // turn up: climb from the right end
         pfGenMode="up"; pfLastPlatX=pfGenX; pfGenY-=(48+Math.random()*18); pfSegLeft=6+Math.floor(Math.random()*4); pfUpStart=pfSegLeft;
+      }
       }
     }
   }
@@ -4361,8 +4460,27 @@ function spawnFlappyRun(chx, gy0){
   pfGenMode="right"; pfGenX=landX+W*0.4; pfGenY=landY; pfLastPlatX=landX; pfSegLeft=W*(0.9+Math.random()*0.8);
   pfNoMarkerUntilX=pfGenX+W*0.8;
 }
+function pfFlapSpawnAhead(){
+  var W=pfCanvas.width, H=pfCanvas.height;
+  var gap=W*0.5, gapH=H*0.42, pw=Math.max(28,W*0.075), cols=["red","green","blue"];
+  var guard=0;
+  while(pfFlapLastX < pfCamX + W*2.2 && guard++<40){
+    pfFlapBandY += (Math.random()-0.5)*H*0.42;
+    pfFlapBandY = Math.max(pfPlayer.y-H*0.55, Math.min(pfPlayer.y+H*0.55, pfFlapBandY));
+    pfFlapLastX += gap;
+    var cy=pfFlapBandY, col=cols[pfPipes.length%3];
+    pfPipes.push({x:pfFlapLastX, w:pw, gapY:cy, gapH:gapH, passed:false, color:col});
+    pfCoinsWorld.push({x:pfFlapLastX+pw*0.5, y:cy, got:false});
+  }
+}
 function pfGenPath(){
   var W=pfCanvas.width, H=pfCanvas.height, guard=0;
+  if(pfFlapEndless){
+    pfFlapSpawnAhead();
+    pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-W*0.7; });
+    pfCoinsWorld=pfCoinsWorld.filter(function(c){ return c.x > pfCamX-W*0.7; });
+    return;
+  }
   while(guard++<800){
     if(pfGenMode==="up"){ if(pfGenY <= pfCamY - H*1.4) break; }
     else { if(pfGenX >= pfCamX + W*2.3) break; }
@@ -4377,6 +4495,7 @@ function pfGenPath(){
 }
 function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   if(arcadeGame==="dream"){ updateDeep(); drawDeep(); }
+  else if(arcadeGame==="jumpmenu"){ updateJumpMenu(); drawJumpMenu(); }
   else if(arcadeGame==="levelselect"){ updateLevelSelect(); drawLevelSelect(); }
   else if(arcadeGame==="binder"){ updateBinderCab(); drawBinderCab(); }
   else if(arcadeGame==="fusepick"){ updateFusePick(); drawFusePick(); }
@@ -4384,7 +4503,7 @@ function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   pfRAF=requestAnimationFrame(pfLoop); }
 function pfGameOver(){
   pfState="over";
-  if(pfScore>pfBest){ pfBest=pfScore; try{localStorage.setItem("qu33phPfBest",pfBest);}catch(e){} }
+  if(pfScore>pfBest){ pfBest=pfScore; pfBestByMode[pfMode]=pfScore; try{localStorage.setItem(pfBestKey(pfMode),pfBest);}catch(e){} }
   try{ if(pfScore>0) addCoins(Math.floor(pfScore/25)); }catch(e){}
   try{haptic([40,30,40]);}catch(e){}
 }
@@ -4497,6 +4616,7 @@ function updatePlatformer(){
   if(pfMega && (pfMega.x < pfCamX - W*0.8 || pfMega.y > pfCamY + H*1.9)) pfMega=null;
   // ── FLAPPY: pipe collision, pass rewards, and its own floor/ceiling death ──
   if(pfFlappy){
+    if(pfFlapEndless){ pfFlappyFloorY = pfCamY + H*0.98; pfFlappyCeilY = pfCamY + H*0.02; }  // die at the screen edges
     for(var pp=0;pp<pfPipes.length;pp++){ var pipe=pfPipes[pp], hg=pipe.gapH*0.5;
       if(p.x+6>pipe.x && p.x-6<pipe.x+pipe.w){
         if(p.y-p.h*0.35 < pipe.gapY-hg || p.y+p.h*0.35 > pipe.gapY+hg){ pfFlappy=false; pfZoomT=1; pfGameOver(); return; }
@@ -4575,6 +4695,20 @@ function pfTileBg(img, alpha, par, W, H){
 const PF_GALAXY_SRCS=["dreamling76.png","dreamling77.png","dreamling82.png","dreamling83.png","dreamling85.png","dreamling87.png"];
 const pfGalaxyBgImgs=PF_GALAXY_SRCS.map(function(s){ var i=new Image(); i.src=s; return i; });
 function pfTheme(){ return (typeof styleOf==="function")?styleOf():currentTheme; }
+// one drifting/growing/rotating deepdream layer — cross-fade two of these for a morphing galaxy
+function pfGalaxyLayer(img, alpha, T, seed, dir, W, H){
+  if(alpha<=0.01 || !(img&&img.complete&&img.naturalWidth)) return;
+  var c=pfctx, iw=img.naturalWidth, ih=img.naturalHeight;
+  var cover=Math.max(W/iw,H/ih)*1.55, tw=iw*cover, th=ih*cover;   // overscan so edges never show while it moves
+  var pulse=1+0.17*Math.sin(T*0.55+seed);                          // breathe / grow
+  var rot=dir*0.026*T + Math.sin(T*0.12+seed)*0.18;                // continuous slow rotation + wobble
+  var dx=W/2 + Math.sin(T*0.29+seed)*W*0.13 - pfCamX*0.05;
+  var dy=H/2 + Math.cos(T*0.23+seed*1.3)*H*0.13 - pfCamY*0.05;
+  c.save(); c.globalAlpha=alpha; c.globalCompositeOperation="lighter";
+  c.translate(dx,dy); c.rotate(rot); c.scale(pulse,pulse);
+  c.drawImage(img, -tw/2, -th/2, tw, th);
+  c.restore();
+}
 function drawPfBg(W,H){
   var th=pfTheme();
   if(th==="cartoon"){
@@ -4598,10 +4732,15 @@ function drawPfBg(W,H){
     var g2=pfctx.createLinearGradient(0,0,0,H); g2.addColorStop(0,"#160a2e"); g2.addColorStop(1,"#0a0618"); pfctx.fillStyle=g2; pfctx.fillRect(0,0,W,H);
     var loaded=pfGalaxyBgImgs.filter(function(im){return im.complete&&im.naturalWidth;});
     if(loaded.length){
-      // swap which deepdream image shows as you climb higher; slow parallax tile
-      var idx=Math.abs(Math.floor(pfCamY/900))%loaded.length;
-      pfTileBg(loaded[idx], 0.8, 0.08, W, H);
-      pfctx.fillStyle="rgba(8,4,20,0.32)"; pfctx.fillRect(0,0,W,H);   // darken so platforms/guy pop
+      var GT=Date.now()/1000;
+      // continuous progress through the deepdream set (climb + time) — cross-fade, never hard-swap
+      var prog=(-pfCamY/540) + GT*0.05, gb=Math.floor(prog), gf=prog-gb;
+      var iA=((gb%loaded.length)+loaded.length)%loaded.length, iB=(iA+1)%loaded.length;
+      pfctx.globalCompositeOperation="lighter";
+      pfGalaxyLayer(loaded[iA], (1-gf)*0.85, GT, iA*1.7,  1, W, H);   // outgoing layer
+      pfGalaxyLayer(loaded[iB], gf*0.85,     GT, iB*1.7, -1, W, H);   // incoming layer
+      pfctx.globalCompositeOperation="source-over"; pfctx.globalAlpha=1;
+      pfctx.fillStyle="rgba(8,4,20,0.4)"; pfctx.fillRect(0,0,W,H);    // darken so platforms/guy pop
     } else {
       pfctx.fillStyle="rgba(180,140,255,0.7)";
       for(var d=0;d<pfDeco.length;d++){ var st=pfDeco[d]; var ssx=((st.x*W - pfCamX*st.z*0.12)%W+W)%W, ssy=((st.y*H - pfCamY*st.z*0.12)%H+H)%H; pfctx.globalAlpha=0.2+st.z*0.35; pfctx.beginPath(); pfctx.arc(ssx,ssy,st.r*0.9,0,6.283); pfctx.fill(); }
@@ -4723,12 +4862,13 @@ function drawPfRun(){ drawPlatformer(); }
 function drawPfOver(W,H){
   pfctx.fillStyle="rgba(0,0,0,0.62)"; pfctx.fillRect(0,0,W,H);
   pfctx.fillStyle="#fff"; pfctx.textAlign="center"; pfctx.textBaseline="middle";
-  pfctx.font="bold 17px Helvetica, Arial, sans-serif"; pfctx.fillText("GAME OVER", W/2, H*0.40);
-  pfctx.font="bold 10px Helvetica, Arial, sans-serif"; pfctx.fillText("height "+pfScore, W/2, H*0.51);
+  pfctx.font="bold 17px Helvetica, Arial, sans-serif"; pfctx.fillText("GAME OVER", W/2, H*0.36);
+  var _mn=""; for(var i=0;i<PF_MODES.length;i++){ if(PF_MODES[i].id===pfMode) _mn=PF_MODES[i].name; }
+  pfctx.fillStyle="#8affea"; pfctx.font="bold 10px Helvetica, Arial, sans-serif"; pfctx.fillText(_mn+" MODE", W/2, H*0.445);
+  pfctx.fillStyle="#fff"; pfctx.font="bold 10px Helvetica, Arial, sans-serif"; pfctx.fillText("score "+pfScore+"    best "+(pfBestByMode[pfMode]||0), W/2, H*0.52);
   var _earn=Math.floor(pfScore/25);
-  pfctx.fillStyle="#ffd24a"; pfctx.font="bold 14px Helvetica, Arial, sans-serif"; pfctx.fillText("+ "+_earn+" COIN"+(_earn===1?"":"S")+" EARNED", W/2, H*0.62);
-  pfctx.fillStyle="#aaa"; pfctx.font="bold 9px Helvetica, Arial, sans-serif"; pfctx.fillText("("+pfScore+" height \u00f7 25)", W/2, H*0.70);
-  pfctx.fillStyle="#fff"; pfctx.fillText("tap RED to retry", W/2, H*0.80);
+  pfctx.fillStyle="#ffd24a"; pfctx.font="bold 14px Helvetica, Arial, sans-serif"; pfctx.fillText("+ "+_earn+" COIN"+(_earn===1?"":"S")+" EARNED", W/2, H*0.63);
+  pfctx.fillStyle="#fff"; pfctx.font="bold 10px Helvetica, Arial, sans-serif"; pfctx.fillText("tap RED to retry", W/2, H*0.78);
 }
 let dmCreatures=[], dmPan=0, dmView=0, dmCollected=[], dmCaptures=0, dmBoss=null, dmState="ride", dmMsg="", dmMsgT=0, dmSpawnT=0, dmT=0, dmBossKills=0;
 const DM_TYPES=[{name:"OONA",hue:290},{name:"VEXL",hue:150},{name:"MOTHE",hue:40},{name:"GLOOB",hue:200},{name:"ZUUP",hue:0},{name:"FERNE",hue:110},{name:"WISP",hue:240}];
@@ -5901,6 +6041,7 @@ function openArcadePause(){ arcadePaused=true; document.getElementById("arcadePa
 function resumeArcade(){ arcadePaused=false; document.getElementById("arcadePause").style.display="none"; pfMusicStart(); }
 function returnToArcade(){
   arcadePaused=false; var pv=document.getElementById("arcadePause"); if(pv) pv.style.display="none";
+  if(arcadeGame==="jump"){ pfMusicStop(); showJumpMenu(); return; }   // back to the mode menu, not the cabinet
   pfActive=false; if(pfRAF){ cancelAnimationFrame(pfRAF); pfRAF=null; }
   var b=document.getElementById("dlBinder"); if(b)b.style.display="none";
   var f=document.getElementById("dlFuse"); if(f)f.style.display="none";
@@ -6000,7 +6141,6 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   // (field border walls are invisible; physics only)
   for(var i=0;i<pbBumpers.length;i++){ var bp=pbBumpers[i]; if(bp.sling)continue; var P=pbProject(bp.x,bp.y),rx=pbSizePx(bp.r,bp.y),ry=rx*0.52; c.save();c.strokeStyle=i%2?"#ff3b6a":"#3affea";c.shadowColor=i%2?"#ff3b6a":"#3affea";c.shadowBlur=bp.hit>0?13:5;c.lineWidth=Math.max(2,rx*0.14);c.beginPath();c.ellipse(P[0],P[1],rx,ry,0,0,6.283);c.stroke();c.fillStyle=i%2?"rgba(255,59,106,0.16)":"rgba(58,255,234,0.16)";c.fill();c.restore(); }
   c.save(); var megaOn=pbMega.flash>0; c.shadowColor="#ffd24a"; c.shadowBlur=megaOn?22:11; c.fillStyle=megaOn?"rgba(255,210,74,0.30)":"rgba(255,210,74,0.12)"; pbDrawQuad(pbMega.x,pbMega.y,pbMega.w,pbMega.h);c.fill();c.strokeStyle=megaOn?"#fff2b0":"#ffd24a";c.lineWidth=megaOn?4:2.5;c.stroke(); c.restore();
-  var mdc=pbProject(pbMega.x+pbMega.w/2,pbMega.y+pbMega.h*0.58), mdr=pbSizePx(0.052,pbMega.y+pbMega.h*0.58); c.save();c.shadowColor="#ff2b3e";c.shadowBlur=megaOn?18:9;c.fillStyle=megaOn?"#ff5a68":"#ff2b3e";c.beginPath();c.ellipse(mdc[0],mdc[1],mdr,mdr*0.52,0,0,6.283);c.fill();c.restore();
   var mp=pbProject(pbMega.x+pbMega.w/2,pbMega.y-0.005); c.save();c.fillStyle="#ffd24a";c.shadowColor="#ffd24a";c.shadowBlur=8;c.font="bold "+pbSizePx(0.055,pbMega.y)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="bottom";c.fillText("MEGA",mp[0],mp[1]);c.restore();
   pbDrawFlipper(0.22,1.02, 0.5-pbFL*1.0, 0.20, true); pbDrawFlipper(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, false);
   if(b){ var BP=pbProject(b.x,b.y),br=pbSizePx(PB_R,b.y); c.save();c.shadowColor="#fff";c.shadowBlur=4;var bg=c.createRadialGradient(BP[0]-br*0.3,BP[1]-br*0.3,br*0.2,BP[0],BP[1],br);bg.addColorStop(0,"#fff");bg.addColorStop(1,"#8892a0");c.fillStyle=bg;c.beginPath();c.arc(BP[0],BP[1],br,0,6.283);c.fill();c.restore(); }
