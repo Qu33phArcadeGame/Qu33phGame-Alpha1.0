@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v243</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v244</div>
 
 <canvas id="game"></canvas>
 
@@ -4094,7 +4094,7 @@ function jmSettingsToggle(){ jmSettings=!jmSettings; try{haptic(6);}catch(e){} }
 function jmCanvasTap(x,y){
   // tap the gear in the top-right corner to open/close settings
   var r=pfCanvas.getBoundingClientRect(), lx=x-r.left, ly=y-r.top;
-  if(lx>pfCanvas.width-46 && ly<46){ jmSettingsToggle(); }
+  if(lx<46 && ly<46){ jmSettingsToggle(); }
   else if(jmSettings){ jmSettings=false; }   // tap elsewhere closes settings
 }
 function updateJumpMenu(){ jmT++; }
@@ -4108,27 +4108,40 @@ function drawJumpMenu(){
   c.font="bold 22px Helvetica, Arial, sans-serif"; c.fillText("QU33PH JUMP", W/2, H*0.06);
   c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold 9px Helvetica, Arial, sans-serif";
   c.fillText("GREEN \u25b2\u25bc   \u2022   RED = PLAY", W/2, H*0.14);
-  // mode rows
-  var top=H*0.24, rowH=Math.min(64, (H*0.62)/PF_MODES.length);
+  // mode rows — each is a custom MARKER button; orientation alternates left/right down the list
+  var top=H*0.22, rowH=Math.min(82, (H*0.68)/PF_MODES.length), rowCols=["red","green","blue","red"];
   for(var i=0;i<PF_MODES.length;i++){
     var m=PF_MODES[i], y=top+i*rowH, sel=(i===jmSel && !jmSettings);
-    var bx=W*0.12, bw=W*0.76, bh=rowH-12;
+    var bx=W*0.09, bw=W*0.82, bh=rowH-10, flip=(i%2===1), mimg=markerImages[rowCols[i]];
+    var glow=(rowCols[i]==="red"?"#ff3040":rowCols[i]==="green"?"#30ff70":"#3a7bff");
     c.save();
-    if(sel){ c.shadowColor="#8affea"; c.shadowBlur=16; c.fillStyle="rgba(40,255,180,0.16)"; c.strokeStyle="#8affea"; }
-    else { c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.05)"; c.strokeStyle="rgba(255,255,255,0.22)"; }
-    rrPf(c,bx,y,bw,bh,10); c.fill(); c.lineWidth=sel?2.4:1.2; c.stroke();
+    // marker art fills the button (flipped on alternate rows), clipped to a rounded pill
+    c.save(); if(sel){ c.shadowColor=glow; c.shadowBlur=20; } rrPf(c,bx,y,bw,bh,bh*0.5); c.clip();
+    if(mimg&&mimg.complete&&mimg.naturalWidth){
+      if(flip){ c.translate(bx+bw,y); c.scale(-1,1); c.drawImage(mimg,0,0,bw,bh); }
+      else { c.drawImage(mimg,bx,y,bw,bh); }
+    } else { c.fillStyle=glow; c.fillRect(bx,y,bw,bh); }
+    // dark scrim (heavier on the left) so the text stays legible over the marker
+    var sg=c.createLinearGradient(bx,0,bx+bw,0); sg.addColorStop(0,"rgba(4,6,12,0.82)"); sg.addColorStop(0.62,"rgba(4,6,12,0.5)"); sg.addColorStop(1,"rgba(4,6,12,0.2)");
+    c.fillStyle=sg; c.fillRect(bx,y,bw,bh);
+    if(!sel){ c.fillStyle="rgba(2,3,8,0.28)"; c.fillRect(bx,y,bw,bh); }   // dim the unselected ones
     c.restore();
-    c.textAlign="left"; c.textBaseline="middle";
-    c.fillStyle=sel?"#8affea":"#fff"; c.font="bold 18px Helvetica, Arial, sans-serif";
-    c.fillText(m.name, bx+16, y+bh*0.36);
-    c.fillStyle="rgba(255,255,255,0.55)"; c.font="bold 8.5px Helvetica, Arial, sans-serif";
-    c.fillText(m.blurb, bx+16, y+bh*0.72);
-    c.textAlign="right"; c.fillStyle="#ffd700"; c.font="bold 11px Helvetica, Arial, sans-serif";
-    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-14, y+bh*0.5);
-    c.textAlign="center";
+    // neon border
+    c.strokeStyle=sel?"#fff":"rgba(255,255,255,0.35)"; c.lineWidth=sel?2.6:1.2; c.shadowColor=sel?glow:"transparent"; c.shadowBlur=sel?14:0;
+    rrPf(c,bx,y,bw,bh,bh*0.5); c.stroke();
+    c.restore();
+    // labels
+    c.textAlign="left"; c.textBaseline="alphabetic";
+    c.fillStyle="#fff"; c.shadowColor="rgba(0,0,0,0.6)"; c.shadowBlur=3; c.font="bold 20px Helvetica, Arial, sans-serif";
+    c.fillText(m.name, bx+18, y+bh*0.44);
+    c.fillStyle="rgba(255,255,255,0.72)"; c.font="bold 9px Helvetica, Arial, sans-serif";
+    c.fillText(m.blurb, bx+18, y+bh*0.74);
+    c.textAlign="right"; c.fillStyle="#ffd700"; c.font="bold 12px Helvetica, Arial, sans-serif";
+    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-16, y+bh*0.56);
+    c.shadowBlur=0; c.textAlign="center";
   }
-  // settings gear (top-right corner)
-  c.save(); c.translate(W-24, 24); c.rotate(jmT*0.01);
+  // settings gear (top-LEFT corner, away from the fullscreen button on the right)
+  c.save(); c.translate(22, 22); c.rotate(jmT*0.01);
   c.strokeStyle=jmSettings?"#8affea":"rgba(255,255,255,0.7)"; c.fillStyle=c.strokeStyle; c.lineWidth=2;
   c.beginPath(); c.arc(0,0,7,0,6.283); c.stroke();
   for(var g=0;g<8;g++){ var a=g*Math.PI/4; c.beginPath(); c.moveTo(Math.cos(a)*8,Math.sin(a)*8); c.lineTo(Math.cos(a)*11,Math.sin(a)*11); c.stroke(); }
@@ -4181,7 +4194,7 @@ function showPlatformer(game){
     rb.addEventListener("pointerup",function(){ if(arcadeGame==="dream"){ if(dmPan>0)dmPan=0; } else if(!isNavMode() && pfMove>0) pfMove=0; });
     rb.addEventListener("pointerleave",function(){ if(arcadeGame==="dream"){ if(dmPan>0)dmPan=0; } else if(!isNavMode() && pfMove>0) pfMove=0; });
     document.getElementById("pfJumpBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmSelect(); } else if(arcadeGame==="levelselect"){ lsEnter(); } else if(arcadeGame==="binder"){ binderRed(); } else if(arcadeGame==="fusepick"){ fpConfirm(); } else if(arcadeGame==="dream"){ if(dmState==="boss") dmFuse(); else dmCapture(); } else if(pfState==="over"){ resetPlatformer(); } else { pfJumpQ=true; try{haptic(12);}catch(e){} } });
-    document.getElementById("pfActionBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmSettingsToggle(); } else if(arcadeGame==="levelselect"){ lsBinder(); } else if(arcadeGame==="binder"){ binderBlue(); } else if(arcadeGame==="fusepick"){ fpToggle(); } else if(arcadeGame==="dream"){ dmCapture(); } else pfActionQ=true; });
+    document.getElementById("pfActionBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmSelect(); } else if(arcadeGame==="levelselect"){ lsBinder(); } else if(arcadeGame==="binder"){ binderBlue(); } else if(arcadeGame==="fusepick"){ fpToggle(); } else if(arcadeGame==="dream"){ dmCapture(); } else pfActionQ=true; });
     pfCanvas.addEventListener("pointerdown",function(e){ if(arcadeGame==="jumpmenu"){ jmCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="binder"){ bcCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="fusepick"){ fpCanvasTap(e.clientX,e.clientY); } });
   }
   var _bb=document.getElementById("dlBinderBtn"); if(_bb) _bb.style.display = (arcadeGame==="dream")?"block":"none";
@@ -4261,10 +4274,17 @@ function layoutPlatformer(){
     // transparent tap halves over the D-pad
     fsStyleBtn("pfLeftBtn", dpX, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25C0","10px 0 0 10px"); document.getElementById("pfLeftBtn").style.background="transparent"; document.getElementById("pfLeftBtn").style.boxShadow=""; document.getElementById("pfLeftBtn").style.border="";
     fsStyleBtn("pfRightBtn", dpX+dp*0.5, dpY+dp*0.3, dp*0.5, dp*0.4, "green","\u25B6","0 10px 10px 0"); document.getElementById("pfRightBtn").style.background="transparent"; document.getElementById("pfRightBtn").style.boxShadow=""; document.getElementById("pfRightBtn").style.border="";
-    // red + blue round buttons bottom-right
+    // red + blue buttons bottom-right (wider "SELECT" pills in the mode menu so the text fits)
+    var isMenu=(arcadeGame==="jumpmenu");
     var br=Math.min(sw*0.19, ch*0.5), byC=cy0+(ch-br)/2;
-    fsStyleBtn("pfJumpBtn", sw*0.55, byC, br, br, "red", isJump?"JUMP":"FUSE","50%");
-    fsStyleBtn("pfActionBtn", sw*0.78, byC, br, br, "blue", isJump?"JUMP":"VIEW","50%");
+    if(isMenu){
+      var bw2=Math.min(sw*0.28, ch*1.1), bh2=Math.min(br, ch*0.62), by2=cy0+(ch-bh2)/2;
+      fsStyleBtn("pfJumpBtn",   sw*0.44, by2, bw2, bh2, "red",  "SELECT","16px");
+      fsStyleBtn("pfActionBtn", sw*0.74, by2, bw2, bh2, "blue", "SELECT","16px");
+    } else {
+      fsStyleBtn("pfJumpBtn", sw*0.55, byC, br, br, "red", isJump?"JUMP":"FUSE","50%");
+      fsStyleBtn("pfActionBtn", sw*0.78, byC, br, br, "blue", isJump?"JUMP":"VIEW","50%");
+    }
     expand.style.display="block"; expand.style.right="10px"; expand.style.left=""; expand.style.top="8px"; expand.innerHTML="&#10005;";
     pause.style.left="10px"; pause.style.top="8px";
   } else {
@@ -4294,10 +4314,11 @@ function resetPlatformer(){
   pfCamX=pfPlayer.x-W*0.4; pfCamY=pfPlayer.y-H*0.55;
   for(var d=0;d<44;d++) pfDeco.push({x:Math.random(),y:Math.random(),z:0.3+Math.random()*0.7,r:0.6+Math.random()*1.6});
   if(pfMode==="flap"){
-    // pure flappy: no ground, launch straight into the pipe stream
+    // pure flappy: no ground, launch straight into the pipe stream, zoomed out a bit
     pfFlapEndless=true; pfFlapBandY=startY-H*0.34; pfFlapLastX=startX+W*0.6;
     pfFlappyFloorY=pfCamY+H+40; pfFlappyCeilY=pfCamY-40; pfFlappyEndX=1e9;
     pfPlayer.y=pfFlapBandY; pfCamY=pfPlayer.y-H*0.5; pfCamX=pfPlayer.x-W*0.5;
+    pfZoom=0.66; pfZoomT=0.66;
     pfFlappyFreeze=true;                       // "TAP TO JUMP", then it goes forever
   } else {
     // combo/jump/run start on a pad; run begins flat, the others climb
@@ -4444,7 +4465,7 @@ function spawnFlappyRun(chx, gy0){
   pfFlappyFloorY = bandY + H*0.62;      // death floor
   pfFlappyCeilY  = bandY - H*0.66;      // death ceiling
   var n = 5+Math.floor(Math.random()*3);
-  var gap = W*0.52, gapH = H*0.42, pw = Math.max(28, W*0.075);
+  var gap = W*0.52, gapH = H*0.47, pw = Math.max(28, W*0.075);
   var x = chx + W*0.85, cy = bandY, cols=["red","green","blue"], lastX=x;
   for(var i=0;i<n;i++){
     cy += (Math.random()-0.5)*H*0.44;
@@ -4462,7 +4483,7 @@ function spawnFlappyRun(chx, gy0){
 }
 function pfFlapSpawnAhead(){
   var W=pfCanvas.width, H=pfCanvas.height;
-  var gap=W*0.5, gapH=H*0.42, pw=Math.max(28,W*0.075), cols=["red","green","blue"];
+  var gap=W*0.5, gapH=H*0.48, pw=Math.max(28,W*0.075), cols=["red","green","blue"];
   var guard=0;
   while(pfFlapLastX < pfCamX + W*2.2 && guard++<40){
     pfFlapBandY += (Math.random()-0.5)*H*0.42;
@@ -4563,7 +4584,7 @@ function updatePlatformer(){
           pfBounceCombo++; pfBounceFlash=32; try{addCoins(3);}catch(e){} try{haptic([12,18]);}catch(e){} break;
         }
         if(pl.flappy && !pfFlappy && !pfFlappyFreeze){ // flappy launch chair → pop up, freeze, wait for "TAP TO JUMP"
-          p.y=pl.y-p.h*0.5-60; p.vx=0; p.vy=0; pfFlappyFreeze=true; pfFlappyPassed=0; pfZoomT=0.72; try{haptic([20,50,20]);}catch(e){} break; }
+          p.y=pl.y-p.h*0.5-60; p.vx=0; p.vy=0; pfFlappyFreeze=true; pfFlappyPassed=0; pfZoomT=0.66; try{haptic([20,50,20]);}catch(e){} break; }
         if(pl.chair && !pfFlight && !pfFlappy && !pfFlappyFreeze){ p.y=pl.y-p.h*0.5-1; p.vy=-16; p.vx=8; pfFlight=true; pfZoomT=0.62; try{haptic([20,50,20]);}catch(e){} break; }
         p.y=pl.y-p.h*0.5; p.vy=0; p.onGround=true; if(pl.dx) p.x+=pl.dx;
         if(pfFlappy || pfFlappyFreeze){ pfFlappy=false; pfFlappyFreeze=false; pfZoomT=1; pfPipes=[];
@@ -4616,7 +4637,7 @@ function updatePlatformer(){
   if(pfMega && (pfMega.x < pfCamX - W*0.8 || pfMega.y > pfCamY + H*1.9)) pfMega=null;
   // ── FLAPPY: pipe collision, pass rewards, and its own floor/ceiling death ──
   if(pfFlappy){
-    if(pfFlapEndless){ pfFlappyFloorY = pfCamY + H*0.98; pfFlappyCeilY = pfCamY + H*0.02; }  // die at the screen edges
+    if(pfFlapEndless){ var _vh=(H*0.5)/(pfZoom||1); pfFlappyCeilY = pfCamY + H*0.5 - _vh + 18; pfFlappyFloorY = pfCamY + H*0.5 + _vh - 18; }  // die at the (zoomed) screen edges
     for(var pp=0;pp<pfPipes.length;pp++){ var pipe=pfPipes[pp], hg=pipe.gapH*0.5;
       if(p.x+6>pipe.x && p.x-6<pipe.x+pipe.w){
         if(p.y-p.h*0.35 < pipe.gapY-hg || p.y+p.h*0.35 > pipe.gapY+hg){ pfFlappy=false; pfZoomT=1; pfGameOver(); return; }
@@ -4778,7 +4799,7 @@ function pfSlab(x,y,w){
 }
 function pfDrawPipes(){
   if(!pfPipes.length) return;
-  var c=pfctx, H=pfCanvas.height, visT=pfCamY-40, visB=pfCamY+H+40;
+  var c=pfctx, H=pfCanvas.height, _vh=(H*0.5)/(pfZoom||1), visT=pfCamY+H*0.5-_vh-60, visB=pfCamY+H*0.5+_vh+60;
   for(var i=0;i<pfPipes.length;i++){
     var pipe=pfPipes[i], hg=pipe.gapH*0.5, img=markerImages[pipe.color];
     var glow=(pipe.color==="red"?"#ff3040":pipe.color==="green"?"#30ff70":"#3a7bff");
