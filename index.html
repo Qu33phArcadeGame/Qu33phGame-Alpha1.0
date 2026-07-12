@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v248</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v249</div>
 
 <canvas id="game"></canvas>
 
@@ -3471,11 +3471,11 @@ function draw(){
     }
     ctx.restore();
 
-    if(round===3){
+    if(round>=1){   // stars on every medal border (bronze/silver/gold) so you can tune from any round
       let t=Date.now()/1000;
       let numStars=16;
       let _corners = isRZ()
-        ? [[cLeft+2,canvas.height*0.078],[cRight+16,canvas.height*0.09],[cRight+16,canvas.height*0.996],[cLeft+2,canvas.height*0.996]]
+        ? [[cLeft+2,canvas.height*0.078],[cRight+34,canvas.height*0.09],[cRight+34,canvas.height*0.996],[cLeft+2,canvas.height*0.996]]
         : [[cLeft+3,cTop+3],[cRight-3,cTop+3],[cRight-3,cBot-3],[cLeft+3,cBot-3]];
       let _edges=[], perimeter=0;
       for(let _e=0;_e<4;_e++){ let _a=_corners[_e], _bc=_corners[(_e+1)%4]; let _len=Math.hypot(_bc[0]-_a[0],_bc[1]-_a[1]); _edges.push({a:_a,b:_bc,len:_len}); perimeter+=_len; }
@@ -3489,8 +3489,8 @@ function draw(){
         let size=3+pulse*4;
         ctx.save();
         ctx.globalAlpha=0.5+pulse*0.5;
-        ctx.fillStyle="#ffd700";
-        ctx.shadowColor="#ffd700"; ctx.shadowBlur=12;
+        ctx.fillStyle=borderColor;
+        ctx.shadowColor=borderColor; ctx.shadowBlur=12;
         ctx.translate(px,py); ctx.rotate(t*2+i);
         ctx.beginPath();
         for(let p=0;p<5;p++){
@@ -4103,30 +4103,32 @@ function drawJumpMenu(){
   var W=pfCanvas.width, H=pfCanvas.height, c=pfctx, th=pfTheme();
   drawPfBg(W,H);
   c.save(); c.textAlign="center";
+  var S=Math.max(0.62, Math.min(1.7, H/470));   // scale text to this canvas so nothing overlaps
   // title
   c.fillStyle="#fff"; c.shadowColor="#8affea"; c.shadowBlur=12; c.textBaseline="top";
-  c.font="bold 22px Helvetica, Arial, sans-serif"; c.fillText("QU33PH JUMP", W/2, H*0.06);
-  c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold 9px Helvetica, Arial, sans-serif";
-  c.fillText("GREEN \u25b2\u25bc   \u2022   RED = PLAY", W/2, H*0.14);
-  // mode rows — black & white MARKER buttons (like the main menu), orientation alternating down the list
-  var top=H*0.23, rowH=Math.min(72, (H*0.64)/PF_MODES.length);
+  c.font="bold "+Math.round(20*S)+"px Helvetica, Arial, sans-serif"; c.fillText("QU33PH JUMP", W/2, H*0.028);
+  c.shadowBlur=0; c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold "+Math.round(9*S)+"px Helvetica, Arial, sans-serif";
+  c.fillText("GREEN \u25b2\u25bc   \u2022   RED = PLAY", W/2, H*0.115);
+  // mode rows — fat black & white MARKER buttons that fill the whole screen section, orientation alternating
+  var top=H*0.17, rowH=(H*0.97-top)/PF_MODES.length;
   for(var i=0;i<PF_MODES.length;i++){
     var m=PF_MODES[i], y=top+i*rowH, sel=(i===jmSel && !jmSettings), flip=(i%2===1);
-    var bx=W*0.12, bw=W*0.76, bh=rowH-12, capW=Math.min(20,bh*0.55), rr=Math.min(9,bh*0.3);
+    var bx=W*0.12, bw=W*0.76, bh=rowH-Math.min(14,rowH*0.16), capW=Math.min(26,bh*0.5), rr=Math.min(12,bh*0.28);
     c.save();
     c.fillStyle="#000"; c.strokeStyle=sel?"#ffffff":"rgba(255,255,255,0.5)"; c.lineWidth=sel?3:1.6;
     if(sel){ c.shadowColor="rgba(255,255,255,0.65)"; c.shadowBlur=15; }
     var capX=flip?(bx+bw-4):(bx-capW+4);            // cap on the outer side, tucked under the body
-    rrPf(c,capX,y+3,capW,bh-6,rr*0.55); c.fill(); c.stroke();
+    rrPf(c,capX,y+4,capW,bh-8,rr*0.55); c.fill(); c.stroke();
     rrPf(c,bx,y,bw,bh,rr); c.fill(); c.stroke();
     c.restore();
+    var nameF=Math.min(rowH*0.34,26), blurbF=Math.min(rowH*0.16,12), bestF=Math.min(rowH*0.2,15);
     c.textAlign="left"; c.textBaseline="alphabetic";
-    c.fillStyle="#fff"; c.font="bold 19px Helvetica, Arial, sans-serif";
+    c.fillStyle="#fff"; c.font="bold "+Math.round(nameF)+"px Helvetica, Arial, sans-serif";
     c.fillText(m.name, bx+16, y+bh*0.44);
-    c.fillStyle="rgba(255,255,255,0.62)"; c.font="bold 9px Helvetica, Arial, sans-serif";
-    c.fillText(m.blurb, bx+16, y+bh*0.76);
-    c.textAlign="right"; c.fillStyle=sel?"#fff":"rgba(255,255,255,0.7)"; c.font="bold 12px Helvetica, Arial, sans-serif";
-    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-16, y+bh*0.58);
+    c.fillStyle="rgba(255,255,255,0.62)"; c.font="bold "+Math.round(blurbF)+"px Helvetica, Arial, sans-serif";
+    c.fillText(m.blurb, bx+16, y+bh*0.78);
+    c.textAlign="right"; c.fillStyle=sel?"#fff":"rgba(255,255,255,0.7)"; c.font="bold "+Math.round(bestF)+"px Helvetica, Arial, sans-serif";
+    c.fillText("BEST "+(pfBestByMode[m.id]||0), bx+bw-16, y+bh*0.52);
     c.textAlign="center";
   }
   // settings gear (top-LEFT corner, away from the fullscreen button on the right)
@@ -4497,12 +4499,12 @@ function spawnBounceChain(chx, gy0){
     if(Math.random()<0.6) pfCoinsWorld.push({x:sx, y:sy-40, got:false});
     lastX=sx; sx += gap; sy -= rise;
   }
-  // one long forgiving floor under the whole chain — a miss just drops you safely
-  pfPlatforms.push({x:chx, y:firstY+H*0.5, w:(sx-chx)+W*0.5, ground:true});
-  // landing ledge + continue the run afterward
-  pfPlatforms.push({x:lastX-W*0.05, y:sy+rise+20, w:W*0.42, ground:true});
-  pfGenMode="right"; pfGenX=lastX+W*0.4; pfGenY=sy+rise+20; pfLastPlatX=lastX; pfSegLeft=W*(0.9+Math.random()*0.8);
-  pfNoMarkerUntilX=pfGenX+W*0.7;   // no markers right where you land out of the chain
+  // ONE continuous forgiving floor under the whole chain that also becomes the run onward —
+  // whether you bounce across the chairs or drop under them, you always land somewhere and keep going
+  var floorY = firstY + H*0.34;
+  pfPlatforms.push({x:chx-W*0.18, y:floorY, w:(sx-chx)+W*0.95, ground:true});
+  pfGenMode="right"; pfGenX=chx+(sx-chx)+W*0.35; pfGenY=floorY; pfLastPlatX=pfGenX-W*0.2; pfSegLeft=W*(0.9+Math.random()*0.8);
+  pfNoMarkerUntilX=pfGenX+W*0.5;   // no markers right where you come out of the chain
 }
 // ── Flappy-Bird section: run off the ledge onto a launch chair → freeze → tap to flap through marker "pipes" → fall to a landing ──
 function spawnFlappyRun(chx, gy0){
@@ -6183,7 +6185,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
     if(b.x>1.14-PB_R){ b.x=1.14-PB_R; b.vx=-b.vx*PB_DAMP; }        // chute outer wall
     if(b.y<0.42){ b.inChute=false; if(b.vx>-0.02)b.vx=-0.026; }    // exit the chute into the field
   } else {
-    var _t=Math.max(0,b.y)/1.18, _f=Math.min(1,_t*_t), _lw=0.02+_f*0.28, _rw=0.96-_f*0.34;   // walls curve smoothly inward (no kink)
+    var _t=Math.max(0,b.y)/1.18, _f=Math.min(1,_t*_t), _lw=0.0+_f*0.20, _rw=0.96-_f*0.34;   // walls curve smoothly inward (no kink)
     if(b.x<_lw+PB_R){ b.x=_lw+PB_R; b.vx=-b.vx*PB_DAMP; }
     if(b.x>_rw-PB_R){ b.x=_rw-PB_R; b.vx=-b.vx*PB_DAMP; }
   }
@@ -6220,7 +6222,7 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   if(pbState==="ready"){ var rp=pbProject(0.86,1.02); c.fillStyle="rgba(255,255,255,0.9)";c.font="bold "+(pbImgRW*0.022)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("LAUNCH \u2192",rp[0],rp[1]); }
   if(typeof PB_SHOW_BOUNDS!=="undefined" && PB_SHOW_BOUNDS){
     // --- TWEAK OUTLINE: traces the actual ball-collision walls (left/right curve inward) ---
-    var _wy=function(y){ var _t=Math.max(0,y)/1.18,_f=Math.min(1,_t*_t); return [0.02+_f*0.28, 0.96-_f*0.34]; };
+    var _wy=function(y){ var _t=Math.max(0,y)/1.18,_f=Math.min(1,_t*_t); return [0.0+_f*0.20, 0.96-_f*0.34]; };
     c.save(); c.strokeStyle="rgba(255,0,210,0.95)"; c.lineWidth=2.4; c.setLineDash([9,6]); c.shadowColor="rgba(255,0,210,0.6)"; c.shadowBlur=6;
     c.beginPath();
     for(var s=0;s<=40;s++){ var yy=0.02+(1.18-0.02)*s/40, P=pbProject(_wy(yy)[0], yy); s===0?c.moveTo(P[0],P[1]):c.lineTo(P[0],P[1]); }   // left wall (top→bottom)
