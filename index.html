@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v258</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v259</div>
 
 <canvas id="game"></canvas>
 
@@ -6145,7 +6145,7 @@ var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG 
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
 var LW=1.0, LH=1.5, PB_G=0.0007, PB_PERSP=0.5;
-var PB_SHOW_BOUNDS=true;   // TWEAK: draws the play-field wall outline; set false to hide
+var PB_SHOW_BOUNDS=false;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
   pbCanvas.style.left="0px";pbCanvas.style.top="0px";pbCanvas.style.width=sw+"px";pbCanvas.style.height=sh+"px";
@@ -6181,7 +6181,7 @@ function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
   LB.addEventListener("touchstart",function(e){e.preventDefault();e.stopPropagation();pbDoLaunch();},{passive:false}); LB.addEventListener("click",function(e){e.stopPropagation();pbDoLaunch();});
 }
 function pbLoop(){ if(!pbActive)return; pbT++; pbUpdate(); pbDraw(); pbRAF=requestAnimationFrame(pbLoop); }
-function pbFlipperCollide(px,py,ang,len,b,active){ var tx=px+Math.cos(ang)*len,ty=py+Math.sin(ang)*len,dx=tx-px,dy=ty-py,L2=dx*dx+dy*dy||1; var tt=Math.max(0,Math.min(1,((b.x-px)*dx+(b.y-py)*dy)/L2)); var cx=px+dx*tt,cy=py+dy*tt,ox=b.x-cx,oy=b.y-cy,d=Math.hypot(ox,oy)||1; var thick=PB_R+0.02; if(d<thick){ var nx=ox/d,ny=oy/d; b.x=cx+nx*thick;b.y=cy+ny*thick; var dot=b.vx*nx+b.vy*ny; if(dot<0){ b.vx-=1.7*dot*nx;b.vy-=1.7*dot*ny; } b.vy-=active*0.05; try{if(active>0.4)haptic(6);}catch(e){} } }
+function pbFlipperCollide(px,py,ang,len,b,active){ var tx=px+Math.cos(ang)*len,ty=py+Math.sin(ang)*len,dx=tx-px,dy=ty-py,L2=dx*dx+dy*dy||1; var tt=Math.max(0,Math.min(1,((b.x-px)*dx+(b.y-py)*dy)/L2)); var cx=px+dx*tt,cy=py+dy*tt,ox=b.x-cx,oy=b.y-cy,d=Math.hypot(ox,oy)||1; var thick=PB_R+0.02; if(d<thick){ var nx=ox/d,ny=oy/d; b.x=cx+nx*thick;b.y=cy+ny*thick; var dot=b.vx*nx+b.vy*ny; if(dot<0){ var _mult = active>0.35 ? 1.8 : 0.5; b.vx-=_mult*dot*nx;b.vy-=_mult*dot*ny; } b.vy-=active*0.05; try{if(active>0.4)haptic(6);}catch(e){} } }
 function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   pbFL+=(pbFLtarget-pbFL)*0.5; pbFR+=(pbFRtarget-pbFR)*0.5;
   if(pbMsgT>0&&pbMsgT<900)pbMsgT--; if(pbMega.flash>0)pbMega.flash--;
