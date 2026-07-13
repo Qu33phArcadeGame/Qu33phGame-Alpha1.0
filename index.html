@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v260</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v261</div>
 
 <canvas id="game"></canvas>
 
@@ -6200,7 +6200,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
     var _lw, _rw;
     if(b.y < 0.6){ _lw=0.04; _rw=0.94; }
     else { var _tf=Math.min(1,Math.max(0,(b.y-0.6)/0.58)), _e=_tf*_tf*(3-2*_tf);   // smoothstep ease into the paddle zone
-           _lw=0.04+_e*0.19; _rw=0.94-_e*0.25; }                                     // -> [0.23, 0.69], INSIDE the flipper pivots (0.22/0.70) so the ball can only drain through the center
+           _lw=0.04+_e*0.15; _rw=0.94-_e*0.23; }                                     // -> [0.19, 0.71] (the smooth one)
     if(b.x<_lw+PB_R){ b.x=_lw+PB_R; if(b.vx<0) b.vx=-b.vx*PB_DAMP; }   // only bounce if moving INTO the wall (no sideways jitter)
     if(b.x>_rw-PB_R){ b.x=_rw-PB_R; if(b.vx>0) b.vx=-b.vx*PB_DAMP; }
   }
@@ -6248,7 +6248,7 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   if(pbState==="ready"){ var rp=pbProject(0.86,1.02); c.fillStyle="rgba(255,255,255,0.9)";c.font="bold "+(pbImgRW*0.022)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("LAUNCH \u2192",rp[0],rp[1]); }
   if(typeof PB_SHOW_BOUNDS!=="undefined" && PB_SHOW_BOUNDS){
     // --- TWEAK OUTLINE: traces the actual ball-collision walls (left/right curve inward) ---
-    var _wy=function(y){ if(y<0.6) return [0.04,0.94]; var tf=Math.min(1,Math.max(0,(y-0.6)/0.58)),e=tf*tf*(3-2*tf); return [0.04+e*0.19, 0.94-e*0.25]; };
+    var _wy=function(y){ if(y<0.6) return [0.04,0.94]; var tf=Math.min(1,Math.max(0,(y-0.6)/0.58)),e=tf*tf*(3-2*tf); return [0.04+e*0.15, 0.94-e*0.23]; };
     c.save(); c.strokeStyle="rgba(255,0,210,0.95)"; c.lineWidth=2.4; c.setLineDash([9,6]); c.shadowColor="rgba(255,0,210,0.6)"; c.shadowBlur=6;
     c.beginPath();
     for(var s=0;s<=40;s++){ var yy=0.02+(1.18-0.02)*s/40, P=pbProject(_wy(yy)[0], yy); s===0?c.moveTo(P[0],P[1]):c.lineTo(P[0],P[1]); }   // left wall (top→bottom)
