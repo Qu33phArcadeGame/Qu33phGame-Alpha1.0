@@ -456,14 +456,14 @@
     }
     /* every BACK button: a compact black & white marker facing left, pinned top-left */
     .back-tl{ position:fixed !important; top:9px !important; left:22px !important; right:auto !important; bottom:auto !important; z-index:3000 !important; margin:0 !important; transform:none !important; width:auto !important; min-width:0 !important;
-      display:inline-flex !important; align-items:center !important; justify-content:center !important;
+      display:inline-flex; align-items:center !important; justify-content:center !important;
       background:#000 !important; color:#fff !important; border:2.5px solid #fff !important; border-radius:4px 9px 9px 4px !important;
       font-family:Helvetica,Arial,sans-serif !important; font-size:9.5px !important; font-weight:bold !important; letter-spacing:1px !important; padding:5px 10px !important; min-height:0 !important; }
     .back-tl::before{ content:"" !important; display:block !important; position:absolute !important; left:-15px !important; right:auto !important; top:2px !important; bottom:2px !important; width:15px !important; background:#000 !important; border:2.5px solid #fff !important; border-radius:8px 2px 2px 8px !important; }
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v263</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v264</div>
 
 <canvas id="game"></canvas>
 
@@ -607,7 +607,7 @@
     <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#fff;margin-top:8px;text-shadow:0 1px 4px #000;">TAP TO CONTINUE</div>
   </div>
   <button id="arcadePauseBtn" onclick="openArcadePause()" style="display:none;position:absolute;top:8px;left:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;">II</button>
-  <button id="pfMapBackBtn" onclick="pfMapBack()" style="display:none;position:absolute;top:8px;left:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(138,255,234,0.55);color:#8affea;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1px;padding:6px 12px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;">&#8592; EXIT</button>
+  <button id="pfMapBackBtn" onclick="pfMapBack()" class="back-tl" style="display:none;">&#8592; BACK</button>
   <div id="arcadePause" style="display:none;position:absolute;inset:0;z-index:8;background:rgba(4,4,10,0.9);flex-direction:column;align-items:center;justify-content:center;">
     <div style="font-family:Helvetica,Arial,sans-serif;font-size:24px;letter-spacing:5px;color:#fff;font-weight:bold;margin-bottom:16px;">PAUSED</div>
     <button onclick="resumeArcade()" class="mk-btn">RESUME GAME</button>
@@ -622,7 +622,6 @@
   <div id="pfActionBtn" style="position:absolute;border-radius:50%;z-index:4;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;touch-action:none;"></div>
   <button id="pfExpandBtn" onclick="toggleArcadeFullscreen()" style="display:none;position:absolute;z-index:7;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:17px;padding:5px 9px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;">&#9974;</button>
   <div id="pfDpad" style="display:none;position:absolute;z-index:3;pointer-events:none;"></div>
-  <button onclick="backFromPlatformer()" class="mk-btn back-tl" style="display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:5;">← BACK</button>
 </div>
 
 <!-- TITLE SCREEN -->
@@ -678,14 +677,14 @@
 
 <!-- ACHIEVEMENTS SCREEN -->
 <div id="achScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:12px;box-sizing:border-box;">
-  <div style="padding:14px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">ACHIEVEMENTS</div>
+  <div style="padding:46px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">ACHIEVEMENTS</div>
   <div id="achGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:min(400px,92vw);margin-top:8px;"></div>
   <button onclick="showTitle()" class="mk-btn back-tl">← BACK</button>
 </div>
 
 <!-- CAREER RECORD SCREEN -->
 <div id="careerScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:12px;box-sizing:border-box;">
-  <div style="padding:14px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">CAREER RECORD</div>
+  <div style="padding:46px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">CAREER RECORD</div>
   <div id="careerBody" style="width:min(400px,92vw);margin-top:14px;"></div>
   <button onclick="showTitle()" class="mk-btn back-tl">← BACK</button>
 </div>
@@ -742,7 +741,7 @@
   <!-- Top bar -->
   <div style="width:100%; display:flex; align-items:flex-start; gap:10px; padding:12px 14px 0; box-sizing:border-box; flex-shrink:0; position:relative; z-index:10;">
     <button onclick="showTitle()" class="mk-btn back-tl" style="margin:2px 0 0 22px; padding:8px 14px; font-size:12px; min-height:0;">← BACK</button>
-    <div id="goldSlotToggle" onclick="setSlotMode(slotMode==='gold'?'normal':'gold')" style="display:none; align-items:center; gap:7px; margin-top:6px; cursor:pointer; -webkit-tap-highlight-color:transparent;">
+    <div id="goldSlotToggle" onclick="setSlotMode(slotMode==='gold'?'normal':'gold')" style="display:none; align-items:center; gap:7px; margin-top:6px; margin-left:96px; cursor:pointer; -webkit-tap-highlight-color:transparent;">
       <span style="font-family:Helvetica,Arial,sans-serif; font-size:10px; color:#ffd700; letter-spacing:1px; font-weight:bold;">GOLD</span>
       <div id="goldSlotSwitch" style="width:42px; height:24px; border-radius:12px; background:#333; position:relative; transition:background .15s;">
         <div id="goldSlotKnob" style="width:18px; height:18px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px; transition:left .15s;"></div>
@@ -4196,7 +4195,7 @@ function showPlatformer(game){
   }
   var _bb=document.getElementById("dlBinderBtn"); if(_bb) _bb.style.display = (arcadeGame==="dream")?"block":"none";
   var _pb=document.getElementById("arcadePauseBtn"); if(_pb) _pb.style.display = nav?"none":"block";
-  var _mb=document.getElementById("pfMapBackBtn"); if(_mb) _mb.style.display = nav?"block":"none";
+  var _mb=document.getElementById("pfMapBackBtn"); if(_mb) _mb.style.display = nav?"inline-flex":"none";
   arcadePaused=false; var _pv=document.getElementById("arcadePause"); if(_pv) _pv.style.display="none";
   if(arcadeGame==="dream") resetDeep(); else if(!nav) resetPlatformer();
   pfActive=true;
@@ -5566,12 +5565,12 @@ function returnToCabBinder(){
   var nt="fus"; if(dmFusions.length){ var ln=fusComp(dmFusions[dmFusions.length-1]).length; nt = ln>=4?"deep":ln===3?"tri":"fus"; }
   bcTab=nt; bcView="grid"; bcSel=0; bcScroll=0; bcGridScroll=0; dmPaused=false;
   showPlatformer("binder");
-  var mb=document.getElementById("pfMapBackBtn"); if(mb) mb.style.display="block";
+  var mb=document.getElementById("pfMapBackBtn"); if(mb) mb.style.display="inline-flex";
 }
 function openBinderCab(){
   arcadeGame="binder"; bcTab="dex"; bcView="grid"; bcSel=0; bcScroll=0; bcGridScroll=0;
   var _bg=document.getElementById("platformerBg"); if(_bg) _bg.src="dreamlingoverlay.png";
-  var mb=document.getElementById("pfMapBackBtn"); if(mb) mb.style.display="block";
+  var mb=document.getElementById("pfMapBackBtn"); if(mb) mb.style.display="inline-flex";
 }
 // canvas taps: tap a tab to switch, tap a card to open it full-screen
 function bcCanvasTap(clientX,clientY){
@@ -5630,7 +5629,7 @@ function openFusePickCab(free){
   var _bg=document.getElementById("platformerBg"); if(_bg) _bg.src="dreamlingoverlay.png";
   document.getElementById("platformerScreen").style.display="block";
   pfCanvas=document.getElementById("platformerCanvas"); layoutPlatformer();
-  var mb=document.getElementById("pfMapBackBtn"); if(mb) mb.style.display="block";
+  var mb=document.getElementById("pfMapBackBtn"); if(mb) mb.style.display="inline-flex";
   var pb=document.getElementById("arcadePauseBtn"); if(pb) pb.style.display="none";
   var bb=document.getElementById("dlBinderBtn"); if(bb) bb.style.display="none";
   pfActive=true; if(!pfRAF) pfRAF=requestAnimationFrame(pfLoop);
@@ -6151,7 +6150,7 @@ var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG 
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
 var LW=1.0, LH=1.5, PB_G=0.0006, PB_PERSP=0.5;
-var PB_SHOW_BOUNDS=true;   // TWEAK: draws the play-field wall outline; set false to hide
+var PB_SHOW_BOUNDS=false;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
   pbCanvas.style.left="0px";pbCanvas.style.top="0px";pbCanvas.style.width=sw+"px";pbCanvas.style.height=sh+"px";
