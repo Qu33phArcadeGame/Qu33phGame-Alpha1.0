@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Qu33ph Mini Golf</title>
+<style>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; background:#000; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#ffd54a; touch-action:none; }
+  #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #cab{ position:relative; height:100vh; max-height:100vh; aspect-ratio:941/1672; }
+  #cabImg{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; z-index:2; user-select:none; }
+  /* screen cutout: x 0.177-0.817, y 0.254-0.788 of the cabinet image */
+  #screen{ position:absolute; left:17.7%; top:25.4%; width:64.0%; height:53.4%; overflow:hidden; background:#0c2417; z-index:1; }
+  #game{ width:100%; height:100%; display:block; }
+  #hud{ position:absolute; left:17.7%; top:25.4%; width:64.0%; z-index:3; pointer-events:none; display:flex; justify-content:space-between; padding:6px 8px; font-size:11px; font-weight:bold; letter-spacing:1px; color:#eafff0; text-shadow:0 1px 3px #000; }
+  #msg{ position:absolute; left:17.7%; top:46%; width:64.0%; z-index:3; pointer-events:none; text-align:center; font-size:22px; font-weight:bold; letter-spacing:2px; color:#fff; text-shadow:0 2px 10px #000; opacity:0; transition:opacity .2s; }
+  #msg.show{ opacity:1; }
+  .pill{ position:fixed; z-index:10; background:linear-gradient(#2a2a2a,#101010); color:#ffd54a; border:1.5px solid #ffcf3a; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:bold; letter-spacing:1px; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.5); }
+  .pill:active{ transform:translateY(1px); }
+  #fsBtn{ top:10px; left:12px; }
+  #resetBtn{ top:10px; right:12px; }
+  #hint{ position:fixed; bottom:8px; left:0; right:0; text-align:center; font-size:11px; color:#9a8; letter-spacing:1px; z-index:10; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="cab">
+    <div id="screen"><canvas id="game"></canvas></div>
+    <img id="cabImg" src="golfoverlay.png" alt="">
+  </div>
+</div>
+<div id="hud"><span id="hThrows">THROWS 0</span><span id="hGoal">REACH THE MEGA</span></div>
+<div id="msg"></div>
+<button class="pill" id="fsBtn">&#9974; FULLSCREEN</button>
+<button class="pill" id="resetBtn">&#8634; RESET</button>
+<div id="hint">flick the blue marker to roll it &middot; reach the red + green QU33PH</div>
+
+<script>
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+const cab=document.getElementById('cab');
+
+const MAP=new Image(); MAP.src='golf.png';
+const IMG={}; ['red','green','blue'].forEach(k=>{ const im=new Image(); im.src=k+'.png'; IMG[k]=im; });
+function ready(im){ return im && im.complete && im.naturalWidth>0; }
+
+const MW=2400, MH=4200;
+const TEE={x:1031,y:4031};
+const MEGA={x:1880,y:3586};
+const BRIDGE={x0:1850,y0:3555,x1:1950,y1:3712};
+const FIELD_GREEN='#0c2417';
+
+const MS=0.25, mw=Math.round(MW*MS), mh=Math.round(MH*MS);
+let walk=null;
+function buildMask(){
+  const o=document.createElement('canvas'); o.width=mw; o.height=mh;
+  const octx=o.getContext('2d'); octx.drawImage(MAP,0,0,mw,mh);
+  const d=octx.getImageData(0,0,mw,mh).data;
+  walk=new Uint8Array(mw*mh);
+  for(let i=0;i<mw*mh;i++){
+    const r=d[i*4],g=d[i*4+1],b=d[i*4+2];
+    walk[i]=(g>r+8 && g>b+3 && g<95 && r<75 && g>22)?1:0;
+  }
+  const bx0=(BRIDGE.x0*MS)|0, bx1=(BRIDGE.x1*MS)|0, by0=(BRIDGE.y0*MS)|0, by1=(BRIDGE.y1*MS)|0;
+  for(let y=by0;y<=by1;y++) for(let x=bx0;x<=bx1;x++) if(x>=0&&x<mw&&y>=0&&y<mh) walk[y*mw+x]=1;
+}
+function green(mx,my){
+  const ix=(mx*MS)|0, iy=(my*MS)|0;
+  if(ix<0||iy<0||ix>=mw||iy>=mh) return false;
+  return walk[iy*mw+ix]===1;
+}
+
+let CW=600, CH=891, ZOOM=0.6, camX=0, camY=0;
+function sizeCanvas(){
+  const r=document.getElementById('screen').getBoundingClientRect();
+  const dpr=Math.min(2, window.devicePixelRatio||1);
+  CW=Math.max(1,Math.round(r.width*dpr)); CH=Math.max(1,Math.round(r.height*dpr));
+  cv.width=CW; cv.height=CH;
+  ZOOM=CW/1000;
+}
+window.addEventListener('resize',sizeCanvas);
+
+let ball={x:TEE.x,y:TEE.y,vx:0,vy:0,roll:0}, moving=false, sunk=false, throws=0;
+const BR=34;
+function resetBall(){ ball={x:TEE.x,y:TEE.y,vx:0,vy:0,roll:0}; moving=false; sunk=false; throws=0; setHud(); flash(''); }
+function setHud(){ document.getElementById('hThrows').textContent='THROWS '+throws; }
+function flash(t){ const m=document.getElementById('msg'); m.textContent=t; m.classList.toggle('show',!!t); }
+
+let flick=[];
+function toScreen(e){ const r=cv.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return {x:(t.clientX-r.left)/r.width*CW, y:(t.clientY-r.top)/r.height*CH}; }
+cv.addEventListener('pointerdown',e=>{ if(moving||sunk)return; const p=toScreen(e); flick=[{x:p.x,y:p.y,t:performance.now()}]; });
+cv.addEventListener('pointermove',e=>{ if(moving||sunk||!flick.length)return; const p=toScreen(e); flick.push({x:p.x,y:p.y,t:performance.now()}); if(flick.length>7)flick.shift(); });
+cv.addEventListener('pointerup',e=>{
+  if(moving||sunk||flick.length<2){ flick=[]; return; }
+  const now=performance.now();
+  let rec=flick.filter(p=>now-p.t<120); if(rec.length<2) rec=flick.slice(-2);
+  const a=rec[0], b=rec[rec.length-1], dt=Math.max(8,b.t-a.t);
+  let vx=(b.x-a.x)/dt, vy=(b.y-a.y)/dt, sp=Math.hypot(vx,vy);
+  flick=[];
+  if(sp<0.25) return;
+  let launch=Math.min(sp*16, 20)/ZOOM;
+  ball.vx=vx/sp*launch; ball.vy=vy/sp*launch; moving=true;
+  throws++; setHud();
+});
+
+function step(){
+  if(!moving) return;
+  let sp=Math.hypot(ball.vx,ball.vy);
+  const steps=Math.max(1, Math.ceil(sp/6));
+  for(let s=0;s<steps;s++){
+    let nx=ball.x+ball.vx/steps;
+    if(nx<BR||nx>MW-BR||!green(nx,ball.y)){ ball.vx=-ball.vx*0.62; }
+    else ball.x=nx;
+    let ny=ball.y+ball.vy/steps;
+    if(ny<BR||ny>MH-BR||!green(ball.x,ny)){ ball.vy=-ball.vy*0.62; }
+    else ball.y=ny;
+  }
+  ball.roll += Math.hypot(ball.vx,ball.vy)*0.05;
+  ball.vx*=0.985; ball.vy*=0.985;
+  if(Math.hypot(ball.vx,ball.vy)<0.15){ ball.vx=ball.vy=0; moving=false; }
+}
+function checkMega(){
+  if(!sunk && Math.hypot(ball.x-MEGA.x, ball.y-MEGA.y) < 70){
+    sunk=true; moving=false; ball.vx=ball.vy=0; flash('QU33PH! \u26f3');
+  }
+}
+
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function draw(){
+  const viewW=CW/ZOOM, viewH=CH/ZOOM;
+  camX=Math.max(0, Math.min(MW-viewW, ball.x-viewW/2));
+  camY=Math.max(0, Math.min(MH-viewH, ball.y-viewH/2));
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle=FIELD_GREEN; ctx.fillRect(0,0,CW,CH);
+  if(ready(MAP)) ctx.drawImage(MAP, camX,camY,viewW,viewH, 0,0,CW,CH);
+  const w2s=(wx,wy)=>({x:(wx-camX)*ZOOM, y:(wy-camY)*ZOOM});
+  ctx.fillStyle=FIELD_GREEN;
+  const b0=w2s(BRIDGE.x0,BRIDGE.y0), b1=w2s(BRIDGE.x1,BRIDGE.y1);
+  ctx.fillRect(b0.x,b0.y,b1.x-b0.x,b1.y-b0.y);
+
+  const m=w2s(MEGA.x,MEGA.y); const mk=90*ZOOM;
+  ctx.save(); ctx.translate(m.x,m.y); ctx.shadowColor='#fff'; ctx.shadowBlur=(sunk?26:12);
+  if(ready(IMG.red)&&ready(IMG.green)){
+    ctx.drawImage(IMG.green, -mk*1.05, -mk, mk, mk*2);
+    ctx.drawImage(IMG.red,   -mk*0.02, -mk, mk, mk*2);
+  } else {
+    ctx.fillStyle='#2fd66e'; rr(-mk*0.95,-9,mk*0.9,18,6); ctx.fill();
+    ctx.fillStyle='#ff3b4a'; rr(0,-9,mk*0.9,18,6); ctx.fill();
+  }
+  ctx.restore();
+  ctx.save(); ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.setLineDash([5,5]); ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(m.x,m.y,70*ZOOM,0,7); ctx.stroke(); ctx.restore();
+
+  const p=w2s(ball.x,ball.y);
+  ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ball.roll);
+  ctx.shadowColor='#3a7bff'; ctx.shadowBlur=(moving?16:9);
+  if(ready(IMG.blue)){ const s=BR*2.4*ZOOM; ctx.drawImage(IMG.blue, -s*0.32, -s/2, s*0.64, s); }
+  else { const g=ctx.createRadialGradient(-4,-4,2,0,0,BR*ZOOM); g.addColorStop(0,'#bcd4ff'); g.addColorStop(.5,'#3a7bff'); g.addColorStop(1,'#1741a8'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,BR*ZOOM,0,7); ctx.fill(); }
+  ctx.restore();
+}
+
+function loop(){ step(); checkMega(); draw(); requestAnimationFrame(loop); }
+
+document.getElementById('resetBtn').onclick=resetBall;
+document.getElementById('fsBtn').onclick=()=>{
+  if(!document.fullscreenElement){ (cab.requestFullscreen?cab.requestFullscreen():cab.webkitRequestFullscreen&&cab.webkitRequestFullscreen()); }
+  else { document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen&&document.webkitExitFullscreen(); }
+};
+document.addEventListener('fullscreenchange',()=>{ setTimeout(sizeCanvas,60); });
+
+function boot(){ sizeCanvas(); buildMask(); setHud(); loop(); }
+if(MAP.complete && MAP.naturalWidth) boot(); else MAP.onload=boot;
+</script>
+</body>
+</html>
