@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v253</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v254</div>
 
 <canvas id="game"></canvas>
 
@@ -510,11 +510,6 @@
   <div class="cab-row">
     <div class="cab-card" id="cabJump" onclick="launchPfGame()"><img src="qu33phjump.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH JUMP</div></div>
     <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
-    <div class="cab-card" onclick="arcadeComingSoon()"><div class="cab-q">?</div><div class="cab-label" style="color:#666;">COMING SOON</div></div>
-  </div>
-  <div class="cab-row">
-    <div class="cab-card" onclick="arcadeComingSoon()"><div class="cab-q">?</div><div class="cab-label" style="color:#666;">COMING SOON</div></div>
-    <div class="cab-card" onclick="arcadeComingSoon()"><div class="cab-q">?</div><div class="cab-label" style="color:#666;">COMING SOON</div></div>
     <div class="cab-card" onclick="arcadeComingSoon()"><div class="cab-q">?</div><div class="cab-label" style="color:#666;">COMING SOON</div></div>
   </div>
   <button class="mk-btn" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
@@ -6207,7 +6202,9 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   }
   if(b.y<tw+PB_R){b.y=tw+PB_R;b.vy=-b.vy*PB_DAMP;}
   if(pbChairCD>0)pbChairCD--;
-  if(b.toMega){ b.vx += ((pbMega.x+pbMega.w/2)-b.x)*0.006; b.upT=0; }   // curve up the rail to the mega
+  if(b.toMega){ b.vx += ((pbMega.x+pbMega.w/2)-b.x)*0.006; b.upT=0; b.megaT=(b.megaT||0)+1;
+    if(b.megaT>70 || (b.y>0.42 && b.vy>0.006)){ b.toMega=false; b.megaT=0; }   // missed the mega → drop the rail, roll down normally (no logo loop)
+  }
   if(b.y<0.96 && !b.toMega){ b.upT=(b.upT||0)+1; } else { b.upT=0; }
   var pbForceDown = b.upT>135;
   if(pbForceDown){ b.vy+=0.0035; b.vx += (0.5-b.x)*0.0018; b.vx*=0.97; }   // anti-trap: never stuck above the paddles → funneled down the center to them
@@ -6218,8 +6215,8 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   b.chkT=(b.chkT||0)+1;
   if(b.chkT>=16){ if(!b.toMega && !b.inChute && b.y>0.24 && b.y<0.94 && (b.y-(b.chkY==null?b.y:b.chkY))<0.02){ b.vx*=0.4; if(b.vy<0.028)b.vy=0.028; b.vx += (0.5-b.x)*0.002; } b.chkY=b.y; b.chkT=0; }
   for(var i=0;i<pbBumpers.length;i++){ if(pbForceDown||b.toMega)break; var bp=pbBumpers[i],dx=b.x-bp.x,dy=b.y-bp.y,d=Math.hypot(dx,dy)||1; if(d<bp.r+PB_R){var nx=dx/d,ny=dy/d;b.x=bp.x+nx*(bp.r+PB_R);b.y=bp.y+ny*(bp.r+PB_R);var dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.vx=b.vx*0.5+nx*0.006;b.vy=b.vy*0.5+ny*0.006;bp.hit=8;pbScore+=(bp.sling?25:100);try{haptic(6);}catch(e){}}}
-  if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=140; b.y=pbChair.y-PB_R; b.vx=0.028; b.vy=-0.09; b.toMega=true; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
-  if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.vy=0.03; b.vx=(0.5-b.x)*0.04; try{haptic([25,15,35]);}catch(e){} }
+  if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=140; b.y=pbChair.y-PB_R; b.vx=0.028; b.vy=-0.09; b.toMega=true; b.megaT=0; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
+  if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.megaT=0; b.vy=0.03; b.vx=(0.5-b.x)*0.04; try{haptic([25,15,35]);}catch(e){} }
   pbFlipperCollide(0.22,1.02, 0.5-pbFL*1.0, 0.20, b, pbFL);
   pbFlipperCollide(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, b, pbFR);
   if(b.y>1.18){ pbBalls--; if(pbBalls<=0){pbState="over";pbMsg="GAME OVER";pbMsgT=999; if(pbScore>pbHigh){pbHigh=pbScore; try{localStorage.setItem("qu33phPinballHigh",pbHigh);}catch(e){}} } else pbNewBall(); }
