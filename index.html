@@ -454,13 +454,16 @@
       font-family:Helvetica, Arial, sans-serif; font-size:12px;
       letter-spacing:2px; border-radius:4px; cursor:pointer;
     }
-    /* every BACK button sits at the top-left, consistently */
-    .back-tl{ position:fixed !important; top:10px !important; left:12px !important; right:auto !important; bottom:auto !important; z-index:3000 !important; margin:0 !important; transform:none !important; width:auto !important; min-width:0 !important; }
-    .back-tl::before{ display:none !important; }
+    /* every BACK button: a compact black & white marker facing left, pinned top-left */
+    .back-tl{ position:fixed !important; top:9px !important; left:22px !important; right:auto !important; bottom:auto !important; z-index:3000 !important; margin:0 !important; transform:none !important; width:auto !important; min-width:0 !important;
+      display:inline-flex !important; align-items:center !important; justify-content:center !important;
+      background:#000 !important; color:#fff !important; border:2.5px solid #fff !important; border-radius:4px 9px 9px 4px !important;
+      font-family:Helvetica,Arial,sans-serif !important; font-size:9.5px !important; font-weight:bold !important; letter-spacing:1px !important; padding:5px 10px !important; min-height:0 !important; }
+    .back-tl::before{ content:"" !important; display:block !important; position:absolute !important; left:-15px !important; right:auto !important; top:2px !important; bottom:2px !important; width:15px !important; background:#000 !important; border:2.5px solid #fff !important; border-radius:8px 2px 2px 8px !important; }
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v262</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v263</div>
 
 <canvas id="game"></canvas>
 
