@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v250</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v251</div>
 
 <canvas id="game"></canvas>
 
@@ -3701,13 +3701,18 @@ function drawHudReadable(){
         ctx.strokeRect(cL+2,cT+2,cR-cL-4,cB-cT-4);
       }
       ctx.restore();
-      if(round===3){
-        let tt=Date.now()/1000, ns=16, pL=cL+3,pR=cR-3,pT=cT+3,pB=cB-3, per=2*((pR-pL)+(pB-pT));
+      if(round>=1){   // stars on every medal border, traced exactly on the border line
+        let tt=Date.now()/1000, ns=16;
+        let _cn = isRZ()
+          ? [[cL+2,canvas.height*0.078],[cR+16,canvas.height*0.09],[cR+16,canvas.height*0.996],[cL+2,canvas.height*0.996]]
+          : [[cL+3,cT+3],[cR-3,cT+3],[cR-3,cB-3],[cL+3,cB-3]];
+        let _eg=[], per=0;
+        for(let e=0;e<4;e++){ let a=_cn[e], b2=_cn[(e+1)%4]; let ln=Math.hypot(b2[0]-a[0],b2[1]-a[1]); _eg.push({a:a,b:b2,len:ln}); per+=ln; }
         for(let i=0;i<ns;i++){
-          let d=((i/ns)*per+tt*120)%per, px,py, tp=pR-pL, rt=pB-pT, bt=pR-pL;
-          if(d<tp){px=pL+d;py=pT;} else if(d<tp+rt){px=pR;py=pT+(d-tp);} else if(d<tp+rt+bt){px=pR-(d-tp-rt);py=pB;} else {px=pL;py=pB-(d-tp-rt-bt);}
-          let pu=0.5+0.5*Math.sin(tt*4+i*1.1), sz=3+pu*4;
-          ctx.save(); ctx.globalAlpha=0.5+pu*0.5; ctx.fillStyle="#ffd700"; ctx.shadowColor="#ffd700"; ctx.shadowBlur=12;
+          let d=((i/ns)*per+tt*120)%per, px=0,py=0, dd=d;
+          for(let e=0;e<4;e++){ if(dd<_eg[e].len){ let f=dd/_eg[e].len; px=_eg[e].a[0]+(_eg[e].b[0]-_eg[e].a[0])*f; py=_eg[e].a[1]+(_eg[e].b[1]-_eg[e].a[1])*f; break; } dd-=_eg[e].len; }
+          let pu=0.5+0.5*Math.sin(tt*4+i*1.1), sz=3.5+pu*4.5;
+          ctx.save(); ctx.globalAlpha=0.6+pu*0.4; ctx.fillStyle=bc; ctx.shadowColor=bc; ctx.shadowBlur=12;
           ctx.translate(px,py); ctx.rotate(tt*2+i); ctx.beginPath();
           for(let p=0;p<5;p++){ let a=p*Math.PI*2/5-Math.PI/2,b=a+Math.PI/5; p===0?ctx.moveTo(Math.cos(a)*sz,Math.sin(a)*sz):ctx.lineTo(Math.cos(a)*sz,Math.sin(a)*sz); ctx.lineTo(Math.cos(b)*sz*0.4,Math.sin(b)*sz*0.4); }
           ctx.closePath(); ctx.fill(); ctx.restore();
@@ -4516,7 +4521,7 @@ function spawnFlappyRun(chx, gy0){
   pfFlappyFloorY = bandY + H*0.62;      // death floor
   pfFlappyCeilY  = bandY - H*0.66;      // death ceiling
   var n = 5+Math.floor(Math.random()*3);
-  var gap = W*0.52, gapH = H*0.47, pw = Math.max(40, W*0.11);
+  var gap = W*0.52, gapH = H*0.47, pw = Math.max(30, W*0.085);
   var x = chx + W*0.85, cy = bandY, cols=["red","green","blue"], lastX=x;
   for(var i=0;i<n;i++){
     cy += (Math.random()-0.5)*H*0.44;
@@ -4534,7 +4539,7 @@ function spawnFlappyRun(chx, gy0){
 }
 function pfFlapSpawnAhead(){
   var W=pfCanvas.width, H=pfCanvas.height;
-  var gap=W*0.5, gapH=H*0.48, pw=Math.max(40,W*0.11), cols=["red","green","blue"];
+  var gap=W*0.5, gapH=H*0.48, pw=Math.max(30,W*0.085), cols=["red","green","blue"];
   var guard=0;
   while(pfFlapLastX < pfCamX + W*2.2 && guard++<40){
     pfFlapBandY += (Math.random()-0.5)*H*0.42;
@@ -6171,7 +6176,7 @@ function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
 function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.485,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
-function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.054;pbBall.vx=-0.019;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
+function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.056;pbBall.vx=-0.019;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
 function launchPinball(){ document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
 function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
 function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
@@ -6189,7 +6194,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   if(pbState!=="play")return;
   b.vy+=PB_G; b.x+=b.vx; b.y+=b.vy;
   b.vx*=0.99; b.vy*=0.995;                                    // friction so energy dissipates
-  var mv=0.045; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
+  var mv=0.055; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
   var tw=0.02;
   if(b.inChute){
     if(b.x<0.98+PB_R){ b.x=0.98+PB_R; if(b.vx<0)b.vx*=-0.3; }      // chute inner wall
