@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v251</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v252</div>
 
 <canvas id="game"></canvas>
 
@@ -6149,7 +6149,7 @@ var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  //
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
-var LW=1.0, LH=1.5, PB_G=0.0016, PB_PERSP=0.5;
+var LW=1.0, LH=1.5, PB_G=0.0018, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=true;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
@@ -6193,7 +6193,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   for(var j=0;j<pbBumpers.length;j++){if(pbBumpers[j].hit>0)pbBumpers[j].hit--;}
   if(pbState!=="play")return;
   b.vy+=PB_G; b.x+=b.vx; b.y+=b.vy;
-  b.vx*=0.99; b.vy*=0.995;                                    // friction so energy dissipates
+  b.vx*=0.99; b.vy*=0.996;                                    // friction so energy dissipates
   var mv=0.055; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
   var tw=0.02;
   if(b.inChute){
@@ -6211,10 +6211,9 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   if(b.y<0.96 && !b.toMega){ b.upT=(b.upT||0)+1; } else { b.upT=0; }
   var pbForceDown = b.upT>135;
   if(pbForceDown){ b.vy+=0.0035; b.vx += (0.5-b.x)*0.0018; b.vx*=0.97; }   // anti-trap: never stuck above the paddles → funneled down the center to them
-  // UNSTICK: if the ball dawdles anywhere in the field (a pocket, or dead-stops mid-table at the logo), roll it down smooth
+  // NEVER DAWDLE: the instant the ball slows anywhere in the field, ease it straight down — no pause at the logo
   var _spd=Math.abs(b.vx)+Math.abs(b.vy);
-  if(!b.toMega && !b.inChute && b.y>0.26 && _spd<0.008){ b.stuckT=(b.stuckT||0)+1; } else { b.stuckT=0; }
-  if(b.stuckT>18){ b.vy+=0.006; b.vx += (0.5-b.x)*0.0022; }
+  if(!b.toMega && !b.inChute && b.y>0.24 && _spd<0.013){ b.vy += 0.0045; b.vx += (0.5-b.x)*0.0011; }
   for(var i=0;i<pbBumpers.length;i++){ if(pbForceDown||b.toMega)break; var bp=pbBumpers[i],dx=b.x-bp.x,dy=b.y-bp.y,d=Math.hypot(dx,dy)||1; if(d<bp.r+PB_R){var nx=dx/d,ny=dy/d;b.x=bp.x+nx*(bp.r+PB_R);b.y=bp.y+ny*(bp.r+PB_R);var dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.vx=b.vx*0.5+nx*0.006;b.vy=b.vy*0.5+ny*0.006;bp.hit=8;pbScore+=(bp.sling?25:100);try{haptic(6);}catch(e){}}}
   if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=140; b.y=pbChair.y-PB_R; b.vx=0.028; b.vy=-0.09; b.toMega=true; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
   if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.vy=0.03; b.vx=(0.5-b.x)*0.04; try{haptic([25,15,35]);}catch(e){} }
