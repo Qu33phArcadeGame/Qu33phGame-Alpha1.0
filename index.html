@@ -454,10 +454,13 @@
       font-family:Helvetica, Arial, sans-serif; font-size:12px;
       letter-spacing:2px; border-radius:4px; cursor:pointer;
     }
+    /* every BACK button sits at the top-left, consistently */
+    .back-tl{ position:fixed !important; top:10px !important; left:12px !important; right:auto !important; bottom:auto !important; z-index:3000 !important; margin:0 !important; transform:none !important; width:auto !important; min-width:0 !important; }
+    .back-tl::before{ display:none !important; }
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v261</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v262</div>
 
 <canvas id="game"></canvas>
 
@@ -480,7 +483,7 @@
   <div style="display:flex;gap:10px;padding:0 0 16px;">
     <button id="plinkoOrientBtn" onclick="cyclePlinkoOrient()" style="width:50px;height:50px;padding:0;border-radius:50%;border:2px solid #666;background:rgba(18,18,22,0.85);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;"><span id="plinkoOrientIcon"></span></button>
     <button id="plinkoDropBtn" onclick="dropPlinko()" style="padding:13px 30px;background:#ffd700;color:#000;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:2px;border:none;border-radius:6px;cursor:pointer;">DROP</button>
-    <button onclick="backFromPlinko()" class="mk-btn">BACK</button>
+    <button onclick="backFromPlinko()" class="mk-btn back-tl">BACK</button>
   </div>
 </div>
 <button id="rotateBtn" onclick="cycleOrientation()"><span id="orientIcon"></span></button>
@@ -500,7 +503,7 @@
   <div style="padding:18px 0 2px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:3px;">COIN RECORD</div>
   <img src="coin.png" onerror="this.src='coin.jpg'" style="width:min(190px,52vw);height:auto;object-fit:contain;margin:8px 0 4px;filter:drop-shadow(0 6px 22px rgba(255,215,0,0.35));">
   <div id="coinRecordBody" style="width:min(400px,92vw);margin-top:6px;display:flex;flex-direction:column;gap:7px;"></div>
-  <button onclick="showTitle()" class="mk-btn" style="margin-top:14px;">← BACK</button>
+  <button onclick="showTitle()" class="mk-btn back-tl" style="margin-top:14px;">← BACK</button>
 </div>
 
 <div id="arcadeMenu" style="display:none; position:absolute;top:0;left:0;width:100%;height:100%;background:#05050a;flex-direction:column;align-items:center;justify-content:center;z-index:100;box-sizing:border-box;padding:20px;">
@@ -512,13 +515,13 @@
     <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
     <div class="cab-card" onclick="arcadeComingSoon()"><div class="cab-q">?</div><div class="cab-label" style="color:#666;">COMING SOON</div></div>
   </div>
-  <button class="mk-btn" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
+  <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
 
 <div id="pinballScreen" oncontextmenu="return false" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0818;z-index:110;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;">
   <img id="pinballBg" src="pinball.png" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;" onerror="this.style.opacity=0.12">
   <canvas id="pinballCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
-  <button id="pbPauseBtn" onclick="pbBack()" style="position:absolute;top:8px;left:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
+  <button class="back-tl" id="pbPauseBtn" onclick="pbBack()" style="position:absolute;top:8px;left:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
   <div id="pbFlipLeft" style="position:absolute;left:0;bottom:0;width:50%;height:34%;z-index:5;"></div>
   <div id="pbFlipRight" style="position:absolute;right:0;bottom:0;width:50%;height:34%;z-index:5;"></div>
   <button id="pbLaunchBtn" style="position:absolute;right:14px;bottom:14px;z-index:6;background:radial-gradient(circle at 40% 30%,#ff9a9a,#d62424 65%,#8a1010);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;border:2px solid rgba(0,0,0,0.4);border-radius:12px;padding:12px 18px;box-shadow:0 4px 10px rgba(0,0,0,0.6),inset 0 2px 6px rgba(255,255,255,0.4);">LAUNCH</button>
@@ -545,7 +548,7 @@
   <div id="dlCardTitle" style="position:absolute;top:0;left:0;width:100%;text-align:center;padding-top:22px;z-index:2;"></div>
   <div id="dlCardHint" style="display:none;position:absolute;bottom:104px;left:0;width:100%;text-align:center;z-index:2;pointer-events:none;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:3px;color:#fff;text-shadow:0 1px 5px #000;">‹ SWIPE TO FLIP ›</div>
   <button id="dlCardSwitch" onclick="cardSwitchVariant()" style="display:none;position:relative;z-index:2;margin-bottom:10px;background:rgba(8,20,24,0.9);border:2px solid #22e0e0;color:#22e0e0;font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:2px;padding:8px 18px;border-radius:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;">⇄ NORMAL</button>
-  <button onclick="closeCard()" class="mk-btn" style="position:relative;z-index:2;margin-bottom:22px;">← BACK</button>
+  <button onclick="closeCard()" class="mk-btn back-tl" style="position:relative;z-index:2;margin-bottom:22px;">← BACK</button>
 </div>
 
 <div id="dlMap" class="dl-overlay" style="background:radial-gradient(circle at 50% 25%,#1a0f2e,#04030f);z-index:128;">
@@ -558,7 +561,7 @@
   <div id="dlMapNodes" style="flex:1;overflow-y:auto;margin-top:12px;"></div>
   <div style="display:flex;gap:10px;justify-content:center;margin-top:6px;flex-shrink:0;">
     <button onclick="openBinder()" class="dl-btn" style="border-color:#8affea;color:#8affea;">CARD BINDER</button>
-    <button onclick="dreamMapBack()" class="dl-btn">&#8592; BACK</button>
+    <button onclick="dreamMapBack()" class="dl-btn back-tl">&#8592; BACK</button>
   </div>
 </div>
 
@@ -566,7 +569,7 @@
   <div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;letter-spacing:3px;color:#c9a0ff;font-weight:bold;margin-bottom:20px;">DREAMLINGS SETTINGS</div>
   <button id="dlAutoBtn" onclick="toggleAutoAdvance()" style="background:#0c0c12;border:2px solid #3fa34d;color:#7dffa0;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:1px;padding:14px 22px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;">AUTO-ADVANCE: ON</button>
   <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;color:#666;margin-top:8px;max-width:260px;text-align:center;">ON: jump straight to the next area after a boss. OFF: return to the level select.</div>
-  <button onclick="closeDlSettings()" class="dl-btn" style="margin-top:26px;">← BACK</button>
+  <button onclick="closeDlSettings()" class="dl-btn back-tl" style="margin-top:26px;">← BACK</button>
 </div>
 
 <div id="dlBinder" class="dl-overlay" style="background:rgba(4,3,15,0.975);">
@@ -616,7 +619,7 @@
   <div id="pfActionBtn" style="position:absolute;border-radius:50%;z-index:4;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;touch-action:none;"></div>
   <button id="pfExpandBtn" onclick="toggleArcadeFullscreen()" style="display:none;position:absolute;z-index:7;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:17px;padding:5px 9px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;">&#9974;</button>
   <div id="pfDpad" style="display:none;position:absolute;z-index:3;pointer-events:none;"></div>
-  <button onclick="backFromPlatformer()" class="mk-btn" style="display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:5;">← BACK</button>
+  <button onclick="backFromPlatformer()" class="mk-btn back-tl" style="display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:5;">← BACK</button>
 </div>
 
 <!-- TITLE SCREEN -->
@@ -646,7 +649,7 @@
     <span class="mode-icon" data-icon="cart"></span>
     <span class="mode-text">
       <span class="mode-name">SHOP</span>
-      <span class="mode-desc">themes, upgrades &amp; more</span>
+      <span class="mode-desc">upgrades &amp; more</span>
     </span>
   </button>
 
@@ -674,21 +677,21 @@
 <div id="achScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:12px;box-sizing:border-box;">
   <div style="padding:14px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">ACHIEVEMENTS</div>
   <div id="achGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:min(400px,92vw);margin-top:8px;"></div>
-  <button onclick="showTitle()" class="mk-btn">← BACK</button>
+  <button onclick="showTitle()" class="mk-btn back-tl">← BACK</button>
 </div>
 
 <!-- CAREER RECORD SCREEN -->
 <div id="careerScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:12px;box-sizing:border-box;">
   <div style="padding:14px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">CAREER RECORD</div>
   <div id="careerBody" style="width:min(400px,92vw);margin-top:14px;"></div>
-  <button onclick="showTitle()" class="mk-btn">← BACK</button>
+  <button onclick="showTitle()" class="mk-btn back-tl">← BACK</button>
 </div>
 
 <!-- MEDAL SHOWCASE SCREEN -->
 <div id="medalShowcaseScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:12px;box-sizing:border-box;">
   <div style="padding:14px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:4px;text-align:center;">MEDAL SHOWCASE</div>
   <div id="medalShowcaseBody" style="width:min(400px,92vw);margin-top:8px;"></div>
-  <button onclick="showCareer()" class="mk-btn">← BACK TO CAREER</button>
+  <button onclick="showCareer()" class="mk-btn back-tl">← BACK TO CAREER</button>
 </div>
 
 <!-- SHOP SCREEN -->
@@ -696,14 +699,14 @@
   <div style="padding:14px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:23px;font-weight:bold;color:#fff;letter-spacing:4px;">SHOP</div>
   <div id="shopCoins" style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#ffd700;letter-spacing:2px;margin-bottom:6px;"></div>
   <div id="shopBody" style="width:min(400px,92vw);margin-top:6px;display:flex;flex-direction:column;gap:7px;"></div>
-  <button onclick="showTitle()" class="mk-btn">← BACK</button>
+  <button onclick="showTitle()" class="mk-btn back-tl">← BACK</button>
 </div>
 
 <!-- SETTINGS SCREEN -->
 <div id="settingsScreen" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;display:none;flex-direction:column;align-items:center;z-index:100;overflow-y:auto;padding-bottom:12px;box-sizing:border-box;">
   <div style="padding:14px 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:23px;font-weight:bold;color:#fff;letter-spacing:4px;">SETTINGS</div>
   <div id="settingsBody" style="width:min(400px,92vw);margin-top:6px;display:flex;flex-direction:column;gap:6px;"></div>
-  <button onclick="settingsBack()" class="mk-btn">← BACK</button>
+  <button onclick="settingsBack()" class="mk-btn back-tl">← BACK</button>
 </div>
 
 <!-- THEME SELECT SCREEN -->
@@ -717,7 +720,7 @@
     <div class="theme-half-label">REALISTIC</div>
     <div class="theme-half-sub">thinner playing field · more challenging</div>
   </div>
-  <button class="mk-btn" onclick="themeBack()" style="position:absolute; top:10px; left:26px; z-index:10; padding:7px 13px; font-size:12px; min-height:0;">← BACK</button>
+  <button class="mk-btn back-tl" onclick="themeBack()" style="position:absolute; top:10px; left:26px; z-index:10; padding:7px 13px; font-size:12px; min-height:0;">← BACK</button>
 </div>
 
 <div id="themeListScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#08080a; flex-direction:column; align-items:center; z-index:100; overflow-y:auto; padding:22px 0 12px; box-sizing:border-box;">
@@ -725,7 +728,7 @@
   <div class="theme-screen-sub">CHOOSE YOUR STYLE</div>
   <div id="themeListBody" style="display:flex; flex-direction:column; align-items:center; margin-top:6px;"></div>
   <div id="themeCoinsDisplay" style="margin-top:12px; font-family:Helvetica, Arial, sans-serif; font-size:12px; color:#888; letter-spacing:2px;"></div>
-  <button class="mk-btn" onclick="showThemeScreen()">← BACK</button>
+  <button class="mk-btn back-tl" onclick="showThemeScreen()">← BACK</button>
 </div>
 
 <!-- SLOT MACHINE SCREEN -->
@@ -735,7 +738,7 @@
 
   <!-- Top bar -->
   <div style="width:100%; display:flex; align-items:flex-start; gap:10px; padding:12px 14px 0; box-sizing:border-box; flex-shrink:0; position:relative; z-index:10;">
-    <button onclick="showTitle()" class="mk-btn" style="margin:2px 0 0 22px; padding:8px 14px; font-size:12px; min-height:0;">← BACK</button>
+    <button onclick="showTitle()" class="mk-btn back-tl" style="margin:2px 0 0 22px; padding:8px 14px; font-size:12px; min-height:0;">← BACK</button>
     <div id="goldSlotToggle" onclick="setSlotMode(slotMode==='gold'?'normal':'gold')" style="display:none; align-items:center; gap:7px; margin-top:6px; cursor:pointer; -webkit-tap-highlight-color:transparent;">
       <span style="font-family:Helvetica,Arial,sans-serif; font-size:10px; color:#ffd700; letter-spacing:1px; font-weight:bold;">GOLD</span>
       <div id="goldSlotSwitch" style="width:42px; height:24px; border-radius:12px; background:#333; position:relative; transition:background .15s;">
@@ -776,7 +779,7 @@
 <!-- PAYTABLE SCREEN -->
 <div id="paytableScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#08080a; flex-direction:column; align-items:center; z-index:100; overflow-y:auto; box-sizing:border-box; padding-bottom:24px;">
   <div style="width:100%; display:flex; align-items:center; padding:14px 16px 6px; box-sizing:border-box; flex-shrink:0;">
-    <button onclick="hidePaytable()" class="mk-btn">← BACK</button>
+    <button onclick="hidePaytable()" class="mk-btn back-tl">← BACK</button>
   </div>
   <div style="font-family:Helvetica, Arial, sans-serif; font-size:22px; font-weight:bold; color:#fff; letter-spacing:4px; margin-bottom:2px;">PAYTABLE</div>
   <div style="font-family:Helvetica, Arial, sans-serif; font-size:9px; color:#555; letter-spacing:3px; display:flex; align-items:center; gap:4px; margin-bottom:14px;">3&times; COSTS 3 BUT TRIPLES YOUR WIN</div>
@@ -800,7 +803,7 @@
   <canvas id="medalCanvas"></canvas>
   <div style="width:min(400px,96vw); display:flex; flex-direction:column; gap:10px; margin-bottom:32px;">
     <button class="medal-btn" id="medalSpecialBtn" style="display:none; background:#1a1a1a; color:#ffd700; border:2px solid #ffd700;" onclick="startSpecialOlympics()">PLAY SPECIAL OLYMPICS</button>
-    <button class="mk-btn" onclick="showTitle()">← BACK TO MENU</button>
+    <button class="mk-btn back-tl" onclick="showTitle()">← BACK TO MENU</button>
   </div>
 </div>
 
@@ -6144,7 +6147,7 @@ var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  //
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
-var LW=1.0, LH=1.5, PB_G=0.0007, PB_PERSP=0.5;
+var LW=1.0, LH=1.5, PB_G=0.0006, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=true;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
@@ -6215,6 +6218,8 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   // NEVER DAWDLE: the instant the ball slows in the field, ease it straight down — gentle centering so it doesn't oscillate
   var _spd=Math.abs(b.vx)+Math.abs(b.vy);
   if(!b.toMega && !b.inChute && b.y>0.24 && b.y<0.99 && _spd<0.010){ b.vy += 0.0028; b.vx += (0.5-b.x)*0.0007; }
+  // OUTLANE GUARD: near the bottom, if the ball drifts toward the side gaps (outside the flippers), gently steer it back to the paddles — no walls moved, no platforms added
+  if(!b.toMega && !b.inChute && b.y>0.84 && (b.x<0.34 || b.x>0.62)){ b.vx += (0.5-b.x)*0.009; }
   // ANTI-JITTER: if the ball hasn't actually descended over ~16 frames, it's wedged/jittering → glide it down smooth and kill the sideways twitch
   b.chkT=(b.chkT||0)+1;
   if(b.chkT>=16){ if(!b.toMega && !b.inChute && b.y>0.24 && b.y<0.94 && (b.y-(b.chkY==null?b.y:b.chkY))<0.02){ b.vx*=0.4; if(b.vy<0.016)b.vy=0.016; b.vx += (0.5-b.x)*0.002; } b.chkY=b.y; b.chkT=0; }
