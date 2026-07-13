@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v252</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v253</div>
 
 <canvas id="game"></canvas>
 
@@ -4702,16 +4702,16 @@ function updatePlatformer(){
     }
     if(p.y > pfFlappyFloorY || p.y < pfFlappyCeilY){ pfFlappy=false; pfZoomT=1; pfGameOver(); return; }
   }
-  // SAFETY NET: never a dead end — if standing on ground with nothing reachable ahead, drop in a bridge to continue
-  if(pfState==="play" && p.onGround && !pfFlappy && !pfFlappyFreeze && !pfFlight && !pfBouncing){
-    var _ahead=false, _pb=p.y+p.h*0.5;
+  // SAFETY NET: never a void — if there's no reachable platform ahead, above, OR below within landing range, drop one in
+  if(pfState==="play" && !pfFlappy && !pfFlappyFreeze && !pfFlight && !pfBouncing){
+    var _pb=p.y+p.h*0.5, _reach=false;
     for(var _i=0;_i<pfPlatforms.length;_i++){ var _pl=pfPlatforms[_i];
-      if(_pl.x+_pl.w > p.x+12 && _pl.x < p.x+W*0.85 && (_pl.y-_pb) > -H*0.42 && (_pl.y-_pb) < H*0.5){ _ahead=true; break; }
+      if(_pl.x < p.x+W*0.72 && _pl.x+_pl.w > p.x-W*0.22 && (_pl.y-_pb) > -H*0.32 && (_pl.y-_pb) < H*0.72){ _reach=true; break; }
     }
-    if(!_ahead){
-      var _by=_pb + H*0.06;
-      pfPlatforms.push({x:p.x+W*0.16, y:_by, w:W*0.55, ground:true});   // a reachable bridge onward
-      if(pfGenMode!=="up"){ pfGenMode="right"; pfGenX=p.x+W*0.16+W*0.55; pfGenY=_by; pfLastPlatX=pfGenX-W*0.2; pfSegLeft=W*(0.9+Math.random()*0.7); }
+    if(!_reach){
+      var _by=_pb + (p.onGround? H*0.05 : H*0.18);   // just below/ahead so it reads as the next platform
+      pfPlatforms.push({x:p.x-W*0.12, y:_by, w:W*0.6, ground:true});
+      if(pfGenMode!=="up"){ pfGenMode="right"; pfGenX=p.x-W*0.12+W*0.6; pfGenY=_by; pfLastPlatX=pfGenX-W*0.2; pfSegLeft=W*(0.9+Math.random()*0.7); pfNoMarkerUntilX=pfGenX+W*0.4; }
     }
   }
   // fell into a pit — forgiving (bigger margin while gliding), but bounded so a total miss still ends
@@ -6149,7 +6149,7 @@ var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  //
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
-var LW=1.0, LH=1.5, PB_G=0.0018, PB_PERSP=0.5;
+var LW=1.0, LH=1.5, PB_G=0.0022, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=true;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
@@ -6176,7 +6176,7 @@ function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
 function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.485,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
-function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.056;pbBall.vx=-0.019;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
+function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.064;pbBall.vx=-0.02;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
 function launchPinball(){ document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
 function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
 function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
@@ -6194,7 +6194,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   if(pbState!=="play")return;
   b.vy+=PB_G; b.x+=b.vx; b.y+=b.vy;
   b.vx*=0.99; b.vy*=0.996;                                    // friction so energy dissipates
-  var mv=0.055; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
+  var mv=0.062; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
   var tw=0.02;
   if(b.inChute){
     if(b.x<0.98+PB_R){ b.x=0.98+PB_R; if(b.vx<0)b.vx*=-0.3; }      // chute inner wall
@@ -6211,9 +6211,12 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   if(b.y<0.96 && !b.toMega){ b.upT=(b.upT||0)+1; } else { b.upT=0; }
   var pbForceDown = b.upT>135;
   if(pbForceDown){ b.vy+=0.0035; b.vx += (0.5-b.x)*0.0018; b.vx*=0.97; }   // anti-trap: never stuck above the paddles → funneled down the center to them
-  // NEVER DAWDLE: the instant the ball slows anywhere in the field, ease it straight down — no pause at the logo
+  // NEVER DAWDLE: the instant the ball slows in the field, ease it straight down — gentle centering so it doesn't oscillate
   var _spd=Math.abs(b.vx)+Math.abs(b.vy);
-  if(!b.toMega && !b.inChute && b.y>0.24 && _spd<0.013){ b.vy += 0.0045; b.vx += (0.5-b.x)*0.0011; }
+  if(!b.toMega && !b.inChute && b.y>0.24 && b.y<0.95 && _spd<0.013){ b.vy += 0.005; b.vx += (0.5-b.x)*0.0006; }
+  // ANTI-JITTER: if the ball hasn't actually descended over ~16 frames, it's wedged/jittering → glide it down smooth and kill the sideways twitch
+  b.chkT=(b.chkT||0)+1;
+  if(b.chkT>=16){ if(!b.toMega && !b.inChute && b.y>0.24 && b.y<0.94 && (b.y-(b.chkY==null?b.y:b.chkY))<0.02){ b.vx*=0.4; if(b.vy<0.028)b.vy=0.028; b.vx += (0.5-b.x)*0.002; } b.chkY=b.y; b.chkT=0; }
   for(var i=0;i<pbBumpers.length;i++){ if(pbForceDown||b.toMega)break; var bp=pbBumpers[i],dx=b.x-bp.x,dy=b.y-bp.y,d=Math.hypot(dx,dy)||1; if(d<bp.r+PB_R){var nx=dx/d,ny=dy/d;b.x=bp.x+nx*(bp.r+PB_R);b.y=bp.y+ny*(bp.r+PB_R);var dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.vx=b.vx*0.5+nx*0.006;b.vy=b.vy*0.5+ny*0.006;bp.hit=8;pbScore+=(bp.sling?25:100);try{haptic(6);}catch(e){}}}
   if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=140; b.y=pbChair.y-PB_R; b.vx=0.028; b.vy=-0.09; b.toMega=true; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
   if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.vy=0.03; b.vx=(0.5-b.x)*0.04; try{haptic([25,15,35]);}catch(e){} }
