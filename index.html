@@ -463,7 +463,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v264</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v265</div>
 
 <canvas id="game"></canvas>
 
@@ -6229,8 +6229,8 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
       if(bp.sling){ b.vx=(0.5-bp.x)*0.05; b.vy=0.03; }   // slingshot: shove the ball DOWN toward the flippers, never wedge it in the corner
       else { var dot=b.vx*nx+b.vy*ny; b.vx-=2*dot*nx; b.vy-=2*dot*ny; b.vx=b.vx*0.5+nx*0.006; b.vy=b.vy*0.5+ny*0.006; }
       bp.hit=8; pbScore+=(bp.sling?25:100); try{haptic(6);}catch(e){} } }
-  if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=140; b.y=pbChair.y-PB_R; b.vx=0.028; b.vy=-0.09; b.toMega=true; b.megaT=0; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
-  if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.megaT=0; b.vy=0.03; b.vx=(0.5-b.x)*0.04; try{haptic([25,15,35]);}catch(e){} }
+  if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=22; b.y=pbChair.y-PB_R; b.vx=0.026; b.vy=-0.078; b.toMega=true; b.megaT=0; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
+  if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.megaT=0; b.vy=0.014; b.vx=(0.5-b.x)*0.02; try{haptic([25,15,35]);}catch(e){} }
   pbFlipperCollide(0.22,1.02, 0.5-pbFL*1.0, 0.20, b, pbFL);
   pbFlipperCollide(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, b, pbFR);
   if(b.y>1.18){ pbBalls--; if(pbBalls<=0){pbState="over";pbMsg="GAME OVER";pbMsgT=999; if(pbScore>pbHigh){pbHigh=pbScore; try{localStorage.setItem("qu33phPinballHigh",pbHigh);}catch(e){}} } else pbNewBall(); }
