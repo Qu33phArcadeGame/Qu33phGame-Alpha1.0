@@ -457,7 +457,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v254</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v255</div>
 
 <canvas id="game"></canvas>
 
@@ -6144,7 +6144,7 @@ var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  //
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
-var LW=1.0, LH=1.5, PB_G=0.0022, PB_PERSP=0.5;
+var LW=1.0, LH=1.5, PB_G=0.0015, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=true;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
@@ -6171,7 +6171,7 @@ function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
 function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.485,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
-function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.064;pbBall.vx=-0.02;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
+function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.078;pbBall.vx=-0.022;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
 function launchPinball(){ document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
 function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
 function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
@@ -6189,16 +6189,19 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   if(pbState!=="play")return;
   b.vy+=PB_G; b.x+=b.vx; b.y+=b.vy;
   b.vx*=0.99; b.vy*=0.996;                                    // friction so energy dissipates
-  var mv=0.062; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
+  var mv=0.075; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
   var tw=0.02;
   if(b.inChute){
     if(b.x<0.98+PB_R){ b.x=0.98+PB_R; if(b.vx<0)b.vx*=-0.3; }      // chute inner wall
     if(b.x>1.14-PB_R){ b.x=1.14-PB_R; b.vx=-b.vx*PB_DAMP; }        // chute outer wall
-    if(b.y<0.42){ b.inChute=false; if(b.vx>-0.02)b.vx=-0.026; }    // exit the chute into the field
+    if(b.y<0.42){ b.inChute=false; b.x=0.9; b.vx=-0.03; }          // exit the chute cleanly inside the field
   } else {
-    var _t=Math.max(0,b.y)/1.18, _f=Math.min(1,_t*_t), _lw=0.0+_f*0.20, _rw=0.96-_f*0.34;   // walls curve smoothly inward (no kink)
-    if(b.x<_lw+PB_R){ b.x=_lw+PB_R; b.vx=-b.vx*PB_DAMP; }
-    if(b.x>_rw-PB_R){ b.x=_rw-PB_R; b.vx=-b.vx*PB_DAMP; }
+    // STRAIGHT walls out to the machine edges — no funnel. Only a gentle taper in the last stretch to feed the flippers.
+    var _lw, _rw;
+    if(b.y < 0.9){ _lw=0.035; _rw=0.955; }
+    else { var _tf=Math.min(1,(b.y-0.9)/0.28); _lw=0.035+_tf*0.15; _rw=0.955-_tf*0.245; }
+    if(b.x<_lw+PB_R){ b.x=_lw+PB_R; if(b.vx<0) b.vx=-b.vx*PB_DAMP; }   // only bounce if moving INTO the wall (no sideways jitter)
+    if(b.x>_rw-PB_R){ b.x=_rw-PB_R; if(b.vx>0) b.vx=-b.vx*PB_DAMP; }
   }
   if(b.y<tw+PB_R){b.y=tw+PB_R;b.vy=-b.vy*PB_DAMP;}
   if(pbChairCD>0)pbChairCD--;
@@ -6241,7 +6244,7 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   if(pbState==="ready"){ var rp=pbProject(0.86,1.02); c.fillStyle="rgba(255,255,255,0.9)";c.font="bold "+(pbImgRW*0.022)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("LAUNCH \u2192",rp[0],rp[1]); }
   if(typeof PB_SHOW_BOUNDS!=="undefined" && PB_SHOW_BOUNDS){
     // --- TWEAK OUTLINE: traces the actual ball-collision walls (left/right curve inward) ---
-    var _wy=function(y){ var _t=Math.max(0,y)/1.18,_f=Math.min(1,_t*_t); return [0.0+_f*0.20, 0.96-_f*0.34]; };
+    var _wy=function(y){ if(y<0.9) return [0.035,0.955]; var tf=Math.min(1,(y-0.9)/0.28); return [0.035+tf*0.15, 0.955-tf*0.245]; };
     c.save(); c.strokeStyle="rgba(255,0,210,0.95)"; c.lineWidth=2.4; c.setLineDash([9,6]); c.shadowColor="rgba(255,0,210,0.6)"; c.shadowBlur=6;
     c.beginPath();
     for(var s=0;s<=40;s++){ var yy=0.02+(1.18-0.02)*s/40, P=pbProject(_wy(yy)[0], yy); s===0?c.moveTo(P[0],P[1]):c.lineTo(P[0],P[1]); }   // left wall (top→bottom)
