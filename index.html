@@ -200,11 +200,11 @@
     .arcade-game-btn { width:min(300px,82vw); margin:7px 0; padding:15px 18px; background:#0c0c12; border:2px solid #2a2a38; border-radius:12px; color:#fff; font-family:Helvetica,Arial,sans-serif; font-size:17px; font-weight:bold; letter-spacing:2px; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; display:flex; flex-direction:column; gap:3px; }
     .arcade-game-btn span { font-size:10px; font-weight:normal; letter-spacing:1px; color:#777; }
     .arcade-game-btn:active { border-color:#3aa0ff; }
-    .cab-row { display:flex; gap:16px; overflow-x:auto; width:100%; padding:8px 16px 12px; box-sizing:border-box; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; }
-    .cab-card { flex:0 0 auto; width:150px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; scroll-snap-align:center; -webkit-tap-highlight-color:transparent; }
+    .cab-row { display:flex; gap:2%; overflow-x:hidden; width:100%; padding:8px 8px 12px; box-sizing:border-box; justify-content:center; align-items:flex-start; }
+    .cab-card { flex:0 0 auto; width:31%; max-width:150px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .cab-card:active { transform:scale(0.96); }
-    .cab-card img { width:150px; height:auto; max-height:240px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
-    .cab-card .cab-label { font-family:Helvetica,Arial,sans-serif; font-size:12px; font-weight:bold; letter-spacing:2px; color:#fff; }
+    .cab-card img { width:100%; height:auto; max-height:240px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
+    .cab-card .cab-label { font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:bold; letter-spacing:1px; color:#fff; text-align:center; line-height:1.2; }
     .cab-card img { position:relative; border-radius:18px; }
     /* ── theme skins for the cabinet icons ── */
     #arcadeMenu.arc-comic .cab-card img { filter:contrast(1.12) drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
@@ -463,7 +463,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v266</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v267</div>
 
 <canvas id="game"></canvas>
 
@@ -517,7 +517,6 @@
     <div class="cab-card" id="cabJump" onclick="launchPfGame()"><img src="qu33phjump.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH JUMP</div></div>
     <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
     <div class="cab-card" id="cabGolf" onclick="launchGolf()"><img src="golfoverlay.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH MINI GOLF</div></div>
-    <div class="cab-card" onclick="arcadeComingSoon()"><div class="cab-q">?</div><div class="cab-label" style="color:#666;">COMING SOON</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>

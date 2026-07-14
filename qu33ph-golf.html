@@ -132,9 +132,10 @@ window.addEventListener('resize',sizeCanvas);
 let mode='menu';   // 'menu' | 'play'
 let ball={x:0,y:0,vx:0,vy:0,roll:0}, moving=false, sunk=false, throws=0, outFlash=0;
 const BR=34;
-function startLevel(){ level=LEVELS[sel]; buildMask(); ball={x:level.tee.x,y:level.tee.y,vx:0,vy:0,roll:0}; moving=false; sunk=false; throws=0; outFlash=0; mode='play'; }
+function startLevel(){ level=LEVELS[sel]; buildMask(); ball={x:level.tee.x,y:level.tee.y,vx:0,vy:0,roll:0}; moving=false; sunk=false; throws=0; outFlash=0; lastRest={x:level.tee.x,y:level.tee.y}; mode='play'; }
 function toMenu(){ mode='menu'; }
-function resetToTee(){ ball.x=level.tee.x; ball.y=level.tee.y; ball.vx=ball.vy=0; ball.roll=0; moving=false; outFlash=48; }
+let lastRest={x:0,y:0};
+function resetToTee(){ ball.x=lastRest.x; ball.y=lastRest.y; ball.vx=ball.vy=0; ball.roll=0; moving=false; outFlash=48; }   // PEEF -> back to where you last were
 
 // ---- flick input (play only) ----
 let flick=[];
@@ -148,14 +149,15 @@ cv.addEventListener('pointerup',e=>{
   const a=rec[0], b=rec[rec.length-1], dt=Math.max(8,b.t-a.t);
   let vx=(b.x-a.x)/dt, vy=(b.y-a.y)/dt, sp=Math.hypot(vx,vy); flick=[];
   if(sp<0.25) return;
-  let launch=Math.min(sp*16,20)/ZOOM;
+  lastRest={x:ball.x,y:ball.y};                 // remember where this throw started, for PEEF
+  let launch=Math.min(sp*16,28)/ZOOM;           // higher cap = further throws
   ball.vx=vx/sp*launch; ball.vy=vy/sp*launch; moving=true; throws++;
 });
 
 // ---- control buttons ----
 function tap(id,fn){ const el=document.getElementById(id); el.addEventListener('click',fn); }
 tap('hDpad',()=>{ if(mode==='menu'){ sel=(sel+1)%LEVELS.length; } });
-tap('hRed',()=>{ if(mode==='menu') startLevel(); else { ball={x:level.tee.x,y:level.tee.y,vx:0,vy:0,roll:0}; moving=false; sunk=false; throws=0; } }); // RED: start / reset ball
+tap('hRed',()=>{ if(mode==='menu') startLevel(); else { ball={x:level.tee.x,y:level.tee.y,vx:0,vy:0,roll:0}; lastRest={x:level.tee.x,y:level.tee.y}; moving=false; sunk=false; throws=0; } }); // RED: start / reset to tee
 tap('hBlue',()=>{ if(mode==='menu') startLevel(); else toMenu(); });  // BLUE: start / back to menu
 
 // ---- physics ----
@@ -165,13 +167,13 @@ function step(){
   for(let s=0;s<steps;s++){
     let nx=ball.x+ball.vx/steps, ny=ball.y+ball.vy/steps;
     // X axis
-    if(nx<0||nx>MW||!green(nx,ball.y)){ if(isWall(nx,ball.y)){ ball.vx=-ball.vx*0.62; } else { resetToTee(); return; } }
+    if(nx<0||nx>MW||!green(nx,ball.y)){ if(isWall(nx,ball.y)){ ball.vx=-ball.vx*0.15; } else { resetToTee(); return; } }
     else ball.x=nx;
     // Y axis
-    if(ny<0||ny>MH||!green(ball.x,ny)){ if(isWall(ball.x,ny)){ ball.vy=-ball.vy*0.62; } else { resetToTee(); return; } }
+    if(ny<0||ny>MH||!green(ball.x,ny)){ if(isWall(ball.x,ny)){ ball.vy=-ball.vy*0.15; } else { resetToTee(); return; } }
     else ball.y=ny;
   }
-  ball.roll+=Math.hypot(ball.vx,ball.vy)*0.05; ball.vx*=0.985; ball.vy*=0.985;
+  ball.roll+=Math.hypot(ball.vx,ball.vy)*0.05; ball.vx*=0.987; ball.vy*=0.987;
   if(Math.hypot(ball.vx,ball.vy)<0.15){ ball.vx=ball.vy=0; moving=false; }
 }
 function checkMega(){ if(mode==='play'&&!sunk&&Math.hypot(ball.x-level.mega.x,ball.y-level.mega.y)<70){ sunk=true; moving=false; ball.vx=ball.vy=0; } }
