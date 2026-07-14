@@ -463,7 +463,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v268</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v269</div>
 
 <canvas id="game"></canvas>
 
@@ -4880,22 +4880,30 @@ function pfDrawPipes(){
     var pipe=pfPipes[i], hg=pipe.gapH*0.5, img=markerImages[pipe.color];
     var glow=(pipe.color==="red"?"#ff3040":pipe.color==="green"?"#30ff70":"#3a7bff");
     var topB=pipe.gapY-hg, botT=pipe.gapY+hg;
-    pfPillar(img, glow, pipe.x, Math.max(visT, pfFlappyCeilY-160), topB, pipe.w);   // top pipe
-    pfPillar(img, glow, pipe.x, botT, Math.min(visB, pfFlappyFloorY+160), pipe.w);   // bottom pipe
+    pfPillar(img, glow, topB, Math.max(visT, pfFlappyCeilY-160), pipe.x, pipe.w);   // top pipe (gap at bottom)
+    pfPillar(img, glow, botT, Math.min(visB, pfFlappyFloorY+160), pipe.x, pipe.w);   // bottom pipe (gap at top)
     // bright neon caps framing the gap
     c.save(); c.fillStyle=glow; c.shadowColor=glow; c.shadowBlur=10;
     c.fillRect(pipe.x-3, topB-6, pipe.w+6, 6); c.fillRect(pipe.x-3, botT, pipe.w+6, 6);
     c.restore();
   }
 }
-function pfPillar(img, glow, x, y0, y1, w){
-  if(y1<=y0) return; var c=pfctx;
+function pfPillar(img, glow, gapY, farY, x, w){
+  // gapY = the gap end (marker cap sits here), farY = ceiling/floor end
+  var c=pfctx; var len=Math.abs(farY-gapY); if(len<=0) return;
+  var top=Math.min(gapY,farY);
   c.save(); c.shadowColor=glow; c.shadowBlur=14;
+  c.beginPath(); c.rect(x, top, w, len); c.clip();                 // keep the pipe inside its slot
   if(img&&img.complete&&img.naturalWidth){
-    var ar=img.naturalHeight/img.naturalWidth, tileH=w*ar; if(tileH<10) tileH=10;   // each marker at its real proportion
-    c.beginPath(); c.rect(x,y0,w,y1-y0); c.clip();                                   // keep tiles inside the pipe
-    for(var yy=y0; yy<y1; yy+=tileH){ c.drawImage(img, x, yy, w, tileH); }           // stack markers, don't stretch
-  } else { c.fillStyle=glow; c.fillRect(x,y0,w,y1-y0); }
+    var mh=w*(img.naturalHeight/img.naturalWidth);                 // ONE giant marker at true proportions
+    c.translate(x, gapY);
+    if(farY<gapY) c.scale(1,-1);                                   // top pipe: flip so cap still faces the gap
+    c.drawImage(img, 0, 0, w, mh);                                 // giant marker, cap at the gap (overshoots off-screen if pipe is short)
+    if(mh < len-0.5){                                              // pipe taller than the marker: extend just the shaft to the edge
+      var sy=img.naturalHeight*0.42, sh=img.naturalHeight*0.16;    // a straight mid-slice of the marker
+      c.drawImage(img, 0, sy, img.naturalWidth, sh, 0, mh-1, w, len-mh+1);
+    }
+  } else { c.fillStyle=glow; c.fillRect(x, top, w, len); }
   c.restore();
 }
 function drawPlatformer(){
