@@ -50,8 +50,7 @@ const MW=2400, MH=4200;
 const FIELD_GREEN='#0c2417';
 // ---- levels (only 1 for now; add more here) ----
 const LEVELS=[
-  { name:'HOLE 1 — THE ATRIUM', tee:{x:1031,y:4031}, mega:{x:1880,y:3586},
-    bridge:{x0:1850,y0:3555,x1:1950,y1:3712} }
+  { name:'HOLE 1 \u2014 THE ATRIUM', tee:{x:309,y:4031}, mega:{x:1880,y:3586} }
 ];
 let sel=0, level=LEVELS[0];
 
@@ -65,10 +64,8 @@ function buildMask(){
     const d=octx.getImageData(0,0,mw,mh).data;
     const m=new Uint8Array(mw*mh);
     for(let i=0;i<mw*mh;i++){ const r=d[i*4],g=d[i*4+1],b=d[i*4+2];
-      m[i]=(g>r+8 && g>b+3 && g<95 && r<75 && g>22)?1:0; }
-    const B=level.bridge;
-    const bx0=(B.x0*MS)|0,bx1=(B.x1*MS)|0,by0=(B.y0*MS)|0,by1=(B.y1*MS)|0;
-    for(let y=by0;y<=by1;y++) for(let x=bx0;x<=bx1;x++) if(x>=0&&x<mw&&y>=0&&y<mh) m[y*mw+x]=1;
+      const bg=(g>r+8 && g>b+3 && g<95 && r<75 && g>22);   // dark-green background
+      m[i]=bg?0:1; }                                        // FIELD = everything else (the building strip)
     walk=m;
   }catch(e){ walk=null; }   // never black-screen: if pixel read fails, field is open
 }
@@ -85,7 +82,7 @@ function sizeCanvas(){
   const r=document.getElementById('screen').getBoundingClientRect();
   const dpr=Math.min(2, window.devicePixelRatio||1);
   CW=Math.max(1,Math.round(r.width*dpr)); CH=Math.max(1,Math.round(r.height*dpr));
-  cv.width=CW; cv.height=CH; ZOOM=CW/1000;
+  cv.width=CW; cv.height=CH; ZOOM=CW/820;
 }
 window.addEventListener('resize',sizeCanvas);
 
@@ -162,8 +159,6 @@ function drawPlay(){
   ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=FIELD_GREEN; ctx.fillRect(0,0,CW,CH);
   if(ready(MAP)) ctx.drawImage(MAP,camX,camY,viewW,viewH,0,0,CW,CH);
   const w2s=(wx,wy)=>({x:(wx-camX)*ZOOM,y:(wy-camY)*ZOOM});
-  const B=level.bridge; ctx.fillStyle=FIELD_GREEN; const b0=w2s(B.x0,B.y0),b1=w2s(B.x1,B.y1);
-  ctx.fillRect(b0.x,b0.y,b1.x-b0.x,b1.y-b0.y);
   // mega markers
   const m=w2s(level.mega.x,level.mega.y), mk=90*ZOOM;
   ctx.save(); ctx.translate(m.x,m.y); ctx.shadowColor='#fff'; ctx.shadowBlur=sunk?26:12;
