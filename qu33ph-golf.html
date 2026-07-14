@@ -10,7 +10,7 @@
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #cab{ position:relative; height:100vh; max-height:100vh; aspect-ratio:941/1672; }
   #cabImg{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; z-index:2; user-select:none; }
-  #screen{ position:absolute; left:17.7%; top:25.4%; width:64.0%; height:53.4%; overflow:hidden; background:#0c2417; z-index:3; }
+  #screen{ position:absolute; left:19.5%; top:26.6%; width:60.4%; height:50.8%; overflow:hidden; background:#0c2417; z-index:3; }
   #game{ width:100%; height:100%; display:block; }
   /* tappable control hotspots over the painted cabinet controls */
   .hot{ position:absolute; z-index:5; background:transparent; }
@@ -20,7 +20,6 @@
   #hBlue{ left:69.5%; top:79.5%; width:15%; height:10%; border-radius:50%; }
   .pill{ position:fixed; z-index:10; background:linear-gradient(#2a2a2a,#101010); color:#ffd54a; border:1.5px solid #ffcf3a; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:bold; letter-spacing:1px; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.5); }
   .pill:active{ transform:translateY(1px); }
-  #fsBtn{ top:10px; left:12px; }
   #hint{ position:fixed; bottom:8px; left:0; right:0; text-align:center; font-size:11px; color:#9a8; letter-spacing:1px; z-index:10; }
 </style>
 </head>
@@ -34,7 +33,6 @@
     <div class="hot" id="hBlue"></div>
   </div>
 </div>
-<button class="pill" id="fsBtn">&#9974; FULLSCREEN</button>
 <div id="hint">D-PAD picks a course &middot; RED / BLUE starts &middot; then swipe to roll</div>
 
 <script>
@@ -232,13 +230,6 @@ function drawPlay(){
 
 function draw(){ if(mode==='menu') drawMenu(); else drawPlay(); }
 function loop(){ step(); checkMega(); draw(); requestAnimationFrame(loop); }
-
-// ---- buttons ----
-document.getElementById('fsBtn').onclick=()=>{
-  if(!document.fullscreenElement){ (cab.requestFullscreen?cab.requestFullscreen():cab.webkitRequestFullscreen&&cab.webkitRequestFullscreen()); }
-  else { document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen&&document.webkitExitFullscreen(); }
-};
-document.addEventListener('fullscreenchange',()=>setTimeout(sizeCanvas,60));
 
 // ---- boot (draw first, build mask when ready — never blocks the screen) ----
 sizeCanvas(); loop();
