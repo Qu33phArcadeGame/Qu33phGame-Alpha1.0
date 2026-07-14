@@ -463,7 +463,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v265</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v266</div>
 
 <canvas id="game"></canvas>
 
@@ -516,6 +516,7 @@
   <div class="cab-row">
     <div class="cab-card" id="cabJump" onclick="launchPfGame()"><img src="qu33phjump.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH JUMP</div></div>
     <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
+    <div class="cab-card" id="cabGolf" onclick="launchGolf()"><img src="golfoverlay.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH GOLF</div></div>
     <div class="cab-card" onclick="arcadeComingSoon()"><div class="cab-q">?</div><div class="cab-label" style="color:#666;">COMING SOON</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
@@ -528,6 +529,11 @@
   <div id="pbFlipLeft" style="position:absolute;left:0;bottom:0;width:50%;height:34%;z-index:5;"></div>
   <div id="pbFlipRight" style="position:absolute;right:0;bottom:0;width:50%;height:34%;z-index:5;"></div>
   <button id="pbLaunchBtn" style="position:absolute;right:14px;bottom:14px;z-index:6;background:radial-gradient(circle at 40% 30%,#ff9a9a,#d62424 65%,#8a1010);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;border:2px solid rgba(0,0,0,0.4);border-radius:12px;padding:12px 18px;box-shadow:0 4px 10px rgba(0,0,0,0.6),inset 0 2px 6px rgba(255,255,255,0.4);">LAUNCH</button>
+</div>
+
+<div id="golfScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
+  <iframe id="golfFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
+  <button class="back-tl" onclick="golfBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
 </div>
 
 <div id="dreamonScreen" style="display:none; position:absolute;top:0;left:0;width:100%;height:100%;background:#04050a;z-index:120;">
@@ -4081,6 +4087,7 @@ function showArcadeMenu(){
   var st=document.getElementById("sideTabs"); if(st) st.style.display="none";
   var ps=document.getElementById("platformerScreen"); if(ps) ps.style.display="none";
   var ds=document.getElementById("dreamonScreen"); if(ds) ds.style.display="none";
+  var gs=document.getElementById("golfScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("golfFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; }
   var dm=document.getElementById("dlMap"); if(dm) dm.style.display="none";
   document.getElementById("arcadeMenu").style.display="flex";
   try{ applyThemeFilters(); }catch(e){}
@@ -4088,6 +4095,8 @@ function showArcadeMenu(){
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
 function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showJumpMenu(); }
+function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("golfScreen"); s.style.display="block"; var f=document.getElementById("golfFrame"); if(!/qu33ph-golf\.html/.test(f.getAttribute("src")||"")) f.setAttribute("src","qu33ph-golf.html"); arcadeGame="golf"; try{ haptic(10); }catch(e){} }
+function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
 function jmSelect(){
