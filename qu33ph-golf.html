@@ -56,7 +56,7 @@ let sel=0, level=LEVELS[0];
 
 // ---- collision mask (built from the map's green pixels) ----
 const MS=0.5, mw=Math.round(MW*MS), mh=Math.round(MH*MS);
-let walk=null, wallCv=null;
+let walk=null, wallCv=null, wallMask=null;
 function buildMask(){
   try{
     const o=document.createElement('canvas'); o.width=mw; o.height=mh;
@@ -64,9 +64,12 @@ function buildMask(){
     const d=octx.getImageData(0,0,mw,mh).data;
     const m=new Uint8Array(mw*mh);
     // magenta outline drawn in the editor?
-    const border=new Uint8Array(mw*mh); let hasBorder=false;
+    // outline colors: magenta = out-of-bounds (PEEF), cyan = wall (bounce). Both block the fill.
+    const border=new Uint8Array(mw*mh), wallC=new Uint8Array(mw*mh); let hasBorder=false;
     for(let i=0;i<mw*mh;i++){ const r=d[i*4],g=d[i*4+1],b=d[i*4+2];
-      if(r>120 && b>120 && g < Math.min(r,b)-35){ border[i]=1; hasBorder=true; } }   // magenta + its soft pink edge
+      if(r>120 && b>120 && g < Math.min(r,b)-35){ border[i]=1; hasBorder=true; }          // magenta + soft edge
+      if(g>120 && b>120 && r < Math.min(g,b)-35){ border[i]=1; wallC[i]=1; hasBorder=true; } // cyan wall + soft edge
+    }
     if(hasBorder){
       // FIELD = inside the outline: flood-fill from the tee, blocked by the magenta lines + edges
       const sx=Math.min(mw-1,Math.max(0,(level.tee.x*MS)|0)), sy=Math.min(mh-1,Math.max(0,(level.tee.y*MS)|0));
@@ -83,6 +86,11 @@ function buildMask(){
         const bg=(g>r+8 && g>b+3 && g<95 && r<75 && g>22); m[i]=bg?0:1; }
     }
     walk=m;
+    // dilate cyan walls a touch so fast balls reliably register the bounce
+    wallMask=new Uint8Array(mw*mh);
+    for(let y=0;y<mh;y++) for(let x=0;x<mw;x++){ if(!wallC[y*mw+x]) continue;
+      for(let dy=-1;dy<=1;dy++){ const ny=y+dy; if(ny<0||ny>=mh) continue;
+        for(let dx=-1;dx<=1;dx++){ const nx=x+dx; if(nx<0||nx>=mw) continue; wallMask[ny*mw+nx]=1; } } }
     buildWallOverlay();
   }catch(e){ walk=null; }   // never black-screen: if pixel read fails, field is open
 }
@@ -104,6 +112,12 @@ function green(mx,my){
   const ix=(mx*MS)|0, iy=(my*MS)|0;
   if(ix<0||iy<0||ix>=mw||iy>=mh) return false;
   return walk[iy*mw+ix]===1;
+}
+function isWall(mx,my){   // cyan bounce-wall?
+  if(!wallMask) return false;
+  const ix=(mx*MS)|0, iy=(my*MS)|0;
+  if(ix<0||iy<0||ix>=mw||iy>=mh) return false;
+  return wallMask[iy*mw+ix]===1;
 }
 
 // ---- view ----
@@ -152,8 +166,12 @@ function step(){
   let sp=Math.hypot(ball.vx,ball.vy); const steps=Math.max(1,Math.ceil(sp/6));
   for(let s=0;s<steps;s++){
     let nx=ball.x+ball.vx/steps, ny=ball.y+ball.vy/steps;
-    if(nx<0||nx>MW||ny<0||ny>MH||!green(nx,ny)){ resetToTee(); return; }   // left the counter/field -> reset
-    ball.x=nx; ball.y=ny;
+    // X axis
+    if(nx<0||nx>MW||!green(nx,ball.y)){ if(isWall(nx,ball.y)){ ball.vx=-ball.vx*0.62; } else { resetToTee(); return; } }
+    else ball.x=nx;
+    // Y axis
+    if(ny<0||ny>MH||!green(ball.x,ny)){ if(isWall(ball.x,ny)){ ball.vy=-ball.vy*0.62; } else { resetToTee(); return; } }
+    else ball.y=ny;
   }
   ball.roll+=Math.hypot(ball.vx,ball.vy)*0.05; ball.vx*=0.985; ball.vy*=0.985;
   if(Math.hypot(ball.vx,ball.vy)<0.15){ ball.vx=ball.vy=0; moving=false; }
@@ -209,7 +227,7 @@ function drawPlay(){
   ctx.textAlign='right'; ctx.fillText(sunk?'QU33PH! \u26f3':'REACH THE MEGA', CW*0.95, CH*0.06);
   if(sunk){ ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.09)+'px Helvetica'; ctx.fillText('QU33PH!', CW/2, CH*0.5);
     ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText('BLUE \u25b6 MENU', CW/2, CH*0.58); }
-  if(outFlash>0){ ctx.textAlign='center'; ctx.globalAlpha=Math.min(1,outFlash/20); ctx.fillStyle='#ff5a5a'; ctx.font='bold '+Math.round(CW*0.08)+'px Helvetica'; ctx.fillText('OUT! \u2192 RESET', CW/2, CH*0.44); ctx.globalAlpha=1; outFlash--; }
+  if(outFlash>0){ ctx.textAlign='center'; ctx.globalAlpha=Math.min(1,outFlash/20); ctx.fillStyle='#ff5a5a'; ctx.font='bold '+Math.round(CW*0.12)+'px Helvetica'; ctx.fillText('PEEF!', CW/2, CH*0.44); ctx.globalAlpha=1; outFlash--; }
 }
 
 function draw(){ if(mode==='menu') drawMenu(); else drawPlay(); }
