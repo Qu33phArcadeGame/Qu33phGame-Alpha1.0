@@ -463,7 +463,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v270</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v271</div>
 
 <canvas id="game"></canvas>
 
@@ -1194,7 +1194,7 @@ function updateLogo(){
   var lg=document.getElementById("logoGalaxy");
   if(_ls==="galaxy"){
     if(!lg){ lg=document.createElement("div"); lg.id="logoGalaxy";
-      lg.style.cssText="position:absolute; inset:-32% -20%; z-index:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; filter:blur(9px); opacity:0.7; background:conic-gradient(from 0deg, rgba(150,90,255,0) 0deg, rgba(150,90,255,0.5) 90deg, rgba(90,160,255,0.18) 180deg, rgba(255,120,240,0.45) 270deg, rgba(150,90,255,0) 360deg); animation:tfxSpin 16s linear infinite;";
+      lg.style.cssText="position:absolute; inset:-14% -8%; z-index:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; filter:blur(9px); opacity:0.7; background:conic-gradient(from 0deg, rgba(150,90,255,0) 0deg, rgba(150,90,255,0.5) 90deg, rgba(90,160,255,0.18) 180deg, rgba(255,120,240,0.45) 270deg, rgba(150,90,255,0) 360deg); animation:tfxSpin 16s linear infinite;";
       container.insertBefore(lg, container.firstChild);
     }
     lg.style.display="block"; img.style.position="relative"; img.style.zIndex="2";
@@ -4404,9 +4404,9 @@ function pfGenStep(){
     pfPlatforms.push({x:pfGenX, y:pfGenY, w:slabW, ground:true});
     var diff=Math.min(0.85, 0.4 + pfProgress*0.006); // more markers the further you go
     if(pfProgress>10 && pfGenX>pfNoMarkerUntilX && Math.random()<diff){
-      var nObs=1+(pfProgress>40 && Math.random()<0.45?1:0);
+      var nObs=1+(pfProgress>50 && Math.random()<0.28?1:0);
       for(var oi=0;oi<nObs;oi++){
-        var ox=pfGenX+slabW*(0.28+Math.random()*0.5)+oi*30;
+        var ox=pfGenX+slabW*(0.30+Math.random()*0.42)+oi*Math.max(48,slabW*0.30);
         if(ox<pfGenX+slabW-16){
           var ob={x:ox,y:pfGenY,w:20,h:30,color:pfMarkerColor(Math.floor(Math.random()*3))};
           // rolling markers that patrol back and forth — jump over them
@@ -4447,7 +4447,7 @@ function pfGenStep(){
       var _roll=Math.random();
       if(pfProgress>26 && _roll<0.12){
         spawnFlappyRun(pfGenX, pfGenY);     // Flappy-Bird pipe gauntlet
-      } else if(pfProgress>22 && _roll<0.28){
+      } else if(pfProgress>22 && _roll<0.28 && (pfCycles-pfLastLaunchCycle)>=2){
         spawnBounceChain(pfGenX, pfGenY);   // Tiny-Wings-style chair bounce chain
       } else if(pfProgress>20 && _roll<0.42){
         spawnZigzagTower(pfGenX, pfGenY);   // doodle-jump zigzag tower
@@ -4710,16 +4710,15 @@ function updatePlatformer(){
     }
     if(p.y > pfFlappyFloorY || p.y < pfFlappyCeilY){ pfFlappy=false; pfZoomT=1; pfGameOver(); return; }
   }
-  // SAFETY NET: never a void — if there's no reachable platform ahead, above, OR below within landing range, drop one in
-  if(pfState==="play" && !pfFlappy && !pfFlappyFreeze && !pfFlight && !pfBouncing){
-    var _pb=p.y+p.h*0.5, _reach=false;
+  // Keep the generator ahead of the player, but NEVER catch a fall — intentional drops stay lethal (real risk/reward)
+  if(pfState==="play" && !pfFlappy && !pfFlappyFreeze && !pfFlight && !pfBouncing && p.onGround){
+    var _pb=p.y+p.h*0.5, _ahead=false;
     for(var _i=0;_i<pfPlatforms.length;_i++){ var _pl=pfPlatforms[_i];
-      if(_pl.x < p.x+W*0.72 && _pl.x+_pl.w > p.x-W*0.22 && (_pl.y-_pb) > -H*0.32 && (_pl.y-_pb) < H*0.72){ _reach=true; break; }
+      if(_pl.x+_pl.w > p.x+p.w && _pl.x < p.x+W*1.05 && (_pl.y-_pb) > -H*0.5 && (_pl.y-_pb) < H*1.1){ _ahead=true; break; }
     }
-    if(!_reach){
-      var _by=_pb + (p.onGround? H*0.05 : H*0.18);   // just below/ahead so it reads as the next platform
-      pfPlatforms.push({x:p.x-W*0.12, y:_by, w:W*0.6, ground:true});
-      if(pfGenMode!=="up"){ pfGenMode="right"; pfGenX=p.x-W*0.12+W*0.6; pfGenY=_by; pfLastPlatX=pfGenX-W*0.2; pfSegLeft=W*(0.9+Math.random()*0.7); pfNoMarkerUntilX=pfGenX+W*0.4; }
+    if(!_ahead){
+      pfPlatforms.push({x:p.x+W*0.6, y:_pb, w:W*0.5, ground:true});
+      if(pfGenMode!=="up"){ pfGenMode="right"; pfGenX=p.x+W*0.6+W*0.5; pfGenY=_pb; pfLastPlatX=pfGenX-W*0.2; pfSegLeft=W*(0.9+Math.random()*0.7); pfNoMarkerUntilX=pfGenX+W*0.4; }
     }
   }
   // fell into a pit — forgiving (bigger margin while gliding), but bounded so a total miss still ends
