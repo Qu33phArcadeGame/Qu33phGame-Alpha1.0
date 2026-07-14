@@ -15,7 +15,8 @@
   /* tappable control hotspots over the painted cabinet controls */
   .hot{ position:absolute; z-index:5; background:transparent; }
   .hot:active{ background:rgba(255,255,255,.14); border-radius:14px; }
-  #hDpad{ left:14%; top:79.5%; width:22%; height:10%; }
+  #hDpadL{ left:14%; top:79.5%; width:11%; height:10%; }
+  #hDpadR{ left:25%; top:79.5%; width:11%; height:10%; }
   #hRed{ left:54%; top:79.5%; width:15%; height:10%; border-radius:50%; }
   #hBlue{ left:69.5%; top:79.5%; width:15%; height:10%; border-radius:50%; }
   .pill{ position:fixed; z-index:10; background:linear-gradient(#2a2a2a,#101010); color:#ffd54a; border:1.5px solid #ffcf3a; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:bold; letter-spacing:1px; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.5); }
@@ -28,7 +29,8 @@
   <div id="cab">
     <div id="screen"><canvas id="game"></canvas></div>
     <img id="cabImg" src="golfoverlay.png" alt="">
-    <div class="hot" id="hDpad"></div>
+    <div class="hot" id="hDpadL"></div>
+    <div class="hot" id="hDpadR"></div>
     <div class="hot" id="hRed"></div>
     <div class="hot" id="hBlue"></div>
   </div>
@@ -39,18 +41,20 @@
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const cab=document.getElementById('cab');
 
-const MAP=new Image(); MAP.crossOrigin='anonymous'; MAP.src='golf.png';
-let mapFail=false; MAP.onerror=()=>{ mapFail=true; };
 const IMG={}; ['red','green','blue'].forEach(k=>{ const im=new Image(); im.crossOrigin='anonymous'; im.src=k+'.png'; IMG[k]=im; });
 function ready(im){ return im && im.complete && im.naturalWidth>0; }
 
 const MW=2400, MH=4200;
 const FIELD_GREEN='#0c2417';
-// ---- levels (only 1 for now; add more here) ----
-const LEVELS=[
-  { name:'HOLE 1 \u2014 THE ATRIUM', tee:{x:309,y:4031}, mega:{x:1880,y:3586} }
-];
+// ---- 18 holes: each loads golf1.png .. golf18.png; tee + mega auto-detected from the map ----
+const HOLE_COUNT=18;
+const LEVELS=[];
+for(let i=1;i<=HOLE_COUNT;i++) LEVELS.push({ name:'HOLE '+i, file:'golf'+i+'.png', img:null, status:'idle', tee:null, mega:null });
 let sel=0, level=LEVELS[0];
+let MAP=null;   // current level's map image (set when a hole starts)
+function loadHole(i){ const L=LEVELS[i]; if(L.status!=='idle') return; L.status='loading';
+  const im=new Image(); im.crossOrigin='anonymous';
+  im.onload=()=>{ L.img=im; L.status='ready'; }; im.onerror=()=>{ L.status='missing'; }; im.src=L.file; }
 
 // ---- collision mask (built from the map's green pixels) ----
 const MS=0.5, mw=Math.round(MW*MS), mh=Math.round(MH*MS);
@@ -61,16 +65,19 @@ function buildMask(){
     const octx=o.getContext('2d'); octx.drawImage(MAP,0,0,mw,mh);
     const d=octx.getImageData(0,0,mw,mh).data;
     const m=new Uint8Array(mw*mh);
-    // magenta outline drawn in the editor?
-    // outline colors: magenta = out-of-bounds (PEEF), cyan = wall (bounce). Both block the fill.
-    const border=new Uint8Array(mw*mh), wallC=new Uint8Array(mw*mh); let hasBorder=false;
+    // outline colors: magenta = out-of-bounds (PEEF), cyan = wall (bounce). red dot = mega target.
+    const border=new Uint8Array(mw*mh), wallC=new Uint8Array(mw*mh); let hasBorder=false, rx=0,ry=0,rn=0;
     for(let i=0;i<mw*mh;i++){ const r=d[i*4],g=d[i*4+1],b=d[i*4+2];
       if(r>120 && b>120 && g < Math.min(r,b)-35){ border[i]=1; hasBorder=true; }          // magenta + soft edge
       if(g>120 && b>120 && r < Math.min(g,b)-35){ border[i]=1; wallC[i]=1; hasBorder=true; } // cyan wall + soft edge
+      if(r>150 && g<90 && b<90){ rx+=(i%mw); ry+=((i/mw)|0); rn++; }                         // red dot = mega
     }
+    if(rn>0) level.mega={ x:(rx/rn)/MS, y:(ry/rn)/MS };
+    else if(!level.mega) level.mega={ x:MW*0.78, y:MH*0.85 };
     if(hasBorder){
-      // FIELD = inside the outline: flood-fill from the tee, blocked by the magenta lines + edges
-      const sx=Math.min(mw-1,Math.max(0,(level.tee.x*MS)|0)), sy=Math.min(mh-1,Math.max(0,(level.tee.y*MS)|0));
+      // FIELD = inside the outline: flood-fill from the MEGA (always inside the lane), blocked by magenta/cyan + edges
+      let sx=Math.max(0,Math.min(mw-1,(level.mega.x*MS)|0)), sy=Math.max(0,Math.min(mh-1,(level.mega.y*MS)|0));
+      if(border[sy*mw+sx]){ let done=false; for(let R=1;R<25&&!done;R++)for(let dy=-R;dy<=R&&!done;dy++)for(let dx=-R;dx<=R&&!done;dx++){ const nx=sx+dx,ny=sy+dy; if(nx>=0&&ny>=0&&nx<mw&&ny<mh&&!border[ny*mw+nx]){ sx=nx;sy=ny;done=true; } } }
       const q=[sy*mw+sx]; m[sy*mw+sx]=1;
       while(q.length){ const idx=q.pop(), x=idx%mw, y=(idx/mw)|0;
         if(x>0){const n=idx-1; if(!m[n]&&!border[n]){m[n]=1;q.push(n);}}
@@ -83,6 +90,11 @@ function buildMask(){
       for(let i=0;i<mw*mh;i++){ const r=d[i*4],g=d[i*4+1],b=d[i*4+2];
         const bg=(g>r+8 && g>b+3 && g<95 && r<75 && g>22); m[i]=bg?0:1; }
     }
+    // auto-pick tee: lowest, left-most field cell with clearance for the ball
+    const CLR=9, clr=(x,y)=>{ for(let dy=-CLR;dy<=CLR;dy+=3)for(let dx=-CLR;dx<=CLR;dx+=3){ const nx=x+dx,ny=y+dy; if(nx<0||ny<0||nx>=mw||ny>=mh||!m[ny*mw+nx]) return false; } return true; };
+    let picked=false;
+    for(let y=mh-1;y>=(mh*0.55|0)&&!picked;y--){ for(let x=(mw*0.03|0);x<(mw*0.58|0);x++){ if(m[y*mw+x]&&clr(x,y)){ level.tee={x:x/MS,y:y/MS}; picked=true; break; } } }
+    if(!picked) level.tee={ x:MW*0.13, y:MH*0.95 };
     walk=m;
     // dilate cyan walls a touch so fast balls reliably register the bounce
     wallMask=new Uint8Array(mw*mh);
@@ -132,7 +144,7 @@ window.addEventListener('resize',sizeCanvas);
 let mode='menu';   // 'menu' | 'play'
 let ball={x:0,y:0,vx:0,vy:0,roll:0}, moving=false, sunk=false, throws=0, outFlash=0;
 const BR=34;
-function startLevel(){ level=LEVELS[sel]; buildMask(); ball={x:level.tee.x,y:level.tee.y,vx:0,vy:0,roll:0}; moving=false; sunk=false; throws=0; outFlash=0; lastRest={x:level.tee.x,y:level.tee.y}; mode='play'; }
+function startLevel(){ const L=LEVELS[sel]; if(L.status!=='ready') return; level=L; MAP=L.img; buildMask(); ball={x:level.tee.x,y:level.tee.y,vx:0,vy:0,roll:0}; moving=false; sunk=false; throws=0; outFlash=0; lastRest={x:level.tee.x,y:level.tee.y}; mode='play'; }
 function toMenu(){ mode='menu'; }
 let lastRest={x:0,y:0};
 function resetToTee(){ ball.x=lastRest.x; ball.y=lastRest.y; ball.vx=ball.vy=0; ball.roll=0; moving=false; outFlash=48; }   // PEEF -> back to where you last were
@@ -156,7 +168,8 @@ cv.addEventListener('pointerup',e=>{
 
 // ---- control buttons ----
 function tap(id,fn){ const el=document.getElementById(id); el.addEventListener('click',fn); }
-tap('hDpad',()=>{ if(mode==='menu'){ sel=(sel+1)%LEVELS.length; } });
+tap('hDpadL',()=>{ if(mode==='menu'){ sel=(sel-1+LEVELS.length)%LEVELS.length; loadHole(sel); } });
+tap('hDpadR',()=>{ if(mode==='menu'){ sel=(sel+1)%LEVELS.length; loadHole(sel); } });
 tap('hRed',()=>{ if(mode==='menu') startLevel(); else { ball={x:level.tee.x,y:level.tee.y,vx:0,vy:0,roll:0}; lastRest={x:level.tee.x,y:level.tee.y}; moving=false; sunk=false; throws=0; } }); // RED: start / reset to tee
 tap('hBlue',()=>{ if(mode==='menu') startLevel(); else toMenu(); });  // BLUE: start / back to menu
 
@@ -184,20 +197,23 @@ function fitRect(iw,ih,x,y,w,h){ const s=Math.min(w/iw,h/ih); const dw=iw*s,dh=i
 
 function drawMenu(){
   ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle='#08150e'; ctx.fillRect(0,0,CW,CH);
-  ctx.textAlign='center'; ctx.fillStyle='#ffd54a';
-  ctx.font='bold '+Math.round(CW*0.075)+'px Helvetica'; ctx.fillText('SELECT COURSE',CW/2,CH*0.12);
-  // card
-  const cw=CW*0.66, ch=CH*0.5, cx=(CW-cw)/2, cy=CH*0.18;
+  ctx.textAlign='center';
+  ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.075)+'px Helvetica'; ctx.fillText('SELECT COURSE',CW/2,CH*0.11);
+  const L=LEVELS[sel];
+  const cw=CW*0.66, ch=CH*0.5, cx=(CW-cw)/2, cy=CH*0.17;
   ctx.fillStyle='#0c2417'; ctx.strokeStyle='#ffcf3a'; ctx.lineWidth=Math.max(2,CW*0.006);
   rr(cx,cy,cw,ch,14); ctx.fill(); ctx.stroke();
-  if(ready(MAP)){ const f=fitRect(MW,MH,cx+8,cy+8,cw-16,ch-16); ctx.drawImage(MAP,f.x,f.y,f.w,f.h); }
-  else if(mapFail){ ctx.fillStyle='#ff8a8a'; ctx.font='bold '+Math.round(CW*0.04)+'px Helvetica'; ctx.fillText('map not found',CW/2,cy+ch/2); }
-  ctx.fillStyle='#eafff0'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';
-  ctx.fillText(LEVELS[sel].name, CW/2, cy+ch+CH*0.06);
+  if(L.status==='ready'){ const f=fitRect(L.img.width,L.img.height,cx+8,cy+8,cw-16,ch-16); ctx.drawImage(L.img,f.x,f.y,f.w,f.h); }
+  else if(L.status==='missing'){ ctx.fillStyle='#8fa8a0'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('NO MAP YET', CW/2, cy+ch*0.46); ctx.fillStyle='#6a7d74'; ctx.font='bold '+Math.round(CW*0.032)+'px Helvetica'; ctx.fillText('upload '+L.file, CW/2, cy+ch*0.57); }
+  else { ctx.fillStyle='#7a8d84'; ctx.font='bold '+Math.round(CW*0.04)+'px Helvetica'; ctx.fillText('LOADING\u2026', CW/2, cy+ch*0.5); }
+  ctx.fillStyle='#eafff0'; ctx.font='bold '+Math.round(CW*0.052)+'px Helvetica';
+  ctx.fillText(L.name, CW/2, cy+ch+CH*0.052);
+  ctx.fillStyle='#7fddaa'; ctx.font='bold '+Math.round(CW*0.034)+'px Helvetica';
+  ctx.fillText((sel+1)+' / '+LEVELS.length, CW/2, cy+ch+CH*0.088);
   ctx.fillStyle='#9fe3b8'; ctx.font='bold '+Math.round(CW*0.038)+'px Helvetica';
-  ctx.fillText('\u25c0  D-PAD  \u25b6', CW/2, CH*0.82);
-  ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';
-  ctx.fillText('RED / BLUE  \u25b6  START', CW/2, CH*0.9);
+  ctx.fillText('\u25c0  D-PAD  \u25b6', CW/2, CH*0.83);
+  if(L.status==='ready'){ ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('RED / BLUE  \u25b6  START', CW/2, CH*0.9); }
+  else { ctx.fillStyle='#66756c'; ctx.font='bold '+Math.round(CW*0.042)+'px Helvetica'; ctx.fillText(L.status==='missing'?'no map to play':'loading\u2026', CW/2, CH*0.9); }
 }
 
 function drawPlay(){
@@ -234,8 +250,7 @@ function draw(){ if(mode==='menu') drawMenu(); else drawPlay(); }
 function loop(){ step(); checkMega(); draw(); requestAnimationFrame(loop); }
 
 // ---- boot (draw first, build mask when ready — never blocks the screen) ----
-sizeCanvas(); loop();
-if(ready(MAP)) buildMask(); else MAP.addEventListener('load',()=>{ /* mask builds on Start */ });
+sizeCanvas(); loadHole(0); loop();
 </script>
 </body>
 </html>

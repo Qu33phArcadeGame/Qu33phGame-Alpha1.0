@@ -463,7 +463,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v267</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v268</div>
 
 <canvas id="game"></canvas>
 
@@ -4529,7 +4529,7 @@ function spawnFlappyRun(chx, gy0){
   pfFlappyFloorY = bandY + H*0.62;      // death floor
   pfFlappyCeilY  = bandY - H*0.66;      // death ceiling
   var n = 5+Math.floor(Math.random()*3);
-  var gap = W*0.52, gapH = H*0.47, pw = Math.max(30, W*0.085);
+  var gap = W*0.52, gapH = H*0.47, pw = Math.max(48, W*0.14);
   var x = chx + W*0.85, cy = bandY, cols=["red","green","blue"], lastX=x;
   for(var i=0;i<n;i++){
     cy += (Math.random()-0.5)*H*0.44;
@@ -4547,7 +4547,7 @@ function spawnFlappyRun(chx, gy0){
 }
 function pfFlapSpawnAhead(){
   var W=pfCanvas.width, H=pfCanvas.height;
-  var gap=W*0.5, gapH=H*0.48, pw=Math.max(30,W*0.085), cols=["red","green","blue"];
+  var gap=W*0.5, gapH=H*0.48, pw=Math.max(48,W*0.14), cols=["red","green","blue"];
   var guard=0;
   while(pfFlapLastX < pfCamX + W*2.2 && guard++<40){
     pfFlapBandY += (Math.random()-0.5)*H*0.42;
@@ -4892,7 +4892,9 @@ function pfPillar(img, glow, x, y0, y1, w){
   if(y1<=y0) return; var c=pfctx;
   c.save(); c.shadowColor=glow; c.shadowBlur=14;
   if(img&&img.complete&&img.naturalWidth){
-    c.drawImage(img, x, y0, w, y1-y0);   // ONE big marker stretched to fill the whole pipe
+    var ar=img.naturalHeight/img.naturalWidth, tileH=w*ar; if(tileH<10) tileH=10;   // each marker at its real proportion
+    c.beginPath(); c.rect(x,y0,w,y1-y0); c.clip();                                   // keep tiles inside the pipe
+    for(var yy=y0; yy<y1; yy+=tileH){ c.drawImage(img, x, yy, w, tileH); }           // stack markers, don't stretch
   } else { c.fillStyle=glow; c.fillRect(x,y0,w,y1-y0); }
   c.restore();
 }
