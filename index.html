@@ -200,10 +200,11 @@
     .arcade-game-btn { width:min(300px,82vw); margin:7px 0; padding:15px 18px; background:#0c0c12; border:2px solid #2a2a38; border-radius:12px; color:#fff; font-family:Helvetica,Arial,sans-serif; font-size:17px; font-weight:bold; letter-spacing:2px; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; display:flex; flex-direction:column; gap:3px; }
     .arcade-game-btn span { font-size:10px; font-weight:normal; letter-spacing:1px; color:#777; }
     .arcade-game-btn:active { border-color:#3aa0ff; }
-    .cab-row { display:flex; gap:2%; overflow-x:hidden; width:100%; padding:8px 8px 12px; box-sizing:border-box; justify-content:center; align-items:flex-start; }
-    .cab-card { flex:0 0 auto; width:31%; max-width:150px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .cab-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px 3%; width:100%; max-width:430px; padding:6px; box-sizing:border-box; justify-items:center; align-items:start; }
+    .cab-card { width:100%; max-width:132px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .cab-card:active { transform:scale(0.96); }
-    .cab-card img { width:100%; height:auto; max-height:240px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
+    .cab-card img { width:100%; height:auto; max-height:168px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
+    .cab-soon { width:100%; aspect-ratio:150/230; max-height:168px; border:2px dashed #26263a; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:36px; color:#33334a; background:rgba(255,255,255,0.015); box-sizing:border-box; }
     .cab-card .cab-label { font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:bold; letter-spacing:1px; color:#fff; text-align:center; line-height:1.2; }
     .cab-card img { position:relative; border-radius:18px; }
     /* ── theme skins for the cabinet icons ── */
@@ -464,7 +465,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v273</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v274</div>
 
 <canvas id="game"></canvas>
 
@@ -513,11 +514,17 @@
 <div id="arcadeMenu" style="display:none; position:absolute;top:0;left:0;width:100%;height:100%;background:#05050a;flex-direction:column;align-items:center;justify-content:center;z-index:100;box-sizing:border-box;padding:20px;">
   <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:7px;color:#ffb000;">QU33PH</div>
   <div style="font-family:Helvetica,Arial,sans-serif;font-size:30px;font-weight:bold;letter-spacing:8px;color:#3aa0ff;margin:2px 0 2px;text-shadow:0 0 14px rgba(58,160,255,0.55);">ARCADE</div>
-  <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:3px;color:#555;margin-bottom:14px;">SLIDE · PICK A CABINET</div>
+  <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:3px;color:#555;margin-bottom:14px;">3 × 3 · PICK A CABINET</div>
   <div class="cab-row">
     <div class="cab-card" id="cabJump" onclick="launchPfGame()"><img src="qu33phjump.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH JUMP</div></div>
     <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
     <div class="cab-card" id="cabGolf" onclick="launchGolf()"><img src="golfoverlay.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH MINI GOLF</div></div>
+    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -4056,6 +4063,7 @@ let pfProgress=0;
 let pfMega=null, pfFlight=false, pfZoom=1, pfZoomT=1, pfCycles=0, pfLastLaunchCycle=-99, pfMegaFlash=0, pfMegaFlashT=0;
 let pfBouncing=false, pfBounceCombo=0, pfBounceFlash=0, pfNoMarkerUntilX=0;
 let pfFlappy=false, pfFlappyFreeze=false, pfPipes=[], pfFlappyFloorY=0, pfFlappyCeilY=0, pfFlappyEndX=0, pfFlappyPassed=0, pfFlappyHint=0;
+var pfGapMax=96, pfRiseMax=70;   // physics-safe jump reach (JUMP -10.4, grav 0.58, run 3.4) -> never spawn an impossible jump
 const pfFlappySpeed=5.2, PF_FLAP=-9.3;
 const pfMegaImg=new Image(); pfMegaImg.src="slotmega.jpg";
 // ── Qu33ph Jump soundtrack (starts on first tap; mute toggle lives in Settings) ──
@@ -4372,8 +4380,8 @@ function pfGenStep(){
     }
   } else if(pfGenMode==="up"){
     // next platform wanders horizontally but stays reachable from the last one
-    var px=pfLastPlatX + (Math.random()-0.5)*W*0.34;
-    px=Math.max(pfGenX-W*0.34, Math.min(pfGenX+W*0.34, px));
+    var px=pfLastPlatX + (Math.random()-0.5)*Math.min(W*0.34, pfGapMax*1.35);
+    px=Math.max(pfLastPlatX-pfGapMax*0.72, Math.min(pfLastPlatX+pfGapMax*0.72, px));   // stay within a reachable diagonal
     var pw=W*0.16+Math.random()*W*0.09;
     var plat={x:px-pw/2, y:pfGenY, w:pw};
     // some climbing platforms slide side to side (only once you're a bit in)
@@ -4384,7 +4392,7 @@ function pfGenStep(){
     var _atBottom = (pfSegLeft>=pfUpStart-1), _atTop=(pfSegLeft<=2);
     if(pfProgress>26 && pw>W*0.2 && (_atBottom||_atTop) && Math.random()<0.4){ pfObstacles.push({x:px, y:pfGenY, w:18, h:26, color:pfMarkerColor(Math.floor(Math.random()*3))}); }
     if(Math.random()<0.5) pfCoinsWorld.push({x:px, y:pfGenY-26, got:false});
-    pfGenY-=(48+Math.random()*22);
+    pfGenY-=Math.min(48+Math.random()*22, pfRiseMax);   // never rise more than a jump
     if(--pfSegLeft<=0){
       if(pfMode==="jump"){
         if(pfProgress>22 && Math.random()<0.33){ spawnZigzagTower(pfLastPlatX, pfGenY); }   // doodle-jump tower
@@ -4438,7 +4446,7 @@ function pfGenStep(){
       pfObstacles=pfObstacles.filter(function(o){ return !(o.x>chx-W*0.35 && o.x<pfNoMarkerUntilX); }); // clear any already-placed nearby
     }
     pfGenX+=slabW; pfSegLeft-=slabW;
-    if(pfSegLeft>W*0.5 && Math.random()<0.4){ pfGenX+=W*(0.1+Math.random()*0.12); } // small hop gap
+    if(pfSegLeft>W*0.5 && Math.random()<0.4){ pfGenX+=Math.min(W*(0.1+Math.random()*0.12), pfGapMax); } // small hop gap (reach-capped)
     if(pfSegLeft<=0){
       pfCycles++;
       if(pfMode==="run"){
@@ -4498,7 +4506,7 @@ function spawnMarkerGauntlet(gx, gy){
     if(Math.random()<0.5){ var span=Math.min(pw*0.35, W*0.2); ob.patrol=true; ob.minX=Math.max(x+10, ox-span); ob.maxX=Math.min(x+pw-10, ox+span); ob.vx=(0.6+Math.random()*0.7)*(Math.random()<0.5?1:-1); ob.roll=0; }
     pfObstacles.push(ob);
     if(Math.random()<0.5) pfCoinsWorld.push({x:x+pw*0.5, y:y-H*(0.13+Math.random()*0.08), got:false});
-    x += pw + W*(0.09+Math.random()*0.08); y += (Math.random()-0.5)*34;   // jumpable gap + slight height change
+    x += pw + Math.min(W*(0.09+Math.random()*0.08), pfGapMax); var _dy=(Math.random()-0.5)*34; if(_dy<-pfRiseMax*0.6)_dy=-pfRiseMax*0.6; y += _dy;   // reach-capped gap + gentle rise
   }
   pfPlatforms.push({x:x, y:y, w:W*0.4, ground:true});   // reconnect landing
   pfGenMode="right"; pfGenX=x+W*0.4; pfLastPlatX=pfGenX; pfGenY=y; pfSegLeft=W*(0.9+Math.random()*0.9); pfNoMarkerUntilX=x+W*0.3;
