@@ -212,7 +212,8 @@
     #arcadeMenu.arc-comic .cab-card::after { content:""; position:absolute; inset:0 0 26px 0; pointer-events:none; mix-blend-mode:multiply; border-radius:18px; background-image:radial-gradient(circle, rgba(0,0,0,0.55) 1.5px, transparent 1.7px); background-size:7px 7px; }
     #arcadeMenu.arc-neon #cabJump img { filter:drop-shadow(0 0 4px #ff2b2b) drop-shadow(0 0 9px #ff2b2b) drop-shadow(0 0 16px rgba(255,43,43,0.6)); }
     #arcadeMenu.arc-neon #cabDeep img { filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 9px #28ff82) drop-shadow(0 0 16px rgba(40,255,130,0.6)); }
-    #arcadeMenu.arc-neon #cabPinball img { filter:drop-shadow(0 0 4px #3affea) drop-shadow(0 0 9px #3affea) drop-shadow(0 0 16px rgba(58,255,234,0.65)); }
+    #arcadeMenu.arc-neon #cabPinball img { filter:drop-shadow(0 0 10px #3affea) drop-shadow(0 0 22px rgba(58,255,234,0.5)); }
+    #arcadeMenu.arc-neon #cabGolf img { filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 10px #28ff82) drop-shadow(0 0 18px rgba(40,255,130,0.65)); }
     #arcadeMenu.arc-sunset .cab-card img { filter:sepia(0.75) saturate(2.1) brightness(1.12) hue-rotate(-12deg) drop-shadow(0 0 7px rgba(255,200,60,0.7)); }
     #arcadeMenu.arc-galaxy .cab-card img { filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 8px rgba(180,120,255,0.75)); }
     #arcadeMenu.arc-galaxy .cab-card { position:relative; }
@@ -4562,21 +4563,22 @@ function pfGenPath(){
   var W=pfCanvas.width, H=pfCanvas.height, guard=0;
   if(pfFlapEndless){
     pfFlapSpawnAhead();
-    pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-W*0.7; });
-    pfCoinsWorld=pfCoinsWorld.filter(function(c){ return c.x > pfCamX-W*0.7; });
+    if((pfT&7)===0){ pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-W*0.7; }); pfCoinsWorld=pfCoinsWorld.filter(function(c){ return c.x > pfCamX-W*0.7; }); }
     return;
   }
   while(guard++<800){
-    if(pfGenMode==="up"){ if(pfGenY <= pfCamY - H*1.4) break; }
-    else { if(pfGenX >= pfCamX + W*2.3) break; }
+    if(pfGenMode==="up"){ if(pfGenY <= pfCamY - H*1.8) break; }   // generate a touch further ahead -> less pop-in
+    else { if(pfGenX >= pfCamX + W*2.7) break; }
     pfGenStep();
   }
-  // prune far behind (keep a much bigger vertical margin during flight so landing spots survive)
-  var _pm = (pfFlight||pfFlappy||pfFlappyFreeze) ? H*3.6 : H*1.7;
-  pfPlatforms=pfPlatforms.filter(function(p){ return p.y < pfCamY+_pm && (p.x+p.w) > pfCamX-W*0.7; });
-  pfObstacles=pfObstacles.filter(function(o){ return o.y < pfCamY+_pm && o.x > pfCamX-W*0.7; });
-  pfCoinsWorld=pfCoinsWorld.filter(function(c){ return c.y < pfCamY+_pm && c.x > pfCamX-W*0.7; });
-  pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-W*0.7; });
+  // prune only every 8 frames (far fewer array allocations -> smoother, less GC jank)
+  if((pfT&7)===0){
+    var _pm = (pfFlight||pfFlappy||pfFlappyFreeze) ? H*3.6 : H*1.7;
+    pfPlatforms=pfPlatforms.filter(function(p){ return p.y < pfCamY+_pm && (p.x+p.w) > pfCamX-W*0.7; });
+    pfObstacles=pfObstacles.filter(function(o){ return o.y < pfCamY+_pm && o.x > pfCamX-W*0.7; });
+    pfCoinsWorld=pfCoinsWorld.filter(function(c){ return c.y < pfCamY+_pm && c.x > pfCamX-W*0.7; });
+    pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-W*0.7; });
+  }
 }
 function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   if(arcadeGame==="dream"){ updateDeep(); drawDeep(); }
@@ -4685,7 +4687,7 @@ function updatePlatformer(){
   if(p.x>pfBestX) pfBestX=p.x;
   if(p.y<pfBestUp) pfBestUp=p.y;
   pfProgress = ((pfStartY-pfBestUp) + (pfBestX-pfStartX))/13;
-  pfScore = Math.max(0, Math.floor(pfProgress));
+  pfScore = pfFlapEndless ? pfFlappyPassed : Math.max(0, Math.floor(pfProgress));
   pfGenPath();
   // marker obstacles
   for(var o=0;o<pfObstacles.length;o++){ var ob=pfObstacles[o];
@@ -4770,7 +4772,7 @@ function pfGuyProc(x,y,face,tilt){
   c.restore();
 }
 function pfHud(W,H){
-  pfctx.fillStyle="#fff"; pfctx.font="bold 11px Helvetica, Arial, sans-serif"; pfctx.textAlign="left"; pfctx.textBaseline="top"; pfctx.fillText("H "+pfScore, 5, 5);
+  pfctx.fillStyle="#fff"; pfctx.font="bold 11px Helvetica, Arial, sans-serif"; pfctx.textAlign="left"; pfctx.textBaseline="top"; if(pfFlapEndless){ pfctx.fillText("\u00d7"+pfFlappyPassed, 5, 5); } else { pfctx.fillText("H "+pfScore, 5, 5); }
   pfctx.textAlign="right"; pfctx.fillStyle="#ffd700"; pfctx.fillText("BEST "+pfBest, W-5, 5);
 }
 // ── Qu33ph Jump backdrop: window.png (climbing) / windowP.png (running) + scattered trees ──
