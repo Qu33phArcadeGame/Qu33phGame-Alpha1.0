@@ -40,7 +40,7 @@ function resize(){
   let w=aw, h=aw/ar; if(h>ah){ h=ah; w=ah*ar; }
   cv.style.width=w+'px'; cv.style.height=h+'px';
   CW=Math.round(w*DPR); CH=Math.round(h*DPR); cv.width=CW; cv.height=CH;
-  centerY=CH*0.52; layout();
+  centerY=CH*0.505; layout();
 }
 window.addEventListener('resize',resize);
 
@@ -48,7 +48,7 @@ window.addEventListener('resize',resize);
 let state='pick', mode='1p';
 let s1, s2, ball, score1=0, score2=0, goalTimer=0, msg='', winner='';
 let c1='green', c2='blue';
-const WIN_GOALS=3;
+let winGoals=3;
 let R_BALL, R_SPIN, GOAL_HALF;
 
 function layout(){
@@ -88,6 +88,10 @@ function moveSpinner(sp,p,bottom){
 }
 function pickTap(p){
   if(p.y < CH*0.42){ mode=(p.x<CW/2)?'1p':'2p'; return; }
+  if(p.y > CH*0.80){                                    // FIRST TO toggle row
+    let opts=[3,5,7]; for(let i=0;i<3;i++){ if(Math.abs(p.x-CW*(0.3+i*0.2))<CW*0.09){ winGoals=opts[i]; break; } }
+    return;
+  }
   c1=(p.x<CW/2)?'green':'blue'; c2=c1==='green'?'blue':'green';
   score1=0; score2=0; resetPositions(); state='play'; msg='';
   document.getElementById('resetBtn').style.display='block';
@@ -127,8 +131,8 @@ function update(){
 }
 function score(who){
   if(who===1){ score1++; msg='GOAL!'; } else { score2++; msg=(mode==='2p'?'P2 SCORES':'CPU SCORES'); }
-  if(score1>=WIN_GOALS||score2>=WIN_GOALS){
-    winner = (mode==='2p') ? (score1>=WIN_GOALS?'P1 WINS!':'P2 WINS!') : (score1>=WIN_GOALS?'YOU WIN!':'CPU WINS');
+  if(score1>=winGoals||score2>=winGoals){
+    winner = (mode==='2p') ? (score1>=winGoals?'P1 WINS!':'P2 WINS!') : (score1>=winGoals?'YOU WIN!':'CPU WINS');
     state='win'; return;
   }
   state='goal'; goalTimer=70;
@@ -173,12 +177,18 @@ function drawPick(){
     ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText(txt,x,y+CW*0.016); }
   tab('1 PLAYER',CW*0.3,mode==='1p'); tab('2 PLAYER',CW*0.7,mode==='2p');
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText(mode==='2p'?'P1 — PICK YOUR SPINNER':'PICK YOUR SPINNER',CW/2,CH*0.4);
-  let r=CW*0.16, gy=CH*0.56;
+  let r=CW*0.15, gy=CH*0.55;
   [['green',CW*0.3,1],['blue',CW*0.7,-1]].forEach(([c,x,dir])=>{ const im=SPIN[c]; ctx.save(); ctx.translate(x,gy); ctx.rotate(performance.now()*0.002*dir); if(ready(im)){ let w=r*2,h=w*(im.naturalHeight/im.naturalWidth); ctx.drawImage(im,-w/2,-h/2,w,h);} ctx.restore(); });
-  ctx.fillStyle='#9fe3b8'; ctx.font='bold '+Math.round(CW*0.04)+'px Helvetica'; ctx.fillText('GREEN',CW*0.3,gy+r+CW*0.09);
-  ctx.fillStyle='#9ec7ff'; ctx.fillText('BLUE',CW*0.7,gy+r+CW*0.09);
-  ctx.fillStyle='#bbb'; ctx.font='bold '+Math.round(CW*0.03)+'px Helvetica';
-  ctx.fillText(mode==='2p'?'P1 bottom · P2 top · drag on your half · first to 3':'drag on your half · first to 3 wins',CW/2,CH*0.72);
+  ctx.fillStyle='#9fe3b8'; ctx.font='bold '+Math.round(CW*0.038)+'px Helvetica'; ctx.fillText('GREEN',CW*0.3,gy+r+CW*0.08);
+  ctx.fillStyle='#9ec7ff'; ctx.fillText('BLUE',CW*0.7,gy+r+CW*0.08);
+  // FIRST TO toggle
+  ctx.fillStyle='#ccc'; ctx.font='bold '+Math.round(CW*0.034)+'px Helvetica'; ctx.fillText('FIRST TO',CW/2,CH*0.80);
+  [3,5,7].forEach((n,i)=>{ let x=CW*(0.3+i*0.2), y=CH*0.85, on=(winGoals===n), rr=CW*0.075;
+    ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.fillStyle=on?'#ffd54a':'rgba(255,255,255,0.1)'; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle=on?'#ffd54a':'#666'; ctx.stroke();
+    ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText(n,x,y+CW*0.018); });
+  ctx.fillStyle='#999'; ctx.font='bold '+Math.round(CW*0.028)+'px Helvetica';
+  ctx.fillText(mode==='2p'?'P1 bottom · P2 top · tap a spinner to start':'tap a spinner to start',CW/2,CH*0.93);
 }
 function loop(){ update(); if(state==='goal'){ goalTimer--; if(goalTimer<=0){ resetPositions(); state='play'; msg=''; } } draw(); requestAnimationFrame(loop); }
 document.getElementById('resetBtn').onclick=()=>{ state='pick'; document.getElementById('resetBtn').style.display='none'; };
