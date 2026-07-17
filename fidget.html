@@ -40,7 +40,7 @@ function resize(){
   let w=aw, h=aw/ar; if(h>ah){ h=ah; w=ah*ar; }
   cv.style.width=w+'px'; cv.style.height=h+'px';
   CW=Math.round(w*DPR); CH=Math.round(h*DPR); cv.width=CW; cv.height=CH;
-  centerY=CH*0.5; layout();
+  centerY=CH*0.52; layout();
 }
 window.addEventListener('resize',resize);
 
@@ -111,7 +111,7 @@ function update(){
   else {
     let tx,ty;
     if(ball.y<centerY){ tx=ball.x; ty=ball.y-R_SPIN*0.7; } else { tx=CW/2+(ball.x-CW/2)*0.5; ty=CH*0.14; }
-    let adx=tx-s2.x, ady=ty-s2.y, ad=Math.hypot(adx,ady)||1, step=Math.min(CW*0.016,ad);
+    let adx=tx-s2.x, ady=ty-s2.y, ad=Math.hypot(adx,ady)||1, step=Math.min(CW*0.0105,ad);
     s2.px=s2.x; s2.py=s2.y; s2.x+=adx/ad*step; s2.y+=ady/ad*step;
     s2.x=Math.max(R_SPIN,Math.min(CW-R_SPIN,s2.x)); s2.y=Math.max(R_SPIN,Math.min(centerY-R_SPIN*0.6,s2.y));
     s2.vx=s2.x-s2.px; s2.vy=s2.y-s2.py;
