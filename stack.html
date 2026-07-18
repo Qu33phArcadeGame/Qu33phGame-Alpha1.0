@@ -16,12 +16,11 @@
 <div id="wrap"><canvas id="game"></canvas></div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
-const IMG={}; ['red','green','blue'].forEach(k=>{ const im=new Image(); im.src='stack'+k+'.png'; IMG[k]=im; });
+const THEME=(new URLSearchParams(location.search).get('theme')||'default');
+const MPREF=(THEME==='cartoon')?'comic':'stack';
+const IMG={}; ['red','green','blue'].forEach(k=>{ const im=new Image(); im.src=MPREF+k+'.png'; IMG[k]=im; });
 function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 const COLORS=['red','green','blue'], HEX={red:'#e23b3b',green:'#2fa84f',blue:'#3a63c8'};
-
-// theme background (passed from arcade)
-const THEME=(new URLSearchParams(location.search).get('theme')||'default');
 const BG={ 'default':['#141a2c','#0a0c14'], 'cartoon':['#f2ead6','#d9cdb0'], 'neon':['#1a0a24','#08010f'],
            'sunset':['#3a1e40','#12060f'], 'galaxy':['#0d0a2a','#05030f'] };
 const TXT={ 'cartoon':'#222', 'default':'#fff','neon':'#fff','sunset':'#fff','galaxy':'#fff' };
@@ -30,7 +29,7 @@ let CW=0,CH=0,DPR=1,ML=0,MW=0,PLATE_Y=0,PLATE_W=0;
 function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
   let ar=720/1280,w=r.width,h=w/ar; if(h>r.height){h=r.height;w=h*ar;}
   cv.style.width=w+'px'; cv.style.height=h+'px'; CW=Math.round(w*DPR); CH=Math.round(h*DPR); cv.width=CW; cv.height=CH;
-  ML=Math.round(CW*0.36); MW=Math.round(CW*0.115); PLATE_W=Math.round(CW*0.40); PLATE_Y=Math.round(CH*0.80);
+  ML=Math.round(CW*0.36); MW=Math.round(CW*0.115); PLATE_W=Math.round(CW*0.40); PLATE_Y=Math.round(CH*0.90);
 }
 sz();
 
@@ -67,9 +66,9 @@ let dragTarget=null;
 cv.addEventListener('pointerdown',e=>{
   if(state==='title'){ startGame(); return; }
   if(state==='over'){ if(overT<=0){ state='title'; } return; }
-  if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); dragTarget={x:Math.max(MW,Math.min(CW-MW,p.x)), y:p.y}; }
+  if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); dragTarget={x:Math.max(MW,Math.min(CW-MW,p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; }
 });
-cv.addEventListener('pointermove',e=>{ if(state==='play'&&cur&&cur.held){ const p=pt(e); dragTarget={x:Math.max(MW,Math.min(CW-MW,p.x)), y:p.y}; } });
+cv.addEventListener('pointermove',e=>{ if(state==='play'&&cur&&cur.held){ const p=pt(e); dragTarget={x:Math.max(MW,Math.min(CW-MW,p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; } });
 function release(){ if(state==='play'&&cur&&cur.held&&!cur.dropped){ cur.held=false; cur.dropped=true; M.Body.setStatic(cur,false); M.Body.setVelocity(cur,{x:0,y:0}); } }
 window.addEventListener('pointerup',release); window.addEventListener('pointercancel',release);
 
@@ -91,8 +90,8 @@ function update(){
   // any previously-placed marker fell off -> topple
   if(state==='play'){ for(const b of placed){ if(b.position.y > PLATE_Y+ML*1.1 || b.position.x<-ML || b.position.x>CW+ML){ gameOver(); break; } } }
   // camera follows tower top
-  let topY = PLATE_Y; if(placed.length) topY=Math.min(topY, ...placed.map(b=>b.position.y)); if(cur) topY=Math.min(topY,cur.position.y);
-  const target = CH*0.42 - topY; camY += (target-camY)*0.1;
+  let topY = PLATE_Y; if(placed.length) topY=Math.min(topY, ...placed.map(b=>b.position.y)); if(cur&&cur.dropped) topY=Math.min(topY,cur.position.y);
+  const followLine = CH*0.28; const target = Math.max(0, followLine - topY); camY += (target-camY)*0.12;
   if(state==='over' && overT>0) overT--;
 }
 function gameOver(){ if(state==='over')return; state='over'; overT=80; }
@@ -106,9 +105,20 @@ function drawBody(b){
 }
 function rr(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
+function drawBackground(){
+  const bg=BG[THEME]||BG.default, g=ctx.createLinearGradient(0,0,0,CH); g.addColorStop(0,bg[0]); g.addColorStop(1,bg[1]); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
+  if(THEME==='cartoon'){                       // Ben-Day halftone dots
+    const d=CW*0.032, r=d*0.24; ctx.fillStyle='rgba(206,58,74,0.16)';
+    for(let gy=0; gy<CH+d; gy+=d){ const off=((Math.round(gy/d))%2)?d/2:0; for(let gx=off; gx<CW+d; gx+=d){ ctx.beginPath(); ctx.arc(gx,gy,r,0,7); ctx.fill(); } }
+  } else if(THEME==='galaxy'){                  // stars
+    ctx.fillStyle='rgba(255,255,255,0.75)'; for(let i=0;i<70;i++){ const x=(i*97)%CW, y=(i*173)%CH, sp=(i%3)+1; ctx.fillRect(x,y,sp,sp); }
+  } else if(THEME==='neon'){                    // faint neon glow center
+    const rg=ctx.createRadialGradient(CW/2,CH*0.55,0,CW/2,CH*0.55,CW*0.9); rg.addColorStop(0,'rgba(255,60,200,0.10)'); rg.addColorStop(1,'rgba(255,60,200,0)'); ctx.fillStyle=rg; ctx.fillRect(0,0,CW,CH);
+  }
+}
 function draw(){
   ctx.setTransform(1,0,0,1,0,0);
-  const bg=BG[THEME]||BG.default, g=ctx.createLinearGradient(0,0,0,CH); g.addColorStop(0,bg[0]); g.addColorStop(1,bg[1]); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
+  drawBackground();
   const txt=TXT[THEME]||'#fff';
   if(state==='title'){ drawTitle(txt); return; }
   if(state==='loading'){ ctx.fillStyle=txt; ctx.textAlign='center'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('loading…',CW/2,CH/2); return; }

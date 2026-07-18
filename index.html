@@ -479,7 +479,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v286</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v287</div>
 
 <canvas id="game"></canvas>
 
@@ -1272,6 +1272,7 @@ function applyThemeFilters(){
   var am=document.getElementById("arcadeMenu");
   if(am){ am.className = s==="cartoon"?"arc-comic":s==="neon"?"arc-neon":s==="galaxy"?"arc-galaxy":s==="sunset"?"arc-sunset":""; }
   { var _ff=({ "default":"fidgetqu33phfield.png","cartoon":"fidgetcomicfield.png","neon":"fidgetneonfield.png","sunset":"fidgetgoldenfield.png","galaxy":"fidgetgalaxyfield.png" })[s]||"fidgetqu33phfield.png"; var _fi=document.querySelector("#cabFidget img"); if(_fi && _fi.getAttribute("src")!==_ff) _fi.setAttribute("src",_ff); }
+  { var _ss=(s==="cartoon")?"stackicon_comic.png":"stackicon.png"; var _si=document.querySelector("#cabStack img"); if(_si && _si.getAttribute("src")!==_ss) _si.setAttribute("src",_ss); }
   var pbg=document.getElementById("pinballBg"); if(pbg) pbg.style.filter=css;
   var pcv=document.getElementById("pinballCanvas"); if(pcv) pcv.style.filter="";
 }
