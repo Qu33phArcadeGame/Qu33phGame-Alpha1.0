@@ -216,6 +216,7 @@
     #arcadeMenu.arc-neon #cabPinball img { filter:drop-shadow(0 0 10px #3affea) drop-shadow(0 0 22px rgba(58,255,234,0.5)); }
     #arcadeMenu.arc-neon #cabGolf img { filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 10px #28ff82) drop-shadow(0 0 18px rgba(40,255,130,0.65)); }
     #cabFidget img { width:100%; aspect-ratio:150/230; max-height:168px; object-fit:cover; border-radius:14px; border:3px solid #141414; box-sizing:border-box; }
+    #cabStack img { width:100%; aspect-ratio:150/230; max-height:168px; object-fit:cover; border-radius:14px; border:3px solid #141414; box-sizing:border-box; }
     #arcadeMenu.arc-comic #cabFidget img, #arcadeMenu.arc-neon #cabFidget img, #arcadeMenu.arc-sunset #cabFidget img, #arcadeMenu.arc-galaxy #cabFidget img { filter:drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-comic #cabFidget img { border-color:#000; }
     #arcadeMenu.arc-neon #cabFidget img { border-color:#ff3bd0; box-shadow:0 0 9px #ff3bd0, 0 0 18px rgba(255,59,208,0.5); }
@@ -472,7 +473,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v282</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v284</div>
 
 <canvas id="game"></canvas>
 
@@ -526,7 +527,7 @@
     <div class="cab-card" id="cabJump" onclick="launchPfGame()"><img src="qu33phjump.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH JUMP</div></div>
     <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
     <div class="cab-card" id="cabGolf" onclick="launchGolf()"><img src="golfoverlay.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH MINI GOLF</div></div>
-    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card" id="cabStack" onclick="launchStack()"><img src="stackicon.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH STACK</div></div>
     <div class="cab-card" id="cabFidget" onclick="launchFidget()"><img src="fidgetqu33phfield.png" onerror="this.style.opacity=0.2"><div class="cab-label">FIDGET QU33PH</div></div>
     <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
     <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
@@ -545,6 +546,10 @@
   <button id="pbLaunchBtn" style="position:absolute;right:14px;bottom:14px;z-index:6;background:radial-gradient(circle at 40% 30%,#ff9a9a,#d62424 65%,#8a1010);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;border:2px solid rgba(0,0,0,0.4);border-radius:12px;padding:12px 18px;box-shadow:0 4px 10px rgba(0,0,0,0.6),inset 0 2px 6px rgba(255,255,255,0.4);">LAUNCH</button>
 </div>
 
+<div id="stackScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
+  <iframe id="stackFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
+  <button class="back-tl" onclick="stackBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
+</div>
 <div id="fidgetScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="fidgetFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
   <button class="back-tl" onclick="fidgetBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
@@ -4107,7 +4112,7 @@ function showArcadeMenu(){
   var st=document.getElementById("sideTabs"); if(st) st.style.display="none";
   var ps=document.getElementById("platformerScreen"); if(ps) ps.style.display="none";
   var ds=document.getElementById("dreamonScreen"); if(ds) ds.style.display="none";
-  var gs=document.getElementById("golfScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("golfFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; } var fs=document.getElementById("fidgetScreen"); if(fs && fs.style.display!=="none"){ var ff=document.getElementById("fidgetFrame"); if(ff){ try{ ff.setAttribute("src","about:blank"); }catch(e){} } fs.style.display="none"; }
+  var gs=document.getElementById("golfScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("golfFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; } var fs=document.getElementById("fidgetScreen"); if(fs && fs.style.display!=="none"){ var ff=document.getElementById("fidgetFrame"); if(ff){ try{ ff.setAttribute("src","about:blank"); }catch(e){} } fs.style.display="none"; } var ss=document.getElementById("stackScreen"); if(ss && ss.style.display!=="none"){ var sf=document.getElementById("stackFrame"); if(sf){ try{ sf.setAttribute("src","about:blank"); }catch(e){} } ss.style.display="none"; }
   var dm=document.getElementById("dlMap"); if(dm) dm.style.display="none";
   document.getElementById("arcadeMenu").style.display="flex";
   try{ applyThemeFilters(); }catch(e){}
@@ -4119,6 +4124,8 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); f.setAttribute("src","stack.html"); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
 function jmSelect(){

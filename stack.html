@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Qu33ph Stack</title>
+<style>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; background:#0b0d14; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; }
+  #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #game{ display:block; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game"></canvas></div>
+<script>
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+const IMG={}; ['red','green','blue'].forEach(k=>{ const im=new Image(); im.src=k+'.png'; IMG[k]=im; });
+function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
+const COLORS=['red','green','blue'];
+const HEX={ red:'#ff3b45', green:'#46e05a', blue:'#3a8bff' };
+
+let CW=0, CH=0, DPR=1, MW=0, MH=0;
+function resize(){
+  const r=document.getElementById('wrap').getBoundingClientRect();
+  DPR=Math.min(2, window.devicePixelRatio||1);
+  let ar=720/1280, w=r.width, h=w/ar; if(h>r.height){ h=r.height; w=h*ar; }
+  cv.style.width=w+'px'; cv.style.height=h+'px';
+  CW=Math.round(w*DPR); CH=Math.round(h*DPR); cv.width=CW; cv.height=CH;
+  MW=Math.round(CW*0.15); MH=Math.round(MW*1.9);
+}
+window.addEventListener('resize',resize);
+
+// ---- physics (verlet chain of joints; markers are the segments between joints) ----
+const GRAV=0.55, DAMP=0.985, ITER=10, BEND=0.55, BASECLAMP=0.9;
+let joints=[], markers=[], active=null, baseX=0, groundY=0;
+let state='title', score=0, best=0, camY=0, toppleT=0, fallH=0;
+try{ best=parseInt(localStorage.getItem('qu33phStackBest')||'0',10)||0; }catch(e){}
+
+function reset(){
+  baseX=CW/2; groundY=CH*0.86;
+  joints=[{x:baseX,y:groundY,ox:baseX,oy:groundY}];
+  joints.push({x:baseX,y:groundY-MH,ox:baseX,oy:groundY-MH});   // first marker (red) on the plate
+  markers=[{color:'red'}];
+  score=0; camY=0; toppleT=0; state='play';
+  newActive();
+}
+function colorFor(i){ return COLORS[i%3]; }
+function newActive(){
+  const lvl=markers.length, top=joints[joints.length-1];
+  active={ x:(Math.random()<0.5?MW:CW-MW), y:top.y-MH, dir:(Math.random()<0.5?1:-1), spd:Math.min(CW*0.02, CW*0.008+lvl*CW*0.0004), color:colorFor(lvl) };
+}
+function drop(){
+  if(state==='title'){ reset(); return; }
+  if(state==='over'){ state='title'; return; }
+  if(state!=='play') return;
+  const top=joints[joints.length-1];
+  // add a new joint above the current top, offset by where you dropped
+  joints.push({x:active.x, y:top.y-MH, ox:active.x, oy:top.y-MH});
+  markers.push({color:active.color});
+  score++;
+  if(score>best){ best=score; try{ localStorage.setItem('qu33phStackBest',best);}catch(e){} }
+  newActive();
+}
+cv.addEventListener('pointerdown', drop);
+
+function physics(){
+  // integrate free joints (index >=1)
+  for(let i=1;i<joints.length;i++){ const j=joints[i];
+    let vx=(j.x-j.ox)*DAMP, vy=(j.y-j.oy)*DAMP;
+    j.ox=j.x; j.oy=j.y; j.x+=vx; j.y+=vy+GRAV;
+  }
+  const stiff = (state==='play') ? 1 : 0.15;   // when toppling, go limp so it falls over
+  for(let k=0;k<ITER;k++){
+    joints[0].x=baseX; joints[0].y=groundY;                       // pin plate
+    // distance constraints (rigid marker length)
+    for(let i=1;i<joints.length;i++){ const a=joints[i-1], b=joints[i];
+      let dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||1, diff=(d-MH)/d;
+      if(i-1===0){ b.x-=dx*diff; b.y-=dy*diff; }
+      else { a.x+=dx*diff*0.5; a.y+=dy*diff*0.5; b.x-=dx*diff*0.5; b.y-=dy*diff*0.5; }
+    }
+    // bending stiffness: each segment continues straight from the previous (keeps it a rigid-ish column)
+    for(let i=1;i<joints.length-1;i++){ const a=joints[i-1], b=joints[i], c=joints[i+1];
+      let px=b.x+(b.x-a.x), py=b.y+(b.y-a.y);
+      c.x+=(px-c.x)*BEND*stiff; c.y+=(py-c.y)*BEND*stiff;
+    }
+    // base clamp: first marker stays roughly upright on the plate
+    if(joints.length>1){ joints[1].x+=(baseX-joints[1].x)*BASECLAMP*stiff; }
+  }
+}
+
+function update(){
+  if(state==='title') return;
+  if(state==='play'){
+    active.x+=active.dir*active.spd;
+    if(active.x<MW){ active.x=MW; active.dir=1; }
+    if(active.x>CW-MW){ active.x=CW-MW; active.dir=-1; }
+    active.y=joints[joints.length-1].y-MH;
+  }
+  if(state==='play'||state==='over') physics();
+  // camera follows the top of the tower
+  const topY=joints[joints.length-1].y;
+  const targetCam = Math.max(0, (CH*0.42) - topY);
+  camY += (targetCam-camY)*0.12;
+  // topple check: top joint drifted too far sideways from the plate
+  if(state==='play' && joints.length>3){
+    const drift=Math.abs(joints[joints.length-1].x - baseX);
+    if(drift > MW*2.6){ state='over'; toppleT=90; fallH=score; }
+  }
+  if(state==='over' && toppleT>0){ toppleT--; }
+}
+
+function drawMarkerSeg(a,b,color){
+  const cx=(a.x+b.x)/2, cy=(a.y+b.y)/2, ang=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2;
+  const len=Math.hypot(b.x-a.x,b.y-a.y);
+  ctx.save(); ctx.translate(cx,cy+camY); ctx.rotate(ang);
+  const im=IMG[color];
+  if(ready(im)) ctx.drawImage(im,-MW/2,-len/2,MW,len);
+  else { ctx.fillStyle=HEX[color]; rr(-MW/2,-len/2,MW,len,MW/2); ctx.fill(); ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=2; ctx.stroke(); }
+  ctx.restore();
+}
+function rr(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+function draw(){
+  ctx.setTransform(1,0,0,1,0,0);
+  const g=ctx.createLinearGradient(0,0,0,CH); g.addColorStop(0,'#141a2c'); g.addColorStop(1,'#0a0c14'); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
+  if(state==='title'){ drawTitle(); return; }
+
+  // plate
+  ctx.fillStyle='#cfd6e0'; ctx.beginPath(); ctx.ellipse(baseX, groundY+camY+MH*0.05, MW*1.1, MW*0.28, 0, 0, 7); ctx.fill();
+  // tower markers
+  for(let i=0;i<markers.length;i++){ drawMarkerSeg(joints[i], joints[i+1], markers[i].color); }
+  // active marker + drop guide
+  if(state==='play'){
+    ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.setLineDash([6,8]); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(active.x, 0); ctx.lineTo(active.x, CH); ctx.stroke(); ctx.setLineDash([]);
+    const a={x:active.x,y:active.y}, b={x:active.x,y:active.y+MH}; drawMarkerSeg(b,a,active.color);
+  }
+  // HUD
+  ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.12)+'px Helvetica';
+  ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=8; ctx.fillText(score, CW/2, CH*0.12); ctx.shadowBlur=0;
+  ctx.fillStyle='#8fa'; ctx.font='bold '+Math.round(CW*0.035)+'px Helvetica'; ctx.fillText('BEST '+best, CW/2, CH*0.16);
+
+  if(state==='over' && toppleT<=0){
+    ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,CW,CH);
+    ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; ctx.fillText('TIMBER!', CW/2, CH*0.4);
+    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.16)+'px Helvetica'; ctx.fillText(fallH, CW/2, CH*0.53);
+    ctx.fillStyle='#8fa'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText('markers high · BEST '+best, CW/2, CH*0.59);
+    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText('tap to play again', CW/2, CH*0.68);
+  }
+}
+function drawTitle(){
+  const cx=CW/2, base=CH*0.66, w=MW, h=MH;
+  ['red','green','blue'].forEach((c,i)=>{ const y=base - i*h*0.98; const a={x:cx,y:y}, b={x:cx,y:y-h}; drawMarkerSeg(b,a,c); });
+  ctx.textAlign='center'; ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.11)+'px Helvetica';
+  ctx.fillText('QU33PH', CW/2, CH*0.2); ctx.fillText('STACK', CW/2, CH*0.2+Math.round(CW*0.12));
+  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.042)+'px Helvetica'; ctx.fillText('tap to drop · keep it balanced', CW/2, CH*0.8);
+  ctx.fillStyle='#8fa'; ctx.font='bold '+Math.round(CW*0.04)+'px Helvetica'; ctx.fillText('BEST '+best, CW/2, CH*0.85);
+  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('▶ TAP TO START', CW/2, CH*0.91);
+}
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+resize(); loop();
+</script>
+</body>
+</html>
