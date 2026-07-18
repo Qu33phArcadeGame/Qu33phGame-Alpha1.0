@@ -30,7 +30,7 @@ let CW=0,CH=0,DPR=1,ML=0,MW=0,PLATE_Y=0,PLATE_W=0;
 function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
   let ar=720/1280,w=r.width,h=w/ar; if(h>r.height){h=r.height;w=h*ar;}
   cv.style.width=w+'px'; cv.style.height=h+'px'; CW=Math.round(w*DPR); CH=Math.round(h*DPR); cv.width=CW; cv.height=CH;
-  ML=Math.round(CW*0.42); MW=Math.round(CW*0.088); PLATE_W=Math.round(CW*0.36); PLATE_Y=Math.round(CH*0.80);
+  ML=Math.round(CW*0.36); MW=Math.round(CW*0.115); PLATE_W=Math.round(CW*0.40); PLATE_Y=Math.round(CH*0.80);
 }
 sz();
 
@@ -39,7 +39,7 @@ try{ best=parseInt(localStorage.getItem('qu33phStackBest')||'0',10)||0; }catch(e
 
 function boot(){
   M=window.Matter; if(!M){ setTimeout(boot,60); return; }
-  engine=M.Engine.create(); world=engine.world; engine.gravity.y=1.1;
+  engine=M.Engine.create(); world=engine.world; engine.gravity.y=0.8;
   state='title';
 }
 boot();
@@ -55,26 +55,31 @@ function spawn(){
   const color=COLORS[placed.length%3];
   const topY = placed.length? Math.min(...placed.map(b=>b.position.y)) : PLATE_Y;
   const y = topY - ML*1.4;
-  const b=M.Bodies.rectangle(CW/2, y, MW, ML, { chamfer:{radius:MW*0.45}, friction:0.7, frictionStatic:1, restitution:0.02, density:0.004, label:'marker' });
-  b.color=color; b.held=true; b.dropped=false; b.settle=0;
+  const b=M.Bodies.rectangle(CW/2, y, MW, ML, { chamfer:{radius:MW*0.14}, friction:1.0, frictionStatic:3, frictionAir:0.03, restitution:0, density:0.004, slop:0.02, label:'marker' });
+  b.color=color; b.held=false; b.dropped=false; b.settle=0;
   M.Body.setStatic(b,true);
   M.Composite.add(world,b); cur=b;
 }
 
 // ---- input: drag the current marker, release to drop ----
 function pt(e){ const r=cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*CW, y:(e.clientY-r.top)/r.height*CH - camY }; }
+let dragTarget=null;
 cv.addEventListener('pointerdown',e=>{
   if(state==='title'){ startGame(); return; }
   if(state==='over'){ if(overT<=0){ state='title'; } return; }
-  if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); M.Body.setPosition(cur,{x:p.x,y:p.y}); M.Body.setAngle(cur,0); }
+  if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); dragTarget={x:Math.max(MW,Math.min(CW-MW,p.x)), y:p.y}; }
 });
-cv.addEventListener('pointermove',e=>{ if(state==='play'&&cur&&cur.held){ const p=pt(e); M.Body.setPosition(cur,{x:Math.max(MW,Math.min(CW-MW,p.x)),y:p.y}); M.Body.setAngle(cur,0); M.Body.setVelocity(cur,{x:0,y:0}); M.Body.setAngularVelocity(cur,0); } });
+cv.addEventListener('pointermove',e=>{ if(state==='play'&&cur&&cur.held){ const p=pt(e); dragTarget={x:Math.max(MW,Math.min(CW-MW,p.x)), y:p.y}; } });
 function release(){ if(state==='play'&&cur&&cur.held&&!cur.dropped){ cur.held=false; cur.dropped=true; M.Body.setStatic(cur,false); M.Body.setVelocity(cur,{x:0,y:0}); } }
 window.addEventListener('pointerup',release); window.addEventListener('pointercancel',release);
 
 function update(){
   if(state!=='play' && state!=='over'){ return; }
-  if(state==='play' || (state==='over')) M.Engine.update(engine, 1000/60);
+  if(state==='play' && cur && cur.held && dragTarget){
+    const nx=cur.position.x+(dragTarget.x-cur.position.x)*0.16, ny=cur.position.y+(dragTarget.y-cur.position.y)*0.16;
+    M.Body.setPosition(cur,{x:nx,y:ny}); M.Body.setAngle(cur,0); M.Body.setVelocity(cur,{x:0,y:0}); M.Body.setAngularVelocity(cur,0);
+  }
+  M.Engine.update(engine, 1000/60);
   if(state==='play' && cur && cur.dropped){
     if(cur.position.y > PLATE_Y+ML*0.8){ gameOver(); }        // fell past/off the plate
     else {
