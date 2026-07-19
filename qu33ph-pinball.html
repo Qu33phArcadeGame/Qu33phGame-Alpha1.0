@@ -9,175 +9,167 @@
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#05060a; }
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #game{ display:block; }
-  #msg{ position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:5; font-weight:bold; font-size:13px; letter-spacing:1px; color:#ffd54a; text-shadow:0 2px 6px #000; pointer-events:none; text-align:center; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
 <body>
 <div id="wrap"><canvas id="game"></canvas></div>
-<div id="msg"></div>
 <script>
-const cv=document.getElementById('game'), ctx=cv.getContext('2d'), msgEl=document.getElementById('msg');
-const FIELD=new Image(); FIELD.src='pinfield.png';
-const CHAIR=new Image(); CHAIR.src='chair.png';
-function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
-
-// ---- layout (fractions of the field image, from analysis) ----
-const BUMPERS=[[0.50,0.265],[0.395,0.31],[0.605,0.31],[0.50,0.346],[0.424,0.40],[0.574,0.40]];
-const SLINGS=[[0.205,0.66],[0.655,0.66]];
-const MEGA=[0.757,0.256], CHAIRP=[0.285,0.60];
-const FLIP_L=[0.40,0.83], FLIP_R=[0.60,0.83];
-const LAUNCH_X=0.865;
-
-let CW=0,CH=0,DPR=1,S=1;
-function px(fx){ return fx*CW; } function py(fy){ return fy*CH; }
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+// ---- coordinate system: play area is W x H units; everything defined in these units, scaled to canvas ----
+const PW=100, PH=170;                 // logical play field (portrait)
+let CW=0,CH=0,DPR=1,SC=1,OX=0,OY=0;
 function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
-  let ar=961/1637,w=r.width,h=w/ar; if(h>r.height){h=r.height;w=h*ar;}
-  cv.style.width=w+'px'; cv.style.height=h+'px'; CW=Math.round(w*DPR); CH=Math.round(h*DPR); cv.width=CW; cv.height=CH; S=CW/961;
+  let w=r.width,h=r.height; const ar=PW/PH;
+  let cw=w, ch=w/ar; if(ch>h){ ch=h; cw=h*ar; }
+  cv.style.width=cw+'px'; cv.style.height=ch+'px'; CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH;
+  SC=CW/PW; OX=0; OY=0;
 }
 sz();
+function X(u){ return u*SC; } // unit -> canvas px
 
-let M,engine,world,ball=null,flipL,flipR,flipLc,flipRc,chairBody,launchPower=0,launching=false;
-let score=0,best=0,balls=3,state='loading',megaFlash=0,chairFlash=0,bumperFlash={};
-try{ best=parseInt(localStorage.getItem('qu33phPinballBest')||'0',10)||0; }catch(e){}
-const R_BALL=()=>CW*0.026, R_BUMP=()=>CW*0.058;
+// ---- geometry constants (in play units) ----
+const CHUTE_X=88, CHUTE_W=12;         // launch chute on the right
+const PLAYR=CHUTE_X-CHUTE_W-1;        // right edge of play area (left of chute)
+const WALL=2.5;
+const FLIP_Y=150, FLIP_LEN=20, FLIP_GAP=20;   // flipper pivots span the drain gap
+const L_PIVOT=PW/2-FLIP_GAP, R_PIVOT=PW/2+FLIP_GAP;
+const BUMPERS=[[38,42,8],[54,42,8],[46,55,8],[32,60,7.5],[60,60,7.5],[46,70,8]]; // x,y,r
+const SLINGS=[[22,120],[66,120]];
+const CHAIR=[24,95], MEGA=[46,26];
 
-function boot(){ M=window.Matter; if(!M){ setTimeout(boot,60); return; } setup(); state='ready'; }
+let M,engine,world,ball=null,flipL,flipR,balls=3,score=0,best=0,state='loading',launchP=0,charging=false,draining=false,overT=0,megaFlash=0,chairFlash=0,bumpFlash={};
+try{ best=parseInt(localStorage.getItem('qu33phPinBest')||'0',10)||0; }catch(e){}
+
+function boot(){ M=window.Matter; if(!M){ setTimeout(boot,60); return; } build(); state='ready'; }
 boot();
 
-function wallSeg(x1,y1,x2,y2,th){ const mx=(x1+x2)/2,my=(y1+y2)/2,dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx);
-  return M.Bodies.rectangle(mx,my,len,th||CW*0.02,{isStatic:true,angle:ang,friction:0,restitution:0.2,label:'wall'}); }
+function wall(x1,y1,x2,y2,thU){ const mx=(x1+x2)/2,my=(y1+y2)/2,dx=(x2-x1),dy=(y2-y1),len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx);
+  return M.Bodies.rectangle(X(mx),X(my),X(len),X(thU||WALL),{isStatic:true,angle:ang,friction:0.02,restitution:0.25,label:'wall'}); }
 
-function setup(){
-  engine=M.Engine.create(); world=engine.world; engine.gravity.y=1.0;
+function build(){
+  engine=M.Engine.create(); world=engine.world; engine.gravity.y=1.0; engine.positionIterations=10; engine.velocityIterations=10;
   const parts=[];
-  // outer play-area walls (approximate the neon field outline; fine-tune later)
-  const L=px(0.135), Rr=px(0.815), T=py(0.215), Bt=py(0.875);
-  parts.push(wallSeg(L,T,L,Bt));                 // left
-  parts.push(wallSeg(Rr,py(0.30),Rr,Bt));        // right inner (left of launch lane)
-  parts.push(wallSeg(L,T,Rr,T));                 // top
-  // upper arch funnel toward bumpers
-  parts.push(wallSeg(L,py(0.30),px(0.32),py(0.235)));
-  parts.push(wallSeg(Rr,py(0.30),px(0.68),py(0.235)));
-  // bottom angled walls toward the drain (gap in the middle)
-  parts.push(wallSeg(L,Bt,px(0.34),py(0.955)));
-  parts.push(wallSeg(Rr,Bt,px(0.66),py(0.955)));
-  // launch lane (right channel)
-  parts.push(wallSeg(px(LAUNCH_X-0.045),py(0.30),px(LAUNCH_X-0.045),py(0.90)));  // divider
-  parts.push(wallSeg(px(0.90),py(0.24),px(0.90),py(0.90)));                       // outer right
-  // one-way lip at top of launch lane so the ball rolls into play
-  parts.push(wallSeg(px(LAUNCH_X-0.045),py(0.30),px(0.80),py(0.245)));
+  // outer box
+  parts.push(wall(2,4,2,PH-6));                       // left
+  parts.push(wall(2,4,PW-2,4));                       // top
+  parts.push(wall(PW-2,4,PW-2,PH-2));                 // far right (outer chute wall)
+  // chute divider (between play and launch lane), open at the very top
+  parts.push(wall(PLAYR,22,PLAYR,PH-2));              // divider
+  parts.push(wall(PLAYR,PH-2,PW-2,PH-2));             // chute floor (ball rests here)
+  // top arch that funnels a launched ball from the chute into play (curves left)
+  parts.push(wall(PW-2,22,PLAYR,14));                 // lip over the chute -> into play
+  parts.push(wall(2,4,2,4));                          // (noop safety)
+  // bottom funnel to the drain, with inlanes; flippers sit in the gap
+  parts.push(wall(2,PH-6,L_PIVOT-2,FLIP_Y+8));        // left bottom wall down to left flipper base
+  parts.push(wall(PLAYR,PH-6,R_PIVOT+2,FLIP_Y+8));    // right bottom wall down to right flipper base
+  // small outlane posts beside flippers
+  parts.push(wall(L_PIVOT-8,FLIP_Y-2,L_PIVOT-8,FLIP_Y+6));
+  parts.push(wall(R_PIVOT+8,FLIP_Y-2,R_PIVOT+8,FLIP_Y+6));
 
   // bumpers
-  BUMPERS.forEach((b,i)=>{ const bd=M.Bodies.circle(px(b[0]),py(b[1]),R_BUMP(),{isStatic:true,restitution:1.35,label:'bumper',bidx:i}); parts.push(bd); });
-  // slingshots (triangles)
-  SLINGS.forEach((s,i)=>{ const w=CW*0.075; const tri=M.Bodies.polygon(px(s[0]),py(s[1]),3,w,{isStatic:true,restitution:1.4,angle:(i?-0.5:0.5),label:'sling'}); parts.push(tri); });
+  BUMPERS.forEach((b,i)=>{ parts.push(M.Bodies.circle(X(b[0]),X(b[1]),X(b[2]),{isStatic:true,restitution:1.4,friction:0,label:'bumper',bidx:i})); });
+  // slingshots
+  SLINGS.forEach((s,i)=>{ parts.push(M.Bodies.polygon(X(s[0]),X(s[1]),3,X(7),{isStatic:true,restitution:1.5,angle:i?Math.PI+0.4:-0.4,label:'sling'})); });
   // chair target
-  chairBody=M.Bodies.rectangle(px(CHAIRP[0]),py(CHAIRP[1]),CW*0.10,CW*0.10,{isStatic:true,restitution:0.4,label:'chair'}); parts.push(chairBody);
+  parts.push(M.Bodies.rectangle(X(CHAIR[0]),X(CHAIR[1]),X(9),X(9),{isStatic:true,restitution:0.5,label:'chair'}));
 
-  // flippers (dynamic, pivoted)
-  const flen=CW*0.15, fth=CW*0.035;
-  flipL=M.Bodies.rectangle(px(FLIP_L[0])+flen*0.35,py(FLIP_L[1]),flen,fth,{density:0.02,label:'flipL'});
-  flipR=M.Bodies.rectangle(px(FLIP_R[0])-flen*0.35,py(FLIP_R[1]),flen,fth,{density:0.02,label:'flipR'});
-  flipLc=M.Constraint.create({pointA:{x:px(FLIP_L[0]),y:py(FLIP_L[1])},bodyB:flipL,pointB:{x:-flen*0.42,y:0},stiffness:1,length:0});
-  flipRc=M.Constraint.create({pointA:{x:px(FLIP_R[0]),y:py(FLIP_R[1])},bodyB:flipR,pointB:{x:flen*0.42,y:0},stiffness:1,length:0});
-  parts.push(flipL,flipR,flipLc,flipRc);
+  // flippers (pivoted)
+  const flenP=X(FLIP_LEN), fthP=X(4.5);
+  flipL=M.Bodies.rectangle(X(L_PIVOT)+flenP*0.35,X(FLIP_Y),flenP,fthP,{density:0.04,friction:0.1,label:'flipL'});
+  flipR=M.Bodies.rectangle(X(R_PIVOT)-flenP*0.35,X(FLIP_Y),flenP,fthP,{density:0.04,friction:0.1,label:'flipR'});
+  const cL=M.Constraint.create({pointA:{x:X(L_PIVOT),y:X(FLIP_Y)},bodyB:flipL,pointB:{x:-flenP*0.42,y:0},stiffness:1,length:0});
+  const cR=M.Constraint.create({pointA:{x:X(R_PIVOT),y:X(FLIP_Y)},bodyB:flipR,pointB:{x:flenP*0.42,y:0},stiffness:1,length:0});
+  parts.push(flipL,flipR,cL,cR);
 
   M.Composite.add(world,parts);
   M.Events.on(engine,'collisionStart',onHit);
   newBall();
 }
-flipRest();
-function flipRest(){}
 
 function newBall(){
-  if(ball){ M.Composite.remove(world,ball); }
-  ball=M.Bodies.circle(px(LAUNCH_X),py(0.86),R_BALL(),{restitution:0.35,friction:0.02,frictionAir:0.006,density:0.02,label:'ball'});
-  M.Composite.add(world,ball); launchPower=0; launching=false; state='ready';
+  if(ball){ M.Composite.remove(world,ball); ball=null; }
+  // rest in the chute, just above the chute floor
+  ball=M.Bodies.circle(X((PLAYR+PW)/2),X(PH-10),X(3.4),{restitution:0.3,friction:0.02,frictionAir:0.004,density:0.02,label:'ball'});
+  M.Composite.add(world,ball); draining=false; charging=false; launchP=0; state='ready';
 }
-function onHit(ev){
-  for(const p of ev.pairs){
-    const labs=[p.bodyA.label,p.bodyB.label];
-    if(labs.includes('ball')){
-      if(labs.includes('bumper')){ const bd=p.bodyA.label==='bumper'?p.bodyA:p.bodyB; score+=100; bumperFlash[bd.bidx]=10; kick(bd,ball,CW*0.14); }
-      else if(labs.includes('sling')){ score+=50; }
-      else if(labs.includes('chair')){ score+=250; chairFlash=18; fireToMega(); }
-    }
-  }
-}
-function kick(from,b,power){ const dx=b.position.x-from.position.x, dy=b.position.y-from.position.y, d=Math.hypot(dx,dy)||1; M.Body.setVelocity(b,{x:b.velocity.x+dx/d*power*0.3, y:b.velocity.y+dy/d*power*0.3}); }
-function fireToMega(){ if(!ball)return; const dx=px(MEGA[0])-ball.position.x, dy=py(MEGA[1])-ball.position.y, d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:dx/d*CW*0.05, y:dy/d*CW*0.05}); }
 
-// ---- input: left half = left flipper, right half = right flipper; launch lane = pull/release ----
-let pressL=false,pressR=false;
-function down(e){ if(state==='over'){ if(overReady){ restart(); } return; }
-  const r=cv.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width;
-  if(state==='ready' && !launching){ launching=true; return; }        // start charging launch
-  if(x<0.5) pressL=true; else pressR=true;
-}
-function up(e){ const r=cv.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width;
-  if(state==='ready' && launching){ // release launch
-    M.Body.setVelocity(ball,{x:0,y:-(CW*0.05 + launchPower*CW*0.05)}); state='play'; launching=false; return; }
-  if(x<0.5) pressL=false; else pressR=false;
-}
-cv.addEventListener('pointerdown',down); window.addEventListener('pointerup',up);
-window.addEventListener('pointercancel',()=>{pressL=pressR=false;});
+function onHit(ev){ for(const p of ev.pairs){ const l=[p.bodyA.label,p.bodyB.label]; if(!l.includes('ball'))continue;
+  if(l.includes('bumper')){ const bd=p.bodyA.label==='bumper'?p.bodyA:p.bodyB; score+=100; bumpFlash[bd.bidx]=10; const dx=ball.position.x-bd.position.x,dy=ball.position.y-bd.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:ball.velocity.x+dx/d*X(2),y:ball.velocity.y+dy/d*X(2)}); }
+  else if(l.includes('sling')){ score+=50; }
+  else if(l.includes('chair')){ score+=250; chairFlash=18; const dx=X(MEGA[0])-ball.position.x,dy=X(MEGA[1])-ball.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:dx/d*X(4),y:dy/d*X(4)}); }
+} }
 
-let overReady=false;
-function restart(){ score=0; balls=3; state='ready'; overReady=false; newBall(); }
-function loseBall(){ balls--; if(balls<=0){ state='over'; overReady=false; setTimeout(()=>overReady=true,700); if(score>best){best=score; try{localStorage.setItem('qu33phPinballBest',best);}catch(e){}} } else { newBall(); } }
+// ---- input ----
+let pL=false,pR=false;
+function down(e){ if(state==='over'){ if(overT<=0) restart(); return; }
+  const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width;
+  if(state==='ready'){ charging=true; return; }
+  if(x<0.5) pL=true; else pR=true;
+}
+function up(e){ const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width;
+  if(state==='ready' && charging){ M.Body.setVelocity(ball,{x:0,y:-(X(28)+launchP*X(34))}); state='play'; charging=false; return; }
+  if(x<0.5) pL=false; else pR=false;
+}
+cv.addEventListener('pointerdown',down); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',()=>{pL=pR=false;});
 
-function flipTo(fb,fc,rest,active,press){ const target=press?active:rest; const cur=fb.angle;
-  M.Body.setAngularVelocity(fb, (target-cur)*0.9); }
+function restart(){ score=0; balls=3; overT=0; newBall(); }
+function loseBall(){ if(draining||state==='over')return; draining=true; balls--;
+  if(balls<=0){ state='over'; overT=45; if(score>best){best=score; try{localStorage.setItem('qu33phPinBest',best);}catch(e){}} }
+  else setTimeout(newBall,300);
+}
+function flip(fb,rest,active,press){ M.Body.setAngularVelocity(fb,(( press?active:rest)-fb.angle)*0.8); }
 
 function update(){
-  if(state!=='play' && state!=='ready' && state!=='over') return;
-  if(state==='ready' && launching){ launchPower=Math.min(1,launchPower+0.03); }
-  // flippers
-  if(flipL){ flipTo(flipL,flipLc,0.35,-0.5,pressL); flipTo(flipR,flipRc,-0.35,0.5,pressR); }
+  if(state==='loading') return;
+  if(state==='ready' && charging) launchP=Math.min(1,launchP+0.025);
+  if(flipL){ flip(flipL,0.32,-0.55,pL); flip(flipR,-0.32,0.55,pR); }
   M.Engine.update(engine,1000/60);
-  if(megaFlash>0)megaFlash--; if(chairFlash>0)chairFlash--; for(const k in bumperFlash){ if(bumperFlash[k]>0)bumperFlash[k]--; }
-  if(ball){
-    // mega hit
-    if(Math.hypot(ball.position.x-px(MEGA[0]),ball.position.y-py(MEGA[1]))<CW*0.05){ score+=500; megaFlash=25; M.Body.setPosition(ball,{x:px(LAUNCH_X),y:py(0.55)}); M.Body.setVelocity(ball,{x:0,y:2}); }
-    // drain
-    if(ball.position.y>py(0.93)) loseBall();
-    if(ball.position.x<-50||ball.position.x>CW+50||ball.position.y>CH+80) loseBall();
+  if(megaFlash>0)megaFlash--; if(chairFlash>0)chairFlash--; for(const k in bumpFlash){ if(bumpFlash[k]>0)bumpFlash[k]--; }
+  if(ball && (state==='play'||state==='ready')){
+    if(Math.hypot(ball.position.x-X(MEGA[0]),ball.position.y-X(MEGA[1]))<X(6)){ score+=500; megaFlash=25; M.Body.setPosition(ball,{x:X((PLAYR+PW)/2),y:X(60)}); M.Body.setVelocity(ball,{x:0,y:X(2)}); }
+    if(ball.position.y>X(PH+6)) loseBall();
   }
+  if(state==='over'&&overT>0) overT--;
 }
-
-function drawBody(b){ ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle);
-  ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=2;
-  const v=b.vertices; ctx.beginPath(); ctx.moveTo(v[0].x-b.position.x,v[0].y-b.position.y); for(let i=1;i<v.length;i++)ctx.lineTo(v[i].x-b.position.x,v[i].y-b.position.y); ctx.closePath(); ctx.restore(); }
 
 function draw(){
   ctx.setTransform(1,0,0,1,0,0);
-  if(ready(FIELD)) ctx.drawImage(FIELD,0,0,CW,CH); else { ctx.fillStyle='#0a0f1c'; ctx.fillRect(0,0,CW,CH); }
-  if(state==='loading'){ ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText('loading…',CW/2,CH/2); requestAnimationFrame(draw); return; }
-
-  // flippers
-  [flipL,flipR].forEach(fb=>{ if(!fb)return; ctx.save(); ctx.translate(fb.position.x,fb.position.y); ctx.rotate(fb.angle);
-    ctx.fillStyle='#3a63c8'; ctx.strokeStyle='#8fb4ff'; ctx.lineWidth=3; const w=CW*0.15,h=CW*0.035;
-    ctx.beginPath(); ctx.roundRect(-w/2,-h/2,w,h,h/2); ctx.fill(); ctx.stroke(); ctx.restore(); });
+  // background
+  const g=ctx.createLinearGradient(0,0,0,CH); g.addColorStop(0,'#0c1226'); g.addColorStop(1,'#060810'); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
+  if(state==='loading'){ ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('loading…',CW/2,CH/2); return; }
+  const NEON='#3affea';
+  // walls (draw all static wall bodies as neon lines)
+  ctx.strokeStyle=NEON; ctx.lineWidth=Math.max(2,X(1.2)); ctx.shadowColor=NEON; ctx.shadowBlur=X(2);
+  world.bodies.forEach(b=>{ if(b.label==='wall'){ const v=b.vertices; ctx.beginPath(); ctx.moveTo(v[0].x,v[0].y); for(let i=1;i<v.length;i++)ctx.lineTo(v[i].x,v[i].y); ctx.closePath(); ctx.stroke(); } });
+  ctx.shadowBlur=0;
+  // bumpers
+  BUMPERS.forEach((b,i)=>{ ctx.strokeStyle=bumpFlash[i]>0?'#fff':NEON; ctx.lineWidth=X(1.4); ctx.shadowColor=NEON; ctx.shadowBlur=X(3);
+    for(let rr=b[2];rr>b[2]*0.4;rr-=b[2]*0.3){ ctx.beginPath(); ctx.arc(X(b[0]),X(b[1]),X(rr),0,7); ctx.stroke(); } ctx.shadowBlur=0; });
+  // slingshots
+  ctx.strokeStyle=NEON; ctx.lineWidth=X(1.4);
+  world.bodies.forEach(b=>{ if(b.label==='sling'){ const v=b.vertices; ctx.beginPath(); ctx.moveTo(v[0].x,v[0].y); for(let i=1;i<v.length;i++)ctx.lineTo(v[i].x,v[i].y); ctx.closePath(); ctx.stroke(); } });
   // chair
-  if(ready(CHAIR)){ const s=CW*0.12; ctx.save(); if(chairFlash>0){ctx.shadowColor='#ff3b45';ctx.shadowBlur=chairFlash*2;} ctx.drawImage(CHAIR,px(CHAIRP[0])-s/2,py(CHAIRP[1])-s/2,s,s); ctx.restore(); }
-  // bumper flash rings
-  BUMPERS.forEach((b,i)=>{ if(bumperFlash[i]>0){ ctx.strokeStyle='rgba(255,255,255,'+(bumperFlash[i]/10)+')'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(px(b[0]),py(b[1]),R_BUMP(),0,7); ctx.stroke(); } });
-  // mega flash
-  if(megaFlash>0){ ctx.strokeStyle='rgba(255,60,60,'+(megaFlash/25)+')'; ctx.lineWidth=6; ctx.beginPath(); ctx.arc(px(MEGA[0]),py(MEGA[1]),CW*0.07,0,7); ctx.stroke(); }
+  ctx.save(); if(chairFlash>0){ctx.shadowColor='#ff3b45';ctx.shadowBlur=X(chairFlash);} ctx.fillStyle='#c98a4a'; ctx.strokeStyle='#fff'; ctx.lineWidth=X(0.8);
+  ctx.fillRect(X(CHAIR[0])-X(4.5),X(CHAIR[1])-X(4.5),X(9),X(9)); ctx.strokeRect(X(CHAIR[0])-X(4.5),X(CHAIR[1])-X(4.5),X(9),X(9)); ctx.fillStyle='#fff'; ctx.font='bold '+X(3)+'px Helvetica'; ctx.textAlign='center'; ctx.fillText('CHAIR',X(CHAIR[0]),X(CHAIR[1])+X(1)); ctx.restore();
+  // mega
+  ctx.fillStyle='#fff'; ctx.fillRect(X(MEGA[0])-X(6),X(MEGA[1])-X(4),X(12),X(8)); ctx.fillStyle=megaFlash>0?'#ff8':'#e33'; ctx.beginPath(); ctx.arc(X(MEGA[0]),X(MEGA[1]),X(2.5),0,7); ctx.fill();
+  // flippers (blue markers)
+  [flipL,flipR].forEach(fb=>{ if(!fb)return; ctx.save(); ctx.translate(fb.position.x,fb.position.y); ctx.rotate(fb.angle);
+    const w=X(FLIP_LEN),h=X(4.5); const grad=ctx.createLinearGradient(-w/2,0,w/2,0); grad.addColorStop(0,'#2a4db0'); grad.addColorStop(1,'#4a7bff'); ctx.fillStyle=grad; ctx.strokeStyle='#bcd0ff'; ctx.lineWidth=X(0.7);
+    ctx.beginPath(); ctx.roundRect(-w/2,-h/2,w,h,h/2); ctx.fill(); ctx.stroke(); ctx.restore(); });
   // ball
-  if(ball){ const r=R_BALL(), bx=ball.position.x, by=ball.position.y;
-    const g=ctx.createRadialGradient(bx-r*0.35,by-r*0.35,r*0.1,bx,by,r); g.addColorStop(0,'#ff8a90'); g.addColorStop(0.5,'#ff3b45'); g.addColorStop(1,'#a00'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(bx-r*0.32,by-r*0.32,r*0.22,0,7); ctx.fill(); }
+  if(ball){ const r=X(3.4),bx=ball.position.x,by=ball.position.y; const rg=ctx.createRadialGradient(bx-r*0.35,by-r*0.35,r*0.1,bx,by,r); rg.addColorStop(0,'#ff9'); rg.addColorStop(0.5,'#ff3b45'); rg.addColorStop(1,'#900'); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.fill(); }
+  // charge meter in chute
+  if(state==='ready'&&charging){ ctx.fillStyle='#ffd54a'; const cx=X((PLAYR+PW)/2); ctx.fillRect(cx-X(1),X(PH-14)-launchP*X(30),X(2),launchP*X(30)); }
 
   // HUD
-  ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=6;
-  ctx.fillText(score, CW*0.05, CH*0.055);
-  ctx.textAlign='right'; ctx.fillText('BALLS '+balls, CW*0.95, CH*0.055); ctx.shadowBlur=0;
-  msgEl.innerText = state==='ready' ? 'HOLD to charge · release to launch' : '';
-
-  if(state==='ready' && launching){ ctx.fillStyle='#ffd54a'; ctx.fillRect(px(0.90)-CW*0.02, py(0.88)-launchPower*CH*0.5, CW*0.015, launchPower*CH*0.5); }
-  if(state==='over'){ ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,CW,CH); ctx.textAlign='center'; ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; ctx.fillText('GAME OVER',CW/2,CH*0.45); ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.06)+'px Helvetica'; ctx.fillText(score,CW/2,CH*0.53); ctx.font='bold '+Math.round(CW*0.04)+'px Helvetica'; ctx.fillText('BEST '+best,CW/2,CH*0.58); if(overReady) ctx.fillText('tap to play again',CW/2,CH*0.65); }
+  ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=6; ctx.fillText(score,X(4),X(9));
+  ctx.textAlign='right'; ctx.fillText('BALLS '+balls,X(PW-4),X(9)); ctx.shadowBlur=0;
+  ctx.textAlign='center';
+  if(state==='ready'&&!charging){ ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font='bold '+Math.round(CW*0.035)+'px Helvetica'; ctx.fillText('HOLD anywhere to charge · release to launch',CW/2,CH*0.94); }
+  if(state==='play'){ ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='bold '+Math.round(CW*0.03)+'px Helvetica'; ctx.fillText('tap LEFT / RIGHT side = flippers',CW/2,CH*0.965); }
+  if(state==='over'){ ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,CW,CH); ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; ctx.fillText('GAME OVER',CW/2,CH*0.45); ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.07)+'px Helvetica'; ctx.fillText(score,CW/2,CH*0.53); ctx.font='bold '+Math.round(CW*0.04)+'px Helvetica'; ctx.fillText('BEST '+best,CW/2,CH*0.58); if(overT<=0) ctx.fillText('tap to play again',CW/2,CH*0.65); }
 }
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 window.addEventListener('resize',()=>{ sz(); });
