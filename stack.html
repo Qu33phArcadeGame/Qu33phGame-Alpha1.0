@@ -34,7 +34,7 @@ function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); 
 }
 sz();
 
-let M, engine, world, plate, cur=null, placed=[], camY=0, score=0, best=0, state='loading', overT=0;
+let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, best=0, state='loading', overT=0;
 try{ best=parseInt(localStorage.getItem('qu33phStackBest')||'0',10)||0; }catch(e){}
 
 function boot(){
@@ -48,7 +48,7 @@ function startGame(){
   M.Composite.clear(world,false);
   plate=M.Bodies.rectangle(CW/2, PLATE_Y+MW*0.4, PLATE_W, MW*0.8, { isStatic:true, friction:1, label:'plate' });
   M.Composite.add(world, plate);
-  placed=[]; score=0; camY=0; state='play'; overT=0;
+  placed=[]; score=0; camY=0; camScale=1; state='play'; overT=0;
   spawn();
 }
 function spawn(){
@@ -62,7 +62,7 @@ function spawn(){
 }
 
 // ---- input: drag the current marker, release to drop ----
-function pt(e){ const r=cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*CW, y:(e.clientY-r.top)/r.height*CH - camY }; }
+function pt(e){ const r=cv.getBoundingClientRect(); const sx=(e.clientX-r.left)/r.width*CW, sy=(e.clientY-r.top)/r.height*CH; return { x:CW/2+(sx-CW/2)/camScale, y:(sy-camY)/camScale }; }
 let dragTarget=null;
 cv.addEventListener('pointerdown',e=>{
   if(state==='title'){ startGame(); return; }
@@ -79,7 +79,9 @@ function update(){
     const nx=cur.position.x+(dragTarget.x-cur.position.x)*0.16, ny=cur.position.y+(dragTarget.y-cur.position.y)*0.16;
     M.Body.setPosition(cur,{x:nx,y:ny}); M.Body.setAngle(cur,0); M.Body.setVelocity(cur,{x:0,y:0}); M.Body.setAngularVelocity(cur,0);
   }
+  engine.gravity.y = (state==='over') ? 2.0 : 0.8;
   M.Engine.update(engine, 1000/60);
+  if(state==='over') M.Engine.update(engine, 1000/60);   // extra step -> snappier collapse
   if(state==='play' && cur && cur.dropped){
     if(cur.position.y > PLATE_Y+ML*0.8){ gameOver(); }        // fell past/off the plate
     else {
@@ -90,16 +92,27 @@ function update(){
   }
   // any previously-placed marker fell off -> topple
   if(state==='play'){ for(const b of placed){ if(b.position.y > PLATE_Y+ML*1.1 || b.position.x<-ML || b.position.x>CW+ML){ gameOver(); break; } } }
-  // camera follows tower top
+  // camera
   let topY = PLATE_Y; if(placed.length) topY=Math.min(topY, ...placed.map(b=>b.position.y)); if(cur&&cur.dropped) topY=Math.min(topY,cur.position.y);
-  const followLine = CH*0.28; const target = Math.max(0, followLine - topY); camY += (target-camY)*0.12;
+  if(state==='over'){
+    let minY=topY, maxY=PLATE_Y;
+    for(const b of placed){ minY=Math.min(minY,b.position.y); maxY=Math.max(maxY,b.position.y); }
+    if(cur){ minY=Math.min(minY,cur.position.y); maxY=Math.max(maxY,cur.position.y); }
+    const Hf=Math.max(CH*0.5, (maxY-minY)+ML*2.4);
+    const tScale=Math.max(0.4, Math.min(1, CH*0.82/Hf)), cY=(minY+maxY)/2;
+    camScale += (tScale-camScale)*0.09;
+    camY += ((CH*0.5 - cY*camScale)-camY)*0.09;
+  } else {
+    const followLine = CH*0.28, target = Math.max(0, followLine - topY);
+    camScale += (1-camScale)*0.12; camY += (target-camY)*0.12;
+  }
   if(state==='over' && overT>0) overT--;
 }
 function gameOver(){ if(state==='over')return; state='over'; overT=80; }
 
 function drawBody(b){
   const im=IMG[b.color];
-  ctx.save(); ctx.translate(b.position.x, b.position.y+camY); ctx.rotate(b.angle);
+  ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
   let glow=null;
   if(THEME==='neon') glow=NEON[b.color];
   else if(THEME==='sunset') glow='#ffcf4a';
@@ -122,7 +135,7 @@ function drawSpiral(cx,cy,R,col){ ctx.save();
   ctx.globalAlpha=1; ctx.restore();
 }
 function drawPlate(){
-  const px=plate.position.x, py=plate.position.y+camY, rx=PLATE_W/2, ry=MW*0.55;
+  const px=plate.position.x, py=plate.position.y, rx=PLATE_W/2, ry=MW*0.55;
   let fill='#cfd6e0', stroke=null, glow=null;
   if(THEME==='neon'){ fill='#2a0620'; stroke='#ff2db4'; glow='#ff2db4'; }
   else if(THEME==='sunset'){ fill='#e8b54a'; stroke='#fff0c0'; glow='#ffcf4a'; }
@@ -157,13 +170,14 @@ function draw(){
   const txt=TXT[THEME]||'#fff';
   if(state==='title'){ drawTitle(txt); return; }
   if(state==='loading'){ ctx.fillStyle=txt; ctx.textAlign='center'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('loading…',CW/2,CH/2); return; }
-  // plate
+  // ---- world (camera: vertical offset camY + zoom camScale about horizontal center) ----
+  ctx.save();
+  ctx.translate(CW/2, camY); ctx.scale(camScale, camScale); ctx.translate(-CW/2, 0);
   drawPlate();
-  // markers
   for(const b of placed) drawBody(b);
   if(cur) drawBody(cur);
-  // drop guide when holding
-  if(cur&&cur.held){ ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.setLineDash([6,8]); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cur.position.x,0); ctx.lineTo(cur.position.x,CH); ctx.stroke(); ctx.setLineDash([]); }
+  if(cur&&cur.held){ ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.setLineDash([6,8]); ctx.lineWidth=2/camScale; ctx.beginPath(); ctx.moveTo(cur.position.x,(0-camY)/camScale); ctx.lineTo(cur.position.x,(CH-camY)/camScale); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.restore();
   // HUD
   ctx.textAlign='center'; ctx.fillStyle=txt; ctx.font='bold '+Math.round(CW*0.12)+'px Helvetica'; ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=8; ctx.fillText(score,CW/2,CH*0.12); ctx.shadowBlur=0;
   ctx.fillStyle='#7fddaa'; ctx.font='bold '+Math.round(CW*0.035)+'px Helvetica'; ctx.fillText('BEST '+best,CW/2,CH*0.16);
