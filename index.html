@@ -479,7 +479,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v296</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v297</div>
 
 <canvas id="game"></canvas>
 
@@ -555,6 +555,10 @@
 <div id="stackScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="stackFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
   <button class="back-tl" onclick="stackBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
+</div>
+<div id="pinball2dScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:116;overflow:hidden;">
+  <iframe id="pinball2dFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
+  <button class="back-tl" onclick="pinball2dBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
 </div>
 <div id="fidgetScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="fidgetFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
@@ -4121,7 +4125,7 @@ function showArcadeMenu(){
   var st=document.getElementById("sideTabs"); if(st) st.style.display="none";
   var ps=document.getElementById("platformerScreen"); if(ps) ps.style.display="none";
   var ds=document.getElementById("dreamonScreen"); if(ds) ds.style.display="none";
-  var gs=document.getElementById("golfScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("golfFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; } var fs=document.getElementById("fidgetScreen"); if(fs && fs.style.display!=="none"){ var ff=document.getElementById("fidgetFrame"); if(ff){ try{ ff.setAttribute("src","about:blank"); }catch(e){} } fs.style.display="none"; } var ss=document.getElementById("stackScreen"); if(ss && ss.style.display!=="none"){ var sf=document.getElementById("stackFrame"); if(sf){ try{ sf.setAttribute("src","about:blank"); }catch(e){} } ss.style.display="none"; }
+  var gs=document.getElementById("golfScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("golfFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; } var fs=document.getElementById("fidgetScreen"); if(fs && fs.style.display!=="none"){ var ff=document.getElementById("fidgetFrame"); if(ff){ try{ ff.setAttribute("src","about:blank"); }catch(e){} } fs.style.display="none"; } var ps=document.getElementById("pinball2dScreen"); if(ps && ps.style.display!=="none"){ var pf=document.getElementById("pinball2dFrame"); if(pf){ try{ pf.setAttribute("src","about:blank"); }catch(e){} } ps.style.display="none"; } var ss=document.getElementById("stackScreen"); if(ss && ss.style.display!=="none"){ var sf=document.getElementById("stackFrame"); if(sf){ try{ sf.setAttribute("src","about:blank"); }catch(e){} } ss.style.display="none"; }
   var dm=document.getElementById("dlMap"); if(dm) dm.style.display="none";
   document.getElementById("arcadeMenu").style.display="flex";
   try{ applyThemeFilters(); }catch(e){}
@@ -6223,7 +6227,8 @@ function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.055;pbBall.vx=-0.015;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
-function launchPinball(){ document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
+function launchPinball(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("pinball2dScreen"); sc.style.display="block"; var f=document.getElementById("pinball2dFrame"); f.setAttribute("src","qu33ph-pinball.html"); arcadeGame="pinball"; try{ haptic(10); }catch(e){} }
+function pinball2dBack(){ var f=document.getElementById("pinball2dFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("pinball2dScreen").style.display="none"; showArcadeMenu(); }
 function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
 function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
   var L=document.getElementById("pbFlipLeft"),R=document.getElementById("pbFlipRight"),LB=document.getElementById("pbLaunchBtn");
