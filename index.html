@@ -479,7 +479,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v294</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v295</div>
 
 <canvas id="game"></canvas>
 
@@ -6529,7 +6529,7 @@ function loop(){
     if(currentTheme==="sunset" || currentTheme==="r_sunset"){
       markers.forEach(m=>{
         if(m.fallen) return;
-        let tipX = m.color==="blue" ? -30 : -13;
+        let tipX = m.color==="blue" ? -35 : -13;
         let tipY = m.color==="blue" ? 20 : -14;
         ctx.save();
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
@@ -6545,7 +6545,7 @@ function loop(){
       previewMarkers.forEach((p,i)=>{
         if(p.used) return;
         let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=LAUNCH_Y-30-i*46;
-        let tipX = p.color==="blue" ? -30 : -13;
+        let tipX = p.color==="blue" ? -35 : -13;
         let tipY = p.color==="blue" ? 20 : -14;
         let angle=p.color==="blue"?blueA2:stdA2;
         ctx.save();
