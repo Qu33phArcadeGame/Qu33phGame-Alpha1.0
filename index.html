@@ -479,7 +479,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v289</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v290</div>
 
 <canvas id="game"></canvas>
 
@@ -1045,6 +1045,7 @@ let coinsEarned = parseInt(localStorage.getItem("qu33phCoinsEarned")||"0",10)||0
 let coinsSpent  = parseInt(localStorage.getItem("qu33phCoinsSpent")||"0",10)||0;
 let slotSpent = parseInt(localStorage.getItem("qu33phSlotSpent")||"0",10)||0;
 let slotWon = parseInt(localStorage.getItem("qu33phSlotWon")||"0",10)||0;
+let slotLost = parseInt(localStorage.getItem("qu33phSlotLost")||"0",10)||0;
 // confetti + coin-magnet runtime state
 let confetti=[];
 let coinFloats=[];
@@ -1851,6 +1852,7 @@ function spinSlot(bet){
           } else {
             resultEl.style.color="#555";
             resultEl.innerText="no match — try again";
+            slotLost+=cost; try{localStorage.setItem("qu33phSlotLost",slotLost);}catch(e){}
           }
           document.getElementById("slotCoinCount").innerText=coins;
           updateSpinBtn();
@@ -4038,7 +4040,7 @@ function showCoinRecord(){
     ["Coins spent (all time)", coinsSpent],
     ["Net saved", coinsEarned-coinsSpent],
     ["Slot machine wins", slotW],
-    ["Coins lost in slots", Math.max(0, slotSpent - slotWon)],
+    ["Coins lost in slots", slotLost],
     ["Games forfeited", forf]
   ];
   var h="";
@@ -6527,8 +6529,8 @@ function loop(){
     if(currentTheme==="sunset" || currentTheme==="r_sunset"){
       markers.forEach(m=>{
         if(m.fallen) return;
-        let tipX = m.color==="blue" ? -20 : -13;
-        let tipY = m.color==="blue" ? 15 : -14;
+        let tipX = m.color==="blue" ? -8 : -13;
+        let tipY = m.color==="blue" ? -2 : -14;
         ctx.save();
         ctx.translate(m.x,m.y); ctx.rotate(m.rotation);
         ctx.shadowColor="#ffd700"; ctx.shadowBlur=24;
@@ -6543,8 +6545,8 @@ function loop(){
       previewMarkers.forEach((p,i)=>{
         if(p.used) return;
         let cx=(LEFT_EDGE+RIGHT_WALL)/2, cy=LAUNCH_Y-30-i*46;
-        let tipX = p.color==="blue" ? -20 : -13;
-        let tipY = p.color==="blue" ? 15 : -14;
+        let tipX = p.color==="blue" ? -8 : -13;
+        let tipY = p.color==="blue" ? -2 : -14;
         let angle=p.color==="blue"?blueA2:stdA2;
         ctx.save();
         ctx.translate(cx,cy); ctx.rotate(angle);
