@@ -479,7 +479,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v300</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v301</div>
 
 <canvas id="game"></canvas>
 
@@ -4778,27 +4778,28 @@ function pfLimb(x,y,color,appear,len){
   else { c.strokeStyle=(color==="red"?"#ff3030":color==="green"?"#30ff60":"#3a7bff"); c.lineWidth=3.4; c.lineCap="round"; c.beginPath(); c.moveTo(-len/2,0); c.lineTo(len/2,0); c.stroke(); }
   c.restore();
 }
+const jgStand=new Image(); jgStand.src="jump_stand.png";  // idle (arms crossed)
+const jgRunL =new Image(); jgRunL.src ="jump_runL.png";   // running left
+const jgRunR =new Image(); jgRunR.src ="jump_runR.png";   // running right
+const jgJump =new Image(); jgJump.src ="jump_jump.png";   // airborne (arms up)
 // ---- Custom pixel jump guy (Coby's drawing) + real coin head + animated marker arms ----
 var PF_GUY_H=54;          // on-screen height of the guy (tweakable)
 var PF_GUY_FEET=15;       // how far below player-center the feet sit
 function pfGuy(x,y,face,tilt){
-  var img=(face<0)?jumpGuyImg1:jumpGuyImg2;   // left = frame1, right = frame2 (no flicker, no flip)
+  var p=pfPlayer, air=!p.onGround, moving=Math.abs(p.vx)>0.6;
+  // pick sprite by state: airborne -> jump, moving -> run L/R, else -> stand (arms crossed)
+  var img = air ? jgJump : (moving ? (face<0?jgRunL:jgRunR) : jgStand);
   if(!(img&&img.complete&&img.naturalWidth)){ pfGuyProc(x,y,face,tilt); return; }
   var c=pfctx, ar=img.naturalWidth/img.naturalHeight;
-  var dh=PF_GUY_H, dw=dh*ar, dx=-dw/2, dy=PF_GUY_FEET-dh;
+  var dh=PF_GUY_H*1.18, dw=dh*ar, dx=-dw/2, dy=PF_GUY_FEET-dh;   // sprites are full characters (own head)
   c.save(); c.translate(x,y); if(tilt){ c.rotate(tilt); }
-  if(pfTheme()==="neon"){ // neon outline: green glow silhouette behind him (shadow-only trick)
+  if(pfTheme()==="neon"){ // neon green glow silhouette behind him (shadow-only trick)
     c.save(); c.shadowColor="#28ff96"; c.shadowOffsetX=2000;
     c.shadowBlur=11; c.drawImage(img, dx-2000, dy, dw, dh);
     c.shadowBlur=6;  c.drawImage(img, dx-2000, dy, dw, dh);
     c.restore();
   }
   c.drawImage(img, dx, dy, dw, dh);
-  // real Qu33ph coin as the head, nestled in the top notch
-  if(coinImg && coinImg.complete && coinImg.naturalWidth){
-    var cd=dh*0.24, ccx=dx+dw*0.503, ccy=dy+dh*0.117;
-    c.save(); c.shadowColor="rgba(0,0,0,0.35)"; c.shadowBlur=2; c.drawImage(coinImg, ccx-cd/2, ccy-cd/2, cd, cd); c.restore();
-  } else { var cd2=dh*0.24, ccx2=dx+dw*0.503, ccy2=dy+dh*0.117; c.fillStyle="#ffd24a"; c.beginPath(); c.arc(ccx2,ccy2,cd2/2,0,6.283); c.fill(); }
   c.restore();
 }
 function pfGuyProc(x,y,face,tilt){
