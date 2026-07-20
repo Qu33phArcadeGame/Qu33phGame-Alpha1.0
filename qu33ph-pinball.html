@@ -18,10 +18,12 @@
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const FIELD=new Image(); FIELD.src='pinfield.png';
 const CHAIRIMG=new Image(); CHAIRIMG.src='chair.png';
+const PTHEME=(new URLSearchParams(location.search).get('theme')||'default');
+const BLUEIMG=new Image(); BLUEIMG.src=(PTHEME==='cartoon')?'pinpaddleC.png':'pinpaddle.png';
 function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 
 // logical field matches the pinfield.png aspect (961x1637 ~ 100x170)
-const PW=100, PH=170;
+const PW=100, PH=178;
 let CW=0,CH=0,DPR=1,SC=1;
 function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
   let w=r.width,h=r.height; const ar=PW/PH; let cw=w,ch=w/ar; if(ch>h){ch=h;cw=h*ar;}
@@ -30,13 +32,13 @@ sz();
 function X(u){ return u*SC; }
 
 // ---- layout in field units (from your labeled map) ----
-const BUMPERS=[[50,45,5.5],[39.5,52.7,5.5],[60.5,52.7,5.5],[50,58.8,5.5],[42.4,68,5.5],[57.4,68,5.5]];
-const SLINGS=[[20,122],[68,122]];
-const MEGA=[73.4,46], CHAIR=[27,104];
-const L_PIVOT=[30,138], R_PIVOT=[62,138], FLIP_LEN=14;
-const CHUTE_DIV=80, CHUTE_OUT=93, BALL_START=[86.5,153];
+const BUMPERS=[[49.3,48.8,5.5],[38.7,57,5.5],[59.9,57,5.5],[49.3,65,5.5],[41.7,72.4,5.5],[56.9,72.4,5.5]];
+const SLINGS=[[22,113],[73,113]];
+const MEGA=[75.7,47.3], CHAIR=[27,110];
+const L_PIVOT=[30,132], R_PIVOT=[66,132], FLIP_LEN=15;   // pivots anchored at the triangle tips
+const CHUTE_DIV=80, CHUTE_OUT=93, BALL_START=[86.5,162];
 const BALL_R=3;
-const MAXV_U=2.6;                                    // hard speed cap in units/step (kills the "Flash" bug)
+const MAXV_U=3.8;                                    // hard speed cap in units/step (kills the "Flash" bug)
 
 let M,engine,world,ball=null,flipL,flipR,balls=3,score=0,best=0,state='loading',launchP=0,charging=false,draining=false,overT=0,megaFlash=0,chairFlash=0,bumpFlash={};
 try{ best=parseInt(localStorage.getItem('qu33phPinBest')||'0',10)||0; }catch(e){}
@@ -51,15 +53,19 @@ function build(){
   engine=M.Engine.create(); world=engine.world; engine.gravity.y=1.0; engine.positionIterations=12; engine.velocityIterations=12;
   const p=[];
   // outer walls (roughly follow the field art; fine-tune later)
-  p.push(wall(13,40,13,150));                 // left
-  p.push(wall(13,40,CHUTE_DIV,38));           // top
-  p.push(wall(CHUTE_DIV,42,CHUTE_DIV,162));   // chute divider (play side)
-  p.push(wall(CHUTE_OUT,38,CHUTE_OUT,162));   // outer right (chute outer)
-  p.push(wall(CHUTE_DIV,162,CHUTE_OUT,162));  // chute floor (ball rests here)
-  p.push(wall(CHUTE_OUT,42,72,34));           // top lip -> deflects launched ball LEFT into play
+  p.push(wall(13,48,13,156));                 // left wall
+  // top arch: guides the ball from the chute top down-left into the play field
+  p.push(wall(13,48,32,33));
+  p.push(wall(32,33,58,27));
+  p.push(wall(58,27,80,28));
+  p.push(wall(80,28,CHUTE_OUT,34));           // deflector at chute top -> sends the launched ball LEFT
+  // launch chute (right)
+  p.push(wall(CHUTE_OUT,34,CHUTE_OUT,170));   // outer right wall
+  p.push(wall(CHUTE_DIV,52,CHUTE_DIV,170));   // divider stops high up -> open top so the ball exits into play
+  p.push(wall(CHUTE_DIV,170,CHUTE_OUT,170));  // chute floor (ball rests here)
   // bottom funnel toward the drain (gap between flippers)
-  p.push(wall(13,150,L_PIVOT[0]-2,L_PIVOT[1]+3));
-  p.push(wall(CHUTE_DIV,150,R_PIVOT[0]+2,R_PIVOT[1]+3));
+  p.push(wall(13,156,L_PIVOT[0]-2,L_PIVOT[1]+3));
+  p.push(wall(CHUTE_DIV,156,R_PIVOT[0]+2,R_PIVOT[1]+3));
   // bumpers
   BUMPERS.forEach((b,i)=>{ p.push(M.Bodies.circle(X(b[0]),X(b[1]),X(b[2]),{isStatic:true,restitution:1.3,friction:0,label:'bumper',bidx:i})); });
   // slingshots
@@ -93,7 +99,7 @@ function down(e){ if(state==='over'){ if(overT<=0) restart(); return; }
   if(state==='ready'){ charging=true; return; }
   if(x<0.5) pL=true; else pR=true; }
 function up(e){ const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width;
-  if(state==='ready'&&charging){ M.Body.setVelocity(ball,{x:0,y:-(X(1.3)+launchP*X(1.4))}); state='play'; charging=false; return; }
+  if(state==='ready'&&charging){ M.Body.setVelocity(ball,{x:-X(0.5),y:-(X(2.4)+launchP*X(1.6))}); state='play'; charging=false; return; }
   if(x<0.5) pL=false; else pR=false; }
 cv.addEventListener('pointerdown',down); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',()=>{pL=pR=false;});
 
@@ -128,9 +134,20 @@ function draw(){
   BUMPERS.forEach((b,i)=>{ if(bumpFlash[i]>0){ ctx.strokeStyle='rgba(255,255,255,'+(bumpFlash[i]/10)+')'; ctx.lineWidth=X(0.8); ctx.beginPath(); ctx.arc(X(b[0]),X(b[1]),X(b[2]),0,7); ctx.stroke(); } });
   if(megaFlash>0){ ctx.strokeStyle='rgba(255,220,60,'+(megaFlash/25)+')'; ctx.lineWidth=X(1.2); ctx.beginPath(); ctx.arc(X(MEGA[0]),X(MEGA[1]),X(7),0,7); ctx.stroke(); }
   // flippers (blue markers)
-  [flipL,flipR].forEach(fb=>{ if(!fb)return; ctx.save(); ctx.translate(fb.position.x,fb.position.y); ctx.rotate(fb.angle);
-    const w=X(FLIP_LEN),h=X(4.5); const grad=ctx.createLinearGradient(-w/2,0,w/2,0); grad.addColorStop(0,'#2a4db0'); grad.addColorStop(1,'#5a8bff'); ctx.fillStyle=grad; ctx.strokeStyle='#cfe0ff'; ctx.lineWidth=X(0.6); ctx.shadowColor='#4a7bff'; ctx.shadowBlur=X(1.5);
-    ctx.beginPath(); ctx.roundRect(-w/2,-h/2,w,h,h/2); ctx.fill(); ctx.stroke(); ctx.restore(); });
+  [flipL,flipR].forEach((fb,fi)=>{ if(!fb)return; ctx.save(); ctx.translate(fb.position.x,fb.position.y); ctx.rotate(fb.angle);
+    const w=X(FLIP_LEN),h=X(6.5);
+    if(ready(BLUEIMG)){ const w=X(FLIP_LEN),h=X(6.5);
+      if(BLUEIMG.naturalHeight>BLUEIMG.naturalWidth){ ctx.rotate(Math.PI/2); ctx.drawImage(BLUEIMG,-h/2,-w/2,h,w); } // vertical marker -> lay it along the flipper
+      else { ctx.drawImage(BLUEIMG,-w/2,-h/2,w,h); }
+    }
+    else { // marker-shaped flipper: blue barrel + lighter cap at the outer end
+      const capW=w*0.28, tipDir=fi?1:-1;   // cap points toward the pivot (outer side)
+      const grad=ctx.createLinearGradient(0,-h/2,0,h/2); grad.addColorStop(0,'#5a8bff'); grad.addColorStop(0.5,'#3358cc'); grad.addColorStop(1,'#22409a');
+      ctx.fillStyle=grad; ctx.strokeStyle='#cfe0ff'; ctx.lineWidth=X(0.5);
+      ctx.beginPath(); ctx.roundRect(-w/2,-h/2,w,h,h*0.4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#9ab8ff'; ctx.beginPath(); ctx.roundRect(tipDir*(w/2-capW),-h/2,capW,h,h*0.4); ctx.fill();
+    }
+    ctx.restore(); });
   // ball
   if(ball){ const r=X(BALL_R),bx=ball.position.x,by=ball.position.y; const rg=ctx.createRadialGradient(bx-r*0.35,by-r*0.35,r*0.1,bx,by,r); rg.addColorStop(0,'#ff9'); rg.addColorStop(0.5,'#ff3b45'); rg.addColorStop(1,'#900'); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.fill(); }
   // charge meter
