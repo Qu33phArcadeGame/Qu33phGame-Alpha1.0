@@ -38,7 +38,7 @@ const MEGA=[75.7,47.3], CHAIR=[27,110];
 const L_PIVOT=[30,132], R_PIVOT=[66,132], FLIP_LEN=15;   // pivots anchored at the triangle tips
 const CHUTE_DIV=80, CHUTE_OUT=93, BALL_START=[86.5,162];
 const BALL_R=3;
-const MAXV_U=3.8;                                    // hard speed cap in units/step (kills the "Flash" bug)
+const MAXV_U=4.3;                                    // hard speed cap in units/step (kills the "Flash" bug)
 
 let M,engine,world,ball=null,flipL,flipR,balls=3,score=0,best=0,state='loading',launchP=0,charging=false,draining=false,overT=0,megaFlash=0,chairFlash=0,bumpFlash={};
 try{ best=parseInt(localStorage.getItem('qu33phPinBest')||'0',10)||0; }catch(e){}
@@ -53,16 +53,16 @@ function build(){
   engine=M.Engine.create(); world=engine.world; engine.gravity.y=1.0; engine.positionIterations=12; engine.velocityIterations=12;
   const p=[];
   // outer walls (roughly follow the field art; fine-tune later)
-  p.push(wall(13,48,13,156));                 // left wall
-  // top arch: guides the ball from the chute top down-left into the play field
-  p.push(wall(13,48,32,33));
-  p.push(wall(32,33,58,27));
-  p.push(wall(58,27,80,28));
-  p.push(wall(80,28,CHUTE_OUT,34));           // deflector at chute top -> sends the launched ball LEFT
-  // launch chute (right)
-  p.push(wall(CHUTE_OUT,34,CHUTE_OUT,170));   // outer right wall
-  p.push(wall(CHUTE_DIV,52,CHUTE_DIV,170));   // divider stops high up -> open top so the ball exits into play
-  p.push(wall(CHUTE_DIV,170,CHUTE_OUT,170));  // chute floor (ball rests here)
+  p.push(wall(14,44,14,156));                 // left wall
+  // field ceiling (top boundary) leading from the deflector down-left
+  p.push(wall(14,44,40,28));
+  p.push(wall(40,28,CHUTE_DIV,32));
+  // chute deflector: a \ ramp above the chute that turns the ball's UP momentum into DOWN-LEFT (into the field)
+  p.push(wall(CHUTE_DIV,32,CHUTE_OUT,44));
+  // launch chute
+  p.push(wall(CHUTE_OUT,30,CHUTE_OUT,170));   // outer right wall
+  p.push(wall(CHUTE_DIV,52,CHUTE_DIV,170));   // divider (gap ABOVE y=52 so the deflected ball exits left into the field)
+  p.push(wall(CHUTE_DIV,170,CHUTE_OUT,170));  // chute floor
   // bottom funnel toward the drain (gap between flippers)
   p.push(wall(13,156,L_PIVOT[0]-2,L_PIVOT[1]+3));
   p.push(wall(CHUTE_DIV,156,R_PIVOT[0]+2,R_PIVOT[1]+3));
@@ -99,7 +99,7 @@ function down(e){ if(state==='over'){ if(overT<=0) restart(); return; }
   if(state==='ready'){ charging=true; return; }
   if(x<0.5) pL=true; else pR=true; }
 function up(e){ const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width;
-  if(state==='ready'&&charging){ M.Body.setVelocity(ball,{x:-X(0.5),y:-(X(2.4)+launchP*X(1.6))}); state='play'; charging=false; return; }
+  if(state==='ready'&&charging){ M.Body.setVelocity(ball,{x:-X(0.4),y:-(X(2.9)+launchP*X(1.7))}); state='play'; charging=false; return; }
   if(x<0.5) pL=false; else pR=false; }
 cv.addEventListener('pointerdown',down); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',()=>{pL=pR=false;});
 
@@ -134,7 +134,7 @@ function draw(){
   BUMPERS.forEach((b,i)=>{ if(bumpFlash[i]>0){ ctx.strokeStyle='rgba(255,255,255,'+(bumpFlash[i]/10)+')'; ctx.lineWidth=X(0.8); ctx.beginPath(); ctx.arc(X(b[0]),X(b[1]),X(b[2]),0,7); ctx.stroke(); } });
   if(megaFlash>0){ ctx.strokeStyle='rgba(255,220,60,'+(megaFlash/25)+')'; ctx.lineWidth=X(1.2); ctx.beginPath(); ctx.arc(X(MEGA[0]),X(MEGA[1]),X(7),0,7); ctx.stroke(); }
   // flippers (blue markers)
-  [flipL,flipR].forEach((fb,fi)=>{ if(!fb)return; ctx.save(); ctx.translate(fb.position.x,fb.position.y); ctx.rotate(fb.angle);
+  [flipL,flipR].forEach((fb,fi)=>{ if(!fb)return; ctx.save(); ctx.translate(fb.position.x,fb.position.y); ctx.rotate(fb.angle); if(fi===1) ctx.scale(-1,1);
     const w=X(FLIP_LEN),h=X(6.5);
     if(ready(BLUEIMG)){ const w=X(FLIP_LEN),h=X(6.5);
       if(BLUEIMG.naturalHeight>BLUEIMG.naturalWidth){ ctx.rotate(Math.PI/2); ctx.drawImage(BLUEIMG,-h/2,-w/2,h,w); } // vertical marker -> lay it along the flipper
