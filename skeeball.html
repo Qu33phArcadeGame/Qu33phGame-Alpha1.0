@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Qu33ph Skee-Ball</title>
+<style>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#000; }
+  #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #game{ display:block; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game"></canvas></div>
+<script>
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+const FIELD=new Image(); FIELD.src='skeefield.png';
+const MK={ red:new Image(), green:new Image(), blue:new Image() };
+MK.red.src='red.png'; MK.green.src='green.png'; MK.blue.src='blue.png';
+function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
+
+const PW=100, PH=177;              // field logical space (matches skeefield aspect 0.563)
+let CW=0,CH=0,DPR=1,SC=1;
+function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
+  const ar=PW/PH; let cw=r.width,ch=r.width/ar; if(ch>r.height){ch=r.height;cw=r.height*ar;}
+  cv.style.width=cw+'px'; cv.style.height=ch+'px'; CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; SC=CW/PW; }
+sz();
+function X(u){ return u*SC; }                 // field-units -> px
+function fx(f){ return f*CW; }                 // field-fraction x -> px
+function fy(f){ return f*CH; }                 // field-fraction y -> px
+
+// scoring rings (field fractions from your art) — value + hit radius
+const ZONES=[
+  {x:0.345,y:0.262,r:0.058,p:100,c:'#b03030'},
+  {x:0.650,y:0.262,r:0.058,p:100,c:'#b03030'},
+  {x:0.502,y:0.268,r:0.050,p:50, c:'#cccccc'},
+  {x:0.502,y:0.300,r:0.040,p:40, c:'#e23b3b'},
+  {x:0.502,y:0.323,r:0.038,p:30, c:'#3a7bff'},
+  {x:0.502,y:0.372,r:0.055,p:10, c:'#d0a030'},
+  {x:0.502,y:0.405,r:0.058,p:10, c:'#d0a030'}
+];
+const ROLL_START={x:0.50,y:0.80};             // where the current marker sits to be flicked
+const QUEUE_Y=0.865;                          // preview markers line up here
+const COLORS=['red','green','blue'];          // cycle order
+
+let markersLeft, curColor, score, best, state, ball, popups;
+try{ best=parseInt(localStorage.getItem('qu33phSkeeballBest')||'0',10)||0; }catch(e){ best=0; }
+
+function reset(){ markersLeft=9; score=0; state='ready'; ball=null; popups=[]; nextMarker(); }
+function nextMarker(){ if(markersLeft<=0){ state='over'; if(score>best){best=score; try{localStorage.setItem('qu33phSkeeballBest',best);}catch(e){}} return; }
+  curColor=COLORS[(9-markersLeft)%3]; state='ready'; ball=null; }
+reset();
+
+// ---- flick input ----
+let dragging=false, dStart=null, dNow=null;
+function pt(e){ const r=cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height }; }
+cv.addEventListener('pointerdown',e=>{ if(state==='over'){ reset(); return; } if(state!=='ready') return; dragging=true; dStart=pt(e); dNow=dStart; });
+cv.addEventListener('pointermove',e=>{ if(dragging) dNow=pt(e); });
+window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
+  const dx=dNow.x-dStart.x, dy=dNow.y-dStart.y;                 // flick UP = negative dy
+  const up=Math.max(0,-dy);                                     // upward pull
+  if(up<0.04){ dStart=dNow=null; return; }                     // too small, ignore
+  roll(up, dx);
+  dStart=dNow=null;
+});
+
+function roll(up, dx){
+  const power=Math.min(1, up/0.42);                            // 0..1
+  const aim=Math.max(-1,Math.min(1, dx/0.28));                 // -1..1
+  const landX=0.50 + aim*0.17;
+  const landY=0.42 - power*0.17;                               // weak=0.42 (near/10), strong=0.25 (far/100)
+  ball={ x0:ROLL_START.x, y0:ROLL_START.y, x1:landX, y1:landY, t:0, dur:38, color:curColor, spin:0, scored:false };
+  state='rolling';
+}
+
+function scoreLanding(lx,ly){
+  let best=null,bd=1e9;
+  for(const z of ZONES){ const d=Math.hypot(lx-z.x,ly-z.y); if(d<bd){ bd=d; best=z; } }
+  if(best && bd < best.r*1.7) return best.p;
+  return 0;
+}
+
+function step(){
+  if(state==='rolling' && ball){
+    ball.t++; ball.spin+=0.4;
+    if(ball.t>=ball.dur){
+      const pts=scoreLanding(ball.x1,ball.y1); score+=pts; markersLeft--;
+      popups.push({x:ball.x1,y:ball.y1,txt:pts>0?('+'+pts):'MISS',life:40,pts:pts});
+      ball=null; setTimeout(nextMarker, 260); state='settle';
+    }
+  }
+  for(let i=popups.length-1;i>=0;i--){ popups[i].life--; popups[i].y-=0.0015; if(popups[i].life<=0) popups.splice(i,1); }
+}
+
+function ease(t){ return 1-Math.pow(1-t,2); }   // ease-out
+
+function drawMarker(color, cx, cy, scale, rot){
+  const img=MK[color], w=X(11)*scale, h=X(11)*scale;
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot);
+  if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; ctx.drawImage(img,-w/2,-w/(2*ar),w,w/ar); }
+  else { ctx.fillStyle=(color==='red'?'#ff3030':color==='green'?'#30d060':'#3a7bff'); ctx.beginPath(); ctx.arc(0,0,w*0.45,0,7); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=X(0.5); ctx.stroke(); }
+  ctx.restore();
+}
+
+function draw(){
+  ctx.setTransform(1,0,0,1,0,0);
+  if(ready(FIELD)) ctx.drawImage(FIELD,0,0,CW,CH); else { ctx.fillStyle='#111'; ctx.fillRect(0,0,CW,CH); }
+  // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
+  ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';
+  ctx.fillText(markersLeft, fx(0.355), fy(0.187));
+  ctx.fillText(score,       fx(0.503), fy(0.187));
+  ctx.fillText(best,        fx(0.655), fy(0.187));
+
+  // preview queue: remaining markers lined up at the bottom
+  const rem=markersLeft - (state==='rolling'||state==='settle'?0:0);
+  const startIdx=9-markersLeft;
+  let qn=markersLeft - ((state==='ready')?1:0);   // don't draw the one that's on the roll spot
+  for(let i=0;i<qn;i++){ const gi=startIdx + ((state==='ready')?1:0) + i;
+    const col=COLORS[gi%3]; const gx=fx(0.30 + (i/8)*0.40); drawMarker(col, gx, fy(QUEUE_Y), 0.62, 0); }
+
+  // current marker on the roll spot (aim preview while dragging)
+  if(state==='ready'){
+    let sx=fx(ROLL_START.x), sy=fy(ROLL_START.y);
+    drawMarker(curColor, sx, sy, 1.0, 0);
+    if(dragging && dStart && dNow){
+      const dx=dNow.x-dStart.x, dy=dNow.y-dStart.y, up=Math.max(0,-dy);
+      const power=Math.min(1,up/0.42), aim=Math.max(-1,Math.min(1,dx/0.28));
+      const lx=fx(0.50+aim*0.17), ly=fy(0.42-power*0.17);
+      ctx.strokeStyle='rgba(255,220,80,0.7)'; ctx.lineWidth=X(0.7); ctx.setLineDash([X(2),X(2)]);
+      ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(lx,ly); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='rgba(255,220,80,0.9)'; ctx.beginPath(); ctx.arc(lx,ly,X(1.6),0,7); ctx.fill();
+    }
+  }
+
+  // rolling marker (kinematic arc up the lane, scaling down for perspective)
+  if(state==='rolling' && ball){
+    const t=ease(ball.t/ball.dur);
+    const cx=fx(ball.x0+(ball.x1-ball.x0)*t);
+    const cy=fy(ball.y0+(ball.y1-ball.y0)*t);
+    const sc=1.0 - t*0.62;                          // perspective shrink
+    // little shadow
+    ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(cx,cy+X(2)*sc,X(5)*sc,X(2)*sc,0,0,7); ctx.fill();
+    drawMarker(ball.color, cx, cy, sc, ball.spin);
+  }
+
+  // score popups
+  for(const p of popups){ ctx.globalAlpha=Math.max(0,p.life/40);
+    ctx.fillStyle=p.pts>=100?'#ffd24a':p.pts>=30?'#7bff9a':p.pts>0?'#8fd0ff':'#ff7a7a';
+    ctx.font='bold '+Math.round(CW*0.055)+'px Helvetica'; ctx.textAlign='center';
+    ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=X(0.8); ctx.strokeText(p.txt,fx(p.x),fy(p.y)); ctx.fillText(p.txt,fx(p.x),fy(p.y)); ctx.globalAlpha=1; }
+
+  // hint
+  if(state==='ready' && !dragging){ ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font='bold '+Math.round(CW*0.035)+'px Helvetica'; ctx.textAlign='center';
+    ctx.fillText('flick UP to roll \u2014 aim for the rings', CW/2, fy(0.93)); }
+
+  // game over
+  if(state==='over'){ ctx.fillStyle='rgba(0,0,0,0.66)'; ctx.fillRect(0,0,CW,CH);
+    ctx.textAlign='center'; ctx.fillStyle='#e23b3b'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; ctx.fillText('GAME OVER',CW/2,CH*0.42);
+    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.08)+'px Helvetica'; ctx.fillText('SCORE '+score,CW/2,CH*0.50);
+    ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText('BEST '+best,CW/2,CH*0.555);
+    ctx.fillText('tap to play again',CW/2,CH*0.62); }
+}
+
+function loop(){ step(); draw(); requestAnimationFrame(loop); }
+window.addEventListener('resize',()=>{ sz(); });
+loop();
+</script>
+</body>
+</html>
