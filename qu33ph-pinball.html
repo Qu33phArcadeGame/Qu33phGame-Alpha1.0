@@ -16,27 +16,27 @@
 <div id="wrap"><canvas id="game"></canvas></div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
-// ---- coordinate system: play area is W x H units; everything defined in these units, scaled to canvas ----
-const PW=100, PH=170;                 // logical play field (portrait)
-let CW=0,CH=0,DPR=1,SC=1,OX=0,OY=0;
-function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
-  let w=r.width,h=r.height; const ar=PW/PH;
-  let cw=w, ch=w/ar; if(ch>h){ ch=h; cw=h*ar; }
-  cv.style.width=cw+'px'; cv.style.height=ch+'px'; CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH;
-  SC=CW/PW; OX=0; OY=0;
-}
-sz();
-function X(u){ return u*SC; } // unit -> canvas px
+const FIELD=new Image(); FIELD.src='pinfield.png';
+const CHAIRIMG=new Image(); CHAIRIMG.src='chair.png';
+function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 
-// ---- geometry constants (in play units) ----
-const CHUTE_X=88, CHUTE_W=12;         // launch chute on the right
-const PLAYR=CHUTE_X-CHUTE_W-1;        // right edge of play area (left of chute)
-const WALL=2.5;
-const FLIP_Y=150, FLIP_LEN=20, FLIP_GAP=20;   // flipper pivots span the drain gap
-const L_PIVOT=PW/2-FLIP_GAP, R_PIVOT=PW/2+FLIP_GAP;
-const BUMPERS=[[38,42,8],[54,42,8],[46,55,8],[32,60,7.5],[60,60,7.5],[46,70,8]]; // x,y,r
-const SLINGS=[[22,120],[66,120]];
-const CHAIR=[24,95], MEGA=[46,26];
+// logical field matches the pinfield.png aspect (961x1637 ~ 100x170)
+const PW=100, PH=170;
+let CW=0,CH=0,DPR=1,SC=1;
+function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
+  let w=r.width,h=r.height; const ar=PW/PH; let cw=w,ch=w/ar; if(ch>h){ch=h;cw=h*ar;}
+  cv.style.width=cw+'px'; cv.style.height=ch+'px'; CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; SC=CW/PW; }
+sz();
+function X(u){ return u*SC; }
+
+// ---- layout in field units (from your labeled map) ----
+const BUMPERS=[[50,45,5.5],[39.5,52.7,5.5],[60.5,52.7,5.5],[50,58.8,5.5],[42.4,68,5.5],[57.4,68,5.5]];
+const SLINGS=[[20,122],[68,122]];
+const MEGA=[73.4,46], CHAIR=[27,104];
+const L_PIVOT=[30,138], R_PIVOT=[62,138], FLIP_LEN=14;
+const CHUTE_DIV=80, CHUTE_OUT=93, BALL_START=[86.5,153];
+const BALL_R=3;
+const MAXV_U=2.6;                                    // hard speed cap in units/step (kills the "Flash" bug)
 
 let M,engine,world,ball=null,flipL,flipR,balls=3,score=0,best=0,state='loading',launchP=0,charging=false,draining=false,overT=0,megaFlash=0,chairFlash=0,bumpFlash={};
 try{ best=parseInt(localStorage.getItem('qu33phPinBest')||'0',10)||0; }catch(e){}
@@ -45,130 +45,101 @@ function boot(){ M=window.Matter; if(!M){ setTimeout(boot,60); return; } build()
 boot();
 
 function wall(x1,y1,x2,y2,thU){ const mx=(x1+x2)/2,my=(y1+y2)/2,dx=(x2-x1),dy=(y2-y1),len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx);
-  return M.Bodies.rectangle(X(mx),X(my),X(len),X(thU||WALL),{isStatic:true,angle:ang,friction:0.02,restitution:0.25,label:'wall'}); }
+  return M.Bodies.rectangle(X(mx),X(my),X(len),X(thU||2),{isStatic:true,angle:ang,friction:0.02,restitution:0.3,label:'wall'}); }
 
 function build(){
-  engine=M.Engine.create(); world=engine.world; engine.gravity.y=1.0; engine.positionIterations=10; engine.velocityIterations=10;
-  const parts=[];
-  // outer box
-  parts.push(wall(2,4,2,PH-6));                       // left
-  parts.push(wall(2,4,PW-2,4));                       // top
-  parts.push(wall(PW-2,4,PW-2,PH-2));                 // far right (outer chute wall)
-  // chute divider (between play and launch lane), open at the very top
-  parts.push(wall(PLAYR,22,PLAYR,PH-2));              // divider
-  parts.push(wall(PLAYR,PH-2,PW-2,PH-2));             // chute floor (ball rests here)
-  // top arch that funnels a launched ball from the chute into play (curves left)
-  parts.push(wall(PW-2,22,PLAYR,14));                 // lip over the chute -> into play
-  parts.push(wall(2,4,2,4));                          // (noop safety)
-  // bottom funnel to the drain, with inlanes; flippers sit in the gap
-  parts.push(wall(2,PH-6,L_PIVOT-2,FLIP_Y+8));        // left bottom wall down to left flipper base
-  parts.push(wall(PLAYR,PH-6,R_PIVOT+2,FLIP_Y+8));    // right bottom wall down to right flipper base
-  // small outlane posts beside flippers
-  parts.push(wall(L_PIVOT-8,FLIP_Y-2,L_PIVOT-8,FLIP_Y+6));
-  parts.push(wall(R_PIVOT+8,FLIP_Y-2,R_PIVOT+8,FLIP_Y+6));
-
+  engine=M.Engine.create(); world=engine.world; engine.gravity.y=1.0; engine.positionIterations=12; engine.velocityIterations=12;
+  const p=[];
+  // outer walls (roughly follow the field art; fine-tune later)
+  p.push(wall(13,40,13,150));                 // left
+  p.push(wall(13,40,CHUTE_DIV,38));           // top
+  p.push(wall(CHUTE_DIV,42,CHUTE_DIV,162));   // chute divider (play side)
+  p.push(wall(CHUTE_OUT,38,CHUTE_OUT,162));   // outer right (chute outer)
+  p.push(wall(CHUTE_DIV,162,CHUTE_OUT,162));  // chute floor (ball rests here)
+  p.push(wall(CHUTE_OUT,42,72,34));           // top lip -> deflects launched ball LEFT into play
+  // bottom funnel toward the drain (gap between flippers)
+  p.push(wall(13,150,L_PIVOT[0]-2,L_PIVOT[1]+3));
+  p.push(wall(CHUTE_DIV,150,R_PIVOT[0]+2,R_PIVOT[1]+3));
   // bumpers
-  BUMPERS.forEach((b,i)=>{ parts.push(M.Bodies.circle(X(b[0]),X(b[1]),X(b[2]),{isStatic:true,restitution:1.4,friction:0,label:'bumper',bidx:i})); });
+  BUMPERS.forEach((b,i)=>{ p.push(M.Bodies.circle(X(b[0]),X(b[1]),X(b[2]),{isStatic:true,restitution:1.3,friction:0,label:'bumper',bidx:i})); });
   // slingshots
-  SLINGS.forEach((s,i)=>{ parts.push(M.Bodies.polygon(X(s[0]),X(s[1]),3,X(7),{isStatic:true,restitution:1.5,angle:i?Math.PI+0.4:-0.4,label:'sling'})); });
+  SLINGS.forEach((s,i)=>{ p.push(M.Bodies.polygon(X(s[0]),X(s[1]),3,X(7),{isStatic:true,restitution:1.35,angle:i?Math.PI+0.4:-0.4,label:'sling'})); });
   // chair target
-  parts.push(M.Bodies.rectangle(X(CHAIR[0]),X(CHAIR[1]),X(9),X(9),{isStatic:true,restitution:0.5,label:'chair'}));
-
-  // flippers (pivoted)
-  const flenP=X(FLIP_LEN), fthP=X(4.5);
-  flipL=M.Bodies.rectangle(X(L_PIVOT)+flenP*0.35,X(FLIP_Y),flenP,fthP,{density:0.04,friction:0.1,label:'flipL'});
-  flipR=M.Bodies.rectangle(X(R_PIVOT)-flenP*0.35,X(FLIP_Y),flenP,fthP,{density:0.04,friction:0.1,label:'flipR'});
-  const cL=M.Constraint.create({pointA:{x:X(L_PIVOT),y:X(FLIP_Y)},bodyB:flipL,pointB:{x:-flenP*0.42,y:0},stiffness:1,length:0});
-  const cR=M.Constraint.create({pointA:{x:X(R_PIVOT),y:X(FLIP_Y)},bodyB:flipR,pointB:{x:flenP*0.42,y:0},stiffness:1,length:0});
-  parts.push(flipL,flipR,cL,cR);
-
-  M.Composite.add(world,parts);
+  p.push(M.Bodies.rectangle(X(CHAIR[0]),X(CHAIR[1]),X(9),X(9),{isStatic:true,restitution:0.5,label:'chair'}));
+  // flippers (pivoted, long enough to leave a ball-sized gap in the middle)
+  const flen=X(FLIP_LEN), fth=X(4);
+  flipL=M.Bodies.rectangle(X(L_PIVOT[0])+flen*0.35,X(L_PIVOT[1]),flen,fth,{density:0.05,friction:0.1,label:'flipL'});
+  flipR=M.Bodies.rectangle(X(R_PIVOT[0])-flen*0.35,X(R_PIVOT[1]),flen,fth,{density:0.05,friction:0.1,label:'flipR'});
+  const cL=M.Constraint.create({pointA:{x:X(L_PIVOT[0]),y:X(L_PIVOT[1])},bodyB:flipL,pointB:{x:-flen*0.42,y:0},stiffness:1,length:0});
+  const cR=M.Constraint.create({pointA:{x:X(R_PIVOT[0]),y:X(R_PIVOT[1])},bodyB:flipR,pointB:{x:flen*0.42,y:0},stiffness:1,length:0});
+  p.push(flipL,flipR,cL,cR);
+  M.Composite.add(world,p);
   M.Events.on(engine,'collisionStart',onHit);
   newBall();
 }
+function newBall(){ if(ball){ M.Composite.remove(world,ball); ball=null; }
+  ball=M.Bodies.circle(X(BALL_START[0]),X(BALL_START[1]),X(BALL_R),{restitution:0.3,friction:0.02,frictionAir:0.005,density:0.02,label:'ball'});
+  M.Composite.add(world,ball); draining=false; charging=false; launchP=0; state='ready'; }
 
-function newBall(){
-  if(ball){ M.Composite.remove(world,ball); ball=null; }
-  // rest in the chute, just above the chute floor
-  ball=M.Bodies.circle(X((PLAYR+PW)/2),X(PH-10),X(3.4),{restitution:0.3,friction:0.02,frictionAir:0.004,density:0.02,label:'ball'});
-  M.Composite.add(world,ball); draining=false; charging=false; launchP=0; state='ready';
-}
-
-function onHit(ev){ for(const p of ev.pairs){ const l=[p.bodyA.label,p.bodyB.label]; if(!l.includes('ball'))continue;
-  if(l.includes('bumper')){ const bd=p.bodyA.label==='bumper'?p.bodyA:p.bodyB; score+=100; bumpFlash[bd.bidx]=10; const dx=ball.position.x-bd.position.x,dy=ball.position.y-bd.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:ball.velocity.x+dx/d*X(2),y:ball.velocity.y+dy/d*X(2)}); }
+function onHit(ev){ for(const pr of ev.pairs){ const l=[pr.bodyA.label,pr.bodyB.label]; if(!l.includes('ball'))continue;
+  if(l.includes('bumper')){ const bd=pr.bodyA.label==='bumper'?pr.bodyA:pr.bodyB; score+=100; bumpFlash[bd.bidx]=10; const dx=ball.position.x-bd.position.x,dy=ball.position.y-bd.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:ball.velocity.x+dx/d*X(0.9),y:ball.velocity.y+dy/d*X(0.9)}); }
   else if(l.includes('sling')){ score+=50; }
-  else if(l.includes('chair')){ score+=250; chairFlash=18; const dx=X(MEGA[0])-ball.position.x,dy=X(MEGA[1])-ball.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:dx/d*X(4),y:dy/d*X(4)}); }
+  else if(l.includes('chair')){ score+=250; chairFlash=18; const dx=X(MEGA[0])-ball.position.x,dy=X(MEGA[1])-ball.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:dx/d*X(2.4),y:dy/d*X(2.4)}); }
 } }
 
-// ---- input ----
 let pL=false,pR=false;
 function down(e){ if(state==='over'){ if(overT<=0) restart(); return; }
   const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width;
   if(state==='ready'){ charging=true; return; }
-  if(x<0.5) pL=true; else pR=true;
-}
+  if(x<0.5) pL=true; else pR=true; }
 function up(e){ const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width;
-  if(state==='ready' && charging){ M.Body.setVelocity(ball,{x:0,y:-(X(28)+launchP*X(34))}); state='play'; charging=false; return; }
-  if(x<0.5) pL=false; else pR=false;
-}
+  if(state==='ready'&&charging){ M.Body.setVelocity(ball,{x:0,y:-(X(1.3)+launchP*X(1.4))}); state='play'; charging=false; return; }
+  if(x<0.5) pL=false; else pR=false; }
 cv.addEventListener('pointerdown',down); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',()=>{pL=pR=false;});
 
 function restart(){ score=0; balls=3; overT=0; newBall(); }
 function loseBall(){ if(draining||state==='over')return; draining=true; balls--;
   if(balls<=0){ state='over'; overT=45; if(score>best){best=score; try{localStorage.setItem('qu33phPinBest',best);}catch(e){}} }
-  else setTimeout(newBall,300);
-}
-function flip(fb,rest,active,press){ M.Body.setAngularVelocity(fb,(( press?active:rest)-fb.angle)*0.8); }
+  else setTimeout(newBall,350); }
+function flip(fb,rest,active,press){ M.Body.setAngularVelocity(fb,((press?active:rest)-fb.angle)*0.8); }
 
 function update(){
   if(state==='loading') return;
-  if(state==='ready' && charging) launchP=Math.min(1,launchP+0.025);
-  if(flipL){ flip(flipL,0.32,-0.55,pL); flip(flipR,-0.32,0.55,pR); }
+  if(state==='ready'&&charging) launchP=Math.min(1,launchP+0.025);
+  if(flipL){ flip(flipL,0.30,-0.55,pL); flip(flipR,-0.30,0.55,pR); }
   M.Engine.update(engine,1000/60);
+  // HARD SPEED CAP — ball can never exceed MAXV (fixes the rocket-off bug)
+  if(ball){ const sp=Math.hypot(ball.velocity.x,ball.velocity.y), mv=X(MAXV_U); if(sp>mv) M.Body.setVelocity(ball,{x:ball.velocity.x/sp*mv,y:ball.velocity.y/sp*mv}); }
   if(megaFlash>0)megaFlash--; if(chairFlash>0)chairFlash--; for(const k in bumpFlash){ if(bumpFlash[k]>0)bumpFlash[k]--; }
-  if(ball && (state==='play'||state==='ready')){
-    if(Math.hypot(ball.position.x-X(MEGA[0]),ball.position.y-X(MEGA[1]))<X(6)){ score+=500; megaFlash=25; M.Body.setPosition(ball,{x:X((PLAYR+PW)/2),y:X(60)}); M.Body.setVelocity(ball,{x:0,y:X(2)}); }
-    if(ball.position.y>X(PH+6)) loseBall();
+  if(ball&&(state==='play'||state==='ready')){
+    if(Math.hypot(ball.position.x-X(MEGA[0]),ball.position.y-X(MEGA[1]))<X(6)){ score+=500; megaFlash=25; M.Body.setPosition(ball,{x:X(BALL_START[0]),y:X(60)}); M.Body.setVelocity(ball,{x:0,y:X(1)}); }
+    if(ball.position.y>X(PH+4)) loseBall();
   }
   if(state==='over'&&overT>0) overT--;
 }
 
 function draw(){
   ctx.setTransform(1,0,0,1,0,0);
-  // background
-  const g=ctx.createLinearGradient(0,0,0,CH); g.addColorStop(0,'#0c1226'); g.addColorStop(1,'#060810'); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
+  if(ready(FIELD)) ctx.drawImage(FIELD,0,0,CW,CH); else { ctx.fillStyle='#0a0f1c'; ctx.fillRect(0,0,CW,CH); }
   if(state==='loading'){ ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('loading…',CW/2,CH/2); return; }
-  const NEON='#3affea';
-  // walls (draw all static wall bodies as neon lines)
-  ctx.strokeStyle=NEON; ctx.lineWidth=Math.max(2,X(1.2)); ctx.shadowColor=NEON; ctx.shadowBlur=X(2);
-  world.bodies.forEach(b=>{ if(b.label==='wall'){ const v=b.vertices; ctx.beginPath(); ctx.moveTo(v[0].x,v[0].y); for(let i=1;i<v.length;i++)ctx.lineTo(v[i].x,v[i].y); ctx.closePath(); ctx.stroke(); } });
-  ctx.shadowBlur=0;
-  // bumpers
-  BUMPERS.forEach((b,i)=>{ ctx.strokeStyle=bumpFlash[i]>0?'#fff':NEON; ctx.lineWidth=X(1.4); ctx.shadowColor=NEON; ctx.shadowBlur=X(3);
-    for(let rr=b[2];rr>b[2]*0.4;rr-=b[2]*0.3){ ctx.beginPath(); ctx.arc(X(b[0]),X(b[1]),X(rr),0,7); ctx.stroke(); } ctx.shadowBlur=0; });
-  // slingshots
-  ctx.strokeStyle=NEON; ctx.lineWidth=X(1.4);
-  world.bodies.forEach(b=>{ if(b.label==='sling'){ const v=b.vertices; ctx.beginPath(); ctx.moveTo(v[0].x,v[0].y); for(let i=1;i<v.length;i++)ctx.lineTo(v[i].x,v[i].y); ctx.closePath(); ctx.stroke(); } });
   // chair
-  ctx.save(); if(chairFlash>0){ctx.shadowColor='#ff3b45';ctx.shadowBlur=X(chairFlash);} ctx.fillStyle='#c98a4a'; ctx.strokeStyle='#fff'; ctx.lineWidth=X(0.8);
-  ctx.fillRect(X(CHAIR[0])-X(4.5),X(CHAIR[1])-X(4.5),X(9),X(9)); ctx.strokeRect(X(CHAIR[0])-X(4.5),X(CHAIR[1])-X(4.5),X(9),X(9)); ctx.fillStyle='#fff'; ctx.font='bold '+X(3)+'px Helvetica'; ctx.textAlign='center'; ctx.fillText('CHAIR',X(CHAIR[0]),X(CHAIR[1])+X(1)); ctx.restore();
-  // mega
-  ctx.fillStyle='#fff'; ctx.fillRect(X(MEGA[0])-X(6),X(MEGA[1])-X(4),X(12),X(8)); ctx.fillStyle=megaFlash>0?'#ff8':'#e33'; ctx.beginPath(); ctx.arc(X(MEGA[0]),X(MEGA[1]),X(2.5),0,7); ctx.fill();
+  if(ready(CHAIRIMG)){ const s=X(11); ctx.save(); if(chairFlash>0){ctx.shadowColor='#ff3b45';ctx.shadowBlur=X(chairFlash);} ctx.drawImage(CHAIRIMG,X(CHAIR[0])-s/2,X(CHAIR[1])-s/2,s,s); ctx.restore(); }
+  // bumper hit rings
+  BUMPERS.forEach((b,i)=>{ if(bumpFlash[i]>0){ ctx.strokeStyle='rgba(255,255,255,'+(bumpFlash[i]/10)+')'; ctx.lineWidth=X(0.8); ctx.beginPath(); ctx.arc(X(b[0]),X(b[1]),X(b[2]),0,7); ctx.stroke(); } });
+  if(megaFlash>0){ ctx.strokeStyle='rgba(255,220,60,'+(megaFlash/25)+')'; ctx.lineWidth=X(1.2); ctx.beginPath(); ctx.arc(X(MEGA[0]),X(MEGA[1]),X(7),0,7); ctx.stroke(); }
   // flippers (blue markers)
   [flipL,flipR].forEach(fb=>{ if(!fb)return; ctx.save(); ctx.translate(fb.position.x,fb.position.y); ctx.rotate(fb.angle);
-    const w=X(FLIP_LEN),h=X(4.5); const grad=ctx.createLinearGradient(-w/2,0,w/2,0); grad.addColorStop(0,'#2a4db0'); grad.addColorStop(1,'#4a7bff'); ctx.fillStyle=grad; ctx.strokeStyle='#bcd0ff'; ctx.lineWidth=X(0.7);
+    const w=X(FLIP_LEN),h=X(4.5); const grad=ctx.createLinearGradient(-w/2,0,w/2,0); grad.addColorStop(0,'#2a4db0'); grad.addColorStop(1,'#5a8bff'); ctx.fillStyle=grad; ctx.strokeStyle='#cfe0ff'; ctx.lineWidth=X(0.6); ctx.shadowColor='#4a7bff'; ctx.shadowBlur=X(1.5);
     ctx.beginPath(); ctx.roundRect(-w/2,-h/2,w,h,h/2); ctx.fill(); ctx.stroke(); ctx.restore(); });
   // ball
-  if(ball){ const r=X(3.4),bx=ball.position.x,by=ball.position.y; const rg=ctx.createRadialGradient(bx-r*0.35,by-r*0.35,r*0.1,bx,by,r); rg.addColorStop(0,'#ff9'); rg.addColorStop(0.5,'#ff3b45'); rg.addColorStop(1,'#900'); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.fill(); }
-  // charge meter in chute
-  if(state==='ready'&&charging){ ctx.fillStyle='#ffd54a'; const cx=X((PLAYR+PW)/2); ctx.fillRect(cx-X(1),X(PH-14)-launchP*X(30),X(2),launchP*X(30)); }
-
+  if(ball){ const r=X(BALL_R),bx=ball.position.x,by=ball.position.y; const rg=ctx.createRadialGradient(bx-r*0.35,by-r*0.35,r*0.1,bx,by,r); rg.addColorStop(0,'#ff9'); rg.addColorStop(0.5,'#ff3b45'); rg.addColorStop(1,'#900'); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(bx,by,r,0,7); ctx.fill(); }
+  // charge meter
+  if(state==='ready'&&charging){ ctx.fillStyle='#ffd54a'; const cx=X((CHUTE_DIV+CHUTE_OUT)/2); ctx.fillRect(cx-X(1),X(150)-launchP*X(28),X(2),launchP*X(28)); }
   // HUD
-  ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=6; ctx.fillText(score,X(4),X(9));
-  ctx.textAlign='right'; ctx.fillText('BALLS '+balls,X(PW-4),X(9)); ctx.shadowBlur=0;
-  ctx.textAlign='center';
-  if(state==='ready'&&!charging){ ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font='bold '+Math.round(CW*0.035)+'px Helvetica'; ctx.fillText('HOLD anywhere to charge · release to launch',CW/2,CH*0.94); }
-  if(state==='play'){ ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='bold '+Math.round(CW*0.03)+'px Helvetica'; ctx.fillText('tap LEFT / RIGHT side = flippers',CW/2,CH*0.965); }
+  ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=6; ctx.fillText(score,X(4),X(8));
+  ctx.textAlign='right'; ctx.fillText('BALLS '+balls,X(PW-4),X(8)); ctx.shadowBlur=0; ctx.textAlign='center';
+  if(state==='ready'&&!charging){ ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.font='bold '+Math.round(CW*0.032)+'px Helvetica'; ctx.fillText('HOLD to charge · release to launch',CW/2,CH*0.955); }
+  if(state==='play'){ ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CW*0.028)+'px Helvetica'; ctx.fillText('tap LEFT / RIGHT = flippers',CW/2,CH*0.975); }
   if(state==='over'){ ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,CW,CH); ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; ctx.fillText('GAME OVER',CW/2,CH*0.45); ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.07)+'px Helvetica'; ctx.fillText(score,CW/2,CH*0.53); ctx.font='bold '+Math.round(CW*0.04)+'px Helvetica'; ctx.fillText('BEST '+best,CW/2,CH*0.58); if(overT<=0) ctx.fillText('tap to play again',CW/2,CH*0.65); }
 }
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
