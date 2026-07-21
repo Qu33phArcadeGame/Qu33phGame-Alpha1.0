@@ -41,7 +41,7 @@ const ZONES=[
   {x:0.502,y:0.405,r:0.058,p:10, c:'#d0a030'}
 ];
 const ROLL_START={x:0.50,y:0.80};             // where the current marker sits to be flicked
-const QUEUE_Y=0.865;                          // preview markers line up here
+const QUEUE_Y=0.60;                            // preview markers sit up on the lane
 const COLORS=['red','green','blue'];          // cycle order
 
 let markersLeft, curColor, score, best, state, ball, popups;
@@ -107,31 +107,24 @@ function draw(){
   ctx.setTransform(1,0,0,1,0,0);
   if(ready(FIELD)) ctx.drawImage(FIELD,0,0,CW,CH); else { ctx.fillStyle='#111'; ctx.fillRect(0,0,CW,CH); }
   // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
-  ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';
-  ctx.fillText(markersLeft, fx(0.355), fy(0.187));
-  ctx.fillText(score,       fx(0.503), fy(0.187));
-  ctx.fillText(best,        fx(0.655), fy(0.187));
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#141414';
+  ctx.font='bold '+Math.round(CW*0.052)+'px Helvetica';
+  ctx.fillText(markersLeft, fx(0.365), fy(0.254));
+  ctx.fillText(score,       fx(0.505), fy(0.254));
+  ctx.fillText(best,        fx(0.640), fy(0.254));
 
-  // preview queue: remaining markers lined up at the bottom
-  const rem=markersLeft - (state==='rolling'||state==='settle'?0:0);
+  // preview queue: upcoming markers up on the lane, semi-transparent (ghosts)
   const startIdx=9-markersLeft;
-  let qn=markersLeft - ((state==='ready')?1:0);   // don't draw the one that's on the roll spot
+  let qn=markersLeft - ((state==='ready')?1:0);   // exclude the live one on the roll spot
+  ctx.globalAlpha=0.38;
   for(let i=0;i<qn;i++){ const gi=startIdx + ((state==='ready')?1:0) + i;
-    const col=COLORS[gi%3]; const gx=fx(0.30 + (i/8)*0.40); drawMarker(col, gx, fy(QUEUE_Y), 0.62, 0); }
+    const col=COLORS[gi%3]; const gx=fx(0.32 + (qn>1?(i/(qn-1)):0.5)*0.36); drawMarker(col, gx, fy(QUEUE_Y), 0.5, 0); }
+  ctx.globalAlpha=1;
 
   // current marker on the roll spot (aim preview while dragging)
   if(state==='ready'){
     let sx=fx(ROLL_START.x), sy=fy(ROLL_START.y);
     drawMarker(curColor, sx, sy, 1.0, 0);
-    if(dragging && dStart && dNow){
-      const dx=dNow.x-dStart.x, dy=dNow.y-dStart.y, up=Math.max(0,-dy);
-      const power=Math.min(1,up/0.42), aim=Math.max(-1,Math.min(1,dx/0.28));
-      const lx=fx(0.50+aim*0.17), ly=fy(0.42-power*0.17);
-      ctx.strokeStyle='rgba(255,220,80,0.7)'; ctx.lineWidth=X(0.7); ctx.setLineDash([X(2),X(2)]);
-      ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(lx,ly); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='rgba(255,220,80,0.9)'; ctx.beginPath(); ctx.arc(lx,ly,X(1.6),0,7); ctx.fill();
-    }
   }
 
   // rolling marker (kinematic arc up the lane, scaling down for perspective)
