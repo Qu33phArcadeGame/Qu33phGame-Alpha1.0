@@ -479,7 +479,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v302</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v303</div>
 
 <canvas id="game"></canvas>
 
@@ -535,7 +535,7 @@
     <div class="cab-card" id="cabGolf" onclick="launchGolf()"><img src="golfoverlay.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH MINI GOLF</div></div>
     <div class="cab-card" id="cabStack" onclick="launchStack()"><img src="stackicon.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH STACK</div></div>
     <div class="cab-card" id="cabFidget" onclick="launchFidget()"><img src="fidgetqu33phfield.png" onerror="this.style.opacity=0.2"><div class="cab-label">FIDGET QU33PH</div></div>
-    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="skeefield.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:cover;border-radius:14px;border:3px solid #141414;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH SKEE-BALL</div></div>
     <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
     <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
     <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
@@ -555,6 +555,10 @@
 <div id="stackScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="stackFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
   <button class="back-tl" onclick="stackBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
+</div>
+<div id="skeeScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
+  <iframe id="skeeFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
+  <button class="back-tl" onclick="skeeBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
 </div>
 <div id="pinball2dScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:116;overflow:hidden;">
   <iframe id="pinball2dFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
@@ -4125,7 +4129,7 @@ function showArcadeMenu(){
   var st=document.getElementById("sideTabs"); if(st) st.style.display="none";
   var ps=document.getElementById("platformerScreen"); if(ps) ps.style.display="none";
   var ds=document.getElementById("dreamonScreen"); if(ds) ds.style.display="none";
-  var gs=document.getElementById("golfScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("golfFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; } var fs=document.getElementById("fidgetScreen"); if(fs && fs.style.display!=="none"){ var ff=document.getElementById("fidgetFrame"); if(ff){ try{ ff.setAttribute("src","about:blank"); }catch(e){} } fs.style.display="none"; } var ps=document.getElementById("pinball2dScreen"); if(ps && ps.style.display!=="none"){ var pf=document.getElementById("pinball2dFrame"); if(pf){ try{ pf.setAttribute("src","about:blank"); }catch(e){} } ps.style.display="none"; } var ss=document.getElementById("stackScreen"); if(ss && ss.style.display!=="none"){ var sf=document.getElementById("stackFrame"); if(sf){ try{ sf.setAttribute("src","about:blank"); }catch(e){} } ss.style.display="none"; }
+  var gs=document.getElementById("golfScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("golfFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; } var fs=document.getElementById("fidgetScreen"); if(fs && fs.style.display!=="none"){ var ff=document.getElementById("fidgetFrame"); if(ff){ try{ ff.setAttribute("src","about:blank"); }catch(e){} } fs.style.display="none"; } var ps=document.getElementById("pinball2dScreen"); if(ps && ps.style.display!=="none"){ var pf=document.getElementById("pinball2dFrame"); if(pf){ try{ pf.setAttribute("src","about:blank"); }catch(e){} } ps.style.display="none"; } var ss=document.getElementById("stackScreen"); if(ss && ss.style.display!=="none"){ var sf=document.getElementById("stackFrame"); if(sf){ try{ sf.setAttribute("src","about:blank"); }catch(e){} } ss.style.display="none"; } var sk=document.getElementById("skeeScreen"); if(sk && sk.style.display!=="none"){ var skf=document.getElementById("skeeFrame"); if(skf){ try{ skf.setAttribute("src","about:blank"); }catch(e){} } sk.style.display="none"; }
   var dm=document.getElementById("dlMap"); if(dm) dm.style.display="none";
   document.getElementById("arcadeMenu").style.display="flex";
   try{ applyThemeFilters(); }catch(e){}
@@ -4139,6 +4143,8 @@ function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
 function jmSelect(){
