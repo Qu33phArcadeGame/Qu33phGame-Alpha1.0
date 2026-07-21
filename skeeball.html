@@ -69,8 +69,8 @@ function roll(up, dx){
   const power=Math.min(1, up/0.42);                            // 0..1
   const aim=Math.max(-1,Math.min(1, dx/0.28));                 // -1..1
   const scat=(1.05-power*0.35);                                 // stronger, cleaner rolls scatter less
-  const landX=0.50 + aim*0.20 + (Math.random()-0.5)*0.05*scat;
-  const landY=0.42 - power*0.17 + (Math.random()-0.5)*0.035*scat;
+  const landX=0.50 + aim*0.20 + (Math.random()-0.5)*0.06*scat;
+  const landY=0.42 - power*0.17 + (Math.random()-0.5)*0.045*scat;
   ball={ x0:ROLL_START.x, y0:ROLL_START.y, x1:landX, y1:landY, t:0, dur:38, color:curColor, spin:0, scored:false };
   state='rolling';
 }
@@ -78,7 +78,7 @@ function roll(up, dx){
 function scoreLanding(lx,ly){
   let best=null,bd=1e9;
   for(const z of ZONES){ const d=Math.hypot(lx-z.x,ly-z.y); if(d<bd){ bd=d; best=z; } }
-  if(best && bd < best.r*1.05) return best.p;
+  if(best && bd < best.r*0.95) return best.p;
   return 0;
 }
 
@@ -110,9 +110,9 @@ function draw(){
   // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
   ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';
-  ctx.fillText(markersLeft, fx(0.367), fy(0.222));
-  ctx.fillText(score,       fx(0.504), fy(0.222));
-  ctx.fillText(best,        fx(0.641), fy(0.222));
+  ctx.fillText(markersLeft, fx(0.346), fy(0.191));
+  ctx.fillText(score,       fx(0.502), fy(0.191));
+  ctx.fillText(best,        fx(0.662), fy(0.191));
 
   // preview queue: upcoming markers up on the lane, semi-transparent (ghosts)
   const startIdx=9-markersLeft;
