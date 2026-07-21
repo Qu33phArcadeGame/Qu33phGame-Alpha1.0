@@ -32,16 +32,16 @@ function fy(f){ return f*CH; }                 // field-fraction y -> px
 
 // scoring rings (field fractions from your art) — value + hit radius
 const ZONES=[
-  {x:0.345,y:0.262,r:0.058,p:100,c:'#b03030'},
-  {x:0.650,y:0.262,r:0.058,p:100,c:'#b03030'},
-  {x:0.502,y:0.268,r:0.050,p:50, c:'#cccccc'},
-  {x:0.502,y:0.300,r:0.040,p:40, c:'#e23b3b'},
-  {x:0.502,y:0.323,r:0.038,p:30, c:'#3a7bff'},
-  {x:0.502,y:0.372,r:0.055,p:10, c:'#d0a030'},
-  {x:0.502,y:0.405,r:0.058,p:10, c:'#d0a030'}
+  {x:0.345,y:0.262,r:0.040,p:100,c:'#b03030'},
+  {x:0.650,y:0.262,r:0.040,p:100,c:'#b03030'},
+  {x:0.502,y:0.268,r:0.038,p:50, c:'#cccccc'},
+  {x:0.502,y:0.300,r:0.036,p:40, c:'#e23b3b'},
+  {x:0.502,y:0.323,r:0.034,p:30, c:'#3a7bff'},
+  {x:0.502,y:0.372,r:0.050,p:10, c:'#d0a030'},
+  {x:0.502,y:0.405,r:0.055,p:10, c:'#d0a030'}
 ];
 const ROLL_START={x:0.50,y:0.80};             // where the current marker sits to be flicked
-const QUEUE_Y=0.60;                            // preview markers sit up on the lane
+const QUEUE_Y=0.565;                           // preview markers sit up on the lane
 const COLORS=['red','green','blue'];          // cycle order
 
 let markersLeft, curColor, score, best, state, ball, popups;
@@ -68,8 +68,9 @@ window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
 function roll(up, dx){
   const power=Math.min(1, up/0.42);                            // 0..1
   const aim=Math.max(-1,Math.min(1, dx/0.28));                 // -1..1
-  const landX=0.50 + aim*0.17;
-  const landY=0.42 - power*0.17;                               // weak=0.42 (near/10), strong=0.25 (far/100)
+  const scat=(1.05-power*0.35);                                 // stronger, cleaner rolls scatter less
+  const landX=0.50 + aim*0.20 + (Math.random()-0.5)*0.05*scat;
+  const landY=0.42 - power*0.17 + (Math.random()-0.5)*0.035*scat;
   ball={ x0:ROLL_START.x, y0:ROLL_START.y, x1:landX, y1:landY, t:0, dur:38, color:curColor, spin:0, scored:false };
   state='rolling';
 }
@@ -77,7 +78,7 @@ function roll(up, dx){
 function scoreLanding(lx,ly){
   let best=null,bd=1e9;
   for(const z of ZONES){ const d=Math.hypot(lx-z.x,ly-z.y); if(d<bd){ bd=d; best=z; } }
-  if(best && bd < best.r*1.7) return best.p;
+  if(best && bd < best.r*1.05) return best.p;
   return 0;
 }
 
@@ -107,11 +108,11 @@ function draw(){
   ctx.setTransform(1,0,0,1,0,0);
   if(ready(FIELD)) ctx.drawImage(FIELD,0,0,CW,CH); else { ctx.fillStyle='#111'; ctx.fillRect(0,0,CW,CH); }
   // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#141414';
-  ctx.font='bold '+Math.round(CW*0.052)+'px Helvetica';
-  ctx.fillText(markersLeft, fx(0.365), fy(0.254));
-  ctx.fillText(score,       fx(0.505), fy(0.254));
-  ctx.fillText(best,        fx(0.640), fy(0.254));
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
+  ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';
+  ctx.fillText(markersLeft, fx(0.367), fy(0.222));
+  ctx.fillText(score,       fx(0.504), fy(0.222));
+  ctx.fillText(best,        fx(0.641), fy(0.222));
 
   // preview queue: upcoming markers up on the lane, semi-transparent (ghosts)
   const startIdx=9-markersLeft;
