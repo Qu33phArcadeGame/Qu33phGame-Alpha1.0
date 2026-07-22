@@ -10,39 +10,38 @@
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #stage{ position:relative; }
   #game{ display:block; }
-  #fx{ position:absolute; inset:0; pointer-events:none; z-index:2; }
-  #fx.fx-comic{ background-image:radial-gradient(circle, rgba(0,0,0,0.45) 1.7px, transparent 2.0px); background-size:8px 8px; mix-blend-mode:multiply; }
-  #fx.fx-neon{ box-shadow: inset 0 0 60px rgba(40,255,130,0.55), inset 0 0 20px rgba(40,255,130,0.55); }
-  #fx.fx-sunset{ box-shadow: inset 0 0 58px rgba(255,180,45,0.5); }
-  #fx.fx-galaxy{ box-shadow: inset 0 0 58px rgba(150,90,255,0.5); background-image:radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1.5px); background-size:26px 26px; mix-blend-mode:screen; animation:twk 1.6s steps(2) infinite; }
-  @keyframes twk{ 0%,100%{opacity:0.4;} 50%{opacity:0.95;} }
+  #orientBtn{ position:absolute; left:10px; bottom:12px; width:46px; height:46px; padding:0; border-radius:50%;
+    border:2px solid #666; background:rgba(18,18,22,0.85); cursor:pointer; display:flex; align-items:center;
+    justify-content:center; z-index:5; -webkit-tap-highlight-color:transparent; }
 </style>
 </head>
 <body>
-<div id="wrap"><div id="stage"><canvas id="game"></canvas><div id="fx"></div></div></div>
+<div id="wrap"><div id="stage"><canvas id="game"></canvas><button id="orientBtn"><span id="orientIcon"></span></button></div></div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+const sc=document.createElement('canvas'), sx2=sc.getContext('2d');   // scene layer (gets the theme effect)
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 
 // ─── assets ───────────────────────────────────────────────────────────────
 function IMG(src){ const i=new Image(); i.src=src; return i; }
 function ready(im){ return im && im.complete && im.naturalWidth>0; }
-const MARKER = IMG(THEME==='cartoon' ? 'blueC.png' : 'blue.png');  // comic theme flips the comic marker
+const MARKER = IMG(THEME==='cartoon' ? 'blueC.png' : 'blue.png');
 const CHAIR  = IMG('Chair.png');
-const FIELD  = IMG('originalfield.png');                            // the ONLY platform texture
-const WIN_R  = IMG('window.png');                                   // realistic window
-const WIN_P  = IMG('windowP.png');                                  // pixel window
+const FIELD  = IMG('originalfield.png');
+const WIN_R  = IMG('window.png');
+const WIN_P  = IMG('windowP.png');
 const TREES_R= ['tree1.png','tree2.png','tree3.png','tree4.png','tree5.png','tree6.png'].map(IMG);
 const TREES_P= [IMG('treeP.png')];
 
-// themed areas — plain painted backgrounds, no field pngs
+// themed areas — real arcade theme names, each with its own effect
 const ZONES=[
-  { name:'QU33PH', style:'default', accent:'#8affea' },
-  { name:'NEON',   style:'neon',    accent:'#28ff82' },
-  { name:'COMIC',  style:'comic',   accent:'#141414' },
-  { name:'SUNSET', style:'sunset',  accent:'#ffd24a' },
-  { name:'GALAXY', style:'galaxy',  accent:'#c9a0ff' }
+  { name:'DEFAULT',      style:'default', accent:'#8affea', fx:''                                        },
+  { name:'COMIC',        style:'comic',   accent:'#141414', fx:'grayscale(1) contrast(1.2)'              },
+  { name:'NEON',         style:'neon',    accent:'#28ff82', fx:'saturate(1.7) brightness(1.1)'           },
+  { name:'GOLDEN HOUR',  style:'sunset',  accent:'#ffd24a', fx:'sepia(0.55) saturate(1.7) brightness(1.1)'},
+  { name:'GALAXY',       style:'galaxy',  accent:'#c9a0ff', fx:'hue-rotate(215deg) saturate(1.4)'        }
 ];
+const CANFILTER = (function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
 
 // ─── canvas ───────────────────────────────────────────────────────────────
 let CW=0,CH=0,DPR=1;
@@ -53,23 +52,14 @@ function sz(){
   cv.style.width=cw+'px'; cv.style.height=ch+'px';
   const st=document.getElementById('stage'); st.style.width=cw+'px'; st.style.height=ch+'px';
   CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH;
+  sc.width=CW; sc.height=CH;
 }
 sz();
-function applyTheme(){
-  const f={ cartoon:'grayscale(1) contrast(1.18)',
-            neon:'hue-rotate(95deg) saturate(2) brightness(1.12)',
-            sunset:'sepia(0.5) saturate(1.6) brightness(1.2) hue-rotate(-8deg)',
-            galaxy:'hue-rotate(230deg) saturate(1.5) brightness(1.05)' }[THEME]||'';
-  cv.style.filter=f;
-  document.getElementById('fx').className =
-    THEME==='cartoon'?'fx-comic':THEME==='neon'?'fx-neon':THEME==='sunset'?'fx-sunset':THEME==='galaxy'?'fx-galaxy':'';
-}
-applyTheme();
 
-// ─── camera zoom (pulled back so a red pad never hides the blue one past it) ─
+// ─── camera ───────────────────────────────────────────────────────────────
 const Z=0.60, ANCHOR=0.70, HOLD=0.16;
 function AY(){ return CH*ANCHOR; }
-function SX(wx){ return (wx-camX)*Z; }                    // world -> screen
+function SX(wx){ return (wx-camX)*Z; }
 function SY(wy){ const a=AY(); return a+(wy-a)*Z; }
 
 // ─── world ────────────────────────────────────────────────────────────────
@@ -78,34 +68,66 @@ function MH(){ return 0.085*CH; }
 function chairH(){ return CH*0.105; }
 function chairW(){ return ready(CHAIR) ? chairH()*(CHAIR.naturalWidth/CHAIR.naturalHeight) : CH*0.085; }
 function rnd(a,b){ return a+Math.random()*(b-a); }
+// furthest a full-power flip can travel, landing dy below the launch point
+function maxReach(dy){
+  const g=G(), vx=0.022*CW, vy=-0.038*CH;
+  const t=(-vy+Math.sqrt(Math.max(0.0001, vy*vy+2*g*dy)))/g;
+  return vx*t;
+}
 
 let plats, marker, camX, score, best, bestP, combo, state, charge, charging, popups,
-    zoneIdx, zoneLeft, zonePix, banner, settle;
+    zoneIdx, zoneLeft, zonePix, banner, settle, lastFlat, stairLeft, stairStep;
 try{ best =parseInt(localStorage.getItem('qu33phFlipBest') ||'0',10)||0; }catch(e){ best=0; }
 try{ bestP=parseInt(localStorage.getItem('qu33phFlipBestP')||'0',10)||0; }catch(e){ bestP=0; }
 
 function nextZone(){
   zoneIdx=(zoneIdx + 1 + Math.floor(Math.random()*(ZONES.length-1))) % ZONES.length;
-  zonePix=Math.random()<0.5;                 // each new area swaps pixel / realistic trees
+  zonePix=Math.random()<0.5;
   zoneLeft=6+Math.floor(Math.random()*4);
 }
 function addPlatform(){
-  const last=plats[plats.length-1], n=plats.length;
-  const d=Math.min(1, n/30);
+  const n=plats.length, last=plats[n-1];
+  const hard = n>25;                                   // ramps up only after 25
+  const d    = hard ? Math.min(1,(n-25)/40) : 0;
   if(zoneLeft<=0) nextZone();
   zoneLeft--;
-  const w   = rnd(0.26,0.36)*CW - d*0.08*CW;
-  const gap = rnd(0.14,0.22)*CW + d*0.10*CW;
-  const x   = last ? last.x+last.w+gap : CW*0.06;
-  let   y   = last ? last.y + rnd(-0.05,0.05)*CH : CH*0.70;
-  y = Math.max(CH*0.48, Math.min(CH*0.80, y));
-  const uneven = n>4 && Math.random() < (0.10+d*0.20);
-  const chair  = !uneven && n>3 && Math.random() < 0.16;
+
+  // stairs: runs of steady up/down steps once it gets hard
+  if(hard && stairLeft<=0 && Math.random()<0.24){
+    stairLeft = 3+((Math.random()*3)|0);
+    stairStep = (Math.random()<0.5?-1:1)*rnd(0.028,0.050)*CH;
+  }
+
+  // an uneven pad is always narrow and close, so the flat pad after it stays in range
+  const uneven = (!last.uneven) && n>6 && Math.random() < (hard ? 0.10+d*0.15 : 0.05);
+  let w   = uneven ? rnd(0.16,0.23)*CW
+                   : (hard ? rnd(0.24,0.33)*CW - d*0.04*CW : rnd(0.30,0.40)*CW);
+  let gap = uneven ? rnd(0.10,0.15)*CW
+                   : (hard ? rnd(0.14,0.21)*CW + d*0.08*CW : rnd(0.11,0.17)*CW);
+
+  let y;
+  if(stairLeft>0){ y=last.y+stairStep; stairLeft--; }
+  else { y = last.y + (hard? rnd(-0.045,0.045) : rnd(-0.018,0.018))*CH; }
+  y = Math.max(CH*0.46, Math.min(CH*0.80, y));
+
+  let x = last.x + last.w + gap;
+
+  // ── hard guarantee: the next FLAT pad is always reachable from the last FLAT pad ──
+  if(!uneven){
+    const lf=plats[lastFlat];
+    const lim=maxReach(y-lf.y)*0.86;                   // 14% headroom
+    if(x-lf.x > lim) x = lf.x + lim;                   // pull it back into range
+    const minX = last.x + last.w + CW*0.05;            // but never overlap the pad before it
+    if(x < minX){ x = minX; }
+  }
+  const chair = !uneven && n>3 && Math.random()<0.15;
   plats.push({ x,y,w,uneven,chair, chairHit:false, zone:zoneIdx, pix:zonePix,
                seed:Math.random(), seed2:Math.random() });
+  if(!uneven) lastFlat=plats.length-1;
 }
 function reset(){
-  plats=[]; zoneIdx=0; zoneLeft=8; zonePix=false; camX=0; score=0; combo=0; popups=[]; banner=0; settle=0;
+  plats=[]; zoneIdx=0; zoneLeft=8; zonePix=false; camX=0; score=0; combo=0; popups=[];
+  banner=0; settle=0; lastFlat=0; stairLeft=0; stairStep=0;
   plats.push({ x:CW*0.06, y:CH*0.70, w:CW*0.42, uneven:false, chair:false, chairHit:false,
                zone:0, pix:false, seed:0.3, seed2:0.6 });
   for(let i=0;i<10;i++) addPlatform();
@@ -114,7 +136,47 @@ function reset(){
   camX=marker.x-(CW*HOLD)/Z;
 }
 reset();
-state='intro';                                  // explain the rules before the first flip
+state='intro';
+
+// ─── marker orientation (vertical / horizontal toggle) ────────────────────
+let ORIENT=null;
+try{ ORIENT=localStorage.getItem('qu33phFlipOrient')||null; }catch(e){}
+function curOrient(){
+  if(ORIENT) return ORIENT;
+  if(!ready(MARKER)) return 'vertical';
+  return (MARKER.naturalWidth>=MARKER.naturalHeight) ? 'vertical' : 'horizontal';  // keeps each theme's natural look
+}
+function markerRot(){
+  if(!ready(MARKER)) return -Math.PI/2;
+  const wide = MARKER.naturalWidth>=MARKER.naturalHeight;
+  const vertical = curOrient()==='vertical';
+  return (wide === vertical) ? -Math.PI/2 : 0;
+}
+function markerDims(){
+  const mh=MH();
+  if(!ready(MARKER)) return {dw:mh, dh:mh*0.25, visH:mh};
+  const ar=MARKER.naturalWidth/MARKER.naturalHeight;
+  const dw = ar>=1 ? mh : mh*ar, dh = ar>=1 ? mh/ar : mh;
+  const long=Math.max(dw,dh), short=Math.min(dw,dh);
+  return { dw, dh, visH:(curOrient()==='vertical'? long : short) };
+}
+function orientIconSvg(){
+  const vertical=curOrient()==='vertical';
+  return '<svg width="28" height="28" viewBox="0 0 24 24">'
+    + '<path d="M19.5 11a7.5 7.5 0 1 0 -1 4.2" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round"/>'
+    + '<path d="M20 4.5v5h-5" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '<rect x="6.4" y="10.5" width="11.2" height="3" rx="1.5" fill="#4f7dff" transform="rotate('+(vertical?90:0)+' 12 12)"/>'
+    + '</svg>';
+}
+function updateOrientBtn(){ const el=document.getElementById('orientIcon'); if(el) el.innerHTML=orientIconSvg(); }
+document.getElementById('orientBtn').addEventListener('click', e=>{
+  e.stopPropagation();
+  ORIENT = (curOrient()==='vertical') ? 'horizontal' : 'vertical';
+  try{ localStorage.setItem('qu33phFlipOrient',ORIENT); }catch(e2){}
+  updateOrientBtn();
+});
+updateOrientBtn();
+if(!ready(MARKER)) MARKER.onload=updateOrientBtn;
 
 // ─── input ────────────────────────────────────────────────────────────────
 cv.addEventListener('pointerdown', e=>{
@@ -142,7 +204,9 @@ function chairLaunch(p){
   const idx=plats.indexOf(p);
   let target=idx+3+((Math.random()*3)|0);
   while(plats.length<=target+10) addPlatform();
-  const t=plats[target]; t.uneven=false; t.chair=false;
+  const t=plats[target];
+  if(t.uneven){ t.uneven=false; if(target>lastFlat) lastFlat=target; }   // landing pad is always safe
+  t.chair=false;
   const g=G(), dy=t.y-marker.y;
   marker.vy=-0.044*CH;
   const T=(-marker.vy+Math.sqrt(Math.max(0.0001, marker.vy*marker.vy+2*g*dy)))/g;
@@ -156,10 +220,10 @@ function land(p){
   marker.y=p.y; marker.vx=0; marker.vy=0; marker.rot=0; marker.skipTo=-1;
   if(p.uneven){ state='tip'; marker.tipT=0; return; }
   const idx=plats.indexOf(p);
-  const gained=Math.max(1, idx-marker.pIdx);        // +1 for every platform passed
+  const gained=Math.max(1, idx-marker.pIdx);
   marker.pIdx=idx; combo++;
-  const pts = gained*10 + Math.min(10,combo)*2;
-  score += pts;
+  const pts=gained*10 + Math.min(10,combo)*2;
+  score+=pts;
   popups.push({x:marker.x, y:p.y-MH()*1.3, txt:'+'+gained, life:44, col:'#8fd0ff'});
   if(gained>1) popups.push({x:marker.x, y:p.y-MH()*1.9, txt:'SKIPPED '+(gained-1), life:52, col:'#ffd24a'});
   else if(combo>2) popups.push({x:marker.x, y:p.y-MH()*1.9, txt:'x'+combo, life:40, col:'#7bff9a'});
@@ -178,9 +242,8 @@ function step(){
   if(banner>0) banner--;
   if(settle>0) settle--;
   if(charging && state==='ready') charge=Math.min(1, charge+0.022);
-
   if(state==='tip'){
-    marker.tipT++; marker.rot += 0.11;
+    marker.tipT++; marker.rot+=0.11;
     if(marker.tipT>26) gameOver('UNEVEN GROUND');
     return;
   }
@@ -198,7 +261,7 @@ function step(){
       }
     }
     if(marker.vy>0){
-      const list = (state==='boost') ? [plats[marker.skipTo]] : plats;
+      const list=(state==='boost') ? [plats[marker.skipTo]] : plats;
       for(const p of list){
         if(!p) continue;
         if(marker.x>=p.x && marker.x<=p.x+p.w && prevY<=p.y && marker.y>=p.y){ land(p); break; }
@@ -211,131 +274,130 @@ function step(){
   for(let i=popups.length-1;i>=0;i--){ const q=popups[i]; q.life--; q.y-=CH*0.0012; if(q.life<=0) popups.splice(i,1); }
 }
 
-// ─── background: painted per theme, then window + trees ───────────────────
-function paintBG(z){
+// ─── scene layer (background + platforms) — this is what gets the theme effect ──
+function paintBG(c,z){
   if(z.style==='comic'){
-    ctx.fillStyle='#9c9c9c'; ctx.fillRect(0,0,CW,CH);
-    ctx.fillStyle='rgba(20,20,20,0.5)';
-    const ds=CH*0.017, ox=(((-camX*0.10)%ds)+ds)%ds;
-    for(let yy=0; yy<CH+ds; yy+=ds){
-      const row=Math.round(yy/ds);
-      for(let xx=-ds+ox+((row%2)?ds/2:0); xx<CW+ds; xx+=ds){ ctx.beginPath(); ctx.arc(xx,yy,ds*0.17,0,6.283); ctx.fill(); }
-    }
+    c.fillStyle='#9c9c9c'; c.fillRect(0,0,CW,CH);
   } else if(z.style==='neon'){
-    ctx.fillStyle='#04060e'; ctx.fillRect(0,0,CW,CH);
-    ctx.save(); ctx.strokeStyle='rgba(40,255,150,0.12)'; ctx.lineWidth=Math.max(1,CH*0.0012);
-    ctx.shadowColor='rgba(40,255,150,0.6)'; ctx.shadowBlur=5;
+    c.fillStyle='#04060e'; c.fillRect(0,0,CW,CH);
+    c.save(); c.strokeStyle='rgba(40,255,150,0.13)'; c.lineWidth=Math.max(1,CH*0.0012);
     const gs=CH*0.042, gx0=(((-camX*0.15)%gs)+gs)%gs;
-    for(let gx=gx0; gx<CW; gx+=gs){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,CH); ctx.stroke(); }
-    for(let gy=0; gy<CH; gy+=gs){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(CW,gy); ctx.stroke(); }
-    ctx.restore();
+    for(let gx=gx0; gx<CW; gx+=gs){ c.beginPath(); c.moveTo(gx,0); c.lineTo(gx,CH); c.stroke(); }
+    for(let gy=0; gy<CH; gy+=gs){ c.beginPath(); c.moveTo(0,gy); c.lineTo(CW,gy); c.stroke(); }
+    c.restore();
   } else if(z.style==='sunset'){
-    const g=ctx.createLinearGradient(0,0,0,CH);
+    const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#6b4e16'); g.addColorStop(0.5,'#4a350e'); g.addColorStop(1,'#2a1e08');
-    ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
-    ctx.save(); ctx.globalCompositeOperation='screen'; const t=Date.now()/1000;
-    for(let i=0;i<26;i++){
-      const sx=((i*137)%100)/100*CW, sy=((i*71)%100)/100*CH*0.6;
-      ctx.globalAlpha=(0.3+0.7*Math.abs(Math.sin(t*1.5+i)))*0.6;
-      ctx.fillStyle=i%2?'#ffe9a0':'#fff'; ctx.fillRect(sx,sy,CH*0.0026,CH*0.0026);
-    }
-    ctx.restore();
+    c.fillStyle=g; c.fillRect(0,0,CW,CH);
   } else if(z.style==='galaxy'){
-    const g=ctx.createLinearGradient(0,0,0,CH);
+    const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#160a2e'); g.addColorStop(1,'#0a0618');
-    ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
-    ctx.fillStyle='rgba(200,170,255,0.75)';
+    c.fillStyle=g; c.fillRect(0,0,CW,CH);
+    c.fillStyle='rgba(200,170,255,0.75)';
     for(let i=0;i<40;i++){
-      const sx=(((i*97)/100*CW - camX*0.06)%CW+CW)%CW, sy=((i*57)%100)/100*CH*0.7;
-      ctx.globalAlpha=0.25+((i*31)%50)/100; ctx.beginPath(); ctx.arc(sx,sy,CH*0.0016,0,6.283); ctx.fill();
+      const px=(((i*97)/100*CW - camX*0.06)%CW+CW)%CW, py=((i*57)%100)/100*CH*0.7;
+      c.globalAlpha=0.25+((i*31)%50)/100; c.beginPath(); c.arc(px,py,CH*0.0016,0,6.283); c.fill();
     }
-    ctx.globalAlpha=1;
+    c.globalAlpha=1;
   } else {
-    const g=ctx.createLinearGradient(0,0,0,CH);
+    const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#2a2358'); g.addColorStop(0.55,'#332670'); g.addColorStop(1,'#211a4a');
-    ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
+    c.fillStyle=g; c.fillRect(0,0,CW,CH);
   }
 }
-function tileWindow(img, alpha, par){
+function tileWindow(c,img,alpha,par){
   if(!ready(img) || alpha<=0.01) return;
   const iw=img.naturalWidth, ih=img.naturalHeight;
-  const sc=Math.max(CW/iw,(CH*1.2)/ih), tw=iw*sc, th=ih*sc;
+  const s=Math.max(CW/iw,(CH*1.2)/ih), tw=iw*s, th=ih*s;
   const ox=(((-camX*par)%tw)+tw)%tw;
-  ctx.save(); ctx.globalAlpha=alpha;
-  for(let gx=-tw+ox; gx<CW+1; gx+=tw){ for(let gy=-th*0.15; gy<CH+1; gy+=th){ ctx.drawImage(img,gx,gy,tw,th); } }
-  ctx.restore();
+  c.save(); c.globalAlpha=alpha;
+  for(let gx=-tw+ox; gx<CW+1; gx+=tw){ for(let gy=-th*0.15; gy<CH+1; gy+=th){ c.drawImage(img,gx,gy,tw,th); } }
+  c.restore();
 }
-function drawTrees(pix){
+function drawTrees(c,pix){
   const pool=(pix?TREES_P:TREES_R).filter(ready);
   if(!pool.length) return;
   for(let i=0;i<9;i++){
     const img=pool[i%pool.length];
     const dep=0.25+((i*37)%60)/100;
     const tileW=CW*1.7, bx=((i*71)%100)/100*tileW;
-    const sx=(((bx - camX*dep*0.16)%tileW)+tileW)%tileW-(tileW-CW)/2;
-    const sy=CH*(0.16+((i*53)%100)/100*0.40);
+    const px=(((bx - camX*dep*0.16)%tileW)+tileW)%tileW-(tileW-CW)/2;
+    const py=CH*(0.16+((i*53)%100)/100*0.40);
     const tht=CH*(0.20+dep*0.30), twt=tht*(img.naturalWidth/img.naturalHeight);
-    ctx.save(); ctx.globalAlpha=0.30+dep*0.28;
-    ctx.drawImage(img, sx-twt/2, sy-tht/2, twt, tht);
-    ctx.restore();
+    c.save(); c.globalAlpha=0.30+dep*0.28; c.drawImage(img, px-twt/2, py-tht/2, twt, tht); c.restore();
   }
 }
-function drawBG(z, pix){
-  paintBG(z);
-  tileWindow(pix?WIN_P:WIN_R, 0.85, 0.10);
-  drawTrees(pix);
-  const gr=ctx.createLinearGradient(0,0,0,CH);
-  gr.addColorStop(0,'rgba(0,0,0,0.42)'); gr.addColorStop(0.55,'rgba(0,0,0,0.14)'); gr.addColorStop(1,'rgba(0,0,0,0.72)');
-  ctx.fillStyle=gr; ctx.fillRect(0,0,CW,CH);
-}
-
-// ─── world draw (inside the zoom transform) ───────────────────────────────
-function drawPlat(p){
-  const sx=p.x-camX, lim=CW/Z;
-  if(sx>lim+80 || sx+p.w<-80) return;
+function drawPlat(c,p){
+  const px=p.x-camX, lim=CW/Z;
+  if(px>lim+80 || px+p.w<-80) return;
   const z=ZONES[p.zone], h=CH*0.34;
-  ctx.save();
-  ctx.beginPath(); ctx.rect(sx,p.y,p.w,h); ctx.clip();
-  if(ready(FIELD)){                                    // different slice of originalfield per platform
+  c.save();
+  c.beginPath(); c.rect(px,p.y,p.w,h); c.clip();
+  if(ready(FIELD)){
     const nw=FIELD.naturalWidth, nh=FIELD.naturalHeight;
     const cw2=nw*(0.20+p.seed*0.30), ch2=nh*(0.12+p.seed2*0.20);
-    ctx.drawImage(FIELD, p.seed2*(nw-cw2), p.seed*(nh-ch2), cw2, ch2, sx, p.y, p.w, h);
-  } else { ctx.fillStyle='#1b1b2a'; ctx.fillRect(sx,p.y,p.w,h); }
-  const g2=ctx.createLinearGradient(0,p.y,0,p.y+h);
+    c.drawImage(FIELD, p.seed2*(nw-cw2), p.seed*(nh-ch2), cw2, ch2, px, p.y, p.w, h);
+  } else { c.fillStyle='#1b1b2a'; c.fillRect(px,p.y,p.w,h); }
+  const g2=c.createLinearGradient(0,p.y,0,p.y+h);
   g2.addColorStop(0,'rgba(0,0,0,0.10)'); g2.addColorStop(1,'rgba(0,0,0,0.92)');
-  ctx.fillStyle=g2; ctx.fillRect(sx,p.y,p.w,h);
-  ctx.restore();
-
+  c.fillStyle=g2; c.fillRect(px,p.y,p.w,h);
+  c.restore();
   if(p.uneven){
-    ctx.save(); ctx.strokeStyle='#ff4d4d'; ctx.lineWidth=Math.max(2,CH*0.006); ctx.beginPath();
+    c.save(); c.strokeStyle='#ff4d4d'; c.lineWidth=Math.max(2,CH*0.006); c.beginPath();
     const teeth=Math.max(4, Math.round(p.w/(CW*0.05)));
     for(let i=0;i<=teeth;i++){
-      const px=sx+p.w*i/teeth, py=p.y+((i%2)?-CH*0.016:0);
-      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      const tx=px+p.w*i/teeth, ty=p.y+((i%2)?-CH*0.016:0);
+      if(i===0) c.moveTo(tx,ty); else c.lineTo(tx,ty);
     }
-    ctx.stroke(); ctx.restore();
+    c.stroke(); c.restore();
   } else {
-    ctx.fillStyle=z.accent; ctx.fillRect(sx,p.y-CH*0.005,p.w,CH*0.005);
-    ctx.globalAlpha=0.3; ctx.fillRect(sx,p.y-CH*0.013,p.w,CH*0.008); ctx.globalAlpha=1;
+    c.fillStyle=z.accent; c.fillRect(px,p.y-CH*0.005,p.w,CH*0.005);
+    c.globalAlpha=0.3; c.fillRect(px,p.y-CH*0.013,p.w,CH*0.008); c.globalAlpha=1;
   }
-  if(p.chair && !p.chairHit){
-    const w=chairW(), h2=chairH(), cx=p.x+p.w*0.5-camX;
+}
+// overlays that sit on the themed scene but under the full-colour props
+function drawZoneOverlay(z){
+  if(z.style==='comic'){
+    ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.5)';
+    const ds=CH*0.017, ox=(((-camX*0.10)%ds)+ds)%ds;
+    for(let yy=0; yy<CH+ds; yy+=ds){
+      const row=Math.round(yy/ds);
+      for(let xx=-ds+ox+((row%2)?ds/2:0); xx<CW+ds; xx+=ds){ ctx.beginPath(); ctx.arc(xx,yy,ds*0.17,0,6.283); ctx.fill(); }
+    }
+    ctx.restore(); return;
+  }
+  let col=null;
+  if(z.style==='neon')   col='rgba(40,255,130,';
+  if(z.style==='sunset') col='rgba(255,180,45,';
+  if(z.style==='galaxy') col='rgba(150,90,255,';
+  if(!col) return;
+  const g=ctx.createRadialGradient(CW/2,CH*0.55,CH*0.20,CW/2,CH*0.55,CH*0.78);
+  g.addColorStop(0,col+'0)'); g.addColorStop(1,col+'0.30)');
+  ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH); ctx.restore();
+}
+
+// ─── full-colour props (drawn after the theme effect) ─────────────────────
+function drawChairs(){
+  const w=chairW(), h2=chairH(), lim=CW/Z;
+  for(const p of plats){
+    if(!p.chair || p.chairHit) continue;
+    const px=p.x-camX; if(px>lim+80 || px+p.w<-80) continue;
+    const cx=p.x+p.w*0.5-camX;
     if(ready(CHAIR)) ctx.drawImage(CHAIR, cx-w/2, p.y-h2, w, h2);
     else { ctx.fillStyle='#d62424'; ctx.fillRect(cx-w/2, p.y-h2, w, h2); }
   }
 }
 function drawMarker(){
-  const mh=MH(), sq=settle>0?(1+settle*0.012):1;
-  const cx=marker.x-camX, cy=marker.y-mh/2;
+  const {dw,dh,visH}=markerDims();
+  const sq=settle>0?(1+settle*0.012):1;
+  const cx=marker.x-camX, cy=marker.y-visH/2;
   if(state==='ready'||state==='tip'){
     ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath();
-    ctx.ellipse(cx, marker.y+CH*0.004, mh*0.20, mh*0.05, 0, 0, 7); ctx.fill();
+    ctx.ellipse(cx, marker.y+CH*0.004, MH()*0.20, MH()*0.05, 0, 0, 7); ctx.fill();
   }
-  ctx.save(); ctx.translate(cx,cy); ctx.rotate(-Math.PI/2 + marker.rot); ctx.scale(1/sq, sq);
-  if(ready(MARKER)){
-    const ar=MARKER.naturalWidth/MARKER.naturalHeight;
-    ctx.drawImage(MARKER, -mh/2, -(mh/ar)/2, mh, mh/ar);
-  } else { ctx.fillStyle='#3a7bff'; ctx.fillRect(-mh/2,-mh*0.09,mh,mh*0.18); }
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(markerRot()+marker.rot); ctx.scale(1/sq,sq);
+  if(ready(MARKER)) ctx.drawImage(MARKER, -dw/2, -dh/2, dw, dh);
+  else { ctx.fillStyle='#3a7bff'; ctx.fillRect(-MH()/2,-MH()*0.09,MH(),MH()*0.18); }
   ctx.restore();
 }
 function drawAim(){
@@ -350,32 +412,31 @@ function drawAim(){
   }
 }
 
-// ─── screen-space HUD ─────────────────────────────────────────────────────
+// ─── HUD ──────────────────────────────────────────────────────────────────
 function drawHUD(z){
-  const pad=CH*0.016, acc=(z.accent==='#141414'?'#222':z.accent);
+  const pad=CH*0.016, acc=(z.accent==='#141414'?'#333':z.accent);
   ctx.textBaseline='top';
   ctx.textAlign='left';
-  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.042)+'px Helvetica';
-  ctx.fillText(marker.pIdx, pad, pad);                                  // +1 per platform passed
-  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CH*0.014)+'px Helvetica';
-  ctx.fillText('PLATFORMS', pad+CH*0.002, pad+CH*0.047);
-  ctx.textAlign='right';
-  ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.020)+'px Helvetica';
-  ctx.fillText('BEST '+bestP, CW-pad, pad);
-  ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='bold '+Math.round(CH*0.016)+'px Helvetica';
-  ctx.fillText(score+' PTS', CW-pad, pad+CH*0.027);
-  ctx.textAlign='center'; ctx.fillStyle=acc;
-  ctx.font='bold '+Math.round(CH*0.017)+'px Helvetica';
-  ctx.fillText(z.name, CW/2, pad);
-  if(combo>2){ ctx.fillStyle='#7bff9a'; ctx.fillText('COMBO x'+combo, CW/2, pad+CH*0.024); }
+  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.040)+'px Helvetica';
+  ctx.fillText(marker.pIdx, pad, pad);
+  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CH*0.013)+'px Helvetica';
+  ctx.fillText('PLATFORMS', pad+CH*0.002, pad+CH*0.045);
+  ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
+  ctx.fillText('BEST '+bestP+'   '+score+' PTS', pad+CH*0.002, pad+CH*0.064);
+  ctx.textAlign='center';
+  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.021)+'px Helvetica';
+  ctx.fillText('QU33PH FLIP', CW/2, pad);
+  ctx.fillStyle=acc; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
+  ctx.fillText(z.name, CW/2, pad+CH*0.027);
+  if(combo>2){ ctx.fillStyle='#7bff9a'; ctx.fillText('COMBO x'+combo, CW/2, pad+CH*0.048); }
 
   if(charging && state==='ready'){
-    const bw=CW*0.5, bh=CH*0.012, bx=(CW-bw)/2, by=CH*0.93;
+    const bw=CW*0.46, bh=CH*0.012, bx=(CW-bw)/2, by=CH*0.935;
     ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.fillRect(bx,by,bw,bh);
     ctx.fillStyle=acc; ctx.fillRect(bx,by,bw*charge,bh);
   } else if(state==='ready'){
-    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.019)+'px Helvetica';
-    ctx.fillText('hold to charge \u2014 release to flip', CW/2, CH*0.925);
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.018)+'px Helvetica';
+    ctx.fillText('hold to charge \u2014 release to flip', CW/2, CH*0.932);
   }
   for(const q of popups){
     ctx.globalAlpha=Math.max(0,q.life/50);
@@ -386,9 +447,9 @@ function drawHUD(z){
     ctx.globalAlpha=1;
   }
   if(banner>0){
-    ctx.globalAlpha=Math.min(1, banner/28); ctx.textAlign='center';
-    ctx.fillStyle=acc; ctx.font='bold '+Math.round(CH*0.038)+'px Helvetica';
-    ctx.fillText(z.name+' ZONE', CW/2, CH*0.30); ctx.globalAlpha=1;
+    ctx.globalAlpha=Math.min(1,banner/28); ctx.textAlign='center';
+    ctx.fillStyle=acc; ctx.font='bold '+Math.round(CH*0.036)+'px Helvetica';
+    ctx.fillText(z.name, CW/2, CH*0.30); ctx.globalAlpha=1;
   }
   if(state==='over'){
     ctx.fillStyle='rgba(0,0,0,0.68)'; ctx.fillRect(0,0,CW,CH);
@@ -406,8 +467,6 @@ function drawHUD(z){
     ctx.textBaseline='top';
   }
 }
-
-// ─── intro card: blue good, red bad ───────────────────────────────────────
 function drawIntro(){
   ctx.fillStyle='rgba(0,0,0,0.80)'; ctx.fillRect(0,0,CW,CH);
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
@@ -415,9 +474,7 @@ function drawIntro(){
   ctx.fillText('QU33PH FLIP', CW/2, CH*0.20);
   ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.font='bold '+Math.round(CH*0.019)+'px Helvetica';
   ctx.fillText('flip your marker \u2014 it lands on its cap', CW/2, CH*0.235);
-
   const bx=CW*0.16, bw=CW*0.68;
-  // good pad
   let y=CH*0.345;
   ctx.fillStyle='#8affea'; ctx.font='bold '+Math.round(CH*0.024)+'px Helvetica';
   ctx.fillText('FLAT = SAFE', CW/2, y-CH*0.022);
@@ -425,20 +482,15 @@ function drawIntro(){
   ctx.fillStyle='#8affea'; ctx.fillRect(bx,y-CH*0.006,bw,CH*0.006);
   ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold '+Math.round(CH*0.017)+'px Helvetica';
   ctx.fillText('land here and it sticks upright', CW/2, y+CH*0.055);
-
-  // bad pad
   y=CH*0.495;
   ctx.fillStyle='#ff4d4d'; ctx.font='bold '+Math.round(CH*0.024)+'px Helvetica';
   ctx.fillText('RED JAGGED = BAD', CW/2, y-CH*0.030);
   ctx.fillStyle='#2a1a1a'; ctx.fillRect(bx,y,bw,CH*0.030);
   ctx.save(); ctx.strokeStyle='#ff4d4d'; ctx.lineWidth=Math.max(2,CH*0.006); ctx.beginPath();
-  const teeth=12;
-  for(let i=0;i<=teeth;i++){ const px=bx+bw*i/teeth, py=y+((i%2)?-CH*0.016:0); if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  for(let i=0;i<=12;i++){ const px=bx+bw*i/12, py=y+((i%2)?-CH*0.016:0); if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
   ctx.stroke(); ctx.restore();
   ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold '+Math.round(CH*0.017)+'px Helvetica';
   ctx.fillText('uneven ground tips you over', CW/2, y+CH*0.055);
-
-  // chair
   y=CH*0.655;
   if(ready(CHAIR)){
     const hh=CH*0.070, ww=hh*(CHAIR.naturalWidth/CHAIR.naturalHeight);
@@ -448,7 +500,6 @@ function drawIntro(){
   ctx.fillText('RED CHAIR = LAUNCH', CW/2, y+CH*0.028);
   ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold '+Math.round(CH*0.017)+'px Helvetica';
   ctx.fillText('hit it to fly way ahead', CW/2, y+CH*0.054);
-
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.024)+'px Helvetica';
   ctx.fillText('hold to charge \u2014 release to flip', CW/2, CH*0.795);
   ctx.globalAlpha=0.55+0.45*Math.abs(Math.sin(Date.now()/400));
@@ -469,11 +520,29 @@ function draw(){
   ctx.setTransform(1,0,0,1,0,0);
   const cp=curPlat(), z=ZONES[cp.zone];
   if(cp.zone!==lastZone){ if(lastZone!==-1) banner=70; lastZone=cp.zone; }
-  drawBG(z, cp.pix);
 
-  ctx.save();
-  const a=AY(); ctx.translate(0,a); ctx.scale(Z,Z); ctx.translate(0,-a);
-  for(const p of plats) drawPlat(p);
+  // 1. build the scene (background + platforms) on its own layer
+  sx2.setTransform(1,0,0,1,0,0); sx2.clearRect(0,0,CW,CH);
+  paintBG(sx2,z);
+  tileWindow(sx2, cp.pix?WIN_P:WIN_R, 0.85, 0.10);
+  drawTrees(sx2, cp.pix);
+  const gr=sx2.createLinearGradient(0,0,0,CH);
+  gr.addColorStop(0,'rgba(0,0,0,0.42)'); gr.addColorStop(0.55,'rgba(0,0,0,0.14)'); gr.addColorStop(1,'rgba(0,0,0,0.72)');
+  sx2.fillStyle=gr; sx2.fillRect(0,0,CW,CH);
+  const a=AY();
+  sx2.save(); sx2.translate(0,a); sx2.scale(Z,Z); sx2.translate(0,-a);
+  for(const p of plats) drawPlat(sx2,p);
+  sx2.restore();
+
+  // 2. stamp it down with the area's theme effect
+  if(CANFILTER && z.fx) ctx.filter=z.fx;
+  ctx.drawImage(sc,0,0);
+  ctx.filter='none';
+  drawZoneOverlay(z);
+
+  // 3. props stay full colour on top — markers and the red chair never get tinted
+  ctx.save(); ctx.translate(0,a); ctx.scale(Z,Z); ctx.translate(0,-a);
+  drawChairs();
   drawAim();
   drawMarker();
   ctx.restore();

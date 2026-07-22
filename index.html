@@ -208,7 +208,7 @@
     .cab-card .cab-label { font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:bold; letter-spacing:1px; color:#fff; text-align:center; line-height:1.2; }
     .cab-card img { position:relative; border-radius:18px; }
     /* ── theme skins for the cabinet icons ── */
-    #arcadeMenu.arc-comic .cab-card img { filter:contrast(1.12) drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
+    #arcadeMenu.arc-comic .cab-card img { filter:grayscale(1) contrast(1.12) drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
     #arcadeMenu.arc-comic .cab-card { position:relative; }
     #arcadeMenu.arc-comic .cab-card::after { content:""; position:absolute; inset:0 0 26px 0; pointer-events:none; mix-blend-mode:multiply; border-radius:18px; background-image:radial-gradient(circle, rgba(0,0,0,0.55) 1.5px, transparent 1.7px); background-size:7px 7px; }
     #arcadeMenu.arc-neon #cabJump img { filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 9px #28ff82) drop-shadow(0 0 16px rgba(40,255,130,0.6)); }
@@ -233,6 +233,7 @@
     #arcadeMenu.arc-sunset #cabFidget img, #arcadeMenu.arc-galaxy #cabFidget img {
       border:0; box-shadow:none; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-comic #cabFidget::after, #arcadeMenu.arc-galaxy #cabFidget::after { display:none; }
+    #arcadeMenu.arc-comic #cabFidget img { filter:grayscale(1) contrast(1.12) drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-sunset .cab-card img { filter:sepia(0.75) saturate(2.1) brightness(1.12) hue-rotate(-12deg) drop-shadow(0 0 7px rgba(255,200,60,0.7)); }
     #arcadeMenu.arc-galaxy .cab-card img { filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 8px rgba(180,120,255,0.75)); }
     /* ── Stack + Flip: glow hugs the markers themselves, never a border box ── */
@@ -494,7 +495,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v311</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v312</div>
 
 <canvas id="game"></canvas>
 
@@ -4163,7 +4164,7 @@ function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=311&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=312&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4174,7 +4175,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=311&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=312&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
