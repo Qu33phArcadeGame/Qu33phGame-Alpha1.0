@@ -70,14 +70,18 @@ const RING_CX=0.503, RING_CY=0.325;
 const RED_HW=0.150, RED_HH=0.058;    // inside this -> 10 (the big red circle)
 const ROLL_START={x:0.50,y:0.70};             // where the current marker sits to be flicked
 const QUEUE_Y=0.565;                           // preview markers sit up on the lane
+const QSLOTS=8, QX0=0.325, QSPAN=0.35;         // fixed slots so the row never shuffles
 const COLORS=['red','green','blue'];          // cycle order
+const TOTAL=9, LAND_HOLD=20, FEED_DUR=16;
 
-let markersLeft, curColor, score, best, state, ball, popups;
+// curIdx = the marker in play; resolved = how many have finished.
+// The waiting queue is always (QSLOTS - curIdx) long, in every state, so nothing pops in or out.
+let curIdx, resolved, score, best, state, ball, popups, landT, feed;
 try{ best=parseInt(localStorage.getItem('qu33phSkeeballBest')||'0',10)||0; }catch(e){ best=0; }
+function qx(i){ return QX0 + (i/(QSLOTS-1))*QSPAN; }
+function colOf(i){ return COLORS[i%3]; }
 
-function reset(){ markersLeft=9; score=0; state='ready'; ball=null; popups=[]; nextMarker(); }
-function nextMarker(){ if(markersLeft<=0){ state='over'; if(score>best){best=score; try{localStorage.setItem('qu33phSkeeballBest',best);}catch(e){}} return; }
-  curColor=COLORS[(9-markersLeft)%3]; state='ready'; ball=null; }
+function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; }
 reset();
 
 // ---- flick input ----
@@ -99,7 +103,7 @@ function roll(up, dx){
   const scat=(1.05-power*0.35);                                 // stronger, cleaner rolls scatter less
   const landX=0.50 + aim*0.20 + (Math.random()-0.5)*0.06*scat;
   const landY=0.42 - power*0.17 + (Math.random()-0.5)*0.045*scat;
-  ball={ x0:ROLL_START.x, y0:ROLL_START.y, x1:landX, y1:landY, t:0, dur:38, color:curColor, spin:0, scored:false };
+  ball={ x0:ROLL_START.x, y0:ROLL_START.y, x1:landX, y1:landY, t:0, dur:38, color:colOf(curIdx), spin:0, scored:false };
   state='rolling';
 }
 
@@ -119,10 +123,27 @@ function step(){
   if(state==='rolling' && ball){
     ball.t++; ball.spin+=0.4;
     if(ball.t>=ball.dur){
-      const pts=scoreLanding(ball.x1,ball.y1); score+=pts; markersLeft--;
-      popups.push({x:ball.x1,y:ball.y1,txt:pts>0?('+'+pts):'MISS',life:40,pts:pts});
-      ball=null; setTimeout(nextMarker, 260); state='settle';
+      ball.t=ball.dur;                                  // marker stays put at the hole
+      const pts=scoreLanding(ball.x1,ball.y1); score+=pts; resolved++;
+      popups.push({x:ball.x1,y:ball.y1,txt:pts>0?('+'+pts):'MISS',life:52,pts:pts});
+      state='landed'; landT=0;                          // score/miss shows now, marker still visible
     }
+  } else if(state==='landed'){
+    landT++;
+    if(landT>=LAND_HOLD){
+      ball=null;
+      if(resolved>=TOTAL){
+        state='over';
+        if(score>best){ best=score; try{ localStorage.setItem('qu33phSkeeballBest',best); }catch(e){} }
+      } else {
+        curIdx++;                                       // next marker leaves the queue...
+        feed={ t:0, dur:FEED_DUR, fromX:qx(QSLOTS-curIdx), color:colOf(curIdx) };
+        state='feed';                                   // ...and travels down to the roll spot
+      }
+    }
+  } else if(state==='feed' && feed){
+    feed.t++;
+    if(feed.t>=feed.dur){ feed=null; state='ready'; }
   }
   for(let i=popups.length-1;i>=0;i--){ popups[i].life--; popups[i].y-=0.0015; if(popups[i].life<=0) popups.splice(i,1); }
 }
@@ -143,33 +164,41 @@ function draw(){
   // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
   ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';
-  ctx.fillText(markersLeft, fx(0.346), fy(0.191));
-  ctx.fillText(score,       fx(0.502), fy(0.191));
-  ctx.fillText(best,        fx(0.662), fy(0.191));
+  ctx.fillText(TOTAL-resolved, fx(0.346), fy(0.1937));
+  ctx.fillText(score,          fx(0.502), fy(0.1937));
+  ctx.fillText(best,           fx(0.662), fy(0.1937));
 
-  // preview queue: upcoming markers up on the lane, semi-transparent (ghosts)
-  const startIdx=9-markersLeft;
-  let qn=markersLeft - ((state==='ready')?1:0);   // exclude the live one on the roll spot
+  // preview queue — fixed slots, length only ever changes when one is fed out
+  const qn=QSLOTS-curIdx;
   ctx.globalAlpha=0.38;
-  for(let i=0;i<qn;i++){ const gi=startIdx + ((state==='ready')?1:0) + i;
-    const col=COLORS[gi%3]; const gx=fx(0.32 + (qn>1?(i/(qn-1)):0.5)*0.36); drawMarker(col, gx, fy(QUEUE_Y), 0.5, 0); }
+  for(let i=0;i<qn;i++) drawMarker(colOf(curIdx+1+i), fx(qx(i)), fy(QUEUE_Y), 0.5, 0);
   ctx.globalAlpha=1;
 
-  // current marker on the roll spot (aim preview while dragging)
-  if(state==='ready'){
-    let sx=fx(ROLL_START.x), sy=fy(ROLL_START.y);
-    drawMarker(curColor, sx, sy, 1.0, 0);
+  // the next marker travelling down from the queue to the roll spot
+  if(state==='feed' && feed){
+    const t=ease(feed.t/feed.dur);
+    const cx=fx(feed.fromX+(ROLL_START.x-feed.fromX)*t);
+    const cy=fy(QUEUE_Y+(ROLL_START.y-QUEUE_Y)*t);
+    ctx.globalAlpha=0.38+0.62*t;
+    drawMarker(feed.color, cx, cy, 0.5+0.5*t, 0);
+    ctx.globalAlpha=1;
   }
 
-  // rolling marker (kinematic arc up the lane, scaling down for perspective)
-  if(state==='rolling' && ball){
-    const t=ease(ball.t/ball.dur);
+  // current marker on the roll spot
+  if(state==='ready') drawMarker(colOf(curIdx), fx(ROLL_START.x), fy(ROLL_START.y), 1.0, 0);
+
+  // rolling marker — stays on screen the whole way up the lane and rests at the hole
+  if((state==='rolling'||state==='landed') && ball){
+    const t=ease(Math.min(1, ball.t/ball.dur));
     const cx=fx(ball.x0+(ball.x1-ball.x0)*t);
     const cy=fy(ball.y0+(ball.y1-ball.y0)*t);
-    const sc=1.0 - t*0.62;                          // perspective shrink
-    // little shadow
+    const sc=1.0 - t*0.45;                          // gentler perspective so it stays readable
+    let al=1;
+    if(state==='landed'){ const k=landT/LAND_HOLD; al = k<0.6 ? 1 : 1-(k-0.6)/0.4; }  // sinks in at the end
+    ctx.globalAlpha=Math.max(0,al);
     ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(cx,cy+X(2)*sc,X(5)*sc,X(2)*sc,0,0,7); ctx.fill();
     drawMarker(ball.color, cx, cy, sc, ball.spin);
+    ctx.globalAlpha=1;
   }
 
   // score popups
