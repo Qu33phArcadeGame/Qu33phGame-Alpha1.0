@@ -78,8 +78,8 @@ const TOTAL=9, LAND_HOLD=20, FEED_DUR=16;
 // The waiting queue is always (QSLOTS - curIdx) long, in every state, so nothing pops in or out.
 let curIdx, resolved, score, best, state, ball, popups, landT, feed;
 try{ best=parseInt(localStorage.getItem('qu33phSkeeballBest')||'0',10)||0; }catch(e){ best=0; }
-function qx(i){ return QX0 + (i/(QSLOTS-1))*QSPAN; }
-function colOf(i){ return COLORS[i%3]; }
+function qx(k){ return QX0 + ((k-1)/(QSLOTS-1))*QSPAN; }   // marker k (1..8) owns a fixed slot
+function colOf(i){ return COLORS[i%3]; }                    // 0 red, 1 green, 2 blue, 3 red ...
 
 function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; }
 reset();
@@ -137,7 +137,7 @@ function step(){
         if(score>best){ best=score; try{ localStorage.setItem('qu33phSkeeballBest',best); }catch(e){} }
       } else {
         curIdx++;                                       // next marker leaves the queue...
-        feed={ t:0, dur:FEED_DUR, fromX:qx(QSLOTS-curIdx), color:colOf(curIdx) };
+        feed={ t:0, dur:FEED_DUR, fromX:qx(curIdx), color:colOf(curIdx) };
         state='feed';                                   // ...and travels down to the roll spot
       }
     }
@@ -168,10 +168,9 @@ function draw(){
   ctx.fillText(score,          fx(0.502), fy(0.1937));
   ctx.fillText(best,           fx(0.662), fy(0.1937));
 
-  // preview queue — fixed slots, length only ever changes when one is fed out
-  const qn=QSLOTS-curIdx;
+  // preview queue — each marker keeps its own slot, so the row never reshuffles
   ctx.globalAlpha=0.38;
-  for(let i=0;i<qn;i++) drawMarker(colOf(curIdx+1+i), fx(qx(i)), fy(QUEUE_Y), 0.5, 0);
+  for(let k=curIdx+1; k<TOTAL; k++) drawMarker(colOf(k), fx(qx(k)), fy(QUEUE_Y), 0.5, 0);
   ctx.globalAlpha=1;
 
   // the next marker travelling down from the queue to the roll spot

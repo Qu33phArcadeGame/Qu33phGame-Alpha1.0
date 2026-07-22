@@ -11,37 +11,80 @@
   #stage{ position:relative; }
   #game{ display:block; }
   #orientBtn{ position:absolute; left:10px; bottom:12px; width:46px; height:46px; padding:0; border-radius:50%;
-    border:2px solid #666; background:rgba(18,18,22,0.85); cursor:pointer; display:flex; align-items:center;
-    justify-content:center; z-index:5; -webkit-tap-highlight-color:transparent; }
+    border:2px solid #666; background:rgba(18,18,22,0.85); display:flex; align-items:center; justify-content:center; z-index:5; }
+  /* marker-shaped buttons, same as the rest of the arcade */
+  .mk-btn{ position:relative; display:inline-flex; align-items:center; justify-content:center; background:#000; color:#fff;
+    border:3px solid #fff; border-radius:4px 10px 10px 4px; padding:11px 20px; margin:9px 0 9px 26px;
+    font-family:Helvetica,Arial,sans-serif; font-size:14px; font-weight:bold; letter-spacing:2px; cursor:pointer;
+    width:min(240px,66vw); box-sizing:border-box; }
+  .mk-btn::before{ content:""; position:absolute; left:-26px; top:2px; bottom:2px; width:26px; background:#000;
+    border:3px solid #fff; border-radius:8px 2px 2px 8px; }
+  .mk-btn:active{ background:#141414; }
+  .mk-btn.gold{ border-color:#ffd700; color:#ffd700; } .mk-btn.gold::before{ border-color:#ffd700; }
+  .mk-btn.flip{ margin-left:0; margin-right:26px; border-radius:10px 4px 4px 10px; }
+  .mk-btn.flip::before{ left:auto; right:-26px; border-radius:2px 8px 8px 2px; }
+  .ovl{ position:absolute; inset:0; z-index:20; display:none; flex-direction:column; align-items:center;
+    justify-content:center; background:rgba(5,5,10,0.94); }
+  .ovl.on{ display:flex; }
+  .ovl h1{ font-size:30px; letter-spacing:7px; margin:0 0 4px; }
+  .ovl .sub{ font-size:12px; letter-spacing:3px; color:#888; margin-bottom:20px; }
+  #levelGrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; width:min(320px,86vw); margin-bottom:16px; }
+  .lvl{ position:relative; aspect-ratio:1/1.35; display:flex; align-items:flex-end; justify-content:center;
+    border-radius:8px; cursor:pointer; }
+  .lvl img{ position:absolute; top:6%; left:50%; width:150%; height:auto; transform:translateX(-50%) rotate(-90deg); }
+  .lvl span{ position:relative; z-index:2; font-size:13px; font-weight:bold; color:#fff; text-shadow:0 0 5px #000,0 0 3px #000; padding-bottom:4px; }
+  .lvl.locked{ filter:grayscale(1) brightness(0.35); cursor:default; }
+  .lvl.locked span{ color:#777; }
 </style>
 </head>
 <body>
-<div id="wrap"><div id="stage"><canvas id="game"></canvas><button id="orientBtn"><span id="orientIcon"></span></button></div></div>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+  <button id="orientBtn"><span id="orientIcon"></span></button>
+  <div id="menu" class="ovl on">
+    <h1>QU33PH FLIP</h1><div class="sub">PICK A MODE</div>
+    <button class="mk-btn" id="bEndless">ENDLESS</button>
+    <button class="mk-btn" id="bTimed">TIMED &middot; 45s</button>
+    <button class="mk-btn gold" id="bLevels">LEVELS</button>
+  </div>
+  <div id="levelSel" class="ovl">
+    <h1 style="font-size:22px;">SELECT LEVEL</h1><div class="sub" id="lvlSub"></div>
+    <div id="levelGrid"></div>
+    <button class="mk-btn flip" id="bLvlBack">BACK</button>
+  </div>
+  <div id="overOvl" class="ovl">
+    <h1 id="ovTitle" style="font-size:26px;color:#e23b3b;">TIPPED OVER</h1>
+    <div class="sub" id="ovSub"></div>
+    <button class="mk-btn" id="bRetry">RETRY</button>
+    <button class="mk-btn flip" id="bMenu">MENU</button>
+  </div>
+</div></div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
-const sc=document.createElement('canvas'), sx2=sc.getContext('2d');   // scene layer (gets the theme effect)
+const sc=document.createElement('canvas'), s2=sc.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 
 // ─── assets ───────────────────────────────────────────────────────────────
-function IMG(src){ const i=new Image(); i.src=src; return i; }
+function IMG(s){ const i=new Image(); i.src=s; return i; }
 function ready(im){ return im && im.complete && im.naturalWidth>0; }
-const MARKER = IMG(THEME==='cartoon' ? 'blueC.png' : 'blue.png');
-const CHAIR  = IMG('Chair.png');
-const FIELD  = IMG('originalfield.png');
-const WIN_R  = IMG('window.png');
-const WIN_P  = IMG('windowP.png');
-const TREES_R= ['tree1.png','tree2.png','tree3.png','tree4.png','tree5.png','tree6.png'].map(IMG);
-const TREES_P= [IMG('treeP.png')];
+const MARKER=IMG(THEME==='cartoon'?'blueC.png':'blue.png');
+const MK_RED=IMG('red.png'), MK_GREEN=IMG('green.png');
+const CHAIR=IMG('Chair.png'), FIELD=IMG('originalfield.png');
+const WIN_R=IMG('window.png'), WIN_P=IMG('windowP.png');
+const TREES_R=['tree1.png','tree2.png','tree3.png','tree4.png','tree5.png','tree6.png'].map(IMG);
+const TREES_P=[IMG('treeP.png')];
 
-// themed areas — real arcade theme names, each with its own effect
-const ZONES=[
-  { name:'DEFAULT',      style:'default', accent:'#8affea', fx:''                                        },
-  { name:'COMIC',        style:'comic',   accent:'#141414', fx:'grayscale(1) contrast(1.2)'              },
-  { name:'NEON',         style:'neon',    accent:'#28ff82', fx:'saturate(1.7) brightness(1.1)'           },
-  { name:'GOLDEN HOUR',  style:'sunset',  accent:'#ffd24a', fx:'sepia(0.55) saturate(1.7) brightness(1.1)'},
-  { name:'GALAXY',       style:'galaxy',  accent:'#c9a0ff', fx:'hue-rotate(215deg) saturate(1.4)'        }
-];
-const CANFILTER = (function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
+// ─── the one selected theme, applied throughout ───────────────────────────
+const TH={
+  'default':{name:'DEFAULT', filter:'',                                    glow:null,      deck:'default'},
+  'cartoon':{name:'COMIC',   filter:'grayscale(1) contrast(1.2)',          glow:null,      deck:'comic', benday:true, plate:true},
+  'neon':   {name:'NEON',    filter:'saturate(1.6) brightness(1.08)',      glow:'#28ff82', deck:'neon'},
+  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020', deck:'sunset', tint:'rgba(255,176,32,0.16)'},
+  'galaxy': {name:'GALAXY',  filter:'hue-rotate(215deg) saturate(1.4)',    glow:'#9a6bff', deck:'galaxy', galaxies:true}
+}[THEME] || {name:'DEFAULT', filter:'', glow:null, deck:'default'};
+const ACC = TH.glow || '#8affea';
+const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
+const PIXEL = (THEME==='cartoon'||THEME==='neon');    // pixel window/trees for those looks
 
 // ─── canvas ───────────────────────────────────────────────────────────────
 let CW=0,CH=0,DPR=1;
@@ -51,340 +94,400 @@ function sz(){
   const cw=r.width, ch=r.height;
   cv.style.width=cw+'px'; cv.style.height=ch+'px';
   const st=document.getElementById('stage'); st.style.width=cw+'px'; st.style.height=ch+'px';
-  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH;
-  sc.width=CW; sc.height=CH;
+  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; sc.width=CW; sc.height=CH;
 }
 sz();
 
-// ─── camera ───────────────────────────────────────────────────────────────
 const Z=0.60, ANCHOR=0.70, HOLD=0.16;
 function AY(){ return CH*ANCHOR; }
-function SX(wx){ return (wx-camX)*Z; }
-function SY(wy){ const a=AY(); return a+(wy-a)*Z; }
-
-// ─── world ────────────────────────────────────────────────────────────────
+function SX(w){ return (w-camX)*Z; }
+function SY(w){ const a=AY(); return a+(w-a)*Z; }
 function G(){ return 0.0018*CH; }
 function MH(){ return 0.085*CH; }
 function chairH(){ return CH*0.105; }
-function chairW(){ return ready(CHAIR) ? chairH()*(CHAIR.naturalWidth/CHAIR.naturalHeight) : CH*0.085; }
+function chairW(){ return ready(CHAIR)? chairH()*(CHAIR.naturalWidth/CHAIR.naturalHeight) : CH*0.085; }
 function rnd(a,b){ return a+Math.random()*(b-a); }
-// furthest a full-power flip can travel, landing dy below the launch point
 function maxReach(dy){
   const g=G(), vx=0.022*CW, vy=-0.038*CH;
-  const t=(-vy+Math.sqrt(Math.max(0.0001, vy*vy+2*g*dy)))/g;
-  return vx*t;
+  return vx*((-vy+Math.sqrt(Math.max(0.0001, vy*vy+2*g*dy)))/g);
 }
 
-let plats, marker, camX, score, best, bestP, combo, state, charge, charging, popups,
-    zoneIdx, zoneLeft, zonePix, banner, settle, lastFlat, stairLeft, stairStep;
-try{ best =parseInt(localStorage.getItem('qu33phFlipBest') ||'0',10)||0; }catch(e){ best=0; }
+// ─── levels (easy to extend — just add entries) ───────────────────────────
+// pad fields: g=gap before it, w=width, d=height change (negative = up a step)
+//             u=1 uneven/red-jagged,  o='R' red marker blocks it, 'G' green marker bonus, 'C' chair
+const LEVELS=[
+ { name:'FIRST FLIPS', pads:[
+   {g:.13,w:.36},{g:.13,w:.36,o:'G'},{g:.14,w:.34},{g:.14,w:.34,o:'G'},{g:.15,w:.32} ]},
+ { name:'UP THE STAIRS', pads:[
+   {g:.13,w:.32},{g:.13,w:.30,d:-.045},{g:.13,w:.30,d:-.045},{g:.13,w:.30,d:-.045,o:'G'},
+   {g:.13,w:.30,d:-.045},{g:.15,w:.34} ]},
+ { name:'RED TAPE', pads:[
+   {g:.13,w:.32},{g:.12,w:.22,u:1},{g:.13,w:.32,o:'G'},{g:.12,w:.20,o:'R'},{g:.13,w:.32},
+   {g:.12,w:.22,u:1},{g:.14,w:.34,o:'G'} ]},
+ { name:'HIGH ROAD', pads:[
+   {g:.13,w:.30},{g:.13,w:.28,d:-.05},{g:.13,w:.28,d:-.05,o:'R'},{g:.13,w:.28,d:-.05},
+   {g:.14,w:.30,o:'G'},{g:.14,w:.28,d:.06},{g:.14,w:.28,d:.06},{g:.15,w:.34} ]},
+ { name:'LAUNCH PAD', pads:[
+   {g:.13,w:.32},{g:.13,w:.30,o:'C'},{g:.13,w:.28},{g:.12,w:.22,u:1},{g:.13,w:.30,o:'G'},
+   {g:.13,w:.28,d:-.05},{g:.13,w:.28,d:-.05},{g:.15,w:.34,o:'G'} ]},
+ { name:'THE CLIMB', pads:[
+   {g:.13,w:.30},{g:.13,w:.26,d:-.05},{g:.13,w:.26,d:-.05},{g:.12,w:.20,u:1},
+   {g:.13,w:.26,d:-.045,o:'G'},{g:.13,w:.26,d:-.045},{g:.13,w:.26,o:'R'},
+   {g:.13,w:.28,d:.05},{g:.13,w:.28,d:.05,o:'G'},{g:.15,w:.34} ]}
+];
+const LEVEL_COUNT=20;
+function levelsDone(){ try{ return parseInt(localStorage.getItem('qu33phFlipLvl')||'0',10)||0; }catch(e){ return 0; } }
+function setLevelsDone(n){ try{ localStorage.setItem('qu33phFlipLvl', n); }catch(e){} }
+function unlocked(i){ return i<=levelsDone(); }        // level index 0-based; 0 always open
+
+// ─── world state ──────────────────────────────────────────────────────────
+let plats, marker, camX, score, bestP, combo, state, charge, charging, popups,
+    settle, lastFlat, stairLeft, stairStep, mode, levelIdx, timeLeft, timerOn, won;
 try{ bestP=parseInt(localStorage.getItem('qu33phFlipBestP')||'0',10)||0; }catch(e){ bestP=0; }
 
-function nextZone(){
-  zoneIdx=(zoneIdx + 1 + Math.floor(Math.random()*(ZONES.length-1))) % ZONES.length;
-  zonePix=Math.random()<0.5;
-  zoneLeft=6+Math.floor(Math.random()*4);
-}
+function pad(o){ return Object.assign({x:0,y:0,w:CW*0.32,uneven:false,chair:false,chairHit:false,
+                  obs:null,got:false,seed:Math.random(),seed2:Math.random()}, o); }
 function addPlatform(){
   const n=plats.length, last=plats[n-1];
-  const hard = n>25;                                   // ramps up only after 25
-  const d    = hard ? Math.min(1,(n-25)/40) : 0;
-  if(zoneLeft<=0) nextZone();
-  zoneLeft--;
-
-  // stairs: runs of steady up/down steps once it gets hard
+  const hard=n>25, d=hard?Math.min(1,(n-25)/40):0;
   if(hard && stairLeft<=0 && Math.random()<0.24){
-    stairLeft = 3+((Math.random()*3)|0);
-    stairStep = (Math.random()<0.5?-1:1)*rnd(0.028,0.050)*CH;
+    stairLeft=3+((Math.random()*3)|0);
+    stairStep=(Math.random()<0.5?-1:1)*rnd(0.028,0.050)*CH;
   }
-
-  // an uneven pad is always narrow and close, so the flat pad after it stays in range
-  const uneven = (!last.uneven) && n>6 && Math.random() < (hard ? 0.10+d*0.15 : 0.05);
-  let w   = uneven ? rnd(0.16,0.23)*CW
-                   : (hard ? rnd(0.24,0.33)*CW - d*0.04*CW : rnd(0.30,0.40)*CW);
-  let gap = uneven ? rnd(0.10,0.15)*CW
-                   : (hard ? rnd(0.14,0.21)*CW + d*0.08*CW : rnd(0.11,0.17)*CW);
-
+  const uneven=(!last.uneven) && n>6 && Math.random()<(hard?0.10+d*0.15:0.05);
+  let w   = uneven? rnd(0.16,0.23)*CW : (hard? rnd(0.24,0.33)*CW-d*0.04*CW : rnd(0.30,0.40)*CW);
+  let gap = uneven? rnd(0.10,0.15)*CW : (hard? rnd(0.14,0.21)*CW+d*0.08*CW : rnd(0.11,0.17)*CW);
   let y;
   if(stairLeft>0){ y=last.y+stairStep; stairLeft--; }
-  else { y = last.y + (hard? rnd(-0.045,0.045) : rnd(-0.018,0.018))*CH; }
-  y = Math.max(CH*0.46, Math.min(CH*0.80, y));
-
-  let x = last.x + last.w + gap;
-
-  // ── hard guarantee: the next FLAT pad is always reachable from the last FLAT pad ──
+  else y=last.y+(hard?rnd(-0.045,0.045):rnd(-0.018,0.018))*CH;
+  y=Math.max(CH*0.46,Math.min(CH*0.80,y));
+  let x=last.x+last.w+gap;
   if(!uneven){
-    const lf=plats[lastFlat];
-    const lim=maxReach(y-lf.y)*0.86;                   // 14% headroom
-    if(x-lf.x > lim) x = lf.x + lim;                   // pull it back into range
-    const minX = last.x + last.w + CW*0.05;            // but never overlap the pad before it
-    if(x < minX){ x = minX; }
+    const lf=plats[lastFlat], lim=maxReach(y-lf.y)*0.86;
+    if(x-lf.x>lim) x=lf.x+lim;
+    const minX=last.x+last.w+CW*0.05; if(x<minX) x=minX;
   }
-  const chair = !uneven && n>3 && Math.random()<0.15;
-  plats.push({ x,y,w,uneven,chair, chairHit:false, zone:zoneIdx, pix:zonePix,
-               seed:Math.random(), seed2:Math.random() });
+  plats.push(pad({x,y,w,uneven,chair:(!uneven && n>3 && Math.random()<0.15)}));
   if(!uneven) lastFlat=plats.length-1;
 }
-function reset(){
-  plats=[]; zoneIdx=0; zoneLeft=8; zonePix=false; camX=0; score=0; combo=0; popups=[];
-  banner=0; settle=0; lastFlat=0; stairLeft=0; stairStep=0;
-  plats.push({ x:CW*0.06, y:CH*0.70, w:CW*0.42, uneven:false, chair:false, chairHit:false,
-               zone:0, pix:false, seed:0.3, seed2:0.6 });
+function buildLevel(i){
+  const spec = LEVELS[i];
+  plats=[pad({x:CW*0.06,y:CH*0.70,w:CW*0.42})]; lastFlat=0;
+  if(spec){
+    for(const s of spec.pads){
+      const last=plats[plats.length-1];
+      let y=Math.max(CH*0.44,Math.min(CH*0.80,last.y+(s.d||0)*CH));
+      let x=last.x+last.w+(s.g||0.14)*CW;
+      const w=(s.w||0.32)*CW, uneven=!!s.u;
+      if(!uneven){                                     // keep designed levels flyable too
+        const lf=plats[lastFlat], lim=maxReach(y-lf.y)*0.86;
+        if(x-lf.x>lim) x=lf.x+lim;
+        const minX=last.x+last.w+CW*0.05; if(x<minX) x=minX;
+      }
+      plats.push(pad({x,y,w,uneven, chair:s.o==='C', obs:(s.o==='R'||s.o==='G')?s.o:null}));
+      if(!uneven) lastFlat=plats.length-1;
+    }
+  } else {                                             // levels past the hand-made ones
+    const len=10+i, bump=Math.min(1,(i-LEVELS.length)/12);
+    stairLeft=0; stairStep=0;
+    for(let k=0;k<len;k++){
+      addPlatform();
+      const p=plats[plats.length-1];
+      if(!p.uneven && !p.chair && Math.random()<0.18+bump*0.12) p.obs = Math.random()<0.5?'R':'G';
+      if(p.obs==='R' && plats.length-1===lastFlat){     // never block the only way forward
+        let prev=plats.length-2; while(prev>0 && plats[prev].uneven) prev--;
+        if(prev<=0) p.obs='G';
+      }
+    }
+  }
+}
+function buildEndless(){
+  plats=[pad({x:CW*0.06,y:CH*0.70,w:CW*0.42})]; lastFlat=0; stairLeft=0; stairStep=0;
   for(let i=0;i<10;i++) addPlatform();
-  marker={ x:plats[0].x+plats[0].w*0.5, y:plats[0].y, vx:0, vy:0, rot:0, spin:0, pIdx:0, skipTo:-1 };
+}
+function startRun(){
+  camX=0; score=0; combo=0; popups=[]; settle=0; won=false;
+  marker={x:plats[0].x+plats[0].w*0.5, y:plats[0].y, vx:0, vy:0, rot:0, spin:0, pIdx:0, skipTo:-1};
   state='ready'; charge=0; charging=false;
   camX=marker.x-(CW*HOLD)/Z;
+  timeLeft=45; timerOn=false;
 }
-reset();
-state='intro';
 
-// ─── marker orientation (vertical / horizontal toggle) ────────────────────
-let ORIENT=null;
-try{ ORIENT=localStorage.getItem('qu33phFlipOrient')||null; }catch(e){}
-function curOrient(){
-  if(ORIENT) return ORIENT;
+// ─── menus ────────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+function show(id,on){ $(id).classList.toggle('on',on); }
+function toMenu(){ state='menu'; show('menu',true); show('levelSel',false); show('overOvl',false); }
+function startMode(m){
+  mode=m; show('menu',false); show('levelSel',false); show('overOvl',false);
+  if(m==='levels') buildLevel(levelIdx); else buildEndless();
+  startRun();
+}
+function buildGrid(){
+  const g=$('levelGrid'); g.innerHTML='';
+  const done=levelsDone();
+  $('lvlSub').textContent = done+' / '+LEVEL_COUNT+' CLEARED';
+  for(let i=0;i<LEVEL_COUNT;i++){
+    const d=document.createElement('div');
+    d.className='lvl'+(unlocked(i)?'':' locked');
+    d.innerHTML='<img src="'+(THEME==='cartoon'?'blueC.png':'blue.png')+'"><span>'+(i+1)+'</span>';
+    if(unlocked(i)) d.onclick=()=>{ levelIdx=i; startMode('levels'); };
+    g.appendChild(d);
+  }
+}
+$('bEndless').onclick=()=>startMode('endless');
+$('bTimed').onclick  =()=>startMode('timed');
+$('bLevels').onclick =()=>{ buildGrid(); show('menu',false); show('levelSel',true); state='menu'; };
+$('bLvlBack').onclick=()=>toMenu();
+$('bMenu').onclick   =()=>toMenu();
+$('bRetry').onclick  =()=>{ if(mode==='levels') buildLevel(levelIdx); else buildEndless(); startRun(); show('overOvl',false); };
+
+// ─── orientation ──────────────────────────────────────────────────────────
+let ORIENT=null; try{ ORIENT=localStorage.getItem('qu33phFlipOrient')||null; }catch(e){}
+function curOrient(){ if(ORIENT) return ORIENT;
   if(!ready(MARKER)) return 'vertical';
-  return (MARKER.naturalWidth>=MARKER.naturalHeight) ? 'vertical' : 'horizontal';  // keeps each theme's natural look
-}
-function markerRot(){
-  if(!ready(MARKER)) return -Math.PI/2;
-  const wide = MARKER.naturalWidth>=MARKER.naturalHeight;
-  const vertical = curOrient()==='vertical';
-  return (wide === vertical) ? -Math.PI/2 : 0;
-}
+  return MARKER.naturalWidth>=MARKER.naturalHeight?'vertical':'horizontal'; }
+function markerRot(){ if(!ready(MARKER)) return -Math.PI/2;
+  const wide=MARKER.naturalWidth>=MARKER.naturalHeight;
+  return (wide===(curOrient()==='vertical'))?-Math.PI/2:0; }
 function markerDims(){
-  const mh=MH();
-  if(!ready(MARKER)) return {dw:mh, dh:mh*0.25, visH:mh};
+  const mh=MH(); if(!ready(MARKER)) return {dw:mh,dh:mh*0.25,visH:mh};
   const ar=MARKER.naturalWidth/MARKER.naturalHeight;
-  const dw = ar>=1 ? mh : mh*ar, dh = ar>=1 ? mh/ar : mh;
-  const long=Math.max(dw,dh), short=Math.min(dw,dh);
-  return { dw, dh, visH:(curOrient()==='vertical'? long : short) };
+  const dw=ar>=1?mh:mh*ar, dh=ar>=1?mh/ar:mh;
+  return {dw,dh,visH:(curOrient()==='vertical'?Math.max(dw,dh):Math.min(dw,dh))};
 }
-function orientIconSvg(){
-  const vertical=curOrient()==='vertical';
+function orientIcon(){ const v=curOrient()==='vertical';
   return '<svg width="28" height="28" viewBox="0 0 24 24">'
-    + '<path d="M19.5 11a7.5 7.5 0 1 0 -1 4.2" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round"/>'
-    + '<path d="M20 4.5v5h-5" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
-    + '<rect x="6.4" y="10.5" width="11.2" height="3" rx="1.5" fill="#4f7dff" transform="rotate('+(vertical?90:0)+' 12 12)"/>'
-    + '</svg>';
-}
-function updateOrientBtn(){ const el=document.getElementById('orientIcon'); if(el) el.innerHTML=orientIconSvg(); }
-document.getElementById('orientBtn').addEventListener('click', e=>{
-  e.stopPropagation();
-  ORIENT = (curOrient()==='vertical') ? 'horizontal' : 'vertical';
-  try{ localStorage.setItem('qu33phFlipOrient',ORIENT); }catch(e2){}
-  updateOrientBtn();
-});
-updateOrientBtn();
-if(!ready(MARKER)) MARKER.onload=updateOrientBtn;
+   +'<path d="M19.5 11a7.5 7.5 0 1 0 -1 4.2" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round"/>'
+   +'<path d="M20 4.5v5h-5" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
+   +'<rect x="6.4" y="10.5" width="11.2" height="3" rx="1.5" fill="'+ACC+'" transform="rotate('+(v?90:0)+' 12 12)"/></svg>'; }
+function updOrient(){ $('orientIcon').innerHTML=orientIcon(); }
+$('orientBtn').addEventListener('click',e=>{ e.stopPropagation();
+  ORIENT=curOrient()==='vertical'?'horizontal':'vertical';
+  try{ localStorage.setItem('qu33phFlipOrient',ORIENT); }catch(e2){} updOrient(); });
+updOrient(); if(!ready(MARKER)) MARKER.onload=updOrient;
 
 // ─── input ────────────────────────────────────────────────────────────────
-cv.addEventListener('pointerdown', e=>{
+cv.addEventListener('pointerdown',e=>{
   if(e&&e.cancelable) e.preventDefault();
-  if(state==='intro'){ state='ready'; return; }
-  if(state==='over'){ reset(); return; }
   if(state!=='ready') return;
   charging=true; charge=0;
 });
-window.addEventListener('pointerup', ()=>{
+window.addEventListener('pointerup',()=>{
   if(!charging) return; charging=false;
   if(state!=='ready') return;
-  flip(Math.max(0.10, charge));
+  flip(Math.max(0.10,charge));
 });
-
 function flip(p){
-  marker.vx = (0.008 + p*0.014)*CW;
-  marker.vy = -(0.026 + p*0.012)*CH;
-  const T   = 2*Math.abs(marker.vy)/G();
-  marker.spin = (Math.PI*2*(1+Math.round(p*2)))/T;
-  marker.rot  = 0;
-  state='flying';
+  marker.vx=(0.008+p*0.014)*CW; marker.vy=-(0.026+p*0.012)*CH;
+  const T=2*Math.abs(marker.vy)/G();
+  marker.spin=(Math.PI*2*(1+Math.round(p*2)))/T; marker.rot=0;
+  state='flying'; timerOn=true;
 }
 function chairLaunch(p){
   const idx=plats.indexOf(p);
   let target=idx+3+((Math.random()*3)|0);
-  while(plats.length<=target+10) addPlatform();
+  if(mode==='levels'){ target=Math.min(target, plats.length-1); }
+  else while(plats.length<=target+10) addPlatform();
   const t=plats[target];
-  if(t.uneven){ t.uneven=false; if(target>lastFlat) lastFlat=target; }   // landing pad is always safe
-  t.chair=false;
+  if(t.uneven){ t.uneven=false; if(target>lastFlat) lastFlat=target; }
+  t.chair=false; if(t.obs==='R') t.obs=null;
   const g=G(), dy=t.y-marker.y;
   marker.vy=-0.044*CH;
-  const T=(-marker.vy+Math.sqrt(Math.max(0.0001, marker.vy*marker.vy+2*g*dy)))/g;
+  const T=(-marker.vy+Math.sqrt(Math.max(0.0001,marker.vy*marker.vy+2*g*dy)))/g;
   marker.vx=((t.x+t.w*0.5)-marker.x)/T;
-  marker.spin=(Math.PI*2*4)/T;
-  marker.skipTo=target;
-  state='boost';
-  popups.push({x:marker.x, y:marker.y-MH()*1.4, txt:'CHAIR LAUNCH!', life:64, col:'#ff5a5a', big:true});
+  marker.spin=(Math.PI*2*4)/T; marker.skipTo=target; state='boost';
+  popups.push({x:marker.x,y:marker.y-MH()*1.4,txt:'CHAIR LAUNCH!',life:64,col:'#ff5a5a',big:true});
 }
 function land(p){
   marker.y=p.y; marker.vx=0; marker.vy=0; marker.rot=0; marker.skipTo=-1;
-  if(p.uneven){ state='tip'; marker.tipT=0; return; }
+  if(p.uneven || p.obs==='R'){ state='tip'; marker.tipT=0; return; }
   const idx=plats.indexOf(p);
   const gained=Math.max(1, idx-marker.pIdx);
   marker.pIdx=idx; combo++;
-  const pts=gained*10 + Math.min(10,combo)*2;
+  let pts=gained*10+Math.min(10,combo)*2;
+  if(p.obs==='G' && !p.got){ p.got=true; pts+=25;
+    popups.push({x:marker.x,y:p.y-MH()*2.4,txt:'BONUS +25',life:52,col:'#7bff9a'}); }
   score+=pts;
-  popups.push({x:marker.x, y:p.y-MH()*1.3, txt:'+'+gained, life:44, col:'#8fd0ff'});
-  if(gained>1) popups.push({x:marker.x, y:p.y-MH()*1.9, txt:'SKIPPED '+(gained-1), life:52, col:'#ffd24a'});
-  else if(combo>2) popups.push({x:marker.x, y:p.y-MH()*1.9, txt:'x'+combo, life:40, col:'#7bff9a'});
+  popups.push({x:marker.x,y:p.y-MH()*1.3,txt:'+'+gained,life:44,col:'#8fd0ff'});
+  if(gained>1) popups.push({x:marker.x,y:p.y-MH()*1.9,txt:'SKIPPED '+(gained-1),life:52,col:'#ffd24a'});
   state='ready'; charge=0; settle=9;
-  while(plats.length < marker.pIdx+11) addPlatform();
+  if(mode==='levels'){
+    if(idx>=plats.length-1){ finishLevel(); return; }
+  } else while(plats.length<marker.pIdx+11) addPlatform();
+}
+function finishLevel(){
+  won=true; state='over'; timerOn=false;
+  if(levelIdx+1>levelsDone()) setLevelsDone(levelIdx+1);
+  $('ovTitle').textContent='LEVEL CLEAR'; $('ovTitle').style.color='#7bff9a';
+  $('ovSub').textContent=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+score+' PTS';
+  show('overOvl',true);
 }
 function gameOver(reason){
-  state='over'; marker.reason=reason; combo=0;
-  if(score>best){ best=score; try{ localStorage.setItem('qu33phFlipBest',best); }catch(e){} }
+  state='over'; timerOn=false; combo=0;
   if(marker.pIdx>bestP){ bestP=marker.pIdx; try{ localStorage.setItem('qu33phFlipBestP',bestP); }catch(e){} }
+  $('ovTitle').textContent = reason==='TIME UP' ? 'TIME UP' : 'TIPPED OVER';
+  $('ovTitle').style.color = reason==='TIME UP' ? '#ffd700' : '#e23b3b';
+  $('ovSub').textContent = marker.pIdx+' PLATFORMS \u00b7 '+score+' PTS \u00b7 BEST '+bestP;
+  show('overOvl',true);
 }
 
 // ─── step ─────────────────────────────────────────────────────────────────
 function step(){
-  if(state==='intro') return;
-  if(banner>0) banner--;
+  if(state==='menu'||state==='over') return;
   if(settle>0) settle--;
-  if(charging && state==='ready') charge=Math.min(1, charge+0.022);
-  if(state==='tip'){
-    marker.tipT++; marker.rot+=0.11;
-    if(marker.tipT>26) gameOver('UNEVEN GROUND');
-    return;
+  if(charging && state==='ready') charge=Math.min(1,charge+0.022);
+  if(mode==='timed' && timerOn && state!=='over'){
+    timeLeft-=1/60;
+    if(timeLeft<=0){ timeLeft=0; gameOver('TIME UP'); return; }
   }
-  if(state==='flying' || state==='boost'){
+  if(state==='tip'){ marker.tipT++; marker.rot+=0.11;
+    if(marker.tipT>26) gameOver('UNEVEN GROUND'); return; }
+  if(state==='flying'||state==='boost'){
     const g=G(), prevY=marker.y;
     marker.x+=marker.vx; marker.vy+=g; marker.y+=marker.vy; marker.rot+=marker.spin;
     if(state==='flying'){
       const cw=chairW(), chh=chairH();
       for(const p of plats){
-        if(!p.chair || p.chairHit) continue;
+        if(!p.chair||p.chairHit) continue;
         const cx=p.x+p.w*0.5;
-        if(marker.x>cx-cw*0.5 && marker.x<cx+cw*0.5 && marker.y>p.y-chh && marker.y<p.y+MH()*0.25){
-          p.chairHit=true; chairLaunch(p); break;
-        }
+        if(marker.x>cx-cw*0.5&&marker.x<cx+cw*0.5&&marker.y>p.y-chh&&marker.y<p.y+MH()*0.25){
+          p.chairHit=true; chairLaunch(p); break; }
       }
     }
     if(marker.vy>0){
-      const list=(state==='boost') ? [plats[marker.skipTo]] : plats;
-      for(const p of list){
-        if(!p) continue;
-        if(marker.x>=p.x && marker.x<=p.x+p.w && prevY<=p.y && marker.y>=p.y){ land(p); break; }
-      }
+      const list=(state==='boost')?[plats[marker.skipTo]]:plats;
+      for(const p of list){ if(!p) continue;
+        if(marker.x>=p.x&&marker.x<=p.x+p.w&&prevY<=p.y&&marker.y>=p.y){ land(p); break; } }
     }
-    if(marker.y > CH*1.25) gameOver('OFF THE EDGE');
+    if(marker.y>CH*1.25) gameOver('OFF THE EDGE');
   }
   const tc=marker.x-(CW*HOLD)/Z;
-  camX += (tc-camX)*0.12; if(camX<0) camX=0;
+  camX+=(tc-camX)*0.12; if(camX<0) camX=0;
   for(let i=popups.length-1;i>=0;i--){ const q=popups[i]; q.life--; q.y-=CH*0.0012; if(q.life<=0) popups.splice(i,1); }
 }
 
-// ─── scene layer (background + platforms) — this is what gets the theme effect ──
-function paintBG(c,z){
-  if(z.style==='comic'){
-    c.fillStyle='#9c9c9c'; c.fillRect(0,0,CW,CH);
-  } else if(z.style==='neon'){
+// ─── scene ────────────────────────────────────────────────────────────────
+function paintBG(c){
+  const d=TH.deck;
+  if(d==='comic'){ c.fillStyle='#9c9c9c'; c.fillRect(0,0,CW,CH); }
+  else if(d==='neon'){
     c.fillStyle='#04060e'; c.fillRect(0,0,CW,CH);
     c.save(); c.strokeStyle='rgba(40,255,150,0.13)'; c.lineWidth=Math.max(1,CH*0.0012);
-    const gs=CH*0.042, gx0=(((-camX*0.15)%gs)+gs)%gs;
-    for(let gx=gx0; gx<CW; gx+=gs){ c.beginPath(); c.moveTo(gx,0); c.lineTo(gx,CH); c.stroke(); }
-    for(let gy=0; gy<CH; gy+=gs){ c.beginPath(); c.moveTo(0,gy); c.lineTo(CW,gy); c.stroke(); }
+    const gs=CH*0.042, g0=(((-camX*0.15)%gs)+gs)%gs;
+    for(let x=g0;x<CW;x+=gs){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,CH); c.stroke(); }
+    for(let y=0;y<CH;y+=gs){ c.beginPath(); c.moveTo(0,y); c.lineTo(CW,y); c.stroke(); }
     c.restore();
-  } else if(z.style==='sunset'){
+  } else if(d==='sunset'){
     const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#6b4e16'); g.addColorStop(0.5,'#4a350e'); g.addColorStop(1,'#2a1e08');
     c.fillStyle=g; c.fillRect(0,0,CW,CH);
-  } else if(z.style==='galaxy'){
+  } else if(d==='galaxy'){
     const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#160a2e'); g.addColorStop(1,'#0a0618');
     c.fillStyle=g; c.fillRect(0,0,CW,CH);
-    c.fillStyle='rgba(200,170,255,0.75)';
-    for(let i=0;i<40;i++){
-      const px=(((i*97)/100*CW - camX*0.06)%CW+CW)%CW, py=((i*57)%100)/100*CH*0.7;
-      c.globalAlpha=0.25+((i*31)%50)/100; c.beginPath(); c.arc(px,py,CH*0.0016,0,6.283); c.fill();
-    }
-    c.globalAlpha=1;
+    drawGalaxies(c);
   } else {
     const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#2a2358'); g.addColorStop(0.55,'#332670'); g.addColorStop(1,'#211a4a');
     c.fillStyle=g; c.fillRect(0,0,CW,CH);
   }
 }
-function tileWindow(c,img,alpha,par){
-  if(!ready(img) || alpha<=0.01) return;
+function drawGalaxies(c){                            // slowly spinning spiral galaxies
+  const t=Date.now()/1000;
+  for(let i=0;i<4;i++){
+    const R=CH*(0.09+0.05*(i%2));
+    const gx=(((i*0.31+0.12)*CW*2.2 - camX*0.05)%(CW*2.2)+CW*2.2)%(CW*2.2)-CW*0.6;
+    const gy=CH*(0.10+0.13*i);
+    c.save(); c.translate(gx,gy); c.rotate(t*(0.10+0.05*i)*(i%2?-1:1));
+    const core=c.createRadialGradient(0,0,0,0,0,R);
+    core.addColorStop(0,'rgba(230,210,255,0.55)');
+    core.addColorStop(0.35,'rgba(150,90,255,0.22)');
+    core.addColorStop(1,'rgba(90,40,160,0)');
+    c.fillStyle=core; c.beginPath(); c.arc(0,0,R,0,6.283); c.fill();
+    c.strokeStyle='rgba(200,170,255,0.30)'; c.lineWidth=Math.max(1,R*0.045);
+    for(let arm=0;arm<2;arm++){
+      c.beginPath();
+      for(let s=0;s<=26;s++){
+        const th=arm*Math.PI + s*0.13, rr=R*0.12+ (s/26)*R*0.92;
+        const px=Math.cos(th)*rr, py=Math.sin(th)*rr*0.42;
+        if(s===0) c.moveTo(px,py); else c.lineTo(px,py);
+      }
+      c.stroke();
+    }
+    c.restore();
+  }
+}
+function tileWin(c,img,al,par){
+  if(!ready(img)||al<=0.01) return;
   const iw=img.naturalWidth, ih=img.naturalHeight;
   const s=Math.max(CW/iw,(CH*1.2)/ih), tw=iw*s, th=ih*s;
   const ox=(((-camX*par)%tw)+tw)%tw;
-  c.save(); c.globalAlpha=alpha;
-  for(let gx=-tw+ox; gx<CW+1; gx+=tw){ for(let gy=-th*0.15; gy<CH+1; gy+=th){ c.drawImage(img,gx,gy,tw,th); } }
+  c.save(); c.globalAlpha=al;
+  for(let x=-tw+ox;x<CW+1;x+=tw) for(let y=-th*0.15;y<CH+1;y+=th) c.drawImage(img,x,y,tw,th);
   c.restore();
 }
-function drawTrees(c,pix){
-  const pool=(pix?TREES_P:TREES_R).filter(ready);
-  if(!pool.length) return;
+function drawTrees(c){
+  const pool=(PIXEL?TREES_P:TREES_R).filter(ready); if(!pool.length) return;
   for(let i=0;i<9;i++){
-    const img=pool[i%pool.length];
-    const dep=0.25+((i*37)%60)/100;
-    const tileW=CW*1.7, bx=((i*71)%100)/100*tileW;
-    const px=(((bx - camX*dep*0.16)%tileW)+tileW)%tileW-(tileW-CW)/2;
+    const img=pool[i%pool.length], dep=0.25+((i*37)%60)/100;
+    const tw=CW*1.7, bx=((i*71)%100)/100*tw;
+    const px=(((bx-camX*dep*0.16)%tw)+tw)%tw-(tw-CW)/2;
     const py=CH*(0.16+((i*53)%100)/100*0.40);
-    const tht=CH*(0.20+dep*0.30), twt=tht*(img.naturalWidth/img.naturalHeight);
-    c.save(); c.globalAlpha=0.30+dep*0.28; c.drawImage(img, px-twt/2, py-tht/2, twt, tht); c.restore();
+    const hh=CH*(0.20+dep*0.30), ww=hh*(img.naturalWidth/img.naturalHeight);
+    c.save(); c.globalAlpha=0.30+dep*0.28; c.drawImage(img,px-ww/2,py-hh/2,ww,hh); c.restore();
   }
 }
 function drawPlat(c,p){
   const px=p.x-camX, lim=CW/Z;
-  if(px>lim+80 || px+p.w<-80) return;
-  const z=ZONES[p.zone], h=CH*0.34;
-  c.save();
-  c.beginPath(); c.rect(px,p.y,p.w,h); c.clip();
+  if(px>lim+80||px+p.w<-80) return;
+  const h=CH*0.34;
+  c.save(); c.beginPath(); c.rect(px,p.y,p.w,h); c.clip();
   if(ready(FIELD)){
     const nw=FIELD.naturalWidth, nh=FIELD.naturalHeight;
     const cw2=nw*(0.20+p.seed*0.30), ch2=nh*(0.12+p.seed2*0.20);
-    c.drawImage(FIELD, p.seed2*(nw-cw2), p.seed*(nh-ch2), cw2, ch2, px, p.y, p.w, h);
+    c.drawImage(FIELD,p.seed2*(nw-cw2),p.seed*(nh-ch2),cw2,ch2,px,p.y,p.w,h);
   } else { c.fillStyle='#1b1b2a'; c.fillRect(px,p.y,p.w,h); }
   const g2=c.createLinearGradient(0,p.y,0,p.y+h);
   g2.addColorStop(0,'rgba(0,0,0,0.10)'); g2.addColorStop(1,'rgba(0,0,0,0.92)');
   c.fillStyle=g2; c.fillRect(px,p.y,p.w,h);
   c.restore();
   if(p.uneven){
-    c.save(); c.strokeStyle='#ff4d4d'; c.lineWidth=Math.max(2,CH*0.006); c.beginPath();
-    const teeth=Math.max(4, Math.round(p.w/(CW*0.05)));
-    for(let i=0;i<=teeth;i++){
-      const tx=px+p.w*i/teeth, ty=p.y+((i%2)?-CH*0.016:0);
-      if(i===0) c.moveTo(tx,ty); else c.lineTo(tx,ty);
-    }
+    c.save(); c.strokeStyle='#ff4d4d'; c.lineWidth=Math.max(2,CH*0.006);
+    if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.012; }
+    c.beginPath();
+    const teeth=Math.max(4,Math.round(p.w/(CW*0.05)));
+    for(let i=0;i<=teeth;i++){ const tx=px+p.w*i/teeth, ty=p.y+((i%2)?-CH*0.016:0);
+      if(i===0) c.moveTo(tx,ty); else c.lineTo(tx,ty); }
     c.stroke(); c.restore();
   } else {
-    c.fillStyle=z.accent; c.fillRect(px,p.y-CH*0.005,p.w,CH*0.005);
-    c.globalAlpha=0.3; c.fillRect(px,p.y-CH*0.013,p.w,CH*0.008); c.globalAlpha=1;
+    c.save();
+    if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.016; }   // platforms glow too
+    c.fillStyle=ACC; c.fillRect(px,p.y-CH*0.005,p.w,CH*0.005);
+    c.restore();
+    c.globalAlpha=0.3; c.fillStyle=ACC; c.fillRect(px,p.y-CH*0.013,p.w,CH*0.008); c.globalAlpha=1;
   }
 }
-// overlays that sit on the themed scene but under the full-colour props
-function drawZoneOverlay(z){
-  if(z.style==='comic'){
-    ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.5)';
-    const ds=CH*0.017, ox=(((-camX*0.10)%ds)+ds)%ds;
-    for(let yy=0; yy<CH+ds; yy+=ds){
-      const row=Math.round(yy/ds);
-      for(let xx=-ds+ox+((row%2)?ds/2:0); xx<CW+ds; xx+=ds){ ctx.beginPath(); ctx.arc(xx,yy,ds*0.17,0,6.283); ctx.fill(); }
-    }
-    ctx.restore(); return;
-  }
-  let col=null;
-  if(z.style==='neon')   col='rgba(40,255,130,';
-  if(z.style==='sunset') col='rgba(255,180,45,';
-  if(z.style==='galaxy') col='rgba(150,90,255,';
-  if(!col) return;
-  const g=ctx.createRadialGradient(CW/2,CH*0.55,CH*0.20,CW/2,CH*0.55,CH*0.78);
-  g.addColorStop(0,col+'0)'); g.addColorStop(1,col+'0.30)');
-  ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH); ctx.restore();
-}
-
-// ─── full-colour props (drawn after the theme effect) ─────────────────────
-function drawChairs(){
-  const w=chairW(), h2=chairH(), lim=CW/Z;
+// full-colour props on top of the themed scene
+function glowOn(){ if(TH.glow){ ctx.shadowColor=TH.glow; ctx.shadowBlur=CH*0.020; } }
+function glowOff(){ ctx.shadowBlur=0; ctx.shadowColor='transparent'; }
+function drawProps(){
+  const lim=CW/Z, cw=chairW(), chh=chairH();
   for(const p of plats){
-    if(!p.chair || p.chairHit) continue;
-    const px=p.x-camX; if(px>lim+80 || px+p.w<-80) continue;
+    const px=p.x-camX; if(px>lim+80||px+p.w<-80) continue;
     const cx=p.x+p.w*0.5-camX;
-    if(ready(CHAIR)) ctx.drawImage(CHAIR, cx-w/2, p.y-h2, w, h2);
-    else { ctx.fillStyle='#d62424'; ctx.fillRect(cx-w/2, p.y-h2, w, h2); }
+    if(p.chair && !p.chairHit){
+      ctx.save(); glowOn();
+      if(ready(CHAIR)) ctx.drawImage(CHAIR,cx-cw/2,p.y-chh,cw,chh);
+      else { ctx.fillStyle='#d62424'; ctx.fillRect(cx-cw/2,p.y-chh,cw,chh); }
+      ctx.restore();
+    }
+    if(p.obs && !(p.obs==='G'&&p.got)){
+      const img=p.obs==='R'?MK_RED:MK_GREEN, oh=MH()*0.9;
+      ctx.save(); ctx.translate(cx,p.y-oh/2); ctx.rotate(-Math.PI/2); glowOn();
+      if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; ctx.drawImage(img,-oh/2,-(oh/ar)/2,oh,oh/ar); }
+      else { ctx.fillStyle=p.obs==='R'?'#ff3030':'#30d060'; ctx.fillRect(-oh/2,-oh*0.09,oh,oh*0.18); }
+      ctx.restore();
+    }
   }
 }
 function drawMarker(){
@@ -393,168 +496,115 @@ function drawMarker(){
   const cx=marker.x-camX, cy=marker.y-visH/2;
   if(state==='ready'||state==='tip'){
     ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath();
-    ctx.ellipse(cx, marker.y+CH*0.004, MH()*0.20, MH()*0.05, 0, 0, 7); ctx.fill();
+    ctx.ellipse(cx,marker.y+CH*0.004,MH()*0.20,MH()*0.05,0,0,7); ctx.fill();
   }
   ctx.save(); ctx.translate(cx,cy); ctx.rotate(markerRot()+marker.rot); ctx.scale(1/sq,sq);
-  if(ready(MARKER)) ctx.drawImage(MARKER, -dw/2, -dh/2, dw, dh);
+  if(TH.plate){                                  // comic: white backing so the line-art marker reads
+    ctx.fillStyle='#fff';
+    const pw=dw*1.06, ph=dh*1.06, r=Math.min(pw,ph)*0.35;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(-pw/2,-ph/2,pw,ph,r); else ctx.rect(-pw/2,-ph/2,pw,ph);
+    ctx.fill();
+  }
+  glowOn();
+  if(ready(MARKER)) ctx.drawImage(MARKER,-dw/2,-dh/2,dw,dh);
   else { ctx.fillStyle='#3a7bff'; ctx.fillRect(-MH()/2,-MH()*0.09,MH(),MH()*0.18); }
   ctx.restore();
 }
 function drawAim(){
-  if(!(charging && state==='ready')) return;
+  if(!(charging&&state==='ready')) return;
   const g=G(), p=Math.max(0.10,charge);
   let vx=(0.008+p*0.014)*CW, vy=-(0.026+p*0.012)*CH, x=marker.x, y=marker.y;
   ctx.fillStyle='rgba(255,255,255,0.55)';
-  for(let i=0;i<90;i++){
-    x+=vx; vy+=g; y+=vy;
-    if(i%5===0){ ctx.beginPath(); ctx.arc(x-camX, y, Math.max(1.5,CH*0.005), 0, 7); ctx.fill(); }
-    if(y>CH*1.1) break;
+  for(let i=0;i<90;i++){ x+=vx; vy+=g; y+=vy;
+    if(i%5===0){ ctx.beginPath(); ctx.arc(x-camX,y,Math.max(1.5,CH*0.005),0,7); ctx.fill(); }
+    if(y>CH*1.1) break; }
+}
+function drawOverlayFx(){
+  if(TH.benday){
+    ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.5)';
+    const ds=CH*0.017, ox=(((-camX*0.10)%ds)+ds)%ds;
+    for(let y=0;y<CH+ds;y+=ds){ const row=Math.round(y/ds);
+      for(let x=-ds+ox+((row%2)?ds/2:0);x<CW+ds;x+=ds){ ctx.beginPath(); ctx.arc(x,y,ds*0.17,0,6.283); ctx.fill(); } }
+    ctx.restore(); return;
+  }
+  if(TH.tint){ ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=TH.tint; ctx.fillRect(0,0,CW,CH); ctx.restore(); }
+  if(TH.glow){
+    const g=ctx.createRadialGradient(CW/2,CH*0.55,CH*0.20,CW/2,CH*0.55,CH*0.80);
+    const c=TH.glow==='#28ff82'?'40,255,130':TH.glow==='#ffb020'?'255,176,32':'150,90,255';
+    g.addColorStop(0,'rgba('+c+',0)'); g.addColorStop(1,'rgba('+c+',0.28)');
+    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH); ctx.restore();
   }
 }
-
-// ─── HUD ──────────────────────────────────────────────────────────────────
-function drawHUD(z){
-  const pad=CH*0.016, acc=(z.accent==='#141414'?'#333':z.accent);
-  ctx.textBaseline='top';
-  ctx.textAlign='left';
+function drawHUD(){
+  const pad=CH*0.016;
+  ctx.textBaseline='top'; ctx.textAlign='left';
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.040)+'px Helvetica';
-  ctx.fillText(marker.pIdx, pad, pad);
+  ctx.fillText(marker.pIdx,pad,pad);
   ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CH*0.013)+'px Helvetica';
-  ctx.fillText('PLATFORMS', pad+CH*0.002, pad+CH*0.045);
+  ctx.fillText('PLATFORMS',pad+CH*0.002,pad+CH*0.045);
   ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-  ctx.fillText('BEST '+bestP+'   '+score+' PTS', pad+CH*0.002, pad+CH*0.064);
+  ctx.fillText((mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestP)+'   '+score+' PTS',pad+CH*0.002,pad+CH*0.064);
   ctx.textAlign='center';
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.021)+'px Helvetica';
-  ctx.fillText('QU33PH FLIP', CW/2, pad);
-  ctx.fillStyle=acc; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-  ctx.fillText(z.name, CW/2, pad+CH*0.027);
-  if(combo>2){ ctx.fillStyle='#7bff9a'; ctx.fillText('COMBO x'+combo, CW/2, pad+CH*0.048); }
-
-  if(charging && state==='ready'){
-    const bw=CW*0.46, bh=CH*0.012, bx=(CW-bw)/2, by=CH*0.935;
+  ctx.fillText('QU33PH FLIP',CW/2,pad);
+  ctx.fillStyle=ACC; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
+  ctx.fillText(TH.name,CW/2,pad+CH*0.027);
+  if(mode==='timed'){
+    const t=Math.max(0,timeLeft);
+    ctx.fillStyle=t<=10?'#ff5a5a':'#fff'; ctx.font='bold '+Math.round(CH*0.038)+'px Helvetica';
+    ctx.fillText(t.toFixed(1),CW/2,pad+CH*0.050);
+  }
+  if(combo>2){ ctx.fillStyle='#7bff9a'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
+    ctx.fillText('COMBO x'+combo,CW/2,pad+CH*(mode==='timed'?0.094:0.048)); }
+  if(charging&&state==='ready'){
+    const bw=CW*0.46,bh=CH*0.012,bx=(CW-bw)/2,by=CH*0.935;
     ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.fillRect(bx,by,bw,bh);
-    ctx.fillStyle=acc; ctx.fillRect(bx,by,bw*charge,bh);
+    ctx.fillStyle=ACC; ctx.fillRect(bx,by,bw*charge,bh);
   } else if(state==='ready'){
     ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.018)+'px Helvetica';
-    ctx.fillText('hold to charge \u2014 release to flip', CW/2, CH*0.932);
+    ctx.fillText('hold to charge \u2014 release to flip',CW/2,CH*0.932);
   }
   for(const q of popups){
-    ctx.globalAlpha=Math.max(0,q.life/50);
-    ctx.fillStyle=q.col; ctx.textAlign='center';
+    ctx.globalAlpha=Math.max(0,q.life/50); ctx.fillStyle=q.col; ctx.textAlign='center';
     ctx.font='bold '+Math.round(CH*(q.big?0.030:0.024))+'px Helvetica';
     ctx.strokeStyle='rgba(0,0,0,0.65)'; ctx.lineWidth=Math.max(2,CH*0.003);
-    ctx.strokeText(q.txt, SX(q.x), SY(q.y)); ctx.fillText(q.txt, SX(q.x), SY(q.y));
-    ctx.globalAlpha=1;
+    ctx.strokeText(q.txt,SX(q.x),SY(q.y)); ctx.fillText(q.txt,SX(q.x),SY(q.y)); ctx.globalAlpha=1;
   }
-  if(banner>0){
-    ctx.globalAlpha=Math.min(1,banner/28); ctx.textAlign='center';
-    ctx.fillStyle=acc; ctx.font='bold '+Math.round(CH*0.036)+'px Helvetica';
-    ctx.fillText(z.name, CW/2, CH*0.30); ctx.globalAlpha=1;
-  }
-  if(state==='over'){
-    ctx.fillStyle='rgba(0,0,0,0.68)'; ctx.fillRect(0,0,CW,CH);
-    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-    ctx.fillStyle='#e23b3b'; ctx.font='bold '+Math.round(CH*0.055)+'px Helvetica';
-    ctx.fillText('TIPPED OVER', CW/2, CH*0.40);
-    ctx.fillStyle='#aaa'; ctx.font='bold '+Math.round(CH*0.022)+'px Helvetica';
-    ctx.fillText(marker.reason||'', CW/2, CH*0.442);
-    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.044)+'px Helvetica';
-    ctx.fillText(marker.pIdx+' PLATFORMS', CW/2, CH*0.515);
-    ctx.fillStyle='#8fd0ff'; ctx.font='bold '+Math.round(CH*0.024)+'px Helvetica';
-    ctx.fillText(score+' PTS', CW/2, CH*0.552);
-    ctx.fillStyle='#ffd700'; ctx.fillText('BEST '+bestP, CW/2, CH*0.588);
-    ctx.fillStyle='#fff'; ctx.fillText('tap to flip again', CW/2, CH*0.645);
-    ctx.textBaseline='top';
-  }
-}
-function drawIntro(){
-  ctx.fillStyle='rgba(0,0,0,0.80)'; ctx.fillRect(0,0,CW,CH);
-  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.046)+'px Helvetica';
-  ctx.fillText('QU33PH FLIP', CW/2, CH*0.20);
-  ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.font='bold '+Math.round(CH*0.019)+'px Helvetica';
-  ctx.fillText('flip your marker \u2014 it lands on its cap', CW/2, CH*0.235);
-  const bx=CW*0.16, bw=CW*0.68;
-  let y=CH*0.345;
-  ctx.fillStyle='#8affea'; ctx.font='bold '+Math.round(CH*0.024)+'px Helvetica';
-  ctx.fillText('FLAT = SAFE', CW/2, y-CH*0.022);
-  ctx.fillStyle='#1b2340'; ctx.fillRect(bx,y,bw,CH*0.030);
-  ctx.fillStyle='#8affea'; ctx.fillRect(bx,y-CH*0.006,bw,CH*0.006);
-  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold '+Math.round(CH*0.017)+'px Helvetica';
-  ctx.fillText('land here and it sticks upright', CW/2, y+CH*0.055);
-  y=CH*0.495;
-  ctx.fillStyle='#ff4d4d'; ctx.font='bold '+Math.round(CH*0.024)+'px Helvetica';
-  ctx.fillText('RED JAGGED = BAD', CW/2, y-CH*0.030);
-  ctx.fillStyle='#2a1a1a'; ctx.fillRect(bx,y,bw,CH*0.030);
-  ctx.save(); ctx.strokeStyle='#ff4d4d'; ctx.lineWidth=Math.max(2,CH*0.006); ctx.beginPath();
-  for(let i=0;i<=12;i++){ const px=bx+bw*i/12, py=y+((i%2)?-CH*0.016:0); if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
-  ctx.stroke(); ctx.restore();
-  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold '+Math.round(CH*0.017)+'px Helvetica';
-  ctx.fillText('uneven ground tips you over', CW/2, y+CH*0.055);
-  y=CH*0.655;
-  if(ready(CHAIR)){
-    const hh=CH*0.070, ww=hh*(CHAIR.naturalWidth/CHAIR.naturalHeight);
-    ctx.drawImage(CHAIR, CW/2-ww/2, y-hh, ww, hh);
-  }
-  ctx.fillStyle='#ff5a5a'; ctx.font='bold '+Math.round(CH*0.022)+'px Helvetica';
-  ctx.fillText('RED CHAIR = LAUNCH', CW/2, y+CH*0.028);
-  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold '+Math.round(CH*0.017)+'px Helvetica';
-  ctx.fillText('hit it to fly way ahead', CW/2, y+CH*0.054);
-  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.024)+'px Helvetica';
-  ctx.fillText('hold to charge \u2014 release to flip', CW/2, CH*0.795);
-  ctx.globalAlpha=0.55+0.45*Math.abs(Math.sin(Date.now()/400));
-  ctx.font='bold '+Math.round(CH*0.028)+'px Helvetica';
-  ctx.fillText('tap to start', CW/2, CH*0.855);
-  ctx.globalAlpha=1;
-  ctx.textBaseline='top';
-}
-
-// ─── frame ────────────────────────────────────────────────────────────────
-let lastZone=-1;
-function curPlat(){
-  const wx=camX+(CW*0.42)/Z;
-  for(const p of plats){ if(wx>=p.x-CW*0.2 && wx<=p.x+p.w+CW*0.2) return p; }
-  return plats[marker.pIdx]||plats[0];
 }
 function draw(){
   ctx.setTransform(1,0,0,1,0,0);
-  const cp=curPlat(), z=ZONES[cp.zone];
-  if(cp.zone!==lastZone){ if(lastZone!==-1) banner=70; lastZone=cp.zone; }
-
-  // 1. build the scene (background + platforms) on its own layer
-  sx2.setTransform(1,0,0,1,0,0); sx2.clearRect(0,0,CW,CH);
-  paintBG(sx2,z);
-  tileWindow(sx2, cp.pix?WIN_P:WIN_R, 0.85, 0.10);
-  drawTrees(sx2, cp.pix);
-  const gr=sx2.createLinearGradient(0,0,0,CH);
+  if(state==='menu'){ ctx.fillStyle='#05050a'; ctx.fillRect(0,0,CW,CH); return; }
+  s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
+  paintBG(s2);
+  tileWin(s2, PIXEL?WIN_P:WIN_R, 0.85, 0.10);
+  drawTrees(s2);
+  const gr=s2.createLinearGradient(0,0,0,CH);
   gr.addColorStop(0,'rgba(0,0,0,0.42)'); gr.addColorStop(0.55,'rgba(0,0,0,0.14)'); gr.addColorStop(1,'rgba(0,0,0,0.72)');
-  sx2.fillStyle=gr; sx2.fillRect(0,0,CW,CH);
+  s2.fillStyle=gr; s2.fillRect(0,0,CW,CH);
   const a=AY();
-  sx2.save(); sx2.translate(0,a); sx2.scale(Z,Z); sx2.translate(0,-a);
-  for(const p of plats) drawPlat(sx2,p);
-  sx2.restore();
+  s2.save(); s2.translate(0,a); s2.scale(Z,Z); s2.translate(0,-a);
+  for(const p of plats) drawPlat(s2,p);
+  s2.restore();
 
-  // 2. stamp it down with the area's theme effect
-  if(CANFILTER && z.fx) ctx.filter=z.fx;
+  if(CANFILTER && TH.filter) ctx.filter=TH.filter;
   ctx.drawImage(sc,0,0);
   ctx.filter='none';
-  drawZoneOverlay(z);
+  drawOverlayFx();
 
-  // 3. props stay full colour on top — markers and the red chair never get tinted
   ctx.save(); ctx.translate(0,a); ctx.scale(Z,Z); ctx.translate(0,-a);
-  drawChairs();
-  drawAim();
-  drawMarker();
+  drawProps(); drawAim(); drawMarker(); glowOff();
   ctx.restore();
-
-  drawHUD(z);
-  if(state==='intro') drawIntro();
+  drawHUD();
 }
 function loop(){ step(); draw(); requestAnimationFrame(loop); }
-window.addEventListener('resize', ()=>{
-  const ow=CW, oh=CH; sz();
-  if(Math.abs(CW-ow)>ow*0.12 || Math.abs(CH-oh)>oh*0.12) reset();
+window.addEventListener('resize',()=>{
+  const ow=CW,oh=CH; sz();
+  if(Math.abs(CW-ow)>ow*0.12||Math.abs(CH-oh)>oh*0.12){
+    if(state!=='menu'){ if(mode==='levels') buildLevel(levelIdx); else buildEndless(); startRun(); }
+  }
 });
+mode='endless'; levelIdx=0; buildEndless(); startRun(); toMenu();
 loop();
 </script>
 </body>
