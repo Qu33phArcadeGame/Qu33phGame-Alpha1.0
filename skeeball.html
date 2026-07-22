@@ -8,11 +8,22 @@
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#000; }
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #stage{ position:relative; }
   #game{ display:block; }
+  #fx{ position:absolute; inset:0; pointer-events:none; z-index:2; }
+  /* comic: greyscale is on the canvas, ben-day dots ride on top */
+  #fx.fx-comic{ background-image:radial-gradient(circle, rgba(0,0,0,0.45) 1.7px, transparent 2.0px); background-size:8px 8px; mix-blend-mode:multiply; }
+  /* neon: green edge glow */
+  #fx.fx-neon{ box-shadow: inset 0 0 60px rgba(40,255,130,0.55), inset 0 0 20px rgba(40,255,130,0.55); }
+  /* sunset: warm gold glow */
+  #fx.fx-sunset{ box-shadow: inset 0 0 58px rgba(255,180,45,0.5); }
+  /* galaxy: violet glow + twinkle */
+  #fx.fx-galaxy{ box-shadow: inset 0 0 58px rgba(150,90,255,0.5); background-image:radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1.5px); background-size:26px 26px; mix-blend-mode:screen; animation:twk 1.6s steps(2) infinite; }
+  @keyframes twk{ 0%,100%{opacity:0.4;} 50%{opacity:0.95;} }
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="game"></canvas></div>
+<div id="wrap"><div id="stage"><canvas id="game"></canvas><div id="fx"></div></div></div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const FIELD=new Image(); FIELD.src='skeefield.png?v=306';
@@ -24,8 +35,23 @@ const PW=100, PH=177;              // field logical space (matches skeefield asp
 let CW=0,CH=0,DPR=1,SC=1;
 function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
   const ar=PW/PH; let cw=r.width,ch=r.width/ar; if(ch>r.height){ch=r.height;cw=r.height*ar;}
-  cv.style.width=cw+'px'; cv.style.height=ch+'px'; CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; SC=CW/PW; }
+  cv.style.width=cw+'px'; cv.style.height=ch+'px';
+  const st=document.getElementById('stage'); if(st){ st.style.width=cw+'px'; st.style.height=ch+'px'; }
+  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; SC=CW/PW; }
 sz();
+// ---- theme effects (comic greyscale+benday, neon green glow, etc.) ----
+const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+function applyTheme(){
+  const f={ cartoon:'grayscale(1) contrast(1.18)',
+            neon:'hue-rotate(95deg) saturate(2) brightness(1.12)',
+            sunset:'sepia(0.5) saturate(1.6) brightness(1.2) hue-rotate(-8deg)',
+            galaxy:'hue-rotate(230deg) saturate(1.5) brightness(1.05)' }[THEME]||'';
+  cv.style.filter=f;
+  const fx=document.getElementById('fx');
+  fx.className = THEME==='cartoon'?'fx-comic':THEME==='neon'?'fx-neon':THEME==='sunset'?'fx-sunset':THEME==='galaxy'?'fx-galaxy':'';
+}
+applyTheme();
+
 function X(u){ return u*SC; }                 // field-units -> px
 function fx(f){ return f*CW; }                 // field-fraction x -> px
 function fy(f){ return f*CH; }                 // field-fraction y -> px

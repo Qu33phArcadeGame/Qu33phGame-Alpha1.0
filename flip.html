@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Qu33ph Flip</title>
+<style>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#000; }
+  #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #stage{ position:relative; }
+  #game{ display:block; }
+  #fx{ position:absolute; inset:0; pointer-events:none; z-index:2; }
+  #fx.fx-comic{ background-image:radial-gradient(circle, rgba(0,0,0,0.45) 1.7px, transparent 2.0px); background-size:8px 8px; mix-blend-mode:multiply; }
+  #fx.fx-neon{ box-shadow: inset 0 0 60px rgba(40,255,130,0.55), inset 0 0 20px rgba(40,255,130,0.55); }
+  #fx.fx-sunset{ box-shadow: inset 0 0 58px rgba(255,180,45,0.5); }
+  #fx.fx-galaxy{ box-shadow: inset 0 0 58px rgba(150,90,255,0.5); background-image:radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1.5px); background-size:26px 26px; mix-blend-mode:screen; animation:twk 1.6s steps(2) infinite; }
+  @keyframes twk{ 0%,100%{opacity:0.4;} 50%{opacity:0.95;} }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage"><canvas id="game"></canvas><div id="fx"></div></div></div>
+<script>
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+
+// ─── assets ───────────────────────────────────────────────────────────────
+function IMG(src){ const i=new Image(); i.src=src; return i; }
+function ready(im){ return im && im.complete && im.naturalWidth>0; }
+const MARKER = IMG(THEME==='cartoon' ? 'blueC.png' : 'blue.png');   // comic theme flips the comic marker
+const CHAIR  = IMG('Chair.png');
+// themed zones — the endless run rolls through these so the scenery keeps changing
+const ZONES=[
+  { name:'QU33PH', bg:IMG('fidgetqu33phfield.png'), accent:'#3a7bff', deck:'#141a2e' },
+  { name:'NEON',   bg:IMG('fidgetneonfield.png'),   accent:'#28ff82', deck:'#07200f' },
+  { name:'COMIC',  bg:IMG('fidgetcomicfield.png'),  accent:'#e8e8e8', deck:'#191919' },
+  { name:'SUNSET', bg:IMG('fidgetgoldenfield.png'), accent:'#ffb020', deck:'#2a1706' },
+  { name:'GALAXY', bg:IMG('fidgetgalaxyfield.png'), accent:'#9a6bff', deck:'#170c2b' }
+];
+// playing-field art reused as platform surfaces
+const TEX=[ IMG('originalfield.png'), IMG('skeefield.png'), IMG('platformeroverlay.png') ];
+
+// ─── canvas ───────────────────────────────────────────────────────────────
+let CW=0,CH=0,DPR=1;
+function sz(){
+  const r=document.getElementById('wrap').getBoundingClientRect();
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  const cw=r.width, ch=r.height;
+  cv.style.width=cw+'px'; cv.style.height=ch+'px';
+  const st=document.getElementById('stage'); st.style.width=cw+'px'; st.style.height=ch+'px';
+  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH;
+}
+sz();
+function applyTheme(){
+  const f={ cartoon:'grayscale(1) contrast(1.18)',
+            neon:'hue-rotate(95deg) saturate(2) brightness(1.12)',
+            sunset:'sepia(0.5) saturate(1.6) brightness(1.2) hue-rotate(-8deg)',
+            galaxy:'hue-rotate(230deg) saturate(1.5) brightness(1.05)' }[THEME]||'';
+  cv.style.filter=f;
+  document.getElementById('fx').className =
+    THEME==='cartoon'?'fx-comic':THEME==='neon'?'fx-neon':THEME==='sunset'?'fx-sunset':THEME==='galaxy'?'fx-galaxy':'';
+}
+applyTheme();
+
+// ─── world ────────────────────────────────────────────────────────────────
+function G(){ return 0.0018*CH; }
+function MH(){ return 0.085*CH; }              // marker height standing on its cap
+function chairH(){ return CH*0.105; }
+function chairW(){ return ready(CHAIR) ? chairH()*(CHAIR.naturalWidth/CHAIR.naturalHeight) : CH*0.085; }
+function rnd(a,b){ return a+Math.random()*(b-a); }
+
+let plats, marker, camX, score, best, combo, state, charge, charging, popups, zoneIdx, zoneLeft, banner, settle;
+try{ best=parseInt(localStorage.getItem('qu33phFlipBest')||'0',10)||0; }catch(e){ best=0; }
+
+function nextZone(){
+  zoneIdx=(zoneIdx + 1 + Math.floor(Math.random()*(ZONES.length-1))) % ZONES.length;  // never repeat back to back
+  zoneLeft=6+Math.floor(Math.random()*4);
+}
+function addPlatform(){
+  const last=plats[plats.length-1], n=plats.length;
+  const d=Math.min(1, n/30);                                  // difficulty ramp
+  if(zoneLeft<=0) nextZone();
+  zoneLeft--;
+  const w   = rnd(0.26,0.36)*CW - d*0.08*CW;                  // pads narrow as you go
+  const gap = rnd(0.14,0.22)*CW + d*0.10*CW;                  // gaps widen
+  const x   = last ? last.x+last.w+gap : CW*0.06;
+  let   y   = last ? last.y + rnd(-0.05,0.05)*CH : CH*0.70;
+  y = Math.max(CH*0.48, Math.min(CH*0.80, y));
+  const uneven = n>4 && Math.random() < (0.10+d*0.20);        // tip-over ground
+  const chair  = !uneven && n>3 && Math.random() < 0.16;      // launch pad
+  plats.push({ x,y,w,uneven,chair, chairHit:false, zone:zoneIdx, tex:(Math.random()*TEX.length)|0, seed:Math.random() });
+}
+function reset(){
+  plats=[]; zoneIdx=0; zoneLeft=8; camX=0; score=0; combo=0; popups=[]; banner=0; settle=0;
+  plats.push({ x:CW*0.06, y:CH*0.70, w:CW*0.42, uneven:false, chair:false, chairHit:false, zone:0, tex:0, seed:0.3 });
+  for(let i=0;i<9;i++) addPlatform();
+  marker={ x:plats[0].x+plats[0].w*0.5, y:plats[0].y, vx:0, vy:0, rot:0, spin:0, pIdx:0, skipTo:-1 };
+  state='ready'; charge=0; charging=false;
+}
+reset();
+
+// ─── input: hold to charge, release to flip ───────────────────────────────
+cv.addEventListener('pointerdown', e=>{
+  if(e&&e.cancelable) e.preventDefault();
+  if(state==='over'){ reset(); return; }
+  if(state!=='ready') return;
+  charging=true; charge=0;
+});
+window.addEventListener('pointerup', ()=>{
+  if(!charging) return; charging=false;
+  if(state!=='ready') return;
+  flip(Math.max(0.10, charge));
+});
+
+function flip(p){
+  marker.vx = (0.008 + p*0.014)*CW;
+  marker.vy = -(0.026 + p*0.012)*CH;
+  const T   = 2*Math.abs(marker.vy)/G();
+  marker.spin = (Math.PI*2*(1+Math.round(p*2)))/T;   // 1–3 whole flips
+  marker.rot  = 0;
+  state='flying';
+}
+function chairLaunch(p){
+  const idx=plats.indexOf(p);
+  let target=idx+3+((Math.random()*3)|0);
+  while(plats.length<=target+9) addPlatform();
+  const t=plats[target]; t.uneven=false; t.chair=false;      // guarantee a clean landing pad
+  const g=G(), dy=t.y-marker.y;
+  marker.vy=-0.044*CH;
+  const T=(-marker.vy+Math.sqrt(Math.max(0.0001, marker.vy*marker.vy+2*g*dy)))/g;
+  marker.vx=((t.x+t.w*0.5)-marker.x)/T;
+  marker.spin=(Math.PI*2*4)/T;
+  marker.skipTo=target;
+  state='boost';
+  popups.push({x:marker.x, y:marker.y-MH()*1.4, txt:'CHAIR LAUNCH!', life:64, col:'#ff5a5a', big:true});
+}
+function land(p){
+  marker.y=p.y; marker.vx=0; marker.vy=0; marker.rot=0; marker.skipTo=-1;
+  if(p.uneven){ tipOver(); return; }                          // uneven ground = it topples
+  const idx=plats.indexOf(p);
+  const skipped=Math.max(0, idx-marker.pIdx-1);
+  marker.pIdx=idx; combo++;
+  const pts = 10 + skipped*15 + Math.min(10,combo)*2;
+  score += pts;
+  popups.push({x:marker.x, y:p.y-MH()*1.3, txt:'+'+pts, life:44, col:'#8fd0ff'});
+  if(skipped>0) popups.push({x:marker.x, y:p.y-MH()*1.9, txt:'SKIPPED '+skipped, life:52, col:'#ffd24a'});
+  else if(combo>2) popups.push({x:marker.x, y:p.y-MH()*1.9, txt:'x'+combo, life:40, col:'#7bff9a'});
+  state='ready'; charge=0; settle=9;
+  while(plats.length < marker.pIdx+10) addPlatform();
+}
+function tipOver(){ state='tip'; marker.tipT=0; }
+function gameOver(reason){
+  state='over'; marker.reason=reason; combo=0;
+  if(score>best){ best=score; try{ localStorage.setItem('qu33phFlipBest',best); }catch(e){} }
+}
+
+// ─── step ─────────────────────────────────────────────────────────────────
+function step(){
+  if(banner>0) banner--;
+  if(settle>0) settle--;
+  if(charging && state==='ready') charge=Math.min(1, charge+0.022);
+
+  if(state==='tip'){
+    marker.tipT++; marker.rot += 0.11;
+    if(marker.tipT>26) gameOver('UNEVEN GROUND');
+    return;
+  }
+  if(state==='flying' || state==='boost'){
+    const g=G(), prevY=marker.y;
+    marker.x+=marker.vx; marker.vy+=g; marker.y+=marker.vy; marker.rot+=marker.spin;
+
+    if(state==='flying'){                                     // chair hit sends you sailing ahead
+      const cw=chairW(), chh=chairH();
+      for(const p of plats){
+        if(!p.chair || p.chairHit) continue;
+        const cx=p.x+p.w*0.5;
+        if(marker.x>cx-cw*0.5 && marker.x<cx+cw*0.5 && marker.y>p.y-chh && marker.y<p.y+MH()*0.25){
+          p.chairHit=true; chairLaunch(p); break;
+        }
+      }
+    }
+    if(marker.vy>0){                                          // only land while falling
+      const list = (state==='boost') ? [plats[marker.skipTo]] : plats;
+      for(const p of list){
+        if(!p) continue;
+        if(marker.x>=p.x && marker.x<=p.x+p.w && prevY<=p.y && marker.y>=p.y){ land(p); break; }
+      }
+    }
+    if(marker.y > CH*1.25) gameOver('OFF THE EDGE');
+  }
+  const tc=marker.x-CW*0.30;
+  camX += (tc-camX)*0.12; if(camX<0) camX=0;
+  for(let i=popups.length-1;i>=0;i--){ const q=popups[i]; q.life--; q.y-=CH*0.0012; if(q.life<=0) popups.splice(i,1); }
+}
+
+// ─── draw ─────────────────────────────────────────────────────────────────
+let lastZone=-1;
+function curZone(){
+  const wx=camX+CW*0.4;
+  for(const p of plats){ if(wx>=p.x-CW*0.2 && wx<=p.x+p.w+CW*0.2) return p.zone; }
+  const p=plats[marker.pIdx]; return p?p.zone:0;
+}
+function drawBG(z){
+  ctx.fillStyle=z.deck; ctx.fillRect(0,0,CW,CH);
+  if(ready(z.bg)){
+    const ar=z.bg.naturalWidth/z.bg.naturalHeight, bh=CH, bw=Math.max(1,bh*ar);
+    const off=-((camX*0.22)%bw);
+    ctx.globalAlpha=0.5;
+    for(let x=off-bw; x<CW+bw; x+=bw) ctx.drawImage(z.bg, x, 0, bw, bh);
+    ctx.globalAlpha=1;
+  }
+  const gr=ctx.createLinearGradient(0,0,0,CH);
+  gr.addColorStop(0,'rgba(0,0,0,0.58)'); gr.addColorStop(0.55,'rgba(0,0,0,0.22)'); gr.addColorStop(1,'rgba(0,0,0,0.78)');
+  ctx.fillStyle=gr; ctx.fillRect(0,0,CW,CH);
+}
+function drawPlat(p){
+  const sx=p.x-camX;
+  if(sx>CW+60 || sx+p.w<-60) return;
+  const z=ZONES[p.zone], h=CH*0.34, tex=TEX[p.tex];
+  ctx.save();
+  ctx.beginPath(); ctx.rect(sx,p.y,p.w,h); ctx.clip();
+  if(ready(tex)){
+    const sw=tex.naturalWidth*0.45, sh=tex.naturalHeight*0.30;
+    ctx.globalAlpha=0.85;
+    ctx.drawImage(tex, p.seed*(tex.naturalWidth-sw), p.seed*(tex.naturalHeight-sh), sw, sh, sx, p.y, p.w, h);
+    ctx.globalAlpha=1;
+  } else { ctx.fillStyle=z.deck; ctx.fillRect(sx,p.y,p.w,h); }
+  const g2=ctx.createLinearGradient(0,p.y,0,p.y+h);
+  g2.addColorStop(0,'rgba(0,0,0,0.12)'); g2.addColorStop(1,'rgba(0,0,0,0.92)');
+  ctx.fillStyle=g2; ctx.fillRect(sx,p.y,p.w,h);
+  ctx.restore();
+
+  if(p.uneven){                                               // jagged = don't land here
+    ctx.save(); ctx.strokeStyle='#ff4d4d'; ctx.lineWidth=Math.max(2,CH*0.005); ctx.beginPath();
+    const teeth=Math.max(4, Math.round(p.w/(CW*0.05)));
+    for(let i=0;i<=teeth;i++){
+      const px=sx+p.w*i/teeth, py=p.y+((i%2)?-CH*0.014:0);
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke(); ctx.restore();
+  } else {
+    ctx.fillStyle=z.accent; ctx.fillRect(sx,p.y-CH*0.004,p.w,CH*0.004);
+    ctx.globalAlpha=0.3; ctx.fillRect(sx,p.y-CH*0.011,p.w,CH*0.007); ctx.globalAlpha=1;
+  }
+  if(p.chair && !p.chairHit){
+    const w=chairW(), h2=chairH(), cx=p.x+p.w*0.5-camX;
+    if(ready(CHAIR)) ctx.drawImage(CHAIR, cx-w/2, p.y-h2, w, h2);
+    else { ctx.fillStyle='#d62424'; ctx.fillRect(cx-w/2, p.y-h2, w, h2); }
+  }
+}
+function drawMarker(){
+  const mh=MH(), sq=settle>0?(1+settle*0.012):1;
+  const cx=marker.x-camX, cy=marker.y-mh/2;
+  if(state==='ready'||state==='tip'){                          // contact shadow
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath();
+    ctx.ellipse(cx, marker.y+CH*0.004, mh*0.20, mh*0.05, 0, 0, 7); ctx.fill();
+  }
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(-Math.PI/2 + marker.rot); ctx.scale(1/sq, sq);
+  if(ready(MARKER)){
+    const ar=MARKER.naturalWidth/MARKER.naturalHeight;
+    ctx.drawImage(MARKER, -mh/2, -(mh/ar)/2, mh, mh/ar);
+  } else { ctx.fillStyle='#3a7bff'; ctx.fillRect(-mh/2,-mh*0.09,mh,mh*0.18); }
+  ctx.restore();
+}
+function drawAim(){
+  if(!(charging && state==='ready')) return;
+  const g=G(), p=Math.max(0.10,charge);
+  let vx=(0.008+p*0.014)*CW, vy=-(0.026+p*0.012)*CH, x=marker.x, y=marker.y;
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  for(let i=0;i<80;i++){
+    x+=vx; vy+=g; y+=vy;
+    if(i%5===0){ ctx.beginPath(); ctx.arc(x-camX, y, Math.max(1.5,CH*0.0035), 0, 7); ctx.fill(); }
+    if(y>CH*1.1) break;
+  }
+}
+function drawHUD(z){
+  const f=Math.round(CH*0.026);
+  ctx.textBaseline='top'; ctx.font='bold '+f+'px Helvetica';
+  ctx.textAlign='left';  ctx.fillStyle='#fff';    ctx.fillText(score, CH*0.014, CH*0.014);
+  ctx.textAlign='right'; ctx.fillStyle='#ffd700'; ctx.fillText('BEST '+best, CW-CH*0.014, CH*0.014);
+  ctx.textAlign='center'; ctx.fillStyle=z.accent;
+  ctx.font='bold '+Math.round(CH*0.018)+'px Helvetica';
+  ctx.fillText(z.name, CW/2, CH*0.016);
+  if(combo>2){ ctx.fillStyle='#7bff9a'; ctx.fillText('COMBO x'+combo, CW/2, CH*0.042); }
+
+  if(charging && state==='ready'){                             // power meter
+    const bw=CW*0.5, bh=CH*0.012, bx=(CW-bw)/2, by=CH*0.93;
+    ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=z.accent; ctx.fillRect(bx,by,bw*charge,bh);
+  } else if(state==='ready'){
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.019)+'px Helvetica';
+    ctx.fillText('hold to charge \u2014 release to flip', CW/2, CH*0.925);
+  }
+  for(const q of popups){
+    ctx.globalAlpha=Math.max(0,q.life/50);
+    ctx.fillStyle=q.col; ctx.textAlign='center';
+    ctx.font='bold '+Math.round(CH*(q.big?0.030:0.024))+'px Helvetica';
+    ctx.strokeStyle='rgba(0,0,0,0.65)'; ctx.lineWidth=Math.max(2,CH*0.003);
+    ctx.strokeText(q.txt, q.x-camX, q.y); ctx.fillText(q.txt, q.x-camX, q.y);
+    ctx.globalAlpha=1;
+  }
+  if(banner>0){
+    ctx.globalAlpha=Math.min(1, banner/28); ctx.textAlign='center';
+    ctx.fillStyle=z.accent; ctx.font='bold '+Math.round(CH*0.038)+'px Helvetica';
+    ctx.fillText(z.name+' ZONE', CW/2, CH*0.30); ctx.globalAlpha=1;
+  }
+  if(state==='over'){
+    ctx.fillStyle='rgba(0,0,0,0.68)'; ctx.fillRect(0,0,CW,CH);
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillStyle='#e23b3b'; ctx.font='bold '+Math.round(CH*0.055)+'px Helvetica';
+    ctx.fillText('TIPPED OVER', CW/2, CH*0.42);
+    ctx.fillStyle='#aaa'; ctx.font='bold '+Math.round(CH*0.022)+'px Helvetica';
+    ctx.fillText(marker.reason||'', CW/2, CH*0.462);
+    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.040)+'px Helvetica';
+    ctx.fillText('SCORE '+score, CW/2, CH*0.53);
+    ctx.font='bold '+Math.round(CH*0.024)+'px Helvetica';
+    ctx.fillText('BEST '+best, CW/2, CH*0.572);
+    ctx.fillText('tap to flip again', CW/2, CH*0.635);
+    ctx.textBaseline='top';
+  }
+}
+function draw(){
+  ctx.setTransform(1,0,0,1,0,0);
+  const zi=curZone(), z=ZONES[zi];
+  if(zi!==lastZone){ if(lastZone!==-1) banner=70; lastZone=zi; }
+  drawBG(z);
+  for(const p of plats) drawPlat(p);
+  drawAim();
+  drawMarker();
+  drawHUD(z);
+}
+function loop(){ step(); draw(); requestAnimationFrame(loop); }
+window.addEventListener('resize', ()=>{
+  const ow=CW, oh=CH; sz();
+  if(Math.abs(CW-ow)>ow*0.12 || Math.abs(CH-oh)>oh*0.12) reset();   // ignore address-bar nudges
+});
+loop();
+</script>
+</body>
+</html>
