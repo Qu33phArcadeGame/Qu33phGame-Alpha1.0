@@ -36,6 +36,11 @@
   .lvl span{ position:relative; z-index:2; font-size:11px; font-weight:bold; color:#fff; text-shadow:0 0 5px #000,0 0 3px #000; padding-bottom:3px; }
   .lvl.locked{ filter:grayscale(1) brightness(0.35); cursor:default; }
   .lvl.locked span{ color:#777; }
+  .tut-row{ display:flex; align-items:center; gap:14px; width:min(320px,88vw); margin:7px 0;
+    font-size:12px; line-height:1.5; color:#ccc; letter-spacing:1px; }
+  .tut-row img{ width:42px; height:auto; flex:0 0 42px; transform:rotate(-90deg); }
+  .tut-row .jag{ flex:0 0 42px; height:14px; background:
+    repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
   .lvl-back{ background:none; border:0; color:#666; font-family:Helvetica,Arial,sans-serif; font-size:11px;
     letter-spacing:2px; padding:6px 10px; cursor:pointer; }
 </style>
@@ -54,6 +59,15 @@
     <h1 style="font-size:22px;">SELECT LEVEL</h1><div class="sub" id="lvlSub"></div>
     <div id="levelGrid"></div>
     <button class="lvl-back" id="bLvlBack">&lsaquo; MODES</button>
+  </div>
+  <div id="tutOvl" class="ovl">
+    <h1 style="font-size:22px;">LEVEL RULES</h1>
+    <div class="tut-row"><img src="green.png" alt=""><div><b style="color:#7bff9a;">GREEN MARKER</b><br>land on it &mdash; bonus points</div></div>
+    <div class="tut-row"><img src="red.png" alt=""><div><b style="color:#ff5a5a;">RED MARKER</b><br>blocked &mdash; flip straight over it</div></div>
+    <div class="tut-row"><span class="jag"></span><div><b style="color:#ff4d4d;">RED JAGGED GROUND</b><br>uneven &mdash; it tips you over</div></div>
+    <div class="tut-row"><img src="Chair.png" alt=""><div><b style="color:#ff5a5a;">RED CHAIR</b><br>launches you far ahead</div></div>
+    <div class="sub" style="margin-top:14px;">reach the last platform to clear the level</div>
+    <button class="mk-btn" id="bTut">GOT IT</button>
   </div>
   <div id="overOvl" class="ovl">
     <h1 id="ovTitle" style="font-size:26px;color:#e23b3b;">TIPPED OVER</h1>
@@ -269,11 +283,18 @@ function startRun(){
 const $=id=>document.getElementById(id);
 function show(id,on){ $(id).classList.toggle('on',on); }
 function toMenu(){ state='menu'; show('menu',true); show('levelSel',false); show('overOvl',false); }
+function tutSeen(){ try{ return localStorage.getItem('qu33phFlipTut')==='1'; }catch(e){ return false; } }
 function startMode(m){
   mode=m; show('menu',false); show('levelSel',false); show('overOvl',false);
+  if(m==='levels' && !tutSeen()){ show('tutOvl',true); state='menu'; return; }   // rules first
+  reallyStart(m);
+}
+function reallyStart(m){
+  show('tutOvl',false);
   if(m==='levels') buildLevel(levelIdx); else buildEndless();
   startRun();
 }
+$('bTut').onclick=()=>{ try{ localStorage.setItem('qu33phFlipTut','1'); }catch(e){} reallyStart('levels'); };
 function buildGrid(){
   const g=$('levelGrid'); g.innerHTML='';
   const done=levelsDone();

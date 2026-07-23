@@ -113,20 +113,20 @@ const R_CHAIR=0.115;
 const ROW_GAP=R_COIN*2+0.008, ROW_START=0.525;
 
 let items, coins, markers, queue, cycle, tLeft, tTotal, state, pz, pzPrev, pzPhase,
-    dragU, dropping, chairOn, chairT, popups, best, paid;
+    dragU, dropping, chairOn, chairT, popups, best, paid, refillT;
 try{ best=parseInt(localStorage.getItem('qu33phDozerBest')||'0',10)||0; }catch(e){ best=0; }
 function rnd(a,b){ return a+Math.random()*(b-a); }
 
-function newCoin(u,v){ return {kind:'coin',u,v,rad:R_COIN,h:0,rot:0,du:0,dv:0,spin:0,col:0}; }
+function newCoin(u,v){ return {kind:'coin',u,v,rad:R_COIN,h:0,rot:0,du:0,dv:0,spin:0,col:0,shelf:false,drop:0}; }
 function newMarker(u,v,col,rot){ return {kind:'marker',u,v,rad:MK_RAD,h:MK_H,
-  rot:(rot===undefined?rnd(0,Math.PI):rot),du:0,dv:0,spin:0,col:col}; }
+  rot:(rot===undefined?rnd(0,Math.PI):rot),du:0,dv:0,spin:0,col:col,shelf:false,drop:0}; }
 // markers arrive in RED, GREEN, BLUE order and keep cycling
 function grant(n){ for(let i=0;i<n;i++){ queue.push(cycle%3); cycle++; } markers=queue.length; }
 
 function reset(total){
   items=[]; coins=0; queue=[]; cycle=0; grant(3);
   tTotal=total||60; tLeft=tTotal; pz=PZ_MIN; pzPrev=PZ_MIN; pzPhase=0;
-  dragU=0.5; dropping=null; chairOn=false; chairT=0; popups=[]; paid=false;
+  dragU=0.5; dropping=null; chairOn=false; chairT=0; popups=[]; paid=false; refillT=0;
   // dense bed of coins packed just beyond the pusher's own reach
   for(let v=ROW_START, r=0; v<=0.94; v+=ROW_GAP, r++){
     const n=(r%2===0)?9:8, off=(r%2===0)?0:(0.84/16);
@@ -179,6 +179,7 @@ function separate(){
     const a=items[i];
     for(let j=i+1;j<items.length;j++){
       const b=items[j];
+      if(a.shelf!==b.shelf) continue;                   // different heights: shelf vs field
       const cp=closestPair(a,b);
       let dx=cp[2]-cp[0], dy=cp[3]-cp[1];
       const min=a.rad+b.rad, d2=dx*dx+dy*dy;
@@ -195,7 +196,7 @@ function separate(){
       if(a.h>0) a.spin += ((cp[0]-a.u)*(-ny)-(cp[1]-a.v)*(-nx))*1.4;   // off-centre hits spin markers
       if(b.h>0) b.spin += ((cp[2]-b.u)*(ny)-(cp[3]-b.v)*(nx))*1.4;
     }
-    if(chairOn){
+    if(chairOn && !a.shelf){
       const cp=closestPair(a,{u:0.5,v:0.5,h:0,rad:0});
       let dx=cp[0]-0.5, dy=cp[1]-0.5;
       const min=a.rad+R_CHAIR, d2=dx*dx+dy*dy;
@@ -225,6 +226,10 @@ function step(dt){
   if(chairOn&&chairT<1) chairT=Math.min(1,chairT+dt*2.2);
   if(tLeft<=0){ tLeft=0; endGame(); return; }
 
+  if(refillT<=0){                                        // field running dry -> tip in a new load
+    let nc=0; for(const a of items) if(a.kind==='coin') nc++;
+    if(nc<5) doRefill();
+  }
   pzPhase+=dt*1.55; pzPrev=pz;
   pz=PZ_MIN+(PZ_MAX-PZ_MIN)*(0.5-0.5*Math.cos(pzPhase));
   const pSpeed=Math.max(0,pz-pzPrev);
@@ -232,19 +237,30 @@ function step(dt){
   if(dropping){
     dropping.t+=dt*2.6;
     if(dropping.t>=1){
-      items.push(newMarker(dropping.u, MK_RAD*1.2+MK_H*0.2, dropping.col, dropping.rot));
-      dropping=null; updateBuy();
+      const landV=MK_RAD*1.2+MK_H*0.2;
+      const m=newMarker(dropping.u, landV, dropping.col, dropping.rot);
+      m.shelf=(landV<pz);                               // caught on the extended shelf
+      items.push(m); dropping=null; updateBuy();
     }
   }
+  const dpz=pz-pzPrev;
   for(const a of items){
     a.u+=a.du; a.v+=a.dv; a.du*=0.90; a.dv*=0.90;
     if(a.h>0){ a.rot+=a.spin; a.spin*=0.88; }
-    const bv=backV(a);
-    if(bv<pz){ a.v+=(pz-bv); a.dv=Math.max(a.dv,pSpeed*1.7); }   // the face drives it forward
+    if(a.shelf){
+      if(dpz>0) a.v+=dpz;                               // riding the shelf out
+      if(a.v>pz){ a.shelf=false; a.drop=1; a.dv=Math.max(a.dv,0.003); }  // shelf pulled out from under it
+    } else {
+      const bv=backV(a);
+      if(bv<pz){ a.v+=(pz-bv); a.dv=Math.max(a.dv,pSpeed*1.7); }         // the face drives it forward
+    }
+    if(a.drop>0) a.drop=Math.max(0,a.drop-dt*3.2);
   }
   for(let k=0;k<4;k++) separate();
+  if(refillT>0){ refillT-=dt; for(const a of items) if(a.v>0.97) a.v=0.97; }
   for(let i=items.length-1;i>=0;i--){
     const a=items[i];
+    if(a.shelf || refillT>0) continue;
     if(a.v > 1-a.rad*0.30){                                       // tips once its centre clears the ledge
       items.splice(i,1);
       if(a.kind==='coin'){ coins++; popups.push({txt:'+1',life:38,col:'#ffd700',u:a.u}); }
@@ -253,6 +269,18 @@ function step(dt){
     }
   }
   for(let i=popups.length-1;i>=0;i--){ popups[i].life--; if(popups[i].life<=0) popups.splice(i,1); }
+}
+function doRefill(){
+  const n=50+((Math.random()*11)|0);                    // 50-60 coins tipped into the middle
+  for(let i=0;i<n;i++){
+    const u=Math.max(R_COIN,Math.min(1-R_COIN, 0.5+rnd(-0.24,0.24)));
+    const c=newCoin(u, 0.54+rnd(-0.12,0.14));
+    c.du=rnd(-0.014,0.014); c.dv=rnd(-0.012,0.016);     // they scatter off the chair and each other
+    c.drop=1;
+    items.push(c);
+  }
+  refillT=2.2;                                          // nothing tips over the ledge mid-drop
+  popups.push({txt:'COIN DROP!',life:90,col:'#ffd700',big:true});
 }
 function payout(){
   if(paid || coins<=0) return;
@@ -378,7 +406,9 @@ function drawMarkerAt(c,x,y,len,rot,col){
 function drawItems(c){
   const sorted=items.slice().sort((a,b)=>a.v-b.v);
   for(const a of sorted){
-    const s=bedScale(a.v), x=bedX(a.u,a.v), y=bedY(a.v);
+    const s=bedScale(a.v), x=bedX(a.u,a.v);
+    const lift=(a.shelf?1:(a.drop||0))*cabH*0.020*s;    // raised while it's up on the pusher
+    const y=bedY(a.v)-lift;
     c.save();
     if(a.kind==='coin'){
       const rad=a.rad*BEDW()*s*0.95;
@@ -429,12 +459,13 @@ function drawHUD(){
   const bar=cabY>CH*0.045;
   const hy=bar? Math.max(CH*0.008, cabY*0.5-CH*0.030) : CH*0.010;
   const pad=Math.max(CW*0.03, CH*0.012);
+  const hudL=Math.max(pad, 178*DPR);                    // clears the ← BACK button in the arcade frame
   ctx.textBaseline='top';
   ctx.textAlign='left';
   ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.026)+'px Helvetica';
-  ctx.fillText(coins+'  COINS', pad, hy);
+  ctx.fillText(coins+'  COINS', hudL, hy);
   ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-  ctx.fillText('MARKERS '+queue.length, pad, hy+CH*0.030);
+  ctx.fillText('MARKERS '+queue.length, hudL, hy+CH*0.030);
   ctx.textAlign='right';
   const t=Math.max(0,tLeft);
   ctx.fillStyle=t<=10?'#ff5a5a':'#fff'; ctx.font='bold '+Math.round(CH*0.026)+'px Helvetica';

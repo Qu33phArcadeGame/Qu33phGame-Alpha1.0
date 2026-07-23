@@ -9,11 +9,15 @@
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; }
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#0b0d14; }
   #game{ display:block; }
+  #orientBtn{ position:fixed; left:10px; bottom:14px; width:46px; height:46px; padding:0; border-radius:50%;
+    border:2px solid #666; background:rgba(18,18,22,0.85); display:flex; align-items:center;
+    justify-content:center; z-index:10; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
 <body>
 <div id="wrap"><canvas id="game"></canvas></div>
+<button id="orientBtn"><span id="orientIcon"></span></button>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default');
@@ -41,6 +45,26 @@ function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); 
 sz();
 
 let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, best=0, state='loading', overT=0;
+let SORIENT=null; try{ SORIENT=localStorage.getItem('qu33phStackOrient')||null; }catch(e){}
+function stackOrient(){ return SORIENT||'vertical'; }
+function baseAngle(){ return stackOrient()==='horizontal' ? Math.PI/2 : 0; }
+function halfSpan(){ return (cur&&cur.baseAngle)? ML*0.5 : MW*0.5; }
+function orientSvg(){
+  const v=stackOrient()==='vertical';
+  return '<svg width="28" height="28" viewBox="0 0 24 24">'
+   +'<path d="M19.5 11a7.5 7.5 0 1 0 -1 4.2" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round"/>'
+   +'<path d="M20 4.5v5h-5" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
+   +'<rect x="6.4" y="10.5" width="11.2" height="3" rx="1.5" fill="#7fddaa" transform="rotate('+(v?90:0)+' 12 12)"/></svg>';
+}
+function updOrientBtn(){ const e=document.getElementById('orientIcon'); if(e) e.innerHTML=orientSvg(); }
+document.getElementById('orientBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  SORIENT = stackOrient()==='vertical' ? 'horizontal' : 'vertical';
+  try{ localStorage.setItem('qu33phStackOrient',SORIENT); }catch(e2){}
+  updOrientBtn();
+  if(cur && !cur.dropped){ cur.baseAngle=baseAngle(); M.Body.setAngle(cur,cur.baseAngle); }
+});
+updOrientBtn();
 try{ best=parseInt(localStorage.getItem('qu33phStackBest')||'0',10)||0; }catch(e){}
 
 function boot(){
@@ -63,6 +87,7 @@ function spawn(){
   const y = topY - ML*1.4;
   const b=M.Bodies.rectangle(CW/2, y, MW, ML, { chamfer:{radius:MW*0.14}, friction:1.0, frictionStatic:3, frictionAir:0.03, restitution:0, density:0.004, slop:0.02, label:'marker' });
   b.color=color; b.held=false; b.dropped=false; b.settle=0;
+  b.baseAngle=baseAngle(); M.Body.setAngle(b,b.baseAngle);
   M.Body.setStatic(b,true);
   M.Composite.add(world,b); cur=b;
 }
@@ -73,17 +98,18 @@ let dragTarget=null;
 cv.addEventListener('pointerdown',e=>{
   if(state==='title'){ startGame(); return; }
   if(state==='over'){ if(overT<=0){ state='title'; } return; }
-  if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); dragTarget={x:Math.max(MW,Math.min(CW-MW,p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; }
+  if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); dragTarget={x:Math.max(halfSpan(),Math.min(CW-halfSpan(),p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; }
 });
-cv.addEventListener('pointermove',e=>{ if(state==='play'&&cur&&cur.held){ const p=pt(e); dragTarget={x:Math.max(MW,Math.min(CW-MW,p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; } });
+cv.addEventListener('pointermove',e=>{ if(state==='play'&&cur&&cur.held){ const p=pt(e); dragTarget={x:Math.max(halfSpan(),Math.min(CW-halfSpan(),p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; } });
 function release(){ if(state==='play'&&cur&&cur.held&&!cur.dropped){ cur.held=false; cur.dropped=true; M.Body.setStatic(cur,false); M.Body.setVelocity(cur,{x:0,y:0}); } }
 window.addEventListener('pointerup',release); window.addEventListener('pointercancel',release);
 
 function update(){
+  if(!engine || !M){ return; }                 // physics lib still loading (or blocked)
   if(state!=='play' && state!=='over'){ return; }
   if(state==='play' && cur && cur.held && dragTarget){
     const nx=cur.position.x+(dragTarget.x-cur.position.x)*0.16, ny=cur.position.y+(dragTarget.y-cur.position.y)*0.16;
-    M.Body.setPosition(cur,{x:nx,y:ny}); M.Body.setAngle(cur,0); M.Body.setVelocity(cur,{x:0,y:0}); M.Body.setAngularVelocity(cur,0);
+    M.Body.setPosition(cur,{x:nx,y:ny}); M.Body.setAngle(cur,cur.baseAngle||0); M.Body.setVelocity(cur,{x:0,y:0}); M.Body.setAngularVelocity(cur,0);
   }
   engine.gravity.y = (state==='over') ? 2.0 : 0.8;
   M.Engine.update(engine, 1000/60);
@@ -209,7 +235,7 @@ function draw(){
   drawBackground();
   const txt=TXT[THEME]||'#fff';
   if(state==='title'){ drawTitle(txt); return; }
-  if(state==='loading'){ ctx.fillStyle=txt; ctx.textAlign='center'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('loading…',CW/2,CH/2); return; }
+  if(state==='loading' || !plate){ ctx.fillStyle=txt; ctx.textAlign='center'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('loading…',CW/2,CH/2); return; }
   // ---- world (camera: vertical offset camY + zoom camScale about horizontal center) ----
   ctx.save();
   ctx.translate(CW/2, camY); ctx.scale(camScale, camScale); ctx.translate(-CW/2, 0);
@@ -238,7 +264,11 @@ function drawTitle(txt){
   ctx.fillStyle='#7fddaa'; ctx.font='bold '+Math.round(CW*0.04)+'px Helvetica'; ctx.fillText('BEST '+best,CW/2,CH*0.85);
   ctx.fillStyle=txt; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText('▶ TAP TO START',CW/2,CH*0.91);
 }
-function loop(){ update(); draw(); requestAnimationFrame(loop); }
+let obShown=null;
+function loop(){ update(); draw();
+  const showB=(state==='title'||state==='play');
+  if(showB!==obShown){ obShown=showB; document.getElementById('orientBtn').style.display=showB?'flex':'none'; }
+  requestAnimationFrame(loop); }
 window.addEventListener('resize',()=>{ sz(); });
 loop();
 </script>
