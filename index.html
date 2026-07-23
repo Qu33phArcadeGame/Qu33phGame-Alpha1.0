@@ -498,7 +498,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v316</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v318</div>
 
 <canvas id="game"></canvas>
 
@@ -556,7 +556,7 @@
     <div class="cab-card" id="cabFidget" onclick="launchFidget()"><img src="fidgetqu33phfield.png" onerror="this.style.opacity=0.2"><div class="cab-label">FIDGET QU33PH</div></div>
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
-    <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=316" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
+    <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
     <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
@@ -1116,6 +1116,19 @@ function addCoins(n){
   if(n>0){ coinsEarned+=n; try{localStorage.setItem("qu33phCoinsEarned",coinsEarned);}catch(e){} try{ trackAch("coins", n); }catch(e){} }
   else if(n<0){ coinsSpent+=(-n); try{localStorage.setItem("qu33phCoinsSpent",coinsSpent);}catch(e){} }
 }
+// games running in an iframe (e.g. Qu33ph Dozer) bank what you won into your coins
+window.addEventListener("message", function(ev){
+  try{
+    var d=ev.data;
+    if(!d || d.type!=="qu33phCoins") return;
+    var n=Math.round(Number(d.n));
+    if(!isFinite(n) || n<=0) return;
+    addCoins(Math.min(n,5000));
+    ["titleCoinCount","shopCoins","themeCoinsDisplay"].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.textContent=coins;
+    });
+  }catch(e){}
+});
 
 const coinImg = new Image();
 coinImg.src="coin.png";
@@ -4114,7 +4127,7 @@ let pfBestByMode={};
 (function(){ var mig=parseInt(localStorage.getItem("qu33phPfBest")||"0",10)||0;
   PF_MODES.forEach(function(m){ var v=parseInt(localStorage.getItem(pfBestKey(m.id))||"0",10)||0; if(m.id==="combo"&&mig>v)v=mig; pfBestByMode[m.id]=v; }); })();
 let pfBest=pfBestByMode["combo"]||0;
-let pfFlapEndless=false, pfFlapLastX=0, pfFlapBandY=0;
+let pfFlapEndless=false, pfFlapLastX=0, pfFlapBandY=0, pfFlapPipeN=0;
 let pfMove=0, pfJumpQ=false, pfActionQ=false;
 // horizontal (platformer) phase — kicks in after height 100
 let pfObstacles=[], pfCoinsWorld=[], pfCamX=0, pfCamY=0, pfDeco=[];
@@ -4169,9 +4182,9 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=318&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=316&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=318&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4182,9 +4195,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=316&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=318&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=316&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=318&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
@@ -4419,7 +4432,7 @@ function resetPlatformer(){
   pfStartX=startX; pfStartY=startY; pfBestX=startX; pfBestUp=startY-15; pfLastGroundY=startY-15; pfT=0;
   pfMega=null; pfFlight=false; pfZoom=1; pfZoomT=1; pfCycles=0; pfLastLaunchCycle=-99; pfMegaFlash=0;
   pfBouncing=false; pfBounceCombo=0; pfBounceFlash=0; pfNoMarkerUntilX=0; pfUpStart=8;
-  pfFlappy=false; pfFlappyFreeze=false; pfPipes=[]; pfFlappyPassed=0; pfFlappyHint=0; pfFlapEndless=false;
+  pfFlappy=false; pfFlappyFreeze=false; pfPipes=[]; pfFlappyPassed=0; pfFlappyHint=0; pfFlapEndless=false; pfFlapPipeN=0;
   pfCamX=pfPlayer.x-W*0.4; pfCamY=pfPlayer.y-H*0.55;
   for(var d=0;d<44;d++) pfDeco.push({x:Math.random(),y:Math.random(),z:0.3+Math.random()*0.7,r:0.6+Math.random()*1.6});
   if(pfMode==="flap"){
@@ -4643,7 +4656,7 @@ function pfFlapSpawnAhead(){
     pfFlapBandY += (Math.random()-0.5)*H*0.42;
     pfFlapBandY = Math.max(pfPlayer.y-H*0.55, Math.min(pfPlayer.y+H*0.55, pfFlapBandY));
     pfFlapLastX += gap;
-    var cy=pfFlapBandY, col=cols[pfPipes.length%3];
+    var cy=pfFlapBandY, col=cols[pfFlapPipeN%3]; pfFlapPipeN++;   // keeps cycling red/green/blue forever
     pfPipes.push({x:pfFlapLastX, w:pw, gapY:cy, gapH:gapH, passed:false, color:col});
     pfCoinsWorld.push({x:pfFlapLastX+pw*0.5, y:cy, got:false});
   }

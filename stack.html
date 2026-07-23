@@ -20,6 +20,12 @@ const THEME=(new URLSearchParams(location.search).get('theme')||'default');
 const MPREF=(THEME==='cartoon')?'comic':'stack';
 const IMG={}; ['red','green','blue'].forEach(k=>{ const im=new Image(); im.src=MPREF+k+'.png'; IMG[k]=im; });
 function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
+// infinite windowed backdrop — same art Qu33ph Jump and Flip use
+function LOAD(s){ const i=new Image(); i.src=s; return i; }
+const WIN_R=LOAD('window.png'), WIN_P=LOAD('windowP.png');
+const TREES_R=['tree1.png','tree2.png','tree3.png','tree4.png','tree5.png','tree6.png'].map(LOAD);
+const TREES_P=[LOAD('treeP.png')];
+const PIXELBG=(THEME==='cartoon'||THEME==='neon');
 const COLORS=['red','green','blue'], HEX={red:'#e23b3b',green:'#2fa84f',blue:'#3a63c8'};
 const BG={ 'default':['#141a2c','#0a0c14'], 'cartoon':['#ffffff','#efefef'], 'neon':['#14001e','#04000a'],
            'sunset':['#6a4410','#1e1004'], 'galaxy':['#0b0826','#02010a'] };
@@ -147,8 +153,42 @@ function drawPlate(){
   if(stroke){ ctx.shadowBlur=0; ctx.strokeStyle=stroke; ctx.lineWidth=Math.max(2,CW*0.008); ctx.stroke(); }
   ctx.restore();
 }
+// ---- infinite vertical backdrop: windows tile forever, trees drift past at depth ----
+function tileWindowsV(img,alpha,par){
+  if(!ready(img)||alpha<=0.01) return;
+  const iw=img.naturalWidth, ih=img.naturalHeight;
+  const s=Math.max(CW/iw,(CH*0.85)/ih), tw=iw*s, th=ih*s;
+  const off=(((camY*par)%th)+th)%th;
+  ctx.save(); ctx.globalAlpha=alpha;
+  for(let y=-th+off; y<CH+1; y+=th)
+    for(let x=0; x<CW+1; x+=tw) ctx.drawImage(img,x,y,tw,th);
+  ctx.restore();
+}
+function drawTreesV(){
+  const pool=(PIXELBG?TREES_P:TREES_R).filter(ready);
+  if(!pool.length) return;
+  const tileH=CH*1.7;
+  for(let i=0;i<8;i++){
+    const img=pool[i%pool.length];
+    const dep=0.30+((i*37)%60)/100;
+    const baseY=((i*53)%100)/100*tileH;
+    const y=((((baseY+camY*dep*0.30)%tileH)+tileH)%tileH)-tileH*0.12;
+    // keep the middle clear so the tower always reads against the wall
+    const side=(i%2)?1:0;
+    const x=CW*(side? 0.72+((i*29)%100)/100*0.24 : 0.04+((i*31)%100)/100*0.24);
+    const hh=CH*(0.15+dep*0.18), ww=hh*(img.naturalWidth/img.naturalHeight);
+    ctx.save(); ctx.globalAlpha=0.20+dep*0.22;
+    ctx.drawImage(img,x-ww/2,y-hh/2,ww,hh);
+    ctx.restore();
+  }
+}
 function drawBackground(){
   const bg=BG[THEME]||BG.default, g=ctx.createLinearGradient(0,0,0,CH); g.addColorStop(0,bg[0]); g.addColorStop(1,bg[1]); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
+  tileWindowsV(PIXELBG?WIN_P:WIN_R, THEME==='cartoon'?0.55:0.80, 0.16);
+  drawTreesV();
+  ctx.save();                                  // settle the backdrop back so the tower pops
+  ctx.fillStyle='rgba(0,0,0,'+(THEME==='cartoon'?0.06:0.30)+')'; ctx.fillRect(0,0,CW,CH);
+  ctx.restore();
   if(THEME==='cartoon'){                       // B&W Ben-Day dots
     const d=CW*0.03, r=d*0.26; ctx.fillStyle='rgba(20,20,20,0.5)';
     for(let gy=0; gy<CH+d; gy+=d){ const off=((Math.round(gy/d))%2)?d/2:0; for(let gx=off; gx<CW+d; gx+=d){ ctx.beginPath(); ctx.arc(gx,gy,r,0,7); ctx.fill(); } }

@@ -8,9 +8,8 @@
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff;
     touch-action:none; user-select:none; background:#000; }
-  #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
-  #stage{ position:relative; }
-  #game{ display:block; }
+  #wrap{ position:fixed; inset:0; }
+  #game{ display:block; position:absolute; inset:0; width:100%; height:100%; }
   .mk-btn{ position:relative; display:inline-flex; align-items:center; justify-content:center; background:#000; color:#fff;
     border:3px solid #fff; border-radius:4px 10px 10px 4px; padding:11px 20px; margin:9px 0 9px 26px;
     font-family:Helvetica,Arial,sans-serif; font-size:14px; font-weight:bold; letter-spacing:2px; cursor:pointer;
@@ -25,26 +24,32 @@
     justify-content:center; background:rgba(5,5,10,0.94); }
   .ovl.on{ display:flex; }
   .ovl h1{ font-size:28px; letter-spacing:6px; margin:0 0 4px; }
-  .ovl .sub{ font-size:12px; letter-spacing:3px; color:#888; margin-bottom:18px; text-align:center; }
-  #buyBtn{ position:absolute; left:50%; transform:translateX(-50%); bottom:12px; z-index:10; display:none;
+  .ovl .sub{ font-size:12px; letter-spacing:3px; color:#888; margin-bottom:18px; text-align:center; line-height:1.6; }
+  #buyBtn{ position:absolute; left:50%; transform:translateX(-50%); bottom:14px; z-index:10; display:none;
     width:min(260px,74vw); margin:0 0 0 26px; }
+  #orientBtn{ position:absolute; left:10px; bottom:14px; width:46px; height:46px; padding:0; border-radius:50%;
+    border:2px solid #666; background:rgba(18,18,22,0.85); display:none; align-items:center; justify-content:center; z-index:10; }
 </style>
 </head>
 <body>
-<div id="wrap"><div id="stage">
+<div id="wrap">
   <canvas id="game"></canvas>
   <button class="mk-btn" id="buyBtn">+3 MARKERS &middot; 10 COINS</button>
+  <button id="orientBtn"><span id="orientIcon"></span></button>
   <div id="menu" class="ovl on">
     <h1>QU33PH DOZER</h1>
-    <div class="sub">DROP MARKERS &middot; PUSH COINS OFF THE LEDGE<br>60 SECONDS</div>
-    <button class="mk-btn" id="bPlay">PLAY</button>
+    <div class="sub">DROP MARKERS &middot; PUSH COINS OFF THE LEDGE<br>PICK YOUR TIME</div>
+    <button class="mk-btn" id="b60">60 SECONDS</button>
+    <button class="mk-btn flip" id="b90">90 SECONDS</button>
+    <button class="mk-btn" id="b120">120 SECONDS</button>
   </div>
   <div id="overOvl" class="ovl">
     <h1 id="ovTitle" style="font-size:26px;color:#ffd700;">TIME UP</h1>
     <div class="sub" id="ovSub"></div>
     <button class="mk-btn" id="bAgain">PLAY AGAIN</button>
+    <button class="mk-btn flip" id="bMenu2">MENU</button>
   </div>
-</div></div>
+</div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');
@@ -55,172 +60,244 @@ const $=id=>document.getElementById(id);
 function IMG(s){ const i=new Image(); i.src=s; return i; }
 function ready(i){ return i && i.complete && i.naturalWidth>0; }
 const C=(THEME==='cartoon');
-const CAB   = IMG('dozerfield.png');
-const COIN  = IMG('coin.png');
-const CHAIR = IMG('Chair.png');
-const MKS   = [IMG(C?'blueC.png':'blue.png'), IMG(C?'redC.png':'red.png'), IMG(C?'greenC.png':'green.png')];
+const CAB=IMG('dozerfield.png'), COIN=IMG('coin.png'), CHAIR=IMG('Chair.png');
+// index 0 = RED, 1 = GREEN, 2 = BLUE — the order you receive them
+const MKS=[IMG(C?'redC.png':'red.png'), IMG(C?'greenC.png':'green.png'), IMG(C?'blueC.png':'blue.png')];
+const MK_FALLBACK=['#e23b3b','#3ecf5a','#4f7dff'];
 
 const TH={
-  'default':{name:'DEFAULT',     filter:'',                                            glow:null},
-  'cartoon':{name:'COMIC',       filter:'grayscale(1) contrast(1.2)',                  glow:null, benday:true},
-  'neon':   {name:'NEON',        filter:'saturate(1.6) brightness(1.08)',              glow:'#28ff82'},
-  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)',   glow:'#ffb020'},
-  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',            glow:'#9a6bff'}
+  'default':{name:'DEFAULT',     filter:'',                                          glow:null},
+  'cartoon':{name:'COMIC',       filter:'grayscale(1) contrast(1.2)',                glow:null, benday:true},
+  'neon':   {name:'NEON',        filter:'saturate(1.6) brightness(1.08)',            glow:'#28ff82'},
+  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020'},
+  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff'}
 }[THEME] || {name:'DEFAULT', filter:'', glow:null};
-const ACC = TH.glow || '#ffd700';
+const ACC=TH.glow||'#ffd700';
 const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
 
-// ─── canvas: the cabinet art is 2:3, fit it inside the viewport ───────────
-let CW=0,CH=0,DPR=1,AR=1024/1536;
+// ─── canvas fills the screen; the cabinet is letterboxed inside it, so the
+//     HUD can sit in the bar above the machine instead of over the marquee ──
+let CW=0,CH=0,DPR=1, cabX=0,cabY=0,cabW=0,cabH=0;
+const AR=1024/1536;
 function sz(){
   const r=$('wrap').getBoundingClientRect();
   DPR=Math.min(2,window.devicePixelRatio||1);
-  let cw=r.width, ch=r.height;
-  if(cw/ch > AR) cw=ch*AR; else ch=cw/AR;
-  cv.style.width=cw+'px'; cv.style.height=ch+'px';
-  const st=$('stage'); st.style.width=cw+'px'; st.style.height=ch+'px';
-  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; sc.width=CW; sc.height=CH;
+  CW=Math.round(r.width*DPR); CH=Math.round(r.height*DPR);
+  cv.width=CW; cv.height=CH; sc.width=CW; sc.height=CH;
+  const s=Math.min(CW/1024, CH/1536);
+  cabW=1024*s; cabH=1536*s; cabX=(CW-cabW)/2; cabY=(CH-cabH)/2;
 }
 sz();
+function CX(f){ return cabX+f*cabW; }
+function CY(f){ return cabY+f*cabH; }
 
 // ─── bed geometry, measured off the cabinet art ───────────────────────────
 const BED={ backY:0.455, frontY:0.862, backL:0.350, backR:0.650, frontL:0.205, frontR:0.775 };
 const SLOT={ y0:0.176, y1:0.211, x0:0.140, x1:0.860 };
-// field space: u across 0..1, v depth 0..1 (0 = back by the pusher, 1 = the ledge)
 function bedX(u,v){
   const l=BED.backL+(BED.frontL-BED.backL)*v, r=BED.backR+(BED.frontR-BED.backR)*v;
-  return (l+(r-l)*u)*CW;
+  return CX(l+(r-l)*u);
 }
-function bedY(v){ return (BED.backY+(BED.frontY-BED.backY)*v)*CH; }
-function bedScale(v){                                   // perspective: things grow toward the player
-  const wBack=BED.backR-BED.backL, w=(BED.backR-BED.backL)+((BED.frontR-BED.frontL)-(BED.backR-BED.backL))*v;
-  return w/wBack;
+function bedY(v){ return CY(BED.backY+(BED.frontY-BED.backY)*v); }
+function bedScale(v){
+  const wB=BED.backR-BED.backL;
+  return (wB+((BED.frontR-BED.frontL)-wB)*v)/wB;
 }
-const BEDW=()=> (BED.backR-BED.backL)*CW;               // reference width for radii
+const BEDW=()=> (BED.backR-BED.backL)*cabW;
 
-// ─── game state ───────────────────────────────────────────────────────────
-const GAME_TIME=60, CHAIR_AT=30, PZ_MIN=0.02, PZ_MAX=0.43;
-const R_COIN=0.046, R_MARK=0.078, R_CHAIR=0.110;
-let items, coins, markers, tLeft, state, pz, pzPrev, pzPhase, dragU, dropping, chairOn, chairT, popups, best;
+// ─── tuning ───────────────────────────────────────────────────────────────
+const CHAIR_AT=30, PZ_MIN=0.02, PZ_MAX=0.43;
+const R_COIN=0.050;                       // a touch bigger than before
+const MK_RAD=0.048, MK_H=0.062;           // markers are capsules: half-length MK_H, radius MK_RAD
+const R_CHAIR=0.115;
+const ROW_GAP=R_COIN*2+0.008, ROW_START=0.525;
+
+let items, coins, markers, queue, cycle, tLeft, tTotal, state, pz, pzPrev, pzPhase,
+    dragU, dropping, chairOn, chairT, popups, best, paid;
 try{ best=parseInt(localStorage.getItem('qu33phDozerBest')||'0',10)||0; }catch(e){ best=0; }
-
 function rnd(a,b){ return a+Math.random()*(b-a); }
-function newItem(kind,u,v){
-  return { kind, u, v, r:(kind==='coin'?R_COIN:R_MARK), du:0, dv:0,
-           rot:(kind==='coin'?0:rnd(-1,1)), mk:(Math.random()*3)|0, spin:0 };
-}
-function reset(){
-  items=[]; coins=0; markers=3; tLeft=GAME_TIME; pz=PZ_MIN; pzPrev=PZ_MIN; pzPhase=0;
-  dragU=0.5; dropping=null; chairOn=false; chairT=0; popups=[];
-  // A dense bed of coins packed in front of the pusher's reach — that's what makes a
-  // drop cascade all the way to the ledge instead of just nudging one coin.
-  const rows=[0.48,0.575,0.67,0.765,0.855,0.94];
-  for(let r=0;r<rows.length;r++){
-    const n = (r%2===0)?11:10, off=(r%2===0)?0:0.043;
+
+function newCoin(u,v){ return {kind:'coin',u,v,rad:R_COIN,h:0,rot:0,du:0,dv:0,spin:0,col:0}; }
+function newMarker(u,v,col,rot){ return {kind:'marker',u,v,rad:MK_RAD,h:MK_H,
+  rot:(rot===undefined?rnd(0,Math.PI):rot),du:0,dv:0,spin:0,col:col}; }
+// markers arrive in RED, GREEN, BLUE order and keep cycling
+function grant(n){ for(let i=0;i<n;i++){ queue.push(cycle%3); cycle++; } markers=queue.length; }
+
+function reset(total){
+  items=[]; coins=0; queue=[]; cycle=0; grant(3);
+  tTotal=total||60; tLeft=tTotal; pz=PZ_MIN; pzPrev=PZ_MIN; pzPhase=0;
+  dragU=0.5; dropping=null; chairOn=false; chairT=0; popups=[]; paid=false;
+  // dense bed of coins packed just beyond the pusher's own reach
+  for(let v=ROW_START, r=0; v<=0.94; v+=ROW_GAP, r++){
+    const n=(r%2===0)?9:8, off=(r%2===0)?0:(0.84/16);
     for(let i=0;i<n;i++){
-      const u=0.075+off+i*(0.85/(n-1||1));
-      items.push(newItem('coin', Math.max(R_COIN,Math.min(1-R_COIN,u+rnd(-0.012,0.012))), rows[r]+rnd(-0.010,0.010)));
+      const u=0.08+off+i*(0.84/(n-1||1));
+      items.push(newCoin(Math.max(R_COIN,Math.min(1-R_COIN,u+rnd(-0.010,0.010))), v+rnd(-0.008,0.008)));
     }
   }
-  for(let i=0;i<8;i++)                                    // markers already mixed into the pile
-    items.push(newItem('marker', rnd(0.15,0.85), rnd(0.55,0.84)));
-  for(let k=0;k<8;k++) separate();
-  items=items.filter(a=>a.v<=0.958);                      // nothing starts hanging over the ledge
+  for(let i=0;i<12;i++) items.push(newMarker(rnd(0.15,0.85), rnd(0.56,0.88), (Math.random()*3)|0));
+  // settle, then make sure nothing starts inside the pusher's own reach —
+  // otherwise the machine ratchets the pile forward and pays out while you idle
+  const minBack=PZ_MAX+0.025;
+  for(let pass=0; pass<3; pass++){
+    for(let k=0;k<6;k++) separate();
+    for(const a of items){ const bv=backV(a); if(bv<minBack) a.v+=(minBack-bv); }
+  }
+  items=items.filter(a=>a.v<=0.955);
   state='menu';
 }
-reset();
 
-// ─── physics ──────────────────────────────────────────────────────────────
+// ─── capsule collision: a coin is a point, a marker is a segment ──────────
+function ends(a){
+  if(a.h===0) return [a.u,a.v,a.u,a.v];
+  const dx=Math.cos(a.rot)*a.h, dy=Math.sin(a.rot)*a.h;
+  return [a.u-dx,a.v-dy,a.u+dx,a.v+dy];
+}
+function onSeg(px,py,x1,y1,x2,y2){
+  const dx=x2-x1, dy=y2-y1, L=dx*dx+dy*dy;
+  if(L<1e-12) return [x1,y1];
+  let t=((px-x1)*dx+(py-y1)*dy)/L; t=t<0?0:(t>1?1:t);
+  return [x1+dx*t, y1+dy*t];
+}
+function closestPair(a,b){
+  if(a.h===0&&b.h===0) return [a.u,a.v,b.u,b.v];
+  if(b.h===0){ const s=ends(a), p=onSeg(b.u,b.v,s[0],s[1],s[2],s[3]); return [p[0],p[1],b.u,b.v]; }
+  if(a.h===0){ const s=ends(b), p=onSeg(a.u,a.v,s[0],s[1],s[2],s[3]); return [a.u,a.v,p[0],p[1]]; }
+  const sa=ends(a), sb=ends(b);
+  let pa=[a.u,a.v], pb=[b.u,b.v];
+  for(let i=0;i<2;i++){
+    pa=onSeg(pb[0],pb[1],sa[0],sa[1],sa[2],sa[3]);
+    pb=onSeg(pa[0],pa[1],sb[0],sb[1],sb[2],sb[3]);
+  }
+  return [pa[0],pa[1],pb[0],pb[1]];
+}
+function uExtent(a){ return a.h===0 ? a.rad : Math.abs(Math.cos(a.rot))*a.h+a.rad; }
+function backV(a){ const s=ends(a); return Math.min(s[1],s[3])-a.rad; }
+
 function separate(){
   for(let i=0;i<items.length;i++){
     const a=items[i];
     for(let j=i+1;j<items.length;j++){
       const b=items[j];
-      let dx=b.u-a.u, dy=b.v-a.v;
-      const min=a.r+b.r;
-      let d2=dx*dx+dy*dy;
+      const cp=closestPair(a,b);
+      let dx=cp[2]-cp[0], dy=cp[3]-cp[1];
+      const min=a.rad+b.rad, d2=dx*dx+dy*dy;
       if(d2>=min*min || d2===0) continue;
       const d=Math.sqrt(d2);
-      if(min-d < 0.007) continue;                        // settled contact: don't let jitter ratchet the pile
-      const push=(min-d)*0.5;
-      const nx=dx/d, ny=dy/d;
+      if(min-d < 0.006) continue;                       // settled contact: no jitter ratchet
+      const push=(min-d)*0.5, nx=dx/d, ny=dy/d;
       a.u-=nx*push; a.v-=ny*push; b.u+=nx*push; b.v+=ny*push;
-      // momentum transfer — this is what makes one shove ripple down the pile to the ledge
-      const rel=(b.du-a.du)*nx + (b.dv-a.dv)*ny;
+      const rel=(b.du-a.du)*nx+(b.dv-a.dv)*ny;          // momentum carries the shove down the pile
       if(rel<0){
         const imp=-rel*0.48;
-        a.du-=nx*imp; a.dv-=ny*imp;
-        b.du+=nx*imp; b.dv+=ny*imp;
+        a.du-=nx*imp; a.dv-=ny*imp; b.du+=nx*imp; b.dv+=ny*imp;
       }
-      if(a.kind==='marker'){ a.spin+=push*2.5; } if(b.kind==='marker'){ b.spin-=push*2.5; }
+      if(a.h>0) a.spin += ((cp[0]-a.u)*(-ny)-(cp[1]-a.v)*(-nx))*1.4;   // off-centre hits spin markers
+      if(b.h>0) b.spin += ((cp[2]-b.u)*(ny)-(cp[3]-b.v)*(nx))*1.4;
     }
-    if(chairOn){                                          // the chair scatters whatever hits it
-      let dx=a.u-0.5, dy=a.v-0.5;
-      const min=a.r+R_CHAIR;
-      let d2=dx*dx+dy*dy;
+    if(chairOn){
+      const cp=closestPair(a,{u:0.5,v:0.5,h:0,rad:0});
+      let dx=cp[0]-0.5, dy=cp[1]-0.5;
+      const min=a.rad+R_CHAIR, d2=dx*dx+dy*dy;
       if(d2<min*min && d2>0){
-        const d=Math.sqrt(d2), nx=dx/d, ny=dy/d, push=(min-d);
-        a.u+=nx*push; a.v+=ny*push;
-        const kick = a.kind==='marker' ? 0.020 : 0.006;   // markers ping off at odd angles
-        const jitter = a.kind==='marker' ? rnd(-0.9,0.9) : rnd(-0.25,0.25);
-        a.du += (nx*Math.cos(jitter)-ny*Math.sin(jitter))*kick;
-        a.dv += (nx*Math.sin(jitter)+ny*Math.cos(jitter))*kick;
-        if(a.kind==='marker') a.spin += rnd(-0.35,0.35);
+        const d=Math.sqrt(d2), nx=dx/d, ny=dy/d;
+        a.u+=nx*(min-d); a.v+=ny*(min-d);
+        const kick=a.kind==='marker'?0.020:0.006;
+        const jit =a.kind==='marker'?rnd(-0.9,0.9):rnd(-0.25,0.25);
+        a.du+=(nx*Math.cos(jit)-ny*Math.sin(jit))*kick;
+        a.dv+=(nx*Math.sin(jit)+ny*Math.cos(jit))*kick;
+        if(a.kind==='marker') a.spin+=rnd(-0.35,0.35);
       }
     }
-    if(a.u<a.r) { a.u=a.r; a.du=Math.abs(a.du)*0.4; }     // side walls
-    if(a.u>1-a.r){ a.u=1-a.r; a.du=-Math.abs(a.du)*0.4; }
-    if(a.v<a.r*0.2) a.v=a.r*0.2;
+    const ex=uExtent(a);
+    if(a.u<ex){ a.u=ex; a.du=Math.abs(a.du)*0.4; }
+    if(a.u>1-ex){ a.u=1-ex; a.du=-Math.abs(a.du)*0.4; }
+    if(a.v<a.rad*0.2) a.v=a.rad*0.2;
   }
 }
+
+// ─── step ─────────────────────────────────────────────────────────────────
 function step(dt){
   if(state!=='play') return;
   tLeft-=dt;
-  if(!chairOn && tLeft<=GAME_TIME-CHAIR_AT){ chairOn=true; chairT=0;
+  if(!chairOn && tTotal-tLeft>=CHAIR_AT){ chairOn=true; chairT=0;
     popups.push({txt:'CHAIR DROPPED!',life:80,col:'#ff5a5a',big:true}); }
-  if(chairOn && chairT<1) chairT=Math.min(1,chairT+dt*2.2);
+  if(chairOn&&chairT<1) chairT=Math.min(1,chairT+dt*2.2);
   if(tLeft<=0){ tLeft=0; endGame(); return; }
 
-  pzPhase += dt*1.55;                                      // pusher sweeps in and out
-  pzPrev = pz;
-  pz = PZ_MIN + (PZ_MAX-PZ_MIN)*(0.5-0.5*Math.cos(pzPhase));
-  const pSpeed = Math.max(0, pz-pzPrev);                   // how hard the face is driving this frame
+  pzPhase+=dt*1.55; pzPrev=pz;
+  pz=PZ_MIN+(PZ_MAX-PZ_MIN)*(0.5-0.5*Math.cos(pzPhase));
+  const pSpeed=Math.max(0,pz-pzPrev);
 
-  if(dropping){                                            // marker falling from the slot into the bed
+  if(dropping){
     dropping.t+=dt*2.6;
-    if(dropping.t>=1){ const it=newItem('marker', dropping.u, R_MARK*1.1); it.spin=rnd(-0.3,0.3);
-      items.push(it); dropping=null; }
+    if(dropping.t>=1){
+      items.push(newMarker(dropping.u, MK_RAD*1.2+MK_H*0.2, dropping.col, dropping.rot));
+      dropping=null; updateBuy();
+    }
   }
   for(const a of items){
-    a.u+=a.du; a.v+=a.dv;
-    a.du*=0.90; a.dv*=0.90;
-    if(a.kind==='marker'){ a.rot+=a.spin; a.spin*=0.88; }
-    if(a.v-a.r < pz){ a.v = pz+a.r; a.dv=Math.max(a.dv, pSpeed*1.7); }  // the pusher face drives it forward
+    a.u+=a.du; a.v+=a.dv; a.du*=0.90; a.dv*=0.90;
+    if(a.h>0){ a.rot+=a.spin; a.spin*=0.88; }
+    const bv=backV(a);
+    if(bv<pz){ a.v+=(pz-bv); a.dv=Math.max(a.dv,pSpeed*1.7); }   // the face drives it forward
   }
   for(let k=0;k<4;k++) separate();
-  for(let i=items.length-1;i>=0;i--){                       // over the front ledge
+  for(let i=items.length-1;i>=0;i--){
     const a=items[i];
-    if(a.v > 1 - a.r*0.30){
+    if(a.v > 1-a.rad*0.30){                                       // tips once its centre clears the ledge
       items.splice(i,1);
       if(a.kind==='coin'){ coins++; popups.push({txt:'+1',life:38,col:'#ffd700',u:a.u}); }
-      else { markers++; popups.push({txt:'MARKER BACK',life:52,col:'#8fd0ff',u:a.u}); }
+      else { queue.push(a.col); markers=queue.length;             // you get that exact marker back
+             popups.push({txt:'MARKER BACK',life:52,col:'#8fd0ff',u:a.u}); updateBuy(); }
     }
   }
   for(let i=popups.length-1;i>=0;i--){ popups[i].life--; if(popups[i].life<=0) popups.splice(i,1); }
-  updateBuy();
+}
+function payout(){
+  if(paid || coins<=0) return;
+  paid=true;
+  try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'qu33phCoins',n:coins},'*'); }
+  catch(e){}
+  try{                                                            // fallback when run standalone
+    if(!window.parent || window.parent===window){
+      const cur=parseInt(localStorage.getItem('qu33phCoins')||'0',10)||0;
+      localStorage.setItem('qu33phCoins', cur+coins);
+    }
+  }catch(e){}
 }
 function endGame(){
   state='over';
   if(coins>best){ best=coins; try{ localStorage.setItem('qu33phDozerBest',best); }catch(e){} }
-  $('ovSub').textContent = coins+' COINS \u00b7 BEST '+best;
-  $('buyBtn').style.display='none';
+  payout();
+  $('ovSub').innerHTML = coins+' COINS &middot; BEST '+best+'<br>+'+coins+' ADDED TO YOUR COINS';
+  $('buyBtn').style.display='none'; $('orientBtn').style.display='none';
   $('overOvl').classList.add('on');
 }
+window.addEventListener('pagehide', payout);
 
-// ─── input: drag across the slot, release to drop ─────────────────────────
+// ─── orientation: how the marker lies when it lands ───────────────────────
+let ORIENT=null; try{ ORIENT=localStorage.getItem('qu33phDozerOrient')||null; }catch(e){}
+function curOrient(){ return ORIENT||'vertical'; }
+function dropRot(){ return curOrient()==='vertical' ? Math.PI/2 : 0; }   // vertical = along the push
+function orientIcon(){
+  const v=curOrient()==='vertical';
+  return '<svg width="28" height="28" viewBox="0 0 24 24">'
+   +'<path d="M19.5 11a7.5 7.5 0 1 0 -1 4.2" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round"/>'
+   +'<path d="M20 4.5v5h-5" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
+   +'<rect x="6.4" y="10.5" width="11.2" height="3" rx="1.5" fill="'+ACC+'" transform="rotate('+(v?90:0)+' 12 12)"/></svg>';
+}
+function updOrient(){ $('orientIcon').innerHTML=orientIcon(); }
+$('orientBtn').addEventListener('click',e=>{ e.stopPropagation();
+  ORIENT=curOrient()==='vertical'?'horizontal':'vertical';
+  try{ localStorage.setItem('qu33phDozerOrient',ORIENT); }catch(e2){}
+  updOrient(); });
+updOrient();
+
+// ─── input ────────────────────────────────────────────────────────────────
 function slotU(clientX){
   const r=cv.getBoundingClientRect();
-  const x=(clientX-r.left)/r.width;
+  const x=((clientX-r.left)*(CW/r.width)-cabX)/cabW;
   return Math.max(0,Math.min(1,(x-SLOT.x0)/(SLOT.x1-SLOT.x0)));
 }
 let pointing=false;
@@ -229,77 +306,90 @@ cv.addEventListener('pointerdown',e=>{
   if(state!=='play') return;
   pointing=true; dragU=slotU(e.clientX);
 });
-cv.addEventListener('pointermove',e=>{ if(pointing && state==='play') dragU=slotU(e.clientX); });
+cv.addEventListener('pointermove',e=>{ if(pointing&&state==='play') dragU=slotU(e.clientX); });
 window.addEventListener('pointerup',()=>{
   if(!pointing) return; pointing=false;
-  if(state!=='play' || markers<=0 || dropping) return;
-  markers--; dropping={u:dragU,t:0,mk:(Math.random()*3)|0};
+  if(state!=='play'||queue.length<=0||dropping) return;
+  const col=queue.shift(); markers=queue.length;
+  dropping={u:dragU,t:0,col:col,rot:dropRot()};
   updateBuy();
 });
 function updateBuy(){
-  const show = (state==='play' && markers<=0 && !dropping);
-  $('buyBtn').style.display = show?'inline-flex':'none';
-  $('buyBtn').disabled = coins<10;
-  $('buyBtn').textContent = coins>=10 ? '+3 MARKERS \u00b7 10 COINS' : 'NEED 10 COINS';
+  const show=(state==='play'&&queue.length<=0&&!dropping);
+  $('buyBtn').style.display=show?'inline-flex':'none';
+  $('buyBtn').disabled=coins<10;
+  $('buyBtn').textContent=coins>=10?'+3 MARKERS \u00b7 10 COINS':'NEED 10 COINS';
+  $('orientBtn').style.display=(state==='play')?'flex':'none';
 }
 $('buyBtn').onclick=e=>{ e.stopPropagation();
-  if(coins<10 || markers>0) return;
-  coins-=10; markers+=3; updateBuy();
+  if(coins<10||queue.length>0) return;
+  coins-=10; grant(3); updateBuy();
   popups.push({txt:'+3 MARKERS',life:60,col:'#7bff9a'});
 };
-$('bPlay').onclick =()=>{ reset(); state='play'; $('menu').classList.remove('on'); updateBuy(); };
-$('bAgain').onclick=()=>{ reset(); state='play'; $('overOvl').classList.remove('on'); updateBuy(); };
+function begin(total){ reset(total); state='play'; $('menu').classList.remove('on'); $('overOvl').classList.remove('on'); updateBuy(); }
+$('b60').onclick =()=>begin(60);
+$('b90').onclick =()=>begin(90);
+$('b120').onclick=()=>begin(120);
+$('bAgain').onclick=()=>begin(tTotal||60);
+$('bMenu2').onclick=()=>{ state='menu'; $('overOvl').classList.remove('on'); $('menu').classList.add('on');
+  $('buyBtn').style.display='none'; $('orientBtn').style.display='none'; };
 
 // ─── drawing ──────────────────────────────────────────────────────────────
-function glowOn(c){ if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.014; } }
+function glowOn(c){ if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=cabH*0.014; } }
 function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
 function drawPusher(c){
-  const faceV=pz;
-  const yTop=CH*0.405, yFace=bedY(faceV);
+  const yTop=CY(0.405), yFace=bedY(pz);
   const lT=bedX(0,0)-BEDW()*0.16, rT=bedX(1,0)+BEDW()*0.16;
-  const lF=bedX(0,faceV)-BEDW()*0.14*bedScale(faceV), rF=bedX(1,faceV)+BEDW()*0.14*bedScale(faceV);
+  const s=bedScale(pz);
+  const lF=bedX(0,pz)-BEDW()*0.14*s, rF=bedX(1,pz)+BEDW()*0.14*s;
   c.save();
   c.beginPath(); c.moveTo(lT,yTop); c.lineTo(rT,yTop); c.lineTo(rF,yFace); c.lineTo(lF,yFace); c.closePath();
   const g=c.createLinearGradient(0,yTop,0,yFace);
   g.addColorStop(0,'#15151a'); g.addColorStop(1,'#2c2c33');
   c.fillStyle=g; c.fill();
-  // yellow / black hazard face
-  const fh=CH*0.022*bedScale(faceV);
+  const fh=cabH*0.022*s;
   c.save(); c.beginPath(); c.rect(lF,yFace-fh*0.5,rF-lF,fh); c.clip();
   c.fillStyle='#f2c300'; c.fillRect(lF,yFace-fh*0.5,rF-lF,fh);
   c.fillStyle='#141414';
   const sw=fh*0.9;
-  for(let x=lF-fh*2; x<rF+fh*2; x+=sw*2){
+  for(let x=lF-fh*2;x<rF+fh*2;x+=sw*2){
     c.beginPath(); c.moveTo(x,yFace+fh*0.5); c.lineTo(x+sw,yFace+fh*0.5);
     c.lineTo(x+sw+fh,yFace-fh*0.5); c.lineTo(x+fh,yFace-fh*0.5); c.closePath(); c.fill();
   }
   c.restore();
-  c.strokeStyle='rgba(0,0,0,0.65)'; c.lineWidth=Math.max(1,CH*0.002);
+  c.strokeStyle='rgba(0,0,0,0.65)'; c.lineWidth=Math.max(1,cabH*0.002);
   c.beginPath(); c.moveTo(lF,yFace-fh*0.5); c.lineTo(rF,yFace-fh*0.5); c.stroke();
   c.restore();
 }
-function drawCoin(c,x,y,rad){
+function drawCoinAt(c,x,y,rad){
   if(ready(COIN)){ c.drawImage(COIN,x-rad,y-rad*0.82,rad*2,rad*1.64); return; }
   const g=c.createRadialGradient(x-rad*0.3,y-rad*0.4,rad*0.1,x,y,rad);
   g.addColorStop(0,'#ffe680'); g.addColorStop(0.6,'#f0b81e'); g.addColorStop(1,'#a9760a');
   c.fillStyle=g; c.beginPath(); c.ellipse(x,y,rad,rad*0.82,0,0,7); c.fill();
   c.strokeStyle='#7d5406'; c.lineWidth=Math.max(1,rad*0.12); c.stroke();
 }
+function drawMarkerAt(c,x,y,len,rot,col){
+  const img=MKS[col%3];
+  c.save(); c.translate(x,y); c.rotate(rot);
+  if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; c.drawImage(img,-len/2,-(len/ar)/2,len,len/ar); }
+  else { c.fillStyle=MK_FALLBACK[col%3]; c.fillRect(-len/2,-len*0.11,len,len*0.22); }
+  c.restore();
+}
 function drawItems(c){
-  const sorted=items.slice().sort((a,b)=>a.v-b.v);       // back to front
+  const sorted=items.slice().sort((a,b)=>a.v-b.v);
   for(const a of sorted){
     const s=bedScale(a.v), x=bedX(a.u,a.v), y=bedY(a.v);
-    const rad=a.r*BEDW()*s*0.92;
     c.save();
-    c.fillStyle='rgba(0,0,0,0.35)';
-    c.beginPath(); c.ellipse(x,y+rad*0.42,rad*0.95,rad*0.34,0,0,7); c.fill();
-    glowOn(c);
-    if(a.kind==='coin') drawCoin(c,x,y,rad);
-    else{
-      const img=MKS[a.mk], len=rad*2.1;
-      c.translate(x,y); c.rotate(a.rot);
-      if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; c.drawImage(img,-len/2,-(len/ar)/2,len,len/ar); }
-      else { c.fillStyle=['#4f7dff','#e23b3b','#3ecf5a'][a.mk]; c.fillRect(-len/2,-len*0.11,len,len*0.22); }
+    if(a.kind==='coin'){
+      const rad=a.rad*BEDW()*s*0.95;
+      c.fillStyle='rgba(0,0,0,0.35)';
+      c.beginPath(); c.ellipse(x,y+rad*0.42,rad*0.95,rad*0.34,0,0,7); c.fill();
+      glowOn(c); drawCoinAt(c,x,y,rad);
+    } else {
+      const len=(a.h+a.rad)*2*BEDW()*s;
+      c.fillStyle='rgba(0,0,0,0.35)';
+      c.beginPath(); c.ellipse(x,y+len*0.16,len*0.34,len*0.13,0,0,7); c.fill();
+      glowOn(c); drawMarkerAt(c,x,y,len,a.rot,a.col);
     }
     c.restore();
   }
@@ -308,7 +398,7 @@ function drawChair(c){
   if(!chairOn) return;
   const s=bedScale(0.5), x=bedX(0.5,0.5), y=bedY(0.5);
   const hh=R_CHAIR*BEDW()*s*2.3*(0.35+0.65*chairT);
-  const ww=ready(CHAIR)? hh*(CHAIR.naturalWidth/CHAIR.naturalHeight) : hh*0.8;
+  const ww=ready(CHAIR)?hh*(CHAIR.naturalWidth/CHAIR.naturalHeight):hh*0.8;
   c.save(); glowOn(c);
   c.fillStyle='rgba(0,0,0,0.4)';
   c.beginPath(); c.ellipse(x,y+hh*0.10,ww*0.45,ww*0.16,0,0,7); c.fill();
@@ -318,81 +408,74 @@ function drawChair(c){
 }
 function drawSlot(c){
   if(state!=='play') return;
-  const sx=(SLOT.x0+(SLOT.x1-SLOT.x0)*dragU)*CW, sy=(SLOT.y0+SLOT.y1)*0.5*CH;
-  // guide line down to where it will land
-  c.save(); c.setLineDash([CH*0.008,CH*0.010]); c.strokeStyle='rgba(255,255,255,0.30)';
-  c.lineWidth=Math.max(1,CH*0.0022);
-  c.beginPath(); c.moveTo(sx,sy+CH*0.02); c.lineTo(bedX(dragU,0),bedY(0)); c.stroke(); c.restore();
-  if(markers>0 && !dropping){
-    const img=MKS[0], len=BEDW()*R_MARK*2.0;
-    c.save(); c.translate(sx,sy); glowOn(c);
-    if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; c.drawImage(img,-len/2,-(len/ar)/2,len,len/ar); }
-    else { c.fillStyle='#4f7dff'; c.fillRect(-len/2,-len*0.11,len,len*0.22); }
-    c.restore();
+  const sx=CX(SLOT.x0+(SLOT.x1-SLOT.x0)*dragU), sy=CY((SLOT.y0+SLOT.y1)*0.5);
+  c.save(); c.setLineDash([cabH*0.008,cabH*0.010]); c.strokeStyle='rgba(255,255,255,0.30)';
+  c.lineWidth=Math.max(1,cabH*0.0022);
+  c.beginPath(); c.moveTo(sx,sy+cabH*0.02); c.lineTo(bedX(dragU,0),bedY(0)); c.stroke(); c.restore();
+  const len=(MK_H+MK_RAD)*2*BEDW();
+  if(queue.length>0 && !dropping){                       // shows the colour you're actually about to drop
+    c.save(); glowOn(c); drawMarkerAt(c,sx,sy,len,dropRot()*0.0,queue[0]); c.restore();
   }
-  if(dropping){                                           // travelling from the slot into the bed
-    const t=dropping.t, img=MKS[dropping.mk];
+  if(dropping){
+    const t=dropping.t;
     const x=sx+(bedX(dropping.u,0)-sx)*t, y=sy+(bedY(0)-sy)*t;
-    const len=BEDW()*R_MARK*2.0*(1-0.15*t);
-    c.save(); c.translate(x,y); c.rotate(t*2.4); glowOn(c);
-    if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; c.drawImage(img,-len/2,-(len/ar)/2,len,len/ar); }
-    else { c.fillStyle='#4f7dff'; c.fillRect(-len/2,-len*0.11,len,len*0.22); }
+    c.save(); glowOn(c);
+    drawMarkerAt(c,x,y,len*(1-0.12*t), dropping.rot*t, dropping.col);
     c.restore();
   }
 }
 function drawHUD(){
-  const pad=CH*0.016;
+  // the HUD lives in the bar above the cabinet, clear of the marquee
+  const bar=cabY>CH*0.045;
+  const hy=bar? Math.max(CH*0.008, cabY*0.5-CH*0.030) : CH*0.010;
+  const pad=Math.max(CW*0.03, CH*0.012);
   ctx.textBaseline='top';
   ctx.textAlign='left';
-  ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.030)+'px Helvetica';
-  ctx.fillText(coins+'  COINS', pad, pad);
-  ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font='bold '+Math.round(CH*0.017)+'px Helvetica';
-  ctx.fillText('MARKERS '+markers, pad, pad+CH*0.036);
+  ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.026)+'px Helvetica';
+  ctx.fillText(coins+'  COINS', pad, hy);
+  ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
+  ctx.fillText('MARKERS '+queue.length, pad, hy+CH*0.030);
   ctx.textAlign='right';
   const t=Math.max(0,tLeft);
-  ctx.fillStyle = t<=10?'#ff5a5a' : '#fff';
-  ctx.font='bold '+Math.round(CH*0.030)+'px Helvetica';
-  ctx.fillText(t.toFixed(1), CW-pad, pad);
-  ctx.fillStyle=ACC; ctx.font='bold '+Math.round(CH*0.013)+'px Helvetica';
-  ctx.fillText(TH.name, CW-pad, pad+CH*0.038);
+  ctx.fillStyle=t<=10?'#ff5a5a':'#fff'; ctx.font='bold '+Math.round(CH*0.026)+'px Helvetica';
+  ctx.fillText(t.toFixed(1), CW-pad, hy);
+  ctx.fillStyle=ACC; ctx.font='bold '+Math.round(CH*0.012)+'px Helvetica';
+  ctx.fillText(TH.name, CW-pad, hy+CH*0.032);
   ctx.textAlign='center';
-  let yy=CH*0.30;
+  let yy=CY(0.30);
   for(const q of popups){
     ctx.globalAlpha=Math.max(0,Math.min(1,q.life/40));
-    ctx.fillStyle=q.col; ctx.font='bold '+Math.round(CH*(q.big?0.026:0.019))+'px Helvetica';
+    ctx.fillStyle=q.col; ctx.font='bold '+Math.round(CH*(q.big?0.024:0.018))+'px Helvetica';
     ctx.strokeStyle='rgba(0,0,0,0.7)'; ctx.lineWidth=Math.max(2,CH*0.003);
-    const px = q.u!==undefined ? bedX(q.u,1) : CW/2;
-    const py = q.u!==undefined ? bedY(1)+CH*0.012 : yy;
+    const px=q.u!==undefined?bedX(q.u,1):CW/2;
+    const py=q.u!==undefined?bedY(1)+cabH*0.012:yy;
     ctx.strokeText(q.txt,px,py); ctx.fillText(q.txt,px,py);
     ctx.globalAlpha=1;
-    if(q.u===undefined) yy+=CH*0.030;
+    if(q.u===undefined) yy+=CH*0.026;
   }
-  if(state==='play' && markers>0 && !dropping){
-    ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font='bold '+Math.round(CH*0.016)+'px Helvetica';
-    ctx.fillText('drag across the slot \u2014 release to drop', CW/2, CH*0.235);
+  if(state==='play'&&queue.length>0&&!dropping){
+    ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font='bold '+Math.round(CH*0.014)+'px Helvetica';
+    ctx.fillText('drag across the slot \u2014 release to drop', CW/2, CY(0.235));
   }
 }
 function drawBenday(){
   if(!TH.benday) return;
   ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.45)';
-  const ds=CH*0.016;
+  const ds=cabH*0.016;
   for(let y=0;y<CH+ds;y+=ds){ const row=Math.round(y/ds);
-    for(let x=((row%2)?ds/2:0); x<CW+ds; x+=ds){ ctx.beginPath(); ctx.arc(x,y,ds*0.16,0,6.283); ctx.fill(); } }
+    for(let x=((row%2)?ds/2:0);x<CW+ds;x+=ds){ ctx.beginPath(); ctx.arc(x,y,ds*0.16,0,6.283); ctx.fill(); } }
   ctx.restore();
 }
 function draw(){
   ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0,0,CW,CH);
-  // 1. cabinet + pusher on the scene layer, so the theme filter hits the machine
+  ctx.fillStyle='#05050a'; ctx.fillRect(0,0,CW,CH);
   s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
-  s2.fillStyle='#05050a'; s2.fillRect(0,0,CW,CH);
-  if(ready(CAB)) s2.drawImage(CAB,0,0,CW,CH);
+  if(ready(CAB)) s2.drawImage(CAB,cabX,cabY,cabW,cabH);
   drawPusher(s2);
-  if(CANFILTER && TH.filter) ctx.filter=TH.filter;
+  if(CANFILTER&&TH.filter) ctx.filter=TH.filter;
   ctx.drawImage(sc,0,0);
   ctx.filter='none';
   drawBenday();
-  // 2. coins, markers and the chair stay full colour on top
   drawChair(ctx);
   drawItems(ctx);
   glowOff(ctx);
@@ -405,6 +488,7 @@ function loop(now){
   step(dt); draw(); requestAnimationFrame(loop);
 }
 window.addEventListener('resize',()=>{ sz(); });
+reset(60);
 updateBuy();
 requestAnimationFrame(loop);
 </script>
