@@ -28,13 +28,16 @@
   .ovl.on{ display:flex; }
   .ovl h1{ font-size:30px; letter-spacing:7px; margin:0 0 4px; }
   .ovl .sub{ font-size:12px; letter-spacing:3px; color:#888; margin-bottom:20px; }
-  #levelGrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; width:min(320px,86vw); margin-bottom:16px; }
+  #levelGrid{ display:grid; grid-template-columns:repeat(6,1fr); gap:7px; width:min(340px,92vw);
+    max-height:60vh; overflow-y:auto; margin-bottom:10px; padding:2px; }
   .lvl{ position:relative; aspect-ratio:1/1.35; display:flex; align-items:flex-end; justify-content:center;
     border-radius:8px; cursor:pointer; }
   .lvl img{ position:absolute; top:6%; left:50%; width:150%; height:auto; transform:translateX(-50%) rotate(-90deg); }
-  .lvl span{ position:relative; z-index:2; font-size:13px; font-weight:bold; color:#fff; text-shadow:0 0 5px #000,0 0 3px #000; padding-bottom:4px; }
+  .lvl span{ position:relative; z-index:2; font-size:11px; font-weight:bold; color:#fff; text-shadow:0 0 5px #000,0 0 3px #000; padding-bottom:3px; }
   .lvl.locked{ filter:grayscale(1) brightness(0.35); cursor:default; }
   .lvl.locked span{ color:#777; }
+  .lvl-back{ background:none; border:0; color:#666; font-family:Helvetica,Arial,sans-serif; font-size:11px;
+    letter-spacing:2px; padding:6px 10px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -44,17 +47,18 @@
   <div id="menu" class="ovl on">
     <h1>QU33PH FLIP</h1><div class="sub">PICK A MODE</div>
     <button class="mk-btn" id="bEndless">ENDLESS</button>
-    <button class="mk-btn" id="bTimed">TIMED &middot; 45s</button>
-    <button class="mk-btn gold" id="bLevels">LEVELS</button>
+    <button class="mk-btn flip" id="bTimed">TIMED &middot; 45s</button>
+    <button class="mk-btn" id="bLevels">LEVELS</button>
   </div>
   <div id="levelSel" class="ovl">
     <h1 style="font-size:22px;">SELECT LEVEL</h1><div class="sub" id="lvlSub"></div>
     <div id="levelGrid"></div>
-    <button class="mk-btn flip" id="bLvlBack">BACK</button>
+    <button class="lvl-back" id="bLvlBack">&lsaquo; MODES</button>
   </div>
   <div id="overOvl" class="ovl">
     <h1 id="ovTitle" style="font-size:26px;color:#e23b3b;">TIPPED OVER</h1>
     <div class="sub" id="ovSub"></div>
+    <button class="mk-btn" id="bNext">NEXT LEVEL</button>
     <button class="mk-btn" id="bRetry">RETRY</button>
     <button class="mk-btn flip" id="bMenu">MENU</button>
   </div>
@@ -133,9 +137,25 @@ const LEVELS=[
  { name:'THE CLIMB', pads:[
    {g:.13,w:.30},{g:.13,w:.26,d:-.05},{g:.13,w:.26,d:-.05},{g:.12,w:.20,u:1},
    {g:.13,w:.26,d:-.045,o:'G'},{g:.13,w:.26,d:-.045},{g:.13,w:.26,o:'R'},
-   {g:.13,w:.28,d:.05},{g:.13,w:.28,d:.05,o:'G'},{g:.15,w:.34} ]}
+   {g:.13,w:.28,d:.05},{g:.13,w:.28,d:.05,o:'G'},{g:.15,w:.34} ]},
+ { name:'DOWN AND OUT', pads:[
+   {g:.13,w:.32},{g:.13,w:.30,d:.045},{g:.13,w:.30,d:.045,o:'G'},{g:.13,w:.30,d:.045},
+   {g:.13,w:.28,d:.045},{g:.14,w:.32,o:'G'},{g:.14,w:.32} ]},
+ { name:'ZIGZAG', pads:[
+   {g:.13,w:.30},{g:.13,w:.28,d:-.05},{g:.13,w:.28,d:.05},{g:.13,w:.28,d:-.05,o:'G'},
+   {g:.13,w:.28,d:.05},{g:.13,w:.28,d:-.05},{g:.14,w:.32,o:'G'},{g:.14,w:.32,d:.05} ]},
+ { name:'GREEN MILE', pads:[
+   {g:.13,w:.26,o:'G'},{g:.13,w:.24,o:'G'},{g:.13,w:.24},{g:.13,w:.24,o:'G'},
+   {g:.13,w:.24},{g:.13,w:.24,o:'G'},{g:.14,w:.30,o:'G'},{g:.14,w:.32} ]},
+ { name:'GAUNTLET', pads:[
+   {g:.13,w:.30},{g:.12,w:.20,u:1},{g:.13,w:.28,o:'G'},{g:.12,w:.20,o:'R'},{g:.13,w:.28},
+   {g:.12,w:.20,u:1},{g:.13,w:.28,o:'G'},{g:.12,w:.20,o:'R'},{g:.14,w:.34} ]},
+ { name:'SKY STEPS', pads:[
+   {g:.13,w:.30},{g:.13,w:.26,d:-.05},{g:.13,w:.26,d:-.05},{g:.13,w:.26,d:-.05,o:'G'},
+   {g:.13,w:.26,d:-.05},{g:.13,w:.26,d:-.05},{g:.13,w:.26,o:'G'},{g:.13,w:.28,d:.06},
+   {g:.13,w:.28,d:.06},{g:.15,w:.34,o:'G'} ]}
 ];
-const LEVEL_COUNT=20;
+const LEVEL_COUNT=33;
 function levelsDone(){ try{ return parseInt(localStorage.getItem('qu33phFlipLvl')||'0',10)||0; }catch(e){ return 0; } }
 function setLevelsDone(n){ try{ localStorage.setItem('qu33phFlipLvl', n); }catch(e){} }
 function unlocked(i){ return i<=levelsDone(); }        // level index 0-based; 0 always open
@@ -190,16 +210,48 @@ function buildLevel(i){
   } else {                                             // levels past the hand-made ones
     const len=10+i, bump=Math.min(1,(i-LEVELS.length)/12);
     stairLeft=0; stairStep=0;
-    for(let k=0;k<len;k++){
-      addPlatform();
-      const p=plats[plats.length-1];
-      if(!p.uneven && !p.chair && Math.random()<0.18+bump*0.12) p.obs = Math.random()<0.5?'R':'G';
-      if(p.obs==='R' && plats.length-1===lastFlat){     // never block the only way forward
-        let prev=plats.length-2; while(prev>0 && plats[prev].uneven) prev--;
-        if(prev<=0) p.obs='G';
-      }
+    for(let k=0;k<len;k++) addPlatform();
+    for(let k=2;k<plats.length-1;k++){                 // obstacles placed after the run exists
+      const p=plats[k];
+      if(p.uneven || p.chair) continue;
+      if(Math.random() >= 0.18+bump*0.12) continue;
+      const prev=plats[k-1], next=plats[k+1];
+      if(Math.random()<0.45 && standable(prev) && standable(next) && !next.chair){
+        // a red blocker only works if the pad after it is within one flip of the pad before it,
+        // so squeeze the trio together rather than dropping an unclearable wall
+        p.w=Math.min(p.w, CW*0.20);
+        p.x=Math.min(p.x, prev.x+prev.w+CW*0.10);
+        const lim=maxReach(next.y-prev.y)*0.86, minX=p.x+p.w+CW*0.05;
+        if(prev.x+lim >= minX){ next.x=Math.min(next.x, prev.x+lim); p.obs='R'; }
+        else p.obs='G';
+      } else p.obs='G';
     }
   }
+  makeFlyable();
+}
+// A pad you can actually stand on. Red-jagged AND red-marker pads both tip you,
+// so neither counts as a foothold when checking that a level is flyable.
+function standable(p){ return !p.uneven && p.obs!=='R'; }
+function makeFlyable(){
+  let last=0, i=1;
+  while(i<plats.length){
+    const p=plats[i];
+    if(!standable(p)){ i++; continue; }
+    const lim=maxReach(p.y-plats[last].y)*0.86;
+    if(p.x-plats[last].x>lim){
+      let cleared=false;                                   // open up whatever is blocking the run
+      for(let k=last+1;k<i;k++){
+        if(plats[k].uneven){ plats[k].uneven=false; cleared=true; }
+        if(plats[k].obs==='R'){ plats[k].obs=null; cleared=true; }
+      }
+      if(cleared){ i=last+1; continue; }                   // rescan: the nearer pad is a foothold now
+      const prev=plats[i-1];                               // last resort, pull it into range
+      plats[i].x=Math.max(prev.x+prev.w+CW*0.05, plats[last].x+lim);
+    }
+    last=i; i++;
+  }
+  const goal=plats[plats.length-1];                        // the finish must always be landable
+  goal.uneven=false; if(goal.obs==='R') goal.obs=null;
 }
 function buildEndless(){
   plats=[pad({x:CW*0.06,y:CH*0.70,w:CW*0.42})]; lastFlat=0; stairLeft=0; stairStep=0;
@@ -240,6 +292,8 @@ $('bLevels').onclick =()=>{ buildGrid(); show('menu',false); show('levelSel',tru
 $('bLvlBack').onclick=()=>toMenu();
 $('bMenu').onclick   =()=>toMenu();
 $('bRetry').onclick  =()=>{ if(mode==='levels') buildLevel(levelIdx); else buildEndless(); startRun(); show('overOvl',false); };
+$('bNext').onclick   =()=>{ levelIdx=Math.min(LEVEL_COUNT-1, levelIdx+1); startMode('levels'); };
+function showNextBtn(on){ $('bNext').style.display = on?'inline-flex':'none'; }
 
 // ─── orientation ──────────────────────────────────────────────────────────
 let ORIENT=null; try{ ORIENT=localStorage.getItem('qu33phFlipOrient')||null; }catch(e){}
@@ -320,6 +374,7 @@ function finishLevel(){
   if(levelIdx+1>levelsDone()) setLevelsDone(levelIdx+1);
   $('ovTitle').textContent='LEVEL CLEAR'; $('ovTitle').style.color='#7bff9a';
   $('ovSub').textContent=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+score+' PTS';
+  showNextBtn(levelIdx < LEVEL_COUNT-1);        // straight into the next one
   show('overOvl',true);
 }
 function gameOver(reason){
@@ -328,6 +383,7 @@ function gameOver(reason){
   $('ovTitle').textContent = reason==='TIME UP' ? 'TIME UP' : 'TIPPED OVER';
   $('ovTitle').style.color = reason==='TIME UP' ? '#ffd700' : '#e23b3b';
   $('ovSub').textContent = marker.pIdx+' PLATFORMS \u00b7 '+score+' PTS \u00b7 BEST '+bestP;
+  showNextBtn(false);
   show('overOvl',true);
 }
 
@@ -597,7 +653,12 @@ function draw(){
   ctx.restore();
   drawHUD();
 }
-function loop(){ step(); draw(); requestAnimationFrame(loop); }
+let chromeOn=null;
+function updateChrome(){                                    // orientation button is in-game only
+  const play = (state!=='menu' && state!=='over');
+  if(play!==chromeOn){ chromeOn=play; $('orientBtn').style.display = play?'flex':'none'; }
+}
+function loop(){ step(); draw(); updateChrome(); requestAnimationFrame(loop); }
 window.addEventListener('resize',()=>{
   const ow=CW,oh=CH; sz();
   if(Math.abs(CW-ow)>ow*0.12||Math.abs(CH-oh)>oh*0.12){

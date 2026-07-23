@@ -215,6 +215,9 @@
     #arcadeMenu.arc-neon #cabPinball img { filter:drop-shadow(0 0 4px #ff2b2b) drop-shadow(0 0 9px #ff2b2b) drop-shadow(0 0 16px rgba(255,43,43,0.6)); }
     #arcadeMenu.arc-neon #cabGolf img { filter:drop-shadow(0 0 4px #3a86ff) drop-shadow(0 0 10px #3a86ff) drop-shadow(0 0 18px rgba(58,134,255,0.65)); }
     #arcadeMenu.arc-neon #cabSkee img { filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 10px #28ff82) drop-shadow(0 0 20px rgba(40,255,130,0.6)); }
+    #arcadeMenu.arc-neon #cabDozer img { filter:drop-shadow(0 0 4px #ff2b2b) drop-shadow(0 0 10px #ff2b2b) drop-shadow(0 0 18px rgba(255,43,43,0.6)); }
+    #arcadeMenu.arc-sunset #cabDozer img { filter:sepia(0.6) saturate(2) brightness(1.12) drop-shadow(0 0 9px rgba(255,200,60,0.8)); }
+    #arcadeMenu.arc-galaxy #cabDozer img { filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 9px rgba(180,120,255,0.8)); }
     /* Flip cabinet: transparent card, marker standing upright, glow (never a box) */
     #cabFlip .flipbox { width:100%; aspect-ratio:150/230; max-height:168px; box-sizing:border-box;
       background:transparent; display:flex; align-items:center; justify-content:center; overflow:visible; }
@@ -495,7 +498,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v314</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v316</div>
 
 <canvas id="game"></canvas>
 
@@ -553,7 +556,7 @@
     <div class="cab-card" id="cabFidget" onclick="launchFidget()"><img src="fidgetqu33phfield.png" onerror="this.style.opacity=0.2"><div class="cab-label">FIDGET QU33PH</div></div>
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
-    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=316" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
     <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
@@ -579,6 +582,10 @@
 <div id="flipScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="flipFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
   <button class="back-tl" onclick="flipBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
+</div>
+<div id="dozerScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
+  <iframe id="dozerFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
+  <button class="back-tl" onclick="dozerBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
 </div>
 <div id="pinball2dScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:116;overflow:hidden;">
   <iframe id="pinball2dFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
@@ -4164,7 +4171,7 @@ function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=314&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=316&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4175,8 +4182,10 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=314&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=316&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=316&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
 function jmSelect(){
