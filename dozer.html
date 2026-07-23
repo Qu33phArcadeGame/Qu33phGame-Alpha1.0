@@ -313,7 +313,7 @@ function orientIcon(){
   return '<svg width="28" height="28" viewBox="0 0 24 24">'
    +'<path d="M19.5 11a7.5 7.5 0 1 0 -1 4.2" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round"/>'
    +'<path d="M20 4.5v5h-5" fill="none" stroke="#bbb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
-   +'<rect x="6.4" y="10.5" width="11.2" height="3" rx="1.5" fill="'+ACC+'" transform="rotate('+(v?90:0)+' 12 12)"/></svg>';
+   +'<rect x="6.4" y="10.5" width="11.2" height="3" rx="1.5" fill="'+ACC+'" transform="rotate('+(v?90:0)+' 12 12)"/></svg>';   // upright bar = vertical drop
 }
 function updOrient(){ $('orientIcon').innerHTML=orientIcon(); }
 $('orientBtn').addEventListener('click',e=>{ e.stopPropagation();
@@ -444,13 +444,13 @@ function drawSlot(c){
   c.beginPath(); c.moveTo(sx,sy+cabH*0.02); c.lineTo(bedX(dragU,0),bedY(0)); c.stroke(); c.restore();
   const len=(MK_H+MK_RAD)*2*BEDW();
   if(queue.length>0 && !dropping){                       // shows the colour you're actually about to drop
-    c.save(); glowOn(c); drawMarkerAt(c,sx,sy,len,dropRot()*0.0,queue[0]); c.restore();
+    c.save(); glowOn(c); drawMarkerAt(c,sx,sy,len,dropRot(),queue[0]); c.restore();
   }
   if(dropping){
     const t=dropping.t;
     const x=sx+(bedX(dropping.u,0)-sx)*t, y=sy+(bedY(0)-sy)*t;
     c.save(); glowOn(c);
-    drawMarkerAt(c,x,y,len*(1-0.12*t), dropping.rot*t, dropping.col);
+    drawMarkerAt(c,x,y,len*(1-0.12*t), dropping.rot, dropping.col);
     c.restore();
   }
 }

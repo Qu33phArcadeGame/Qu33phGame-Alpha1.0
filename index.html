@@ -498,7 +498,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v319</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v320</div>
 
 <canvas id="game"></canvas>
 
@@ -4182,9 +4182,9 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=319&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=320&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=319&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=320&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4195,9 +4195,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=319&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=320&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=319&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=320&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
@@ -6257,7 +6257,7 @@ function returnToArcade(){
 // ================= QU33PH PINBALL =================
 var pbCanvas=null,pbctx=null,pbRAF=null,pbActive=false,pbW=0,pbH=0,PB_R=0;
 var pbBall=null,pbScore=0,pbBalls=3,pbState="ready",pbT=0,pbHigh=0,pbChairCD=0; try{pbHigh=+(localStorage.getItem("qu33phPinballHigh")||0);}catch(e){}
-var pbFL=0,pbFR=0,pbFLtarget=0,pbFRtarget=0,pbMsg="",pbMsgT=0;
+var pbFL=0,pbFR=0,pbFLtarget=0,pbFRtarget=0,pbMsg="",pbMsgT=0,pbFLprevAng=0.5,pbFRprevAng=Math.PI-0.5;
 var pbBumpers=[],pbChair=null,pbMega=null,pbListenersSet=false;
 var PB_GRAV=0.3,PB_DAMP=0.62;
 // ── perspective play-field: physics live in a flat logical table, rendered into the tilted quad of pinball.png ──
@@ -6302,12 +6302,50 @@ function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
   LB.addEventListener("touchstart",function(e){e.preventDefault();e.stopPropagation();pbDoLaunch();},{passive:false}); LB.addEventListener("click",function(e){e.stopPropagation();pbDoLaunch();});
 }
 function pbLoop(){ if(!pbActive)return; pbT++; pbUpdate(); pbDraw(); pbRAF=requestAnimationFrame(pbLoop); }
-function pbFlipperCollide(px,py,ang,len,b,active){ var tx=px+Math.cos(ang)*len,ty=py+Math.sin(ang)*len,dx=tx-px,dy=ty-py,L2=dx*dx+dy*dy||1; var tt=Math.max(0,Math.min(1,((b.x-px)*dx+(b.y-py)*dy)/L2)); var cx=px+dx*tt,cy=py+dy*tt,ox=b.x-cx,oy=b.y-cy,d=Math.hypot(ox,oy)||1; var thick=PB_R+0.02; if(d<thick){ var nx=ox/d,ny=oy/d; b.x=cx+nx*thick;b.y=cy+ny*thick; var dot=b.vx*nx+b.vy*ny; if(dot<0){ var _mult = active>0.35 ? 1.8 : 0.5; b.vx-=_mult*dot*nx;b.vy-=_mult*dot*ny; } b.vy-=active*0.05; try{if(active>0.4)haptic(6);}catch(e){} } }
+// closest points between two segments — lets us test the ball's whole path, not just where it ended up
+function pbSegSeg(ax,ay,bx,by,cx,cy,dx2,dy2){
+  var ux=bx-ax,uy=by-ay,vx=dx2-cx,vy=dy2-cy,wx=ax-cx,wy=ay-cy;
+  var a=ux*ux+uy*uy,bb=ux*vx+uy*vy,c=vx*vx+vy*vy,d=ux*wx+uy*wy,e=vx*wx+vy*wy;
+  var D=a*c-bb*bb,s,t;
+  if(D<1e-12){ s=0; t=(c>1e-12)?e/c:0; }
+  else { s=(bb*e-c*d)/D; t=(a*e-bb*d)/D; }
+  s=Math.max(0,Math.min(1,s));
+  t=Math.max(0,Math.min(1,(bb*s+e)/(c||1)));
+  s=Math.max(0,Math.min(1,(bb*t-d)/(a||1)));
+  return { px:ax+ux*s, py:ay+uy*s, qx:cx+vx*t, qy:cy+vy*t };
+}
+// swept flipper collision: catches fast balls and fast-swinging flippers that used to slip through
+function pbFlipperCollide(px,py,ang,len,b,active,prevAng){
+  var thick=PB_R+0.022;
+  var bx0=(b.px!==undefined)?b.px:b.x, by0=(b.py!==undefined)?b.py:b.y;
+  var angs=[ang]; if(prevAng!==undefined && Math.abs(prevAng-ang)>0.001) angs.push(prevAng);
+  var best=null;
+  for(var i=0;i<angs.length;i++){
+    var A=angs[i], tx=px+Math.cos(A)*len, ty=py+Math.sin(A)*len;
+    var r=pbSegSeg(bx0,by0,b.x,b.y,px,py,tx,ty);
+    var ox=r.px-r.qx, oy=r.py-r.qy, d=Math.hypot(ox,oy);
+    if(d<thick && (best===null || d<best.d)) best={d:d,cx:r.qx,cy:r.qy,ang:A};
+  }
+  if(best===null) return;
+  // normal is the flipper's perpendicular, flipped to whichever side the ball came from,
+  // so a ball that swept past still gets pushed back out the way it arrived
+  var fdx=Math.cos(best.ang), fdy=Math.sin(best.ang);
+  var nx=-fdy, ny=fdx;
+  if((bx0-best.cx)*nx+(by0-best.cy)*ny < 0){ nx=-nx; ny=-ny; }
+  b.x=best.cx+nx*thick; b.y=best.cy+ny*thick;
+  var dot=b.vx*nx+b.vy*ny;
+  if(dot<0){ var _mult=active>0.35?1.8:0.5; b.vx-=_mult*dot*nx; b.vy-=_mult*dot*ny; }
+  b.vy-=active*0.05;
+  try{ if(active>0.4)haptic(6); }catch(e){}
+}
 function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
+  var _flPrev=pbFL,_frPrev=pbFR;
   pbFL+=(pbFLtarget-pbFL)*0.5; pbFR+=(pbFRtarget-pbFR)*0.5;
+  pbFLprevAng=0.5-_flPrev*1.0; pbFRprevAng=(Math.PI-0.5)+_frPrev*1.0;
   if(pbMsgT>0&&pbMsgT<900)pbMsgT--; if(pbMega.flash>0)pbMega.flash--;
   for(var j=0;j<pbBumpers.length;j++){if(pbBumpers[j].hit>0)pbBumpers[j].hit--;}
   if(pbState!=="play")return;
+  b.px=b.x; b.py=b.y;                                          // path start for swept collision
   b.vy+=PB_G; b.x+=b.vx; b.y+=b.vy;
   b.vx*=0.99; b.vy*=0.996;                                    // friction so energy dissipates
   var mv=0.05; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
@@ -6347,8 +6385,8 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
       bp.hit=8; pbScore+=(bp.sling?25:100); try{haptic(6);}catch(e){} } }
   if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=22; b.y=pbChair.y-PB_R; b.vx=0.026; b.vy=-0.078; b.toMega=true; b.megaT=0; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
   if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.megaT=0; b.vy=0.014; b.vx=(0.5-b.x)*0.02; try{haptic([25,15,35]);}catch(e){} }
-  pbFlipperCollide(0.22,1.02, 0.5-pbFL*1.0, 0.20, b, pbFL);
-  pbFlipperCollide(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, b, pbFR);
+  pbFlipperCollide(0.22,1.02, 0.5-pbFL*1.0, 0.20, b, pbFL, pbFLprevAng);
+  pbFlipperCollide(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, b, pbFR, pbFRprevAng);
   if(b.y>1.18){ pbBalls--; if(pbBalls<=0){pbState="over";pbMsg="GAME OVER";pbMsgT=999; if(pbScore>pbHigh){pbHigh=pbScore; try{localStorage.setItem("qu33phPinballHigh",pbHigh);}catch(e){}} } else pbNewBall(); }
 }
 function pbDrawFlipper(px,py,ang,len,mirror){ var c=pbctx,tx=px+Math.cos(ang)*len,ty=py+Math.sin(ang)*len,A=pbProject(px,py),B=pbProject(tx,ty);

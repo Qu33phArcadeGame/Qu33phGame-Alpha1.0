@@ -46,9 +46,28 @@ sz();
 
 let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, best=0, state='loading', overT=0;
 let SORIENT=null; try{ SORIENT=localStorage.getItem('qu33phStackOrient')||null; }catch(e){}
+let INK=null;
+function measureInk(){
+  const im=IMG.blue||IMG.red||IMG.green;
+  if(!ready(im)) return null;
+  try{
+    const c=document.createElement('canvas');
+    const k=Math.min(1,140/im.naturalWidth);
+    c.width=Math.max(1,Math.round(im.naturalWidth*k)); c.height=Math.max(1,Math.round(im.naturalHeight*k));
+    const g=c.getContext('2d'); g.drawImage(im,0,0,c.width,c.height);
+    const d=g.getImageData(0,0,c.width,c.height).data;
+    let x0=1e9,x1=-1,y0=1e9,y1=-1;
+    for(let y=0;y<c.height;y++) for(let x=0;x<c.width;x++){
+      if(d[(y*c.width+x)*4+3]>40){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+    }
+    if(x1<0) return null;
+    return { w:(x1-x0+1)/c.width, h:(y1-y0+1)/c.height,
+             cx:((x0+x1+1)/2)/c.width, cy:((y0+y1+1)/2)/c.height };
+  }catch(e){ return null; }
+}
 function stackOrient(){ return SORIENT||'vertical'; }
 function baseAngle(){ return stackOrient()==='horizontal' ? Math.PI/2 : 0; }
-function halfSpan(){ return (cur&&cur.baseAngle)? ML*0.5 : MW*0.5; }
+function halfSpan(){ if(!cur) return MW*0.5; return (cur.baseAngle? (cur.bh||ML) : (cur.bw||MW))*0.5; }
 function orientSvg(){
   const v=stackOrient()==='vertical';
   return '<svg width="28" height="28" viewBox="0 0 24 24">'
@@ -85,7 +104,16 @@ function spawn(){
   const color=COLORS[placed.length%3];
   const topY = placed.length? Math.min(...placed.map(b=>b.position.y)) : PLATE_Y;
   const y = topY - ML*1.4;
-  const b=M.Bodies.rectangle(CW/2, y, MW, ML, { chamfer:{radius:MW*0.14}, friction:1.0, frictionStatic:3, frictionAir:0.03, restitution:0, density:0.004, slop:0.02, label:'marker' });
+  if(INK===null) INK=measureInk()||false;
+  const im0=IMG[color];
+  const spriteW=ready(im0)? ML*(im0.naturalWidth/im0.naturalHeight) : MW;
+  let bw=MW, bh=ML;
+  if(INK){                                    // shrink onto the visible marker, not the padding
+    bw=Math.max(CW*0.045, spriteW*INK.w*0.94);
+    bh=Math.max(CW*0.10,  ML*INK.h*0.98);
+  }
+  const b=M.Bodies.rectangle(CW/2, y, bw, bh, { chamfer:{radius:Math.min(bw,bh)*0.14}, friction:1.0, frictionStatic:3, frictionAir:0.03, restitution:0, density:0.004, slop:0.02, label:'marker' });
+  b.bw=bw; b.bh=bh;
   b.color=color; b.held=false; b.dropped=false; b.settle=0;
   b.baseAngle=baseAngle(); M.Body.setAngle(b,b.baseAngle);
   M.Body.setStatic(b,true);
@@ -150,11 +178,12 @@ function drawBody(b){
   else if(THEME==='sunset') glow='#ffcf4a';
   else if(THEME==='galaxy') glow='#b46bff';
   const w=ready(im)? ML*(im.naturalWidth/im.naturalHeight) : MW;
+  const ox=INK? -(INK.cx-0.5)*w : 0, oy=INK? -(INK.cy-0.5)*ML : 0;
   if(glow){ ctx.shadowColor=glow; ctx.shadowBlur=CW*0.055;
-    if(ready(im)){ ctx.drawImage(im,-w/2,-ML/2,w,ML); ctx.drawImage(im,-w/2,-ML/2,w,ML); } else { ctx.fillStyle=HEX[b.color]; rr(-MW/2,-ML/2,MW,ML,MW/2); ctx.fill(); }
+    if(ready(im)){ ctx.drawImage(im,-w/2+ox,-ML/2+oy,w,ML); ctx.drawImage(im,-w/2+ox,-ML/2+oy,w,ML); } else { ctx.fillStyle=HEX[b.color]; rr(-MW/2,-ML/2,MW,ML,MW/2); ctx.fill(); }
     ctx.shadowBlur=0;
   }
-  if(ready(im)){ ctx.drawImage(im,-w/2,-ML/2,w,ML); }
+  if(ready(im)){ ctx.drawImage(im,-w/2+ox,-ML/2+oy,w,ML); }
   else { ctx.fillStyle=HEX[b.color]; rr(-MW/2,-ML/2,MW,ML,MW/2); ctx.fill(); }
   ctx.restore();
 }
@@ -266,7 +295,7 @@ function drawTitle(txt){
 }
 let obShown=null;
 function loop(){ update(); draw();
-  const showB=(state==='title'||state==='play');
+  const showB=(state==='play');
   if(showB!==obShown){ obShown=showB; document.getElementById('orientBtn').style.display=showB?'flex':'none'; }
   requestAnimationFrame(loop); }
 window.addEventListener('resize',()=>{ sz(); });
