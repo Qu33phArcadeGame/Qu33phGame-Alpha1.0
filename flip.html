@@ -85,7 +85,8 @@ const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLow
 // ─── assets ───────────────────────────────────────────────────────────────
 function IMG(s){ const i=new Image(); i.src=s; return i; }
 function ready(im){ return im && im.complete && im.naturalWidth>0; }
-const MARKER=IMG(THEME==='cartoon'?'blueC.png':'blue.png');
+const MARKER=IMG('blue.png');   // transparent marker in every theme
+const COMIC_OUTLINE=(THEME==='cartoon');
 const MK_RED=IMG('red.png'), MK_GREEN=IMG('green.png');
 const CHAIR=IMG('Chair.png'), FIELD=IMG('originalfield.png');
 const WIN_R=IMG('window.png'), WIN_P=IMG('windowP.png');
@@ -590,8 +591,11 @@ function bendayPattern(c, ds){
   BEND=c.createPattern(t,'repeat'); BENDkey=ds;
   return BEND;
 }
-function glowOn(){ if(TH.glow){ ctx.shadowColor=TH.glow; ctx.shadowBlur=CH*0.020; } }
-function glowOff(){ ctx.shadowBlur=0; ctx.shadowColor='transparent'; }
+// comic theme: real (transparent) markers with a thick drawn border instead of the flat comic art
+function outlineOn(c, px){ if(COMIC_OUTLINE && CANFILTER){ var p=Math.max(1.6, px);
+  c.filter='drop-shadow(0 0 '+p+'px #101010) drop-shadow(0 0 '+p+'px #101010) drop-shadow(0 0 '+p+'px #101010)'; } }
+function glowOn(){ if(TH.glow){ ctx.shadowColor=TH.glow; ctx.shadowBlur=CH*0.020; } outlineOn(ctx, CH*0.0035); }
+function glowOff(){ ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.filter='none'; }
 function drawProps(){
   const lim=CW/Z, cw=chairW(), chh=chairH();
   for(const p of plats){

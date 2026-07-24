@@ -62,7 +62,8 @@ function ready(i){ return i && i.complete && i.naturalWidth>0; }
 const C=(THEME==='cartoon');
 const CAB=IMG('dozerfield.png'), COIN=IMG('coin.png'), CHAIR=IMG('Chair.png');
 // index 0 = RED, 1 = GREEN, 2 = BLUE — the order you receive them
-const MKS=[IMG(C?'redC.png':'red.png'), IMG(C?'greenC.png':'green.png'), IMG(C?'blueC.png':'blue.png')];
+const MKS=[IMG('red.png'), IMG('green.png'), IMG('blue.png')];   // always the transparent markers; comic gets a drawn border instead
+const COMIC_OUTLINE=(THEME==='cartoon');
 const MK_FALLBACK=['#e23b3b','#3ecf5a','#4f7dff'];
 
 const TH={
@@ -263,12 +264,21 @@ function step(dt){
     if(a.shelf || refillT>0) continue;
     if(a.v > 1-a.rad*0.30){                                       // tips once its centre clears the ledge
       items.splice(i,1);
-      fallers.push({ x:bedX(a.u,1), y:bedY(1), vy:CH*0.004, rot:a.rot, spin:(Math.random()-0.5)*0.3,
+      fallers.push({ x:bedX(a.u,1), y:bedY(1), vy:cabH*0.10, vx:(a.u-0.5)*cabW*0.04, rot:a.rot, spin:(Math.random()-0.5)*3.0,
                      kind:a.kind, col:a.col, sz:bedScale(1) });   // watch it drop over the front
       if(a.kind==='coin'){ coins++; popups.push({txt:'+1',life:44,col:'#ffd700',u:a.u}); }
       else { queue.push(a.col); markers=queue.length;             // you get that exact marker back
              popups.push({txt:'MARKER BACK',life:58,col:'#8fd0ff',u:a.u}); updateBuy(); }
     }
+  }
+  for(let i=fallers.length-1;i>=0;i--){        // tumble down the front of the machine, then retire
+    const f=fallers[i];
+    f.vy += cabH*1.20*dt;                     // gravity — slow enough to actually watch it go over
+    f.y  += f.vy*dt;
+    f.x  += (f.vx||0)*dt;
+    f.rot += f.spin*dt;
+    f.sz *= (1 - dt*0.16);                    // falls away from the camera
+    if(f.y > cabY+cabH*1.14) fallers.splice(i,1);
   }
   for(let i=popups.length-1;i>=0;i--){ popups[i].life--; if(popups[i].life<=0) popups.splice(i,1); }
 }
@@ -375,11 +385,15 @@ function glowFor(kind,col){
   }
   return TH.glow;
 }
+// comic theme: real (transparent) markers with a thick drawn border instead of the flat comic art
+function outlineOn(c, px){ if(COMIC_OUTLINE && CANFILTER){ var p=Math.max(1.6, px);
+  c.filter='drop-shadow(0 0 '+p+'px #101010) drop-shadow(0 0 '+p+'px #101010) drop-shadow(0 0 '+p+'px #101010)'; } }
 function glowOn(c,kind,col){
   const g=glowFor(kind,col);
   if(g){ c.shadowColor=g; c.shadowBlur=cabH*(THEME==='neon'?0.020:0.014); }
+  if(kind==='marker') outlineOn(c, cabH*0.0040);
 }
-function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
+function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; c.filter='none'; }
 function drawPusher(c){
   const yTop=CY(0.405), yFace=bedY(pz);
   const lT=bedX(0,0)-BEDW()*0.16, rT=bedX(1,0)+BEDW()*0.16;
@@ -441,7 +455,7 @@ function drawItems(c){
 }
 function drawFallers(c){
   for(const f of fallers){
-    const fade=Math.max(0, 1-Math.max(0,(f.y-CH*0.90))/(CH*0.16));
+    const f0=cabY+cabH*1.02, fade=Math.max(0, 1-Math.max(0,(f.y-f0))/(cabH*0.12));
     c.save(); c.globalAlpha=fade;
     if(f.kind==='coin'){
       const rad=R_COIN*BEDW()*f.sz*0.95;
