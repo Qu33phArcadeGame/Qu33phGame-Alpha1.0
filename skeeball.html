@@ -22,8 +22,7 @@ const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLow
 const FIELD=new Image(); FIELD.src='skeefield.png?v=306';
 const MK={ red:new Image(), green:new Image(), blue:new Image() };
 const CMC=(THEME==='cartoon');
-MK.red.src='red.png'; MK.green.src='green.png'; MK.blue.src='blue.png';   // transparent markers in every theme
-const COMIC_OUTLINE=CMC;
+MK.red.src=CMC?'redC.png':'red.png'; MK.green.src=CMC?'greenC.png':'green.png'; MK.blue.src=CMC?'blueC.png':'blue.png';
 function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 
 const PW=100, PH=177;              // field logical space (matches skeefield aspect 0.563)
@@ -65,15 +64,11 @@ function glowFor(kind){
   if(THEME==='neon'){ if(kind==='coin') return '#ffd700'; if(MK_GLOW[kind]) return MK_GLOW[kind]; }
   return TH.glow;
 }
-// comic theme: real (transparent) markers with a thick drawn border instead of the flat comic art
-function outlineOn(c, px){ if(COMIC_OUTLINE && CANFILTER){ var p=Math.max(1.6, px);
-  c.filter='drop-shadow(0 0 '+p+'px #101010) drop-shadow(0 0 '+p+'px #101010) drop-shadow(0 0 '+p+'px #101010)'; } }
 function glowOn(c,kind){
   const g=glowFor(kind);
   if(g){ c.shadowColor=g; c.shadowBlur=CH*(THEME==='neon'?0.020:0.016); }
-  if(kind==='marker') outlineOn(c, CH*0.0035);
 }
-function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; c.filter='none'; }
+function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
 // sporadic stars, constellations and slow spirals — no grid, nothing that reads like ben-day
 let STARS=null, CONSTEL=null;
 function buildSky(){

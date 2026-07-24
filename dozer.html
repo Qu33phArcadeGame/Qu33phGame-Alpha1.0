@@ -62,8 +62,7 @@ function ready(i){ return i && i.complete && i.naturalWidth>0; }
 const C=(THEME==='cartoon');
 const CAB=IMG('dozerfield.png'), COIN=IMG('coin.png'), CHAIR=IMG('Chair.png');
 // index 0 = RED, 1 = GREEN, 2 = BLUE — the order you receive them
-const MKS=[IMG('red.png'), IMG('green.png'), IMG('blue.png')];   // always the transparent markers; comic gets a drawn border instead
-const COMIC_OUTLINE=(THEME==='cartoon');
+const MKS=[IMG(C?'redC.png':'red.png'), IMG(C?'greenC.png':'green.png'), IMG(C?'blueC.png':'blue.png')];
 const MK_FALLBACK=['#e23b3b','#3ecf5a','#4f7dff'];
 
 const TH={
@@ -385,15 +384,11 @@ function glowFor(kind,col){
   }
   return TH.glow;
 }
-// comic theme: real (transparent) markers with a thick drawn border instead of the flat comic art
-function outlineOn(c, px){ if(COMIC_OUTLINE && CANFILTER){ var p=Math.max(1.6, px);
-  c.filter='drop-shadow(0 0 '+p+'px #101010) drop-shadow(0 0 '+p+'px #101010) drop-shadow(0 0 '+p+'px #101010)'; } }
 function glowOn(c,kind,col){
   const g=glowFor(kind,col);
   if(g){ c.shadowColor=g; c.shadowBlur=cabH*(THEME==='neon'?0.020:0.014); }
-  if(kind==='marker') outlineOn(c, cabH*0.0040);
 }
-function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; c.filter='none'; }
+function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
 function drawPusher(c){
   const yTop=CY(0.405), yFace=bedY(pz);
   const lT=bedX(0,0)-BEDW()*0.16, rT=bedX(1,0)+BEDW()*0.16;
