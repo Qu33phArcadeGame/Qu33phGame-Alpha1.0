@@ -39,9 +39,11 @@
       Markers touching score. All four touching is a <b>QU33PH</b>.<br>
       Landing on the box is a <b>MEGA QU33PH</b> &mdash; 30 points.<br>
       Falling off the table costs you, and the blue marker costs most.<br>
-      Last 9 seconds is <b>SUDDEN DEATH</b> &mdash; two chairs, bigger swings.
+      The last fifth of the clock is <b>SUDDEN DEATH</b> &mdash; two chairs slide on, bigger swings.
     </div>
-    <button class="mk-btn" id="bStart">START &middot; 45 SECONDS</button>
+    <button class="mk-btn" id="bStart">60 SECONDS</button>
+    <button class="mk-btn flip" id="b90">90 SECONDS</button>
+    <button class="mk-btn" id="b120">120 SECONDS</button>
   </div>
   <div id="overOvl" class="ovl">
     <h1 id="ovTitle" style="color:#ffd700;">TIME UP</h1>
@@ -70,9 +72,9 @@ const HEX={ green:'#5aa74c', pink:'#dd5c66', yellow:'#d3ba0c', blue:'#106094' };
 const TH={
   'default':{name:'DEFAULT',     filter:'',                                          glow:null},
   'cartoon':{name:'COMIC',       filter:'grayscale(1) contrast(1.2)',                glow:null, benday:true},
-  'neon':   {name:'NEON',        filter:'saturate(1.6) brightness(1.08)',            glow:'#28ff82'},
-  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020', tint:'rgba(255,176,32,0.16)'},
-  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff', galaxies:true}
+  'neon':   {name:'NEON',        filter:'saturate(1.7) brightness(1.05)',            glow:'#28ff82', room:true},
+  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020', tint:'rgba(255,176,32,0.26)'},
+  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff', galaxies:true, tint:'rgba(150,90,255,0.26)'}
 }[THEME] || {name:'DEFAULT', filter:'', glow:null};
 const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
 let BEND=null,BENDkey=0;
@@ -151,7 +153,7 @@ function proj(u,v){
 }
 
 // ─── state ────────────────────────────────────────────────────────────────
-const MATCH=45, SUDDEN_AT=9;              // 45s match, last 9s is sudden death (same 20% as 25/5 min)
+let MATCH=60, SUDDEN_AT=12;                // pick your length; sudden death is always the last fifth (same 5-of-25 split)
 const MK_LEN=0.115;                        // marker length in u units
 const RAD=MK_LEN*0.42;                     // collision radius in u units
 const BOXV=0.74, BOXU=0.5, BOXW=0.15, BOXH=0.045;  // the mini case — Mega Qu33ph, sat between the chairs
@@ -259,7 +261,7 @@ function endTurn(){
   pop((turnPts>=0?'+':'')+turnPts+' TURN '+turn, turnPts>=0?'#ffd700':'#ff6b6b', true);
   if(extra) pop('33+ — EXTRA TURN  +10','#8affea',true);
   if(!extra) turn++;
-  turnPause=0.9;                      // driven by the game clock, never a timer that can be throttled
+  turnPause=0.45;                     // driven by the game clock, never a timer that can be throttled
 }
 
 // ─── physics ──────────────────────────────────────────────────────────────
@@ -275,7 +277,7 @@ function step(dt){
   if(!sudden && tLeft<=SUDDEN_AT){ sudden=true; pop('SUDDEN DEATH','#ff5a5a',true); }
   if(tLeft<=0){ tLeft=0; gameOver(); return; }
 
-  camMix += (camTarget-camMix)*Math.min(1,dt*3.2);
+  camMix += (camTarget-camMix)*Math.min(1,dt*6.0);
 
   const drag=Math.exp(-2.15*dt);
   let moving=false;
@@ -284,7 +286,7 @@ function step(dt){
     m.u+=m.du*dt; m.v+=m.dv*dt;
     m.rot+=m.spin*dt; m.spin*=Math.exp(-2.6*dt);
     m.du*=drag; m.dv*=drag;
-    if(Math.abs(m.du)+Math.abs(m.dv)<0.012){ m.du=0; m.dv=0; m.spin*=0.7; } else moving=true;
+    if(Math.abs(m.du)+Math.abs(m.dv)<0.045){ m.du=0; m.dv=0; m.spin*=0.7; } else moving=true;   // call it settled sooner — it has under 2% of the lane left in it
     // chairs are solid in sudden death
     for(const ch of chairs()){
       if(Math.abs(m.u-ch.u)<ch.w/2+RAD && Math.abs(m.v-ch.v)<ch.h/2+RAD){
@@ -342,6 +344,28 @@ function payout(){
 window.addEventListener('pagehide',payout);
 
 // ─── drawing ──────────────────────────────────────────────────────────────
+function tableOutline(c){                  // appends the table's real silhouette to the current path
+  const N=26, p0=proj(0,0); c.moveTo(p0.x,p0.y);
+  for(let i=1;i<=N;i++){ const p=proj(0,i/N); c.lineTo(p.x,p.y); }
+  for(let i=N;i>=0;i--){ const p=proj(1,i/N); c.lineTo(p.x,p.y); }
+  c.closePath();
+}
+function drawNeonRoom(c){
+  c.save();                                        // floor first — everything outside the table
+  c.beginPath(); c.rect(0,0,CW,CH); tableOutline(c); c.clip('evenodd');
+  c.globalCompositeOperation='multiply'; c.fillStyle='rgba(255,120,110,0.55)'; c.fillRect(0,0,CW,CH);
+  c.globalCompositeOperation='screen';   c.fillStyle='rgba(255,40,40,0.20)'; c.fillRect(0,0,CW,CH);
+  c.restore();
+  c.save();                                        // then the table itself
+  c.beginPath(); tableOutline(c); c.clip();
+  c.globalCompositeOperation='screen'; c.fillStyle='rgba(40,255,120,0.24)'; c.fillRect(0,0,CW,CH);
+  c.restore();
+  c.save();                                        // and a lit rim along the table edge
+  c.shadowColor='#28ff82'; c.shadowBlur=CH*0.022;
+  c.strokeStyle='rgba(60,255,140,0.85)'; c.lineWidth=Math.max(2,CH*0.0028);
+  c.beginPath(); tableOutline(c); c.stroke(); c.stroke();
+  c.restore();
+}
 function drawCover(c,img,alpha){
   if(!ready(img)||alpha<=0.004) return;
   const r=coverRect(img); c.globalAlpha=alpha; c.drawImage(img,r.x,r.y,r.w,r.h); c.globalAlpha=1;
@@ -372,11 +396,13 @@ function drawScene(c){
   const l=proj(0,V_DESTINY), r=proj(1,V_DESTINY);
   c.save(); c.setLineDash([CW*0.02,CW*0.016]); c.strokeStyle='rgba(255,255,255,0.42)'; c.lineWidth=Math.max(1,CH*0.0022);
   c.beginPath(); c.moveTo(l.x,l.y); c.lineTo(r.x,r.y); c.stroke(); c.restore();
-  // the Qu33ph box sitting mid-lane
-  const b=proj(BOXU,BOXV), bs=BOXW*b.s*2;
-  if(ready(BOX)){ const ar=BOX.naturalWidth/BOX.naturalHeight;
-    c.drawImage(BOX,b.x-bs/2,b.y-bs/(ar*2),bs,bs/ar); }
-  else { c.fillStyle='rgba(255,255,255,0.85)'; c.fillRect(b.x-bs/2,b.y-bs*0.18,bs,bs*0.36); }
+  // the case sits on the table the whole match — Mega Qu33ph is main-game scoring
+  {
+    const b=proj(BOXU,BOXV), bs=BOXW*b.s*2;
+    if(ready(BOX)){ const ar=BOX.naturalWidth/BOX.naturalHeight;
+      c.drawImage(BOX,b.x-bs/2,b.y-bs/(ar*2),bs,bs/ar); }
+    else { c.fillStyle='rgba(255,255,255,0.85)'; c.fillRect(b.x-bs/2,b.y-bs*0.18,bs,bs*0.36); }
+  }
   // chairs, once sudden death lands
   for(const ch of chairs()){
     const p=proj(ch.u,ch.v), s=ch.w*p.s*2;
@@ -401,12 +427,12 @@ function drawHUD(){
   // still to throw — stacked above the near edge of the first table, same as the original game
   const rem=order.slice(idx+((state==='play'&&!live)?1:0));
   if(rem.length && camMix<0.85){
-    const base=proj(0.5,0.02), bh=CH*0.030;
+    const base=proj(0.5,0.02), bh=CH*0.030, PX=CW*0.22;   // off to the left, clear of the one in your hand
     ctx.save(); ctx.globalAlpha=0.85*(1-camMix);
     for(let i=0;i<rem.length;i++){
       const im=MK[rem[i]], y=base.y-bh*0.55-i*bh*1.05;
-      if(ready(im)){ const ar=im.naturalWidth/im.naturalHeight; ctx.drawImage(im,CW/2-bh*ar/2,y-bh/2,bh*ar,bh); }
-      else { ctx.fillStyle=HEX[rem[i]]; ctx.fillRect(CW/2-bh*0.14,y-bh/2,bh*0.28,bh); }
+      if(ready(im)){ const ar=im.naturalWidth/im.naturalHeight; ctx.drawImage(im,PX-bh*ar/2,y-bh/2,bh*ar,bh); }
+      else { ctx.fillStyle=HEX[rem[i]]; ctx.fillRect(PX-bh*0.14,y-bh/2,bh*0.28,bh); }
     }
     ctx.restore();
   }
@@ -440,14 +466,15 @@ function draw(){
     if(TH.benday){ ctx.globalCompositeOperation='multiply'; ctx.fillStyle=bendayPattern(ctx,CH*0.016); ctx.fillRect(0,0,CW,CH); ctx.globalCompositeOperation='source-over'; }
     ctx.restore();
   } else { drawScene(ctx); }
+  if(TH.room){ drawNeonRoom(ctx); }
   if(TH.tint){ ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=TH.tint; ctx.fillRect(0,0,CW,CH); ctx.restore(); }
   if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
   // markers ride on top so they keep their colour, same rule as the other cabinets
   const sorted=markers.filter(m=>!m.off).slice().sort((a,b)=>b.v-a.v);
   for(const m of sorted){
     // the near view only looks at the first table, so anything down the far end isn't in shot
-    const near=1-Math.max(0,Math.min(1,(m.v-0.40)/0.14));
-    const a=Math.max(camMix, near);
+    const near=1-Math.max(0,Math.min(1,(m.v-0.30)/0.16));   // fully gone by the seam, never left hanging on the far table
+    const a=near+(1-near)*camMix;                            // smooth blend rather than a hard max
     if(a<=0.02) continue;
     ctx.globalAlpha=a; drawMarkerAt(ctx,m.u,m.v,m.rot,m.col,m.cap); ctx.globalAlpha=1;
   }
@@ -488,8 +515,11 @@ window.addEventListener('pointerup',()=>{
   launch(Math.min(1,up/0.42), dx/0.28);
 });
 
-$('bStart').addEventListener('click',()=>{ $('menu').classList.remove('on'); reset(); });
-$('bAgain').addEventListener('click',()=>{ $('overOvl').classList.remove('on'); reset(); });
+function startMatch(secs){ MATCH=secs; SUDDEN_AT=Math.round(secs*0.2); $('menu').classList.remove('on'); reset(); }
+$('bStart').addEventListener('click',()=>startMatch(60));
+$('b90').addEventListener('click',()=>startMatch(90));
+$('b120').addEventListener('click',()=>startMatch(120));
+$('bAgain').addEventListener('click',()=>{ $('overOvl').classList.remove('on'); $('menu').classList.add('on'); });
 newTurn();
 requestAnimationFrame(loop);
 </script>

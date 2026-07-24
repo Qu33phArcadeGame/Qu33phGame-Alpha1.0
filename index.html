@@ -254,6 +254,28 @@
     /* galaxy: scattered stars and nebulae, never a regular grid */
     #arcadeMenu.arc-galaxy .cab-card::after { content:""; position:absolute; inset:0 0 26px 0; pointer-events:none; mix-blend-mode:screen; border-radius:18px; background-repeat:no-repeat; background-image:radial-gradient(ellipse 55% 38% at 72% 24%, rgba(150,90,255,0.20), transparent 70%),radial-gradient(ellipse 45% 30% at 24% 68%, rgba(90,140,255,0.16), transparent 72%),radial-gradient(circle at 33.4% 17.2%, rgba(255,255,255,0.58) 0 1.2px, transparent 1.7px),radial-gradient(circle at 53.4% 37.4%, rgba(255,255,255,0.78) 0 0.7px, transparent 1.2px),radial-gradient(circle at 6.5% 43.8%, rgba(255,255,255,0.59) 0 0.8px, transparent 1.3px),radial-gradient(circle at 42.9% 80.7%, rgba(255,255,255,0.65) 0 0.8px, transparent 1.3px),radial-gradient(circle at 62.0% 92.1%, rgba(255,255,255,0.73) 0 1.2px, transparent 1.7px),radial-gradient(circle at 94.8% 7.4%, rgba(255,255,255,0.68) 0 1.4px, transparent 1.9px),radial-gradient(circle at 16.6% 14.1%, rgba(255,255,255,0.92) 0 0.9px, transparent 1.4px),radial-gradient(circle at 20.0% 57.7%, rgba(255,255,255,0.72) 0 1.2px, transparent 1.7px),radial-gradient(circle at 54.5% 8.9%, rgba(255,255,255,0.64) 0 0.7px, transparent 1.2px),radial-gradient(circle at 67.0% 43.2%, rgba(255,255,255,0.81) 0 1.0px, transparent 1.5px),radial-gradient(circle at 45.6% 31.2%, rgba(255,255,255,0.86) 0 1.3px, transparent 1.8px),radial-gradient(circle at 25.9% 57.0%, rgba(255,255,255,0.94) 0 1.1px, transparent 1.6px),radial-gradient(circle at 71.6% 30.1%, rgba(255,255,255,0.6) 0 1.5px, transparent 2.0px),radial-gradient(circle at 42.3% 74.2%, rgba(255,255,255,0.77) 0 0.8px, transparent 1.3px),radial-gradient(circle at 6.7% 65.8%, rgba(255,255,255,0.81) 0 1.3px, transparent 1.8px),radial-gradient(circle at 85.3% 32.5%, rgba(255,255,255,0.82) 0 1.3px, transparent 1.8px); animation:arcTwinkle 2.6s ease-in-out infinite; }
     @keyframes arcTwinkle { 0%,100%{ opacity:0.35; } 50%{ opacity:0.95; } }
+    /* ── one glow recipe per theme, applied to every cabinet the same way ── */
+    #arcadeMenu.arc-comic  .cab-card img, #arcadeMenu.arc-comic  .cab-card .flipbox img {
+      filter:grayscale(1) contrast(1.15) drop-shadow(0 5px 14px rgba(0,0,0,0.6)) !important; }
+    #arcadeMenu.arc-sunset .cab-card img, #arcadeMenu.arc-sunset .cab-card .flipbox img {
+      filter:sepia(0.65) saturate(2) brightness(1.12) hue-rotate(-12deg)
+             drop-shadow(0 0 5px rgba(255,194,58,1)) drop-shadow(0 0 14px rgba(255,176,32,0.9))
+             drop-shadow(0 0 26px rgba(255,176,32,0.5)) !important; }
+    #arcadeMenu.arc-galaxy .cab-card img, #arcadeMenu.arc-galaxy .cab-card .flipbox img {
+      filter:hue-rotate(230deg) saturate(1.5) brightness(1.05)
+             drop-shadow(0 0 5px rgba(180,120,255,1)) drop-shadow(0 0 14px rgba(154,107,255,0.85))
+             drop-shadow(0 0 26px rgba(154,107,255,0.5)) !important; }
+    #arcadeMenu.arc-neon #cabJump img { filter:drop-shadow(0 0 4px rgba(40,255,130,1)) drop-shadow(0 0 12px rgba(40,255,130,0.9)) drop-shadow(0 0 22px rgba(40,255,130,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabPinball img { filter:drop-shadow(0 0 4px rgba(255,43,43,1)) drop-shadow(0 0 12px rgba(255,43,43,0.9)) drop-shadow(0 0 22px rgba(255,43,43,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabGolf img { filter:drop-shadow(0 0 4px rgba(58,134,255,1)) drop-shadow(0 0 12px rgba(58,134,255,0.9)) drop-shadow(0 0 22px rgba(58,134,255,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabStack img { filter:drop-shadow(0 0 4px rgba(58,134,255,1)) drop-shadow(0 0 12px rgba(58,134,255,0.9)) drop-shadow(0 0 22px rgba(58,134,255,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabFidget img { filter:drop-shadow(0 0 4px rgba(255,43,43,1)) drop-shadow(0 0 12px rgba(255,43,43,0.9)) drop-shadow(0 0 22px rgba(255,43,43,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabFlip img { filter:drop-shadow(0 0 4px rgba(40,255,130,1)) drop-shadow(0 0 12px rgba(40,255,130,0.9)) drop-shadow(0 0 22px rgba(40,255,130,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabSkee img { filter:drop-shadow(0 0 4px rgba(40,255,130,1)) drop-shadow(0 0 12px rgba(40,255,130,0.9)) drop-shadow(0 0 22px rgba(40,255,130,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabDozer img { filter:drop-shadow(0 0 4px rgba(255,43,43,1)) drop-shadow(0 0 12px rgba(255,43,43,0.9)) drop-shadow(0 0 22px rgba(255,43,43,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabMini img { filter:drop-shadow(0 0 4px rgba(58,134,255,1)) drop-shadow(0 0 12px rgba(58,134,255,0.9)) drop-shadow(0 0 22px rgba(58,134,255,0.55)) !important; }
+    /* Mini Qu33ph is a full cabinet render like Dozer and Qu33ph-Ball, so it takes Ben-Day too */
+    #arcadeMenu.arc-comic #cabMini::after { display:block !important; }
     /* ── Pinball comic theme: greyscale table + Ben-Day dots ── */
     #pbBenday { display:none; position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;
       mix-blend-mode:multiply; background-repeat:repeat; background-size:9px 18px;
@@ -263,7 +285,7 @@
     #pinballScreen.pb-comic #pbBenday { display:block; }
     #cabMini img { width:100%; aspect-ratio:150/230; max-height:168px; object-fit:contain; border:0; border-radius:0;
       background:transparent; box-shadow:none; box-sizing:border-box; filter:drop-shadow(0 6px 16px rgba(0,0,0,0.6)); }
-    #arcadeMenu.arc-comic #cabMini::after, #arcadeMenu.arc-galaxy #cabMini::after { display:none; }
+    #arcadeMenu.arc-galaxy #cabMini::after { display:none; }
     #arcadeMenu.arc-comic  #cabMini img { filter:grayscale(1) contrast(1.18) drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-neon   #cabMini img { filter:drop-shadow(0 0 4px #ff2d55) drop-shadow(0 0 10px #ff2d55) drop-shadow(0 0 18px rgba(255,45,85,0.6)); }
     #arcadeMenu.arc-sunset #cabMini img { filter:sepia(0.55) saturate(1.7) brightness(1.1) drop-shadow(0 0 5px #ffc23a) drop-shadow(0 0 13px #ffb020) drop-shadow(0 0 24px rgba(255,176,32,0.72)); }
@@ -514,7 +536,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v328</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v330</div>
 
 <canvas id="game"></canvas>
 
@@ -573,7 +595,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=328" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=330" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -4235,11 +4257,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4250,9 +4272,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
