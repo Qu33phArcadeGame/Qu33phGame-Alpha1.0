@@ -261,6 +261,13 @@
                        radial-gradient(circle at 75% 75%, rgba(20,20,20,0.45) 1.5px, transparent 1.8px); }
     #pinballScreen.pb-comic #pinballBg { filter:grayscale(1) contrast(1.2); }
     #pinballScreen.pb-comic #pbBenday { display:block; }
+    #cabMini img { width:100%; aspect-ratio:150/230; max-height:168px; object-fit:contain; border:0; border-radius:0;
+      background:transparent; box-shadow:none; box-sizing:border-box; filter:drop-shadow(0 6px 16px rgba(0,0,0,0.6)); }
+    #arcadeMenu.arc-comic #cabMini::after, #arcadeMenu.arc-galaxy #cabMini::after { display:none; }
+    #arcadeMenu.arc-comic  #cabMini img { filter:grayscale(1) contrast(1.18) drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
+    #arcadeMenu.arc-neon   #cabMini img { filter:drop-shadow(0 0 4px #ff2d55) drop-shadow(0 0 10px #ff2d55) drop-shadow(0 0 18px rgba(255,45,85,0.6)); }
+    #arcadeMenu.arc-sunset #cabMini img { filter:sepia(0.55) saturate(1.7) brightness(1.1) drop-shadow(0 0 5px #ffc23a) drop-shadow(0 0 13px #ffb020) drop-shadow(0 0 24px rgba(255,176,32,0.72)); }
+    #arcadeMenu.arc-galaxy #cabMini img { filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 5px #b478ff) drop-shadow(0 0 13px rgba(154,107,255,0.8)); }
     .cab-q { width:150px; height:230px; border:2px dashed #333; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:64px; color:#3a3a3a; }
     .dl-overlay { display:none; position:absolute; inset:0; z-index:130; flex-direction:column; padding:14px; box-sizing:border-box; font-family:monospace; }
     .dl-tab { flex:1; padding:8px; background:#12101e; border:1px solid #2a2740; border-radius:8px; color:#888; font-family:monospace; font-size:11px; letter-spacing:2px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -507,7 +514,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v324</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v325</div>
 
 <canvas id="game"></canvas>
 
@@ -566,7 +573,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card"><div class="cab-soon">?</div><div class="cab-label" style="color:#4a4a5a;">COMING SOON</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=325" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -581,6 +588,10 @@
   <button id="pbLaunchBtn" style="position:absolute;right:14px;bottom:14px;z-index:6;background:radial-gradient(circle at 40% 30%,#ff9a9a,#d62424 65%,#8a1010);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;border:2px solid rgba(0,0,0,0.4);border-radius:12px;padding:12px 18px;box-shadow:0 4px 10px rgba(0,0,0,0.6),inset 0 2px 6px rgba(255,255,255,0.4);">LAUNCH</button>
 </div>
 
+<div id="miniScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
+  <iframe id="miniFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
+  <button class="back-tl" onclick="miniBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
+</div>
 <div id="stackScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="stackFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
   <button class="back-tl" onclick="stackBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
@@ -1331,6 +1342,27 @@ function themeFilter(){
   if(s==="galaxy")  return "hue-rotate(230deg) saturate(1.5) brightness(1.05)";
   return "none"; // simple / default = the original look
 }
+function keyWhiteCanvas(im){
+  var c=document.createElement("canvas"); c.width=im.naturalWidth; c.height=im.naturalHeight;
+  var g=c.getContext("2d",{willReadFrequently:true}); g.drawImage(im,0,0);
+  var d=g.getImageData(0,0,c.width,c.height), p=d.data;
+  for(var i=0;i<p.length;i+=4){ if(!p[i+3]) continue;
+    var mx=Math.max(p[i],p[i+1],p[i+2]), mn=Math.min(p[i],p[i+1],p[i+2]);
+    if(mx-mn<30){ if(mn>=232) p[i+3]=0; else if(mn>202) p[i+3]=Math.min(p[i+3], Math.round((232-mn)*(255/30))); } }
+  g.putImageData(d,0,0); return c;
+}
+var _keyCache={};
+function setIconSrc(el, src, key){
+  if(el.getAttribute("data-src")===src) return;
+  el.setAttribute("data-src", src);
+  if(!key){ el.setAttribute("src", src); return; }
+  if(_keyCache[src]){ el.setAttribute("src", _keyCache[src]); return; }
+  el.setAttribute("src", src);                       // show it right away, key it once it lands
+  var probe=new Image();
+  probe.onload=function(){ try{ var u=keyWhiteCanvas(probe).toDataURL("image/png"); _keyCache[src]=u;
+    if(el.getAttribute("data-src")===src) el.setAttribute("src", u); }catch(e){} };
+  probe.src=src;
+}
 function applyThemeFilters(){
   var s=(typeof styleOf==="function")?styleOf():currentTheme;
   var f=themeFilter(), css=(f==="none"?"":f);
@@ -1341,8 +1373,8 @@ function applyThemeFilters(){
   var am=document.getElementById("arcadeMenu");
   if(am){ am.className = s==="cartoon"?"arc-comic":s==="neon"?"arc-neon":s==="galaxy"?"arc-galaxy":s==="sunset"?"arc-sunset":""; }
   { var _ff=({ "default":"fidgetqu33phfield.png","cartoon":"fidgetcomicfield.png","neon":"fidgetneonfield.png","sunset":"fidgetgoldenfield.png","galaxy":"fidgetgalaxyfield.png" })[s]||"fidgetqu33phfield.png"; var _fi=document.querySelector("#cabFidget img"); if(_fi && _fi.getAttribute("src")!==_ff) _fi.setAttribute("src",_ff); }
-  { var _ss=(s==="cartoon")?"stackicon_comic.png?v=311":"stackicon.png?v=311"; var _si=document.querySelector("#cabStack img"); if(_si && _si.getAttribute("src")!==_ss) _si.setAttribute("src",_ss); }
-  { var _bs=(s==="cartoon")?"blueC.png":"blue.png"; var _bi=document.querySelector("#cabFlip img"); if(_bi){ if(_bi.getAttribute("src")!==_bs) _bi.setAttribute("src",_bs); orientFlipIcon(_bi); } }
+  { var _ss=(s==="cartoon")?"stackicon_comic.png?v=311":"stackicon.png?v=311"; var _si=document.querySelector("#cabStack img"); if(_si) setIconSrc(_si,_ss,s==="cartoon"); }
+  { var _bs=(s==="cartoon")?"blueC.png":"blue.png"; var _bi=document.querySelector("#cabFlip img"); if(_bi){ setIconSrc(_bi,_bs,s==="cartoon"); orientFlipIcon(_bi); } }
   var pbg=document.getElementById("pinballBg"); if(pbg) pbg.style.filter=css;
   var pcv=document.getElementById("pinballCanvas"); if(pcv) pcv.style.filter="";
 }
@@ -4202,9 +4234,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=324&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=325&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=325&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=324&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=325&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4215,9 +4249,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=324&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=325&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=324&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=325&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
