@@ -251,7 +251,8 @@
     #arcadeMenu.arc-comic #cabStack img,
     #arcadeMenu.arc-comic #cabFlip img   { filter:grayscale(1) contrast(1.18) drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-galaxy .cab-card { position:relative; }
-    #arcadeMenu.arc-galaxy .cab-card::after { content:""; position:absolute; inset:0 0 26px 0; pointer-events:none; mix-blend-mode:screen; border-radius:18px; background-image:radial-gradient(circle, rgba(255,255,255,0.95) 1px, transparent 1.5px); background-size:20px 20px; animation:arcTwinkle 1.5s steps(2) infinite; }
+    /* galaxy: scattered stars and nebulae, never a regular grid */
+    #arcadeMenu.arc-galaxy .cab-card::after { content:""; position:absolute; inset:0 0 26px 0; pointer-events:none; mix-blend-mode:screen; border-radius:18px; background-repeat:no-repeat; background-image:radial-gradient(ellipse 55% 38% at 72% 24%, rgba(150,90,255,0.20), transparent 70%),radial-gradient(ellipse 45% 30% at 24% 68%, rgba(90,140,255,0.16), transparent 72%),radial-gradient(circle at 33.4% 17.2%, rgba(255,255,255,0.58) 0 1.2px, transparent 1.7px),radial-gradient(circle at 53.4% 37.4%, rgba(255,255,255,0.78) 0 0.7px, transparent 1.2px),radial-gradient(circle at 6.5% 43.8%, rgba(255,255,255,0.59) 0 0.8px, transparent 1.3px),radial-gradient(circle at 42.9% 80.7%, rgba(255,255,255,0.65) 0 0.8px, transparent 1.3px),radial-gradient(circle at 62.0% 92.1%, rgba(255,255,255,0.73) 0 1.2px, transparent 1.7px),radial-gradient(circle at 94.8% 7.4%, rgba(255,255,255,0.68) 0 1.4px, transparent 1.9px),radial-gradient(circle at 16.6% 14.1%, rgba(255,255,255,0.92) 0 0.9px, transparent 1.4px),radial-gradient(circle at 20.0% 57.7%, rgba(255,255,255,0.72) 0 1.2px, transparent 1.7px),radial-gradient(circle at 54.5% 8.9%, rgba(255,255,255,0.64) 0 0.7px, transparent 1.2px),radial-gradient(circle at 67.0% 43.2%, rgba(255,255,255,0.81) 0 1.0px, transparent 1.5px),radial-gradient(circle at 45.6% 31.2%, rgba(255,255,255,0.86) 0 1.3px, transparent 1.8px),radial-gradient(circle at 25.9% 57.0%, rgba(255,255,255,0.94) 0 1.1px, transparent 1.6px),radial-gradient(circle at 71.6% 30.1%, rgba(255,255,255,0.6) 0 1.5px, transparent 2.0px),radial-gradient(circle at 42.3% 74.2%, rgba(255,255,255,0.77) 0 0.8px, transparent 1.3px),radial-gradient(circle at 6.7% 65.8%, rgba(255,255,255,0.81) 0 1.3px, transparent 1.8px),radial-gradient(circle at 85.3% 32.5%, rgba(255,255,255,0.82) 0 1.3px, transparent 1.8px); animation:arcTwinkle 2.6s ease-in-out infinite; }
     @keyframes arcTwinkle { 0%,100%{ opacity:0.35; } 50%{ opacity:0.95; } }
     .cab-q { width:150px; height:230px; border:2px dashed #333; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:64px; color:#3a3a3a; }
     .dl-overlay { display:none; position:absolute; inset:0; z-index:130; flex-direction:column; padding:14px; box-sizing:border-box; font-family:monospace; }
@@ -393,6 +394,7 @@
       background:#1a1a1a; border-color:#c8a840; color:#c8a840;
     }
     .nation-flag { font-size:11px; font-weight:bold; letter-spacing:1px; color:#0c0c0c; background:#ffd700; border-radius:4px; padding:4px 6px; line-height:1; min-width:34px; text-align:center; }
+    .nation-flag-img { width:38px; height:26px; display:block; border-radius:3px; box-shadow:0 1px 3px rgba(0,0,0,0.6); }
     .nation-name { font-size:10px; text-align:center; line-height:1.3; }
     .nation-confirm {
       width:min(400px,92vw); margin-top:16px;
@@ -498,7 +500,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v320</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v321</div>
 
 <canvas id="game"></canvas>
 
@@ -946,7 +948,17 @@ function showNationSelect(){
   NATIONS.forEach((n,i)=>{
     const btn = document.createElement("button");
     btn.className="nation-btn";
-    btn.innerHTML=`<span class="nation-flag">${NATION_ABBR[n.name]||n.name.slice(0,3).toUpperCase()}</span><span class="nation-name">${n.name}</span>`;
+    if(typeof colorblind!=="undefined" && colorblind){
+      btn.innerHTML=`<span class="nation-flag">${NATION_ABBR[n.name]||n.name.slice(0,3).toUpperCase()}</span><span class="nation-name">${n.name}</span>`;
+    } else {
+      const fc=document.createElement("canvas");
+      const dp=Math.min(3,window.devicePixelRatio||1), FW=38, FH=26;
+      fc.width=Math.round(FW*dp); fc.height=Math.round(FH*dp);
+      fc.className="nation-flag-img";
+      try{ const fx=fc.getContext("2d"); fx.scale(dp,dp); drawMiniFlag(fx,0,0,FW,FH,n.name); }catch(e){}
+      const nm=document.createElement("span"); nm.className="nation-name"; nm.textContent=n.name;
+      btn.appendChild(fc); btn.appendChild(nm);
+    }
     btn.onclick=()=>{
       document.querySelectorAll(".nation-btn").forEach(b=>b.classList.remove("selected"));
       btn.classList.add("selected");
@@ -4182,9 +4194,9 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=320&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=321&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=320&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=321&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4195,9 +4207,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=320&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=321&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=320&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=321&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }

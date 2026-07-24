@@ -70,7 +70,7 @@ const TH={
   'cartoon':{name:'COMIC',       filter:'grayscale(1) contrast(1.2)',                glow:null, benday:true},
   'neon':   {name:'NEON',        filter:'saturate(1.6) brightness(1.08)',            glow:'#28ff82'},
   'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020'},
-  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff'}
+  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff', galaxies:true}
 }[THEME] || {name:'DEFAULT', filter:'', glow:null};
 const ACC=TH.glow||'#ffd700';
 const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
@@ -489,6 +489,51 @@ function drawHUD(){
     ctx.fillText('drag across the slot \u2014 release to drop', CW/2, CY(0.235));
   }
 }
+// sporadic stars, constellations and slow spirals — never a grid
+let STARS=null, CONSTEL=null;
+function buildSky(){
+  STARS=[]; CONSTEL=[];
+  for(let i=0;i<70;i++) STARS.push({x:Math.random(),y:Math.random(),r:0.4+Math.random()*1.5,p:Math.random()*6.283});
+  for(let k=0;k<3;k++){
+    const cx=0.15+Math.random()*0.7, cy=0.08+Math.random()*0.6, pts=[];
+    for(let i=0;i<3+((Math.random()*3)|0);i++)
+      pts.push({x:cx+(Math.random()-0.5)*0.22, y:cy+(Math.random()-0.5)*0.18});
+    CONSTEL.push(pts);
+  }
+}
+function drawSky(c){
+  if(!STARS) buildSky();
+  const t=Date.now()/1000;
+  c.save();
+  for(const st of STARS){
+    c.globalAlpha=0.35+0.5*Math.abs(Math.sin(t*0.9+st.p));
+    c.fillStyle='#fff'; c.beginPath(); c.arc(st.x*CW,st.y*CH,st.r*(CH/900),0,6.283); c.fill();
+  }
+  c.globalAlpha=0.35; c.strokeStyle='rgba(190,165,255,0.75)'; c.lineWidth=Math.max(1,CH*0.0013);
+  for(const pts of CONSTEL){
+    c.beginPath(); pts.forEach((p,i)=> i? c.lineTo(p.x*CW,p.y*CH) : c.moveTo(p.x*CW,p.y*CH)); c.stroke();
+    c.fillStyle='rgba(220,205,255,0.9)';
+    for(const p of pts){ c.beginPath(); c.arc(p.x*CW,p.y*CH,CH*0.0022,0,6.283); c.fill(); }
+  }
+  c.globalAlpha=1;
+  for(let i=0;i<3;i++){
+    const R=CH*(0.055+0.028*(i%2));
+    c.save(); c.translate(CW*(0.18+0.32*i), CH*(0.07+0.08*i));
+    c.rotate(t*(0.09+0.04*i)*(i%2?-1:1));
+    const g=c.createRadialGradient(0,0,0,0,0,R);
+    g.addColorStop(0,'rgba(235,215,255,0.5)'); g.addColorStop(0.4,'rgba(150,90,255,0.20)'); g.addColorStop(1,'rgba(90,40,160,0)');
+    c.fillStyle=g; c.beginPath(); c.arc(0,0,R,0,6.283); c.fill();
+    c.strokeStyle='rgba(200,170,255,0.28)'; c.lineWidth=Math.max(1,R*0.05);
+    for(let arm=0;arm<2;arm++){
+      c.beginPath();
+      for(let q=0;q<=24;q++){ const th=arm*Math.PI+q*0.14, rr=R*0.12+(q/24)*R*0.9;
+        const px=Math.cos(th)*rr, py=Math.sin(th)*rr*0.42; q? c.lineTo(px,py) : c.moveTo(px,py); }
+      c.stroke();
+    }
+    c.restore();
+  }
+  c.restore();
+}
 function drawBenday(){
   if(!TH.benday) return;
   ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.45)';
@@ -507,6 +552,7 @@ function draw(){
   ctx.drawImage(sc,0,0);
   ctx.filter='none';
   drawBenday();
+  if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
   drawChair(ctx);
   drawItems(ctx);
   glowOff(ctx);

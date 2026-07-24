@@ -10,25 +10,19 @@
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #stage{ position:relative; }
   #game{ display:block; }
-  #fx{ position:absolute; inset:0; pointer-events:none; z-index:2; }
-  /* comic: greyscale is on the canvas, ben-day dots ride on top */
-  #fx.fx-comic{ background-image:radial-gradient(circle, rgba(0,0,0,0.45) 1.7px, transparent 2.0px); background-size:8px 8px; mix-blend-mode:multiply; }
-  /* neon: green edge glow */
-  #fx.fx-neon{ box-shadow: inset 0 0 60px rgba(40,255,130,0.55), inset 0 0 20px rgba(40,255,130,0.55); }
-  /* sunset: warm gold glow */
-  #fx.fx-sunset{ box-shadow: inset 0 0 58px rgba(255,180,45,0.5); }
-  /* galaxy: violet glow + twinkle */
-  #fx.fx-galaxy{ box-shadow: inset 0 0 58px rgba(150,90,255,0.5); background-image:radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1.5px); background-size:26px 26px; mix-blend-mode:screen; animation:twk 1.6s steps(2) infinite; }
-  @keyframes twk{ 0%,100%{opacity:0.4;} 50%{opacity:0.95;} }
+
 </style>
 </head>
 <body>
-<div id="wrap"><div id="stage"><canvas id="game"></canvas><div id="fx"></div></div></div>
+<div id="wrap"><div id="stage"><canvas id="game"></canvas></div></div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
+const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 const FIELD=new Image(); FIELD.src='skeefield.png?v=306';
 const MK={ red:new Image(), green:new Image(), blue:new Image() };
-MK.red.src='red.png'; MK.green.src='green.png'; MK.blue.src='blue.png';
+const CMC=(THEME==='cartoon');
+MK.red.src=CMC?'redC.png':'red.png'; MK.green.src=CMC?'greenC.png':'green.png'; MK.blue.src=CMC?'blueC.png':'blue.png';
 function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 
 const PW=100, PH=177;              // field logical space (matches skeefield aspect 0.563)
@@ -37,20 +31,83 @@ function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); 
   const ar=PW/PH; let cw=r.width,ch=r.width/ar; if(ch>r.height){ch=r.height;cw=r.height*ar;}
   cv.style.width=cw+'px'; cv.style.height=ch+'px';
   const st=document.getElementById('stage'); if(st){ st.style.width=cw+'px'; st.style.height=ch+'px'; }
-  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; SC=CW/PW; }
+  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; sc.width=CW; sc.height=CH; SC=CW/PW; }
 sz();
-// ---- theme effects (comic greyscale+benday, neon green glow, etc.) ----
-const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
-function applyTheme(){
-  const f={ cartoon:'grayscale(1) contrast(1.18)',
-            neon:'hue-rotate(95deg) saturate(2) brightness(1.12)',
-            sunset:'sepia(0.5) saturate(1.6) brightness(1.2) hue-rotate(-8deg)',
-            galaxy:'hue-rotate(230deg) saturate(1.5) brightness(1.05)' }[THEME]||'';
-  cv.style.filter=f;
-  const fx=document.getElementById('fx');
-  fx.className = THEME==='cartoon'?'fx-comic':THEME==='neon'?'fx-neon':THEME==='sunset'?'fx-sunset':THEME==='galaxy'?'fx-galaxy':'';
+// ---- themes: the cabinet gets the filter, the markers keep their colour ----
+const TH={
+  'default':{name:'DEFAULT',     filter:'',                                          glow:null},
+  'cartoon':{name:'COMIC',       filter:'grayscale(1) contrast(1.2)',                glow:null, benday:true},
+  'neon':   {name:'NEON',        filter:'saturate(1.6) brightness(1.08)',            glow:'#28ff82'},
+  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020'},
+  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff', galaxies:true}
+}[THEME] || {name:'DEFAULT', filter:'', glow:null};
+const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
+function glowOn(c){ if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.016; } }
+function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
+// sporadic stars, constellations and slow spirals — no grid, nothing that reads like ben-day
+let STARS=null, CONSTEL=null;
+function buildSky(){
+  STARS=[]; CONSTEL=[];
+  for(let i=0;i<70;i++) STARS.push({x:Math.random(),y:Math.random(),r:0.4+Math.random()*1.5,p:Math.random()*6.283});
+  for(let k=0;k<3;k++){
+    const cx=0.15+Math.random()*0.7, cy=0.10+Math.random()*0.7, pts=[];
+    for(let i=0;i<3+((Math.random()*3)|0);i++)
+      pts.push({x:cx+(Math.random()-0.5)*0.22, y:cy+(Math.random()-0.5)*0.20});
+    CONSTEL.push(pts);
+  }
 }
-applyTheme();
+function drawSky(c){
+  if(!STARS) buildSky();
+  const t=Date.now()/1000;
+  c.save();
+  for(const st of STARS){
+    c.globalAlpha=0.35+0.5*Math.abs(Math.sin(t*0.9+st.p));
+    c.fillStyle='#fff'; c.beginPath(); c.arc(st.x*CW, st.y*CH, st.r*(CH/900), 0, 6.283); c.fill();
+  }
+  c.globalAlpha=0.35; c.strokeStyle='rgba(190,165,255,0.75)'; c.lineWidth=Math.max(1,CH*0.0013);
+  for(const pts of CONSTEL){
+    c.beginPath();
+    pts.forEach((p,i)=> i? c.lineTo(p.x*CW,p.y*CH) : c.moveTo(p.x*CW,p.y*CH));
+    c.stroke();
+    c.fillStyle='rgba(220,205,255,0.9)';
+    for(const p of pts){ c.beginPath(); c.arc(p.x*CW,p.y*CH,CH*0.0022,0,6.283); c.fill(); }
+  }
+  c.globalAlpha=1;
+  for(let i=0;i<3;i++){                                  // slow spiral galaxies
+    const R=CH*(0.06+0.03*(i%2));
+    const gx=CW*(0.16+0.34*i), gy=CH*(0.08+0.10*i);
+    c.save(); c.translate(gx,gy); c.rotate(t*(0.09+0.04*i)*(i%2?-1:1));
+    const g=c.createRadialGradient(0,0,0,0,0,R);
+    g.addColorStop(0,'rgba(235,215,255,0.5)'); g.addColorStop(0.4,'rgba(150,90,255,0.20)'); g.addColorStop(1,'rgba(90,40,160,0)');
+    c.fillStyle=g; c.beginPath(); c.arc(0,0,R,0,6.283); c.fill();
+    c.strokeStyle='rgba(200,170,255,0.28)'; c.lineWidth=Math.max(1,R*0.05);
+    for(let arm=0;arm<2;arm++){
+      c.beginPath();
+      for(let q=0;q<=24;q++){ const th=arm*Math.PI+q*0.14, rr=R*0.12+(q/24)*R*0.9;
+        const px=Math.cos(th)*rr, py=Math.sin(th)*rr*0.42;
+        q? c.lineTo(px,py) : c.moveTo(px,py); }
+      c.stroke();
+    }
+    c.restore();
+  }
+  c.restore();
+}
+function drawThemeOverlay(){
+  if(TH.benday){
+    ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.42)';
+    const ds=CH*0.015;
+    for(let y=0;y<CH+ds;y+=ds){ const row=Math.round(y/ds);
+      for(let x=((row%2)?ds/2:0);x<CW+ds;x+=ds){ ctx.beginPath(); ctx.arc(x,y,ds*0.16,0,6.283); ctx.fill(); } }
+    ctx.restore(); return;
+  }
+  if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
+  if(TH.glow){
+    const g=ctx.createRadialGradient(CW/2,CH*0.5,CH*0.18,CW/2,CH*0.5,CH*0.78);
+    const c=TH.glow==='#28ff82'?'40,255,130':TH.glow==='#ffb020'?'255,176,32':'150,90,255';
+    g.addColorStop(0,'rgba('+c+',0)'); g.addColorStop(1,'rgba('+c+',0.26)');
+    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH); ctx.restore();
+  }
+}
 
 function X(u){ return u*SC; }                 // field-units -> px
 function fx(f){ return f*CW; }                 // field-fraction x -> px
@@ -152,15 +209,20 @@ function ease(t){ return 1-Math.pow(1-t,2); }   // ease-out
 
 function drawMarker(color, cx, cy, scale, rot){
   const img=MK[color], w=X(11)*scale, h=X(11)*scale;
-  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot);
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); glowOn(ctx);
   if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; ctx.drawImage(img,-w/2,-w/(2*ar),w,w/ar); }
   else { ctx.fillStyle=(color==='red'?'#ff3030':color==='green'?'#30d060':'#3a7bff'); ctx.beginPath(); ctx.arc(0,0,w*0.45,0,7); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=X(0.5); ctx.stroke(); }
-  ctx.restore();
+  glowOff(ctx); ctx.restore();
 }
 
 function draw(){
   ctx.setTransform(1,0,0,1,0,0);
-  if(ready(FIELD)) ctx.drawImage(FIELD,0,0,CW,CH); else { ctx.fillStyle='#111'; ctx.fillRect(0,0,CW,CH); }
+  s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
+  if(ready(FIELD)) s2.drawImage(FIELD,0,0,CW,CH); else { s2.fillStyle='#111'; s2.fillRect(0,0,CW,CH); }
+  if(CANFILTER && TH.filter) ctx.filter=TH.filter;
+  ctx.drawImage(sc,0,0);
+  ctx.filter='none';
+  drawThemeOverlay();
   // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
   ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';

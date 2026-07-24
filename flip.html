@@ -469,8 +469,31 @@ function paintBG(c){
     c.fillStyle=g; c.fillRect(0,0,CW,CH);
   }
 }
-function drawGalaxies(c){                            // slowly spinning spiral galaxies
+let FSTARS=null, FCON=null;
+function drawGalaxies(c){                            // spirals, scattered stars and constellations
   const t=Date.now()/1000;
+  if(!FSTARS){
+    FSTARS=[]; FCON=[];
+    for(let i=0;i<70;i++) FSTARS.push({x:Math.random(),y:Math.random(),r:0.4+Math.random()*1.5,p:Math.random()*6.283});
+    for(let k=0;k<3;k++){
+      const cx=0.12+Math.random()*0.74, cy=0.06+Math.random()*0.6, pts=[];
+      for(let i=0;i<3+((Math.random()*3)|0);i++)
+        pts.push({x:cx+(Math.random()-0.5)*0.22, y:cy+(Math.random()-0.5)*0.18});
+      FCON.push(pts);
+    }
+  }
+  c.save();
+  for(const st of FSTARS){
+    c.globalAlpha=0.32+0.5*Math.abs(Math.sin(t*0.9+st.p));
+    c.fillStyle='#fff'; c.beginPath(); c.arc(st.x*CW,st.y*CH,st.r*(CH/900),0,6.283); c.fill();
+  }
+  c.globalAlpha=0.32; c.strokeStyle='rgba(190,165,255,0.75)'; c.lineWidth=Math.max(1,CH*0.0012);
+  for(const pts of FCON){
+    c.beginPath(); pts.forEach((p,i)=> i? c.lineTo(p.x*CW,p.y*CH) : c.moveTo(p.x*CW,p.y*CH)); c.stroke();
+    c.fillStyle='rgba(220,205,255,0.9)';
+    for(const p of pts){ c.beginPath(); c.arc(p.x*CW,p.y*CH,CH*0.002,0,6.283); c.fill(); }
+  }
+  c.restore();
   for(let i=0;i<4;i++){
     const R=CH*(0.09+0.05*(i%2));
     const gx=(((i*0.31+0.12)*CW*2.2 - camX*0.05)%(CW*2.2)+CW*2.2)%(CW*2.2)-CW*0.6;
