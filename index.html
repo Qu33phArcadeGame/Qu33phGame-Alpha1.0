@@ -514,7 +514,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v326</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v328</div>
 
 <canvas id="game"></canvas>
 
@@ -573,7 +573,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=326" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=328" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -1375,7 +1375,8 @@ function applyThemeFilters(){
   { var _ff=({ "default":"fidgetqu33phfield.png","cartoon":"fidgetcomicfield.png","neon":"fidgetneonfield.png","sunset":"fidgetgoldenfield.png","galaxy":"fidgetgalaxyfield.png" })[s]||"fidgetqu33phfield.png"; var _fi=document.querySelector("#cabFidget img"); if(_fi && _fi.getAttribute("src")!==_ff) _fi.setAttribute("src",_ff); }
   { var _ss=(s==="cartoon")?"stackicon_comic.png?v=311":"stackicon.png?v=311"; var _si=document.querySelector("#cabStack img"); if(_si) setIconSrc(_si,_ss,s==="cartoon"); }
   { var _bs=(s==="cartoon")?"blueC.png":"blue.png"; var _bi=document.querySelector("#cabFlip img"); if(_bi){ setIconSrc(_bi,_bs,s==="cartoon"); orientFlipIcon(_bi); } }
-  var pbg=document.getElementById("pinballBg"); if(pbg) pbg.style.filter=css;
+  var pbg=document.getElementById("pinballBg"); if(pbg) pbg.style.filter=(s==="cartoon")?"grayscale(1) contrast(1.18)":css;
+  { var _ps=document.getElementById("pinballScreen"); if(_ps) _ps.classList.toggle("pb-comic", s==="cartoon"); }
   var pcv=document.getElementById("pinballCanvas"); if(pcv) pcv.style.filter="";
 }
 function setTheme(t){
@@ -4234,11 +4235,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=326&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=326&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=326&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4249,9 +4250,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=326&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=326&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=328&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
@@ -6430,12 +6431,22 @@ function pbDrawFlipper(px,py,ang,len,mirror){ var c=pbctx,tx=px+Math.cos(ang)*le
   c.restore(); }
 function pbDrawQuad(x,y,w,hh){ var c=pbctx,a=pbProject(x,y),b2=pbProject(x+w,y),d2=pbProject(x+w,y+hh),e2=pbProject(x,y+hh); c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b2[0],b2[1]);c.lineTo(d2[0],d2[1]);c.lineTo(e2[0],e2[1]);c.closePath(); }
 function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
+  var _cm=false; try{ _cm=document.getElementById("pinballScreen").classList.contains("pb-comic"); }catch(e){}
+  var _gs=function(on){ try{ c.filter = (_cm&&on) ? "grayscale(1) contrast(1.15)" : "none"; }catch(e){} };
+  _gs(true);                                   // comic: the table greys out...
   // (field border walls are invisible; physics only)
   for(var i=0;i<pbBumpers.length;i++){ var bp=pbBumpers[i]; if(bp.sling)continue; var P=pbProject(bp.x,bp.y),rx=pbSizePx(bp.r,bp.y),ry=rx*0.52; c.save();c.strokeStyle=i%2?"#ff3b6a":"#3affea";c.shadowColor=i%2?"#ff3b6a":"#3affea";c.shadowBlur=bp.hit>0?13:5;c.lineWidth=Math.max(2,rx*0.14);c.beginPath();c.ellipse(P[0],P[1],rx,ry,0,0,6.283);c.stroke();c.fillStyle=i%2?"rgba(255,59,106,0.16)":"rgba(58,255,234,0.16)";c.fill();c.restore(); }
   c.save(); var megaOn=pbMega.flash>0; c.shadowColor="#ffd24a"; c.shadowBlur=megaOn?22:11; c.fillStyle=megaOn?"rgba(255,210,74,0.30)":"rgba(255,210,74,0.12)"; pbDrawQuad(pbMega.x,pbMega.y,pbMega.w,pbMega.h);c.fill();c.strokeStyle=megaOn?"#fff2b0":"#ffd24a";c.lineWidth=megaOn?4:2.5;c.stroke(); c.restore();
   var mp=pbProject(pbMega.x+pbMega.w/2,pbMega.y-0.005); c.save();c.fillStyle="#ffd24a";c.shadowColor="#ffd24a";c.shadowBlur=8;c.font="bold "+pbSizePx(0.055,pbMega.y)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="bottom";c.fillText("MEGA",mp[0],mp[1]);c.restore();
+  _gs(false);                                  // ...but the chair and the paddles stay in colour
+  if(_cm && chairImg && chairImg.complete && chairImg.naturalWidth){
+    var _ca=pbProject(pbChair.x,pbChair.y), _cb=pbProject(pbChair.x+pbChair.w,pbChair.y+pbChair.h);
+    c.drawImage(chairImg,_ca[0],_ca[1],Math.max(4,_cb[0]-_ca[0]),Math.max(4,_cb[1]-_ca[1]));
+  }
   pbDrawFlipper(0.22,1.02, 0.5-pbFL*1.0, 0.20, true); pbDrawFlipper(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, false);
+  _gs(true);
   if(b){ var BP=pbProject(b.x,b.y),br=pbSizePx(PB_R,b.y); c.save();c.shadowColor="#fff";c.shadowBlur=4;var bg=c.createRadialGradient(BP[0]-br*0.3,BP[1]-br*0.3,br*0.2,BP[0],BP[1],br);bg.addColorStop(0,"#fff");bg.addColorStop(1,"#8892a0");c.fillStyle=bg;c.beginPath();c.arc(BP[0],BP[1],br,0,6.283);c.fill();c.restore(); }
+  _gs(false);
   c.fillStyle="#8fe0ff";c.textBaseline="middle"; c.font="bold "+(pbImgRW*0.03)+"px Helvetica, Arial, sans-serif"; c.textAlign="right"; c.fillText(pbHigh||0, pbImgOX+0.63*pbImgRW, pbImgOY+0.315*pbImgRH);
   c.font="bold "+(pbImgRW*0.023)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.fillText("SCORE "+pbScore+"    BALLS "+pbBalls, pbImgOX+0.5*pbImgRW, pbImgOY+0.328*pbImgRH);
   if(pbState==="ready"){ var rp=pbProject(0.86,1.02); c.fillStyle="rgba(255,255,255,0.9)";c.font="bold "+(pbImgRW*0.022)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("LAUNCH \u2192",rp[0],rp[1]); }

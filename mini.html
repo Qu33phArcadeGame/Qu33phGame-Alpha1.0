@@ -60,7 +60,7 @@ function IMG(s){ const i=new Image(); i.src=s; return i; }
 function ready(i){ return i && i.complete && (i.naturalWidth||i.width)>0; }
 const C=(THEME==='cartoon');
 const NEAR=IMG('minitablenear.png'), FAR=IMG('minitablefar.jpg');
-const CHAIR=IMG('Chair.png'), BOX=IMG('minicabinet.png');
+const CHAIR=IMG('Chair.png'), BOX=IMG('minicase.png');
 // the four mini highlighters — blue is always thrown last
 const MK={ green:IMG('minigreen.png'), pink:IMG('minipink.png'),
            yellow:IMG('miniyellow.png'), blue:IMG('miniblue.png') };
@@ -71,8 +71,8 @@ const TH={
   'default':{name:'DEFAULT',     filter:'',                                          glow:null},
   'cartoon':{name:'COMIC',       filter:'grayscale(1) contrast(1.2)',                glow:null, benday:true},
   'neon':   {name:'NEON',        filter:'saturate(1.6) brightness(1.08)',            glow:'#28ff82'},
-  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020'},
-  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff'}
+  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020', tint:'rgba(255,176,32,0.16)'},
+  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff', galaxies:true}
 }[THEME] || {name:'DEFAULT', filter:'', glow:null};
 const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
 let BEND=null,BENDkey=0;
@@ -83,6 +83,31 @@ function bendayPattern(c, ds){
   const r=Math.max(1,ds*0.16);
   for(const p of [[0,0],[ds,0],[0,ds*2],[ds,ds*2],[ds*0.5,ds]]){ g.beginPath(); g.arc(p[0],p[1],r,0,6.283); g.fill(); }
   BEND=c.createPattern(t,'repeat'); BENDkey=ds; return BEND;
+}
+// galaxy: scattered stars and constellations, never a grid (that's Ben-Day's job)
+let STARS=null, CONSTEL=null;
+function buildSky(){
+  let sd=20260724; const rnd=()=>{ sd=(sd*1103515245+12345)&0x7fffffff; return sd/0x7fffffff; };
+  STARS=[]; for(let i=0;i<110;i++) STARS.push({x:rnd(),y:rnd()*0.75,r:0.6+rnd()*1.9,p:rnd()*6.28});
+  CONSTEL=[];
+  for(let c=0;c<3;c++){ const cx=0.15+rnd()*0.7, cy=0.06+rnd()*0.5, pts=[];
+    for(let i=0;i<3+((rnd()*3)|0);i++) pts.push({x:cx+(rnd()-0.5)*0.20, y:cy+(rnd()-0.5)*0.16});
+    CONSTEL.push(pts); }
+}
+function drawSky(c){
+  if(!STARS) buildSky();
+  const t=Date.now()/1000; c.save();
+  for(const st of STARS){
+    c.globalAlpha=0.35+0.5*Math.abs(Math.sin(t*0.9+st.p));
+    c.fillStyle='#fff'; c.beginPath(); c.arc(st.x*CW,st.y*CH,st.r*(CH/900),0,6.283); c.fill();
+  }
+  c.globalAlpha=0.35; c.strokeStyle='rgba(190,165,255,0.75)'; c.lineWidth=Math.max(1,CH*0.0013);
+  for(const pts of CONSTEL){
+    c.beginPath(); pts.forEach((p,i)=> i? c.lineTo(p.x*CW,p.y*CH) : c.moveTo(p.x*CW,p.y*CH)); c.stroke();
+    c.fillStyle='rgba(220,205,255,0.9)';
+    for(const p of pts){ c.beginPath(); c.arc(p.x*CW,p.y*CH,CH*0.0022,0,6.283); c.fill(); }
+  }
+  c.globalAlpha=1; c.restore();
 }
 function glowOn(c,col){ if(TH.glow){ c.shadowColor=(THEME==='neon'&&col)?col:TH.glow; c.shadowBlur=CH*0.016; } }
 function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
@@ -104,7 +129,7 @@ const VIEW={
   far: { img:FAR,  invA:2.311, invB:2.694, hw0:0.2094, fy0:0.167, slope:0.3414, cx:0.4968 }
 };
 const V_SEAM=0.5;          // joint between the two tables — "the first set of tables"
-const V_DESTINY=0.75;      // the line of destiny
+const V_DESTINY=0.5;       // the line of destiny IS that joint — you have to reach the far table
 const LANE_AR=4.0;         // the lane is about 4 table-widths long; keeps distances honest
 function coverRect(img){
   const iw=img.naturalWidth, ih=img.naturalHeight;
@@ -129,7 +154,7 @@ function proj(u,v){
 const MATCH=45, SUDDEN_AT=9;              // 45s match, last 9s is sudden death (same 20% as 25/5 min)
 const MK_LEN=0.115;                        // marker length in u units
 const RAD=MK_LEN*0.42;                     // collision radius in u units
-const BOXV=0.55, BOXU=0.5, BOXW=0.17, BOXH=0.05;   // the Qu33ph box target
+const BOXV=0.74, BOXU=0.5, BOXW=0.15, BOXH=0.045;  // the mini case — Mega Qu33ph, sat between the chairs
 let state='menu', tLeft=MATCH, sudden=false, score=0, best=0, turnPts=0, turn=1;
 let markers=[], order=[], idx=0, live=null, popups=[], msg='', msgT=0, coins=0, paid=false;
 let aimU=0.5, capsOff=0, turnPause=0;
@@ -146,7 +171,10 @@ function reset(){
   turnPause=0; state='play'; tLeft=MATCH; sudden=false; score=0; turn=1; coins=0; paid=false;
   popups=[]; msg=''; msgT=0; capsOff=0; newTurn();
 }
-function pop(txt,col,big){ popups.push({txt:txt,col:col||'#fff',life:big?96:70,big:!!big}); }
+function pop(txt,col,big,peef){ popups.push({txt:txt,col:col||'#fff',life:big?96:70,big:!!big,peef:!!peef,shake:peef?9:0}); }
+let shakeT=0, shakeAmt=0;
+function addShake(a){ shakeAmt=Math.max(shakeAmt,a); shakeT=0.42; }
+function haptic(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
 
 // ─── throwing ─────────────────────────────────────────────────────────────
 function nextColor(){ return idx<order.length ? order[idx] : null; }
@@ -166,15 +194,16 @@ function fellOff(m, byBlue){
   m.off=true; m.alive=false;
   let d=0;
   if(sudden){
-    if(m.v>V_DESTINY) d=10;               // SD: off the counter past the line of destiny
-    else d=6;
+    d = (m.v>V_DESTINY) ? 10 : 6;          // SD: off the counter past the line, or short of the chair
   } else if(m.col==='blue'){
-    d = (m.v<V_SEAM) ? 4 : (m.v<V_DESTINY ? 10 : 0);
+    d = (m.v<V_DESTINY) ? 10 : 0;          // blue off the table before the line of destiny
   } else {
-    d = (m.v<V_SEAM) ? 50 : (m.v<V_DESTINY ? 5 : 0);
+    d = (m.v<V_DESTINY) ? 50 : 0;          // any other marker off before it clears the first table
   }
   if(byBlue) d+=6;                        // blue knocking another marker off
-  if(d>0){ turnPts-=d; pop('-'+d+(byBlue?' KNOCKED OFF':' OFF THE TABLE'),'#ff6b6b'); }
+  pop('PEEF','#ff2222',true,true);        // off the table — same call as the real game
+  if(d>0){ turnPts-=d; pop('-'+d+(byBlue?' KNOCKED OFF':''),'#ff2222',false,true); }
+  addShake(12); haptic([50,40,50]);
 }
 function popCap(m){
   if(!m.cap) return; m.cap=false; capsOff++;
@@ -237,7 +266,8 @@ function endTurn(){
 function chairs(){
   if(!sudden) return [];
   // two chairs on the end tables, one further up the lane than the other, gap down the middle
-  return [ {u:0.24, v:0.66, w:0.20, h:0.05}, {u:0.76, v:0.78, w:0.20, h:0.05} ];
+  // both dead centre, in a line up the table, with the case sitting between them
+  return [ {u:0.5, v:0.62, w:0.17, h:0.045}, {u:0.5, v:0.86, w:0.17, h:0.045} ];
 }
 function step(dt){
   if(state!=='play') return;
@@ -291,6 +321,7 @@ function step(dt){
   }
   for(let i=popups.length-1;i>=0;i--){ popups[i].life--; if(popups[i].life<=0) popups.splice(i,1); }
   if(msgT>0) msgT--;
+  if(shakeT>0){ shakeT-=dt; if(shakeT<=0){ shakeT=0; shakeAmt=0; } }
 }
 function gameOver(){
   state='over'; live=null;
@@ -367,14 +398,17 @@ function drawHUD(){
   ctx.fillStyle='#888'; ctx.fillText('BEST '+best, CW*0.04, CH*0.022+F*1.5);
   ctx.textAlign='right';
   ctx.fillStyle='#ffd700'; ctx.fillText(TH.name, CW*0.96, CH*0.022);
-  // what's left to throw — blue always sits last in the row
-  const rem=order.slice(idx);
-  const bw=CW*0.055, y=CH*0.115;
-  ctx.textAlign='center';
-  for(let i=0;i<rem.length;i++){
-    const x=CW/2-(rem.length-1)*bw*0.6+i*bw*1.2, im=MK[rem[i]];
-    if(ready(im)){ const ar=im.naturalWidth/im.naturalHeight; ctx.drawImage(im,x-bw*ar/2,y,bw*ar,bw); }
-    else { ctx.fillStyle=HEX[rem[i]]; ctx.fillRect(x-bw*0.12,y,bw*0.24,bw); }
+  // still to throw — stacked above the near edge of the first table, same as the original game
+  const rem=order.slice(idx+((state==='play'&&!live)?1:0));
+  if(rem.length && camMix<0.85){
+    const base=proj(0.5,0.02), bh=CH*0.030;
+    ctx.save(); ctx.globalAlpha=0.85*(1-camMix);
+    for(let i=0;i<rem.length;i++){
+      const im=MK[rem[i]], y=base.y-bh*0.55-i*bh*1.05;
+      if(ready(im)){ const ar=im.naturalWidth/im.naturalHeight; ctx.drawImage(im,CW/2-bh*ar/2,y-bh/2,bh*ar,bh); }
+      else { ctx.fillStyle=HEX[rem[i]]; ctx.fillRect(CW/2-bh*0.14,y-bh/2,bh*0.28,bh); }
+    }
+    ctx.restore();
   }
   if(state==='play' && !live && nextColor()){
     ctx.font='bold '+Math.round(F*0.95)+'px Helvetica,Arial,sans-serif';
@@ -387,22 +421,36 @@ function drawHUD(){
   }
   let py=CH*0.42;
   for(const p of popups){
-    ctx.font='bold '+Math.round(F*(p.big?1.7:1.15))+'px Helvetica,Arial,sans-serif';
+    const peef=p.peef, sh=peef?(Math.random()-0.5)*p.shake*(p.life/70):0;
+    ctx.font='bold '+Math.round(F*(p.big?(peef?2.3:1.7):1.15))+'px Helvetica,Arial,sans-serif';
     ctx.globalAlpha=Math.min(1,p.life/26); ctx.fillStyle=p.col;
-    ctx.textAlign='center'; ctx.fillText(p.txt, CW/2, py); ctx.globalAlpha=1;
+    ctx.textAlign='center';
+    ctx.fillText(p.txt, CW/2+sh, py+sh*0.5);
+    ctx.globalAlpha=1;
     py+=F*2;
   }
 }
 function draw(){
+  ctx.setTransform(1,0,0,1,0,0);
+  if(shakeT>0){ const k=shakeAmt*(shakeT/0.42);
+    ctx.setTransform(1,0,0,1,(Math.random()-0.5)*k,(Math.random()-0.5)*k); }
   if(TH.filter && CANFILTER){
     drawScene(s2);
     ctx.clearRect(0,0,CW,CH); ctx.save(); ctx.filter=TH.filter; ctx.drawImage(sc,0,0); ctx.filter='none';
     if(TH.benday){ ctx.globalCompositeOperation='multiply'; ctx.fillStyle=bendayPattern(ctx,CH*0.016); ctx.fillRect(0,0,CW,CH); ctx.globalCompositeOperation='source-over'; }
     ctx.restore();
   } else { drawScene(ctx); }
+  if(TH.tint){ ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=TH.tint; ctx.fillRect(0,0,CW,CH); ctx.restore(); }
+  if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
   // markers ride on top so they keep their colour, same rule as the other cabinets
   const sorted=markers.filter(m=>!m.off).slice().sort((a,b)=>b.v-a.v);
-  for(const m of sorted) drawMarkerAt(ctx,m.u,m.v,m.rot,m.col,m.cap);
+  for(const m of sorted){
+    // the near view only looks at the first table, so anything down the far end isn't in shot
+    const near=1-Math.max(0,Math.min(1,(m.v-0.40)/0.14));
+    const a=Math.max(camMix, near);
+    if(a<=0.02) continue;
+    ctx.globalAlpha=a; drawMarkerAt(ctx,m.u,m.v,m.rot,m.col,m.cap); ctx.globalAlpha=1;
+  }
   // the marker waiting at the near edge, and the flick you're pulling
   if(state==='play' && !live && nextColor() && turnPause<=0){
     drawMarkerAt(ctx,aimU,0.02,0,nextColor(),true);
