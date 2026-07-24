@@ -113,7 +113,7 @@ const R_CHAIR=0.115;
 const ROW_GAP=R_COIN*2+0.008, ROW_START=0.525;
 
 let items, coins, markers, queue, cycle, tLeft, tTotal, state, pz, pzPrev, pzPhase,
-    dragU, dropping, chairOn, chairT, popups, best, paid, refillT;
+    dragU, dropping, chairOn, chairT, popups, best, paid, refillT, fallers;
 try{ best=parseInt(localStorage.getItem('qu33phDozerBest')||'0',10)||0; }catch(e){ best=0; }
 function rnd(a,b){ return a+Math.random()*(b-a); }
 
@@ -126,7 +126,7 @@ function grant(n){ for(let i=0;i<n;i++){ queue.push(cycle%3); cycle++; } markers
 function reset(total){
   items=[]; coins=0; queue=[]; cycle=0; grant(3);
   tTotal=total||60; tLeft=tTotal; pz=PZ_MIN; pzPrev=PZ_MIN; pzPhase=0;
-  dragU=0.5; dropping=null; chairOn=false; chairT=0; popups=[]; paid=false; refillT=0;
+  dragU=0.5; dropping=null; chairOn=false; chairT=0; popups=[]; paid=false; refillT=0; fallers=[];
   // dense bed of coins packed just beyond the pusher's own reach
   for(let v=ROW_START, r=0; v<=0.94; v+=ROW_GAP, r++){
     const n=(r%2===0)?9:8, off=(r%2===0)?0:(0.84/16);
@@ -263,9 +263,11 @@ function step(dt){
     if(a.shelf || refillT>0) continue;
     if(a.v > 1-a.rad*0.30){                                       // tips once its centre clears the ledge
       items.splice(i,1);
-      if(a.kind==='coin'){ coins++; popups.push({txt:'+1',life:38,col:'#ffd700',u:a.u}); }
+      fallers.push({ x:bedX(a.u,1), y:bedY(1), vy:CH*0.004, rot:a.rot, spin:(Math.random()-0.5)*0.3,
+                     kind:a.kind, col:a.col, sz:bedScale(1) });   // watch it drop over the front
+      if(a.kind==='coin'){ coins++; popups.push({txt:'+1',life:44,col:'#ffd700',u:a.u}); }
       else { queue.push(a.col); markers=queue.length;             // you get that exact marker back
-             popups.push({txt:'MARKER BACK',life:52,col:'#8fd0ff',u:a.u}); updateBuy(); }
+             popups.push({txt:'MARKER BACK',life:58,col:'#8fd0ff',u:a.u}); updateBuy(); }
     }
   }
   for(let i=popups.length-1;i>=0;i--){ popups[i].life--; if(popups[i].life<=0) popups.splice(i,1); }
@@ -363,7 +365,20 @@ $('bMenu2').onclick=()=>{ state='menu'; $('overOvl').classList.remove('on'); $('
   $('buyBtn').style.display='none'; $('orientBtn').style.display='none'; };
 
 // ─── drawing ──────────────────────────────────────────────────────────────
-function glowOn(c){ if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=cabH*0.014; } }
+const MK_GLOW=['#ff3b3b','#39ff6a','#4f9dff'];              // red, green, blue
+function glowFor(kind,col){
+  if(!TH.glow) return null;
+  if(THEME==='neon'){
+    if(kind==='coin')   return '#ffd700';
+    if(kind==='chair')  return '#ff3b3b';
+    if(kind==='marker') return MK_GLOW[(col||0)%3];
+  }
+  return TH.glow;
+}
+function glowOn(c,kind,col){
+  const g=glowFor(kind,col);
+  if(g){ c.shadowColor=g; c.shadowBlur=cabH*(THEME==='neon'?0.020:0.014); }
+}
 function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
 function drawPusher(c){
   const yTop=CY(0.405), yFace=bedY(pz);
@@ -414,22 +429,37 @@ function drawItems(c){
       const rad=a.rad*BEDW()*s*0.95;
       c.fillStyle='rgba(0,0,0,0.35)';
       c.beginPath(); c.ellipse(x,y+rad*0.42,rad*0.95,rad*0.34,0,0,7); c.fill();
-      glowOn(c); drawCoinAt(c,x,y,rad);
+      glowOn(c,'coin'); drawCoinAt(c,x,y,rad);
     } else {
       const len=(a.h+a.rad)*2*BEDW()*s;
       c.fillStyle='rgba(0,0,0,0.35)';
       c.beginPath(); c.ellipse(x,y+len*0.16,len*0.34,len*0.13,0,0,7); c.fill();
-      glowOn(c); drawMarkerAt(c,x,y,len,a.rot,a.col);
+      glowOn(c,'marker',a.col); drawMarkerAt(c,x,y,len,a.rot,a.col);
     }
     c.restore();
   }
+}
+function drawFallers(c){
+  for(const f of fallers){
+    const fade=Math.max(0, 1-Math.max(0,(f.y-CH*0.90))/(CH*0.16));
+    c.save(); c.globalAlpha=fade;
+    if(f.kind==='coin'){
+      const rad=R_COIN*BEDW()*f.sz*0.95;
+      glowOn(c,'coin'); drawCoinAt(c,f.x,f.y,rad);
+    } else {
+      const len=(MK_H+MK_RAD)*2*BEDW()*f.sz;
+      glowOn(c,'marker',f.col); drawMarkerAt(c,f.x,f.y,len,f.rot,f.col);
+    }
+    c.restore();
+  }
+  glowOff(c);
 }
 function drawChair(c){
   if(!chairOn) return;
   const s=bedScale(0.5), x=bedX(0.5,0.5), y=bedY(0.5);
   const hh=R_CHAIR*BEDW()*s*2.3*(0.35+0.65*chairT);
   const ww=ready(CHAIR)?hh*(CHAIR.naturalWidth/CHAIR.naturalHeight):hh*0.8;
-  c.save(); glowOn(c);
+  c.save(); glowOn(c,'chair');
   c.fillStyle='rgba(0,0,0,0.4)';
   c.beginPath(); c.ellipse(x,y+hh*0.10,ww*0.45,ww*0.16,0,0,7); c.fill();
   if(ready(CHAIR)) c.drawImage(CHAIR,x-ww/2,y-hh*0.72,ww,hh);
@@ -444,12 +474,12 @@ function drawSlot(c){
   c.beginPath(); c.moveTo(sx,sy+cabH*0.02); c.lineTo(bedX(dragU,0),bedY(0)); c.stroke(); c.restore();
   const len=(MK_H+MK_RAD)*2*BEDW();
   if(queue.length>0 && !dropping){                       // shows the colour you're actually about to drop
-    c.save(); glowOn(c); drawMarkerAt(c,sx,sy,len,dropRot(),queue[0]); c.restore();
+    c.save(); glowOn(c,'marker',queue[0]); drawMarkerAt(c,sx,sy,len,dropRot(),queue[0]); c.restore();
   }
   if(dropping){
     const t=dropping.t;
     const x=sx+(bedX(dropping.u,0)-sx)*t, y=sy+(bedY(0)-sy)*t;
-    c.save(); glowOn(c);
+    c.save(); glowOn(c,'marker',dropping.col);
     drawMarkerAt(c,x,y,len*(1-0.12*t), dropping.rot, dropping.col);
     c.restore();
   }
@@ -479,7 +509,7 @@ function drawHUD(){
     ctx.fillStyle=q.col; ctx.font='bold '+Math.round(CH*(q.big?0.024:0.018))+'px Helvetica';
     ctx.strokeStyle='rgba(0,0,0,0.7)'; ctx.lineWidth=Math.max(2,CH*0.003);
     const px=q.u!==undefined?bedX(q.u,1):CW/2;
-    const py=q.u!==undefined?bedY(1)+cabH*0.012:yy;
+    const py=q.u!==undefined?Math.min(CH*0.955, CY(0.95)):yy;
     ctx.strokeText(q.txt,px,py); ctx.fillText(q.txt,px,py);
     ctx.globalAlpha=1;
     if(q.u===undefined) yy+=CH*0.026;
@@ -534,27 +564,78 @@ function drawSky(c){
   }
   c.restore();
 }
+let BEND=null, BENDkey=0;
+function bendayPattern(c, ds){
+  ds=Math.max(6, Math.round(ds));
+  if(BEND && BENDkey===ds) return BEND;
+  const t=document.createElement('canvas');
+  t.width=ds; t.height=ds*2;
+  const g=t.getContext('2d');
+  g.fillStyle='rgba(20,20,20,0.45)';
+  const r=Math.max(1, ds*0.16);
+  // staggered rows, drawn once into a tile instead of thousands of arcs every frame
+  const pts=[[0,0],[ds,0],[0,ds*2],[ds,ds*2],[ds*0.5,ds]];
+  for(const p of pts){ g.beginPath(); g.arc(p[0],p[1],r,0,6.283); g.fill(); }
+  BEND=c.createPattern(t,'repeat'); BENDkey=ds;
+  return BEND;
+}
 function drawBenday(){
   if(!TH.benday) return;
-  ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.45)';
-  const ds=cabH*0.016;
-  for(let y=0;y<CH+ds;y+=ds){ const row=Math.round(y/ds);
-    for(let x=((row%2)?ds/2:0);x<CW+ds;x+=ds){ ctx.beginPath(); ctx.arc(x,y,ds*0.16,0,6.283); ctx.fill(); } }
+  ctx.save(); ctx.globalCompositeOperation='multiply';
+  ctx.fillStyle=bendayPattern(ctx, cabH*0.016);
+  ctx.fillRect(0,0,CW,CH);                              // one fill instead of ~3900 arcs
   ctx.restore();
+}
+let CABC=null, cabcKey='';
+function ensureCabCache(){
+  const key=CW+'x'+CH+'|'+THEME+'|'+(ready(CAB)?1:0);
+  if(CABC && cabcKey===key) return;
+  CABC=document.createElement('canvas'); CABC.width=CW; CABC.height=CH;
+  const g=CABC.getContext('2d');
+  g.fillStyle='#05050a'; g.fillRect(0,0,CW,CH);
+  const tmp=document.createElement('canvas'); tmp.width=CW; tmp.height=CH;
+  const tg=tmp.getContext('2d');
+  if(ready(CAB)) tg.drawImage(CAB,cabX,cabY,cabW,cabH);
+  if(CANFILTER&&TH.filter) g.filter=TH.filter;
+  g.drawImage(tmp,0,0);
+  g.filter='none';
+  if(THEME==='neon'){                                   // bloom baked in: the machine's lights glow
+    g.save(); g.globalCompositeOperation='screen'; g.globalAlpha=0.30; g.drawImage(tmp,0,0);
+    g.globalAlpha=0.16; g.filter='blur(6px)'; g.drawImage(tmp,0,0); g.filter='none'; g.restore();
+  }
+  if(TH.benday){
+    g.save(); g.globalCompositeOperation='multiply';
+    g.fillStyle=bendayPattern(g, cabH*0.016); g.fillRect(0,0,CW,CH); g.restore();
+  }
+  cabcKey=key;
 }
 function draw(){
   ctx.setTransform(1,0,0,1,0,0);
-  ctx.fillStyle='#05050a'; ctx.fillRect(0,0,CW,CH);
+  ensureCabCache();
+  ctx.drawImage(CABC,0,0);                              // static machine: one blit
+  // the pusher moves, so it's themed live — but only across its own band
   s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
-  if(ready(CAB)) s2.drawImage(CAB,cabX,cabY,cabW,cabH);
   drawPusher(s2);
+  const y0=CY(0.39), y1=bedY(pz)+cabH*0.05;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,y0,CW,Math.max(1,y1-y0)); ctx.clip();
   if(CANFILTER&&TH.filter) ctx.filter=TH.filter;
   ctx.drawImage(sc,0,0);
   ctx.filter='none';
-  drawBenday();
+  if(THEME==='neon'){
+    ctx.globalCompositeOperation='screen'; ctx.globalAlpha=0.30; ctx.drawImage(sc,0,0);
+    ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+  }
+  if(TH.benday){
+    ctx.globalCompositeOperation='multiply';
+    ctx.fillStyle=bendayPattern(ctx, cabH*0.016);
+    ctx.fillRect(0,y0,CW,Math.max(1,y1-y0));
+  }
+  ctx.restore();
   if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
   drawChair(ctx);
   drawItems(ctx);
+  drawFallers(ctx);
   glowOff(ctx);
   drawSlot(ctx);
   drawHUD();
@@ -564,7 +645,7 @@ function loop(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;
   step(dt); draw(); requestAnimationFrame(loop);
 }
-window.addEventListener('resize',()=>{ sz(); });
+window.addEventListener('resize',()=>{ sz(); CABC=null; });
 reset(60);
 updateBuy();
 requestAnimationFrame(loop);

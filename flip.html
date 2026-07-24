@@ -537,6 +537,13 @@ function drawTrees(c){
     c.save(); c.globalAlpha=0.30+dep*0.28; c.drawImage(img,px-ww/2,py-hh/2,ww,hh); c.restore();
   }
 }
+let PGRAD=null, pgradH=0;
+function platGrad(c,h){
+  if(PGRAD && pgradH===h) return PGRAD;
+  const g=c.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,'rgba(0,0,0,0.10)'); g.addColorStop(1,'rgba(0,0,0,0.92)');
+  PGRAD=g; pgradH=h; return g;
+}
 function drawPlat(c,p){
   const px=p.x-camX, lim=CW/Z;
   if(px>lim+80||px+p.w<-80) return;
@@ -547,9 +554,9 @@ function drawPlat(c,p){
     const cw2=nw*(0.20+p.seed*0.30), ch2=nh*(0.12+p.seed2*0.20);
     c.drawImage(FIELD,p.seed2*(nw-cw2),p.seed*(nh-ch2),cw2,ch2,px,p.y,p.w,h);
   } else { c.fillStyle='#1b1b2a'; c.fillRect(px,p.y,p.w,h); }
-  const g2=c.createLinearGradient(0,p.y,0,p.y+h);
-  g2.addColorStop(0,'rgba(0,0,0,0.10)'); g2.addColorStop(1,'rgba(0,0,0,0.92)');
-  c.fillStyle=g2; c.fillRect(px,p.y,p.w,h);
+  c.save(); c.translate(0,p.y);
+  c.fillStyle=platGrad(c,h); c.fillRect(px,0,p.w,h);
+  c.restore();
   c.restore();
   if(p.uneven){
     c.save(); c.strokeStyle='#ff4d4d'; c.lineWidth=Math.max(2,CH*0.006);
@@ -568,6 +575,21 @@ function drawPlat(c,p){
   }
 }
 // full-colour props on top of the themed scene
+let BEND=null, BENDkey=0;
+function bendayPattern(c, ds){
+  ds=Math.max(6, Math.round(ds));
+  if(BEND && BENDkey===ds) return BEND;
+  const t=document.createElement('canvas');
+  t.width=ds; t.height=ds*2;
+  const g=t.getContext('2d');
+  g.fillStyle='rgba(20,20,20,0.45)';
+  const r=Math.max(1, ds*0.16);
+  // staggered rows, drawn once into a tile instead of thousands of arcs every frame
+  const pts=[[0,0],[ds,0],[0,ds*2],[ds,ds*2],[ds*0.5,ds]];
+  for(const p of pts){ g.beginPath(); g.arc(p[0],p[1],r,0,6.283); g.fill(); }
+  BEND=c.createPattern(t,'repeat'); BENDkey=ds;
+  return BEND;
+}
 function glowOn(){ if(TH.glow){ ctx.shadowColor=TH.glow; ctx.shadowBlur=CH*0.020; } }
 function glowOff(){ ctx.shadowBlur=0; ctx.shadowColor='transparent'; }
 function drawProps(){
@@ -622,10 +644,10 @@ function drawAim(){
 }
 function drawOverlayFx(){
   if(TH.benday){
-    ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.5)';
-    const ds=CH*0.017, ox=(((-camX*0.10)%ds)+ds)%ds;
-    for(let y=0;y<CH+ds;y+=ds){ const row=Math.round(y/ds);
-      for(let x=-ds+ox+((row%2)?ds/2:0);x<CW+ds;x+=ds){ ctx.beginPath(); ctx.arc(x,y,ds*0.17,0,6.283); ctx.fill(); } }
+    const ds=Math.max(6,Math.round(CH*0.017)), ox=(((-camX*0.10)%ds)+ds)%ds;
+    ctx.save(); ctx.translate(ox,0);
+    ctx.fillStyle=bendayPattern(ctx, ds);
+    ctx.fillRect(-ox,0,CW+ds,CH);
     ctx.restore(); return;
   }
   if(TH.tint){ ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=TH.tint; ctx.fillRect(0,0,CW,CH); ctx.restore(); }

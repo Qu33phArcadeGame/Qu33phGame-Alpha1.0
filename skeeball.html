@@ -33,6 +33,7 @@ function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); 
   const st=document.getElementById('stage'); if(st){ st.style.width=cw+'px'; st.style.height=ch+'px'; }
   CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; sc.width=CW; sc.height=CH; SC=CW/PW; }
 sz();
+window.addEventListener('resize',()=>{ try{ sz(); FIELDC=null; }catch(e){} });
 // ---- themes: the cabinet gets the filter, the markers keep their colour ----
 const TH={
   'default':{name:'DEFAULT',     filter:'',                                          glow:null},
@@ -42,7 +43,31 @@ const TH={
   'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff', galaxies:true}
 }[THEME] || {name:'DEFAULT', filter:'', glow:null};
 const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
-function glowOn(c){ if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.016; } }
+let BEND=null, BENDkey=0;
+function bendayPattern(c, ds){
+  ds=Math.max(6, Math.round(ds));
+  if(BEND && BENDkey===ds) return BEND;
+  const t=document.createElement('canvas');
+  t.width=ds; t.height=ds*2;
+  const g=t.getContext('2d');
+  g.fillStyle='rgba(20,20,20,0.45)';
+  const r=Math.max(1, ds*0.16);
+  // staggered rows, drawn once into a tile instead of thousands of arcs every frame
+  const pts=[[0,0],[ds,0],[0,ds*2],[ds,ds*2],[ds*0.5,ds]];
+  for(const p of pts){ g.beginPath(); g.arc(p[0],p[1],r,0,6.283); g.fill(); }
+  BEND=c.createPattern(t,'repeat'); BENDkey=ds;
+  return BEND;
+}
+const MK_GLOW={red:'#ff3b3b',green:'#39ff6a',blue:'#4f9dff'};
+function glowFor(kind){
+  if(!TH.glow) return null;
+  if(THEME==='neon'){ if(kind==='coin') return '#ffd700'; if(MK_GLOW[kind]) return MK_GLOW[kind]; }
+  return TH.glow;
+}
+function glowOn(c,kind){
+  const g=glowFor(kind);
+  if(g){ c.shadowColor=g; c.shadowBlur=CH*(THEME==='neon'?0.020:0.016); }
+}
 function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
 // sporadic stars, constellations and slow spirals — no grid, nothing that reads like ben-day
 let STARS=null, CONSTEL=null;
@@ -93,13 +118,7 @@ function drawSky(c){
   c.restore();
 }
 function drawThemeOverlay(){
-  if(TH.benday){
-    ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgba(20,20,20,0.42)';
-    const ds=CH*0.015;
-    for(let y=0;y<CH+ds;y+=ds){ const row=Math.round(y/ds);
-      for(let x=((row%2)?ds/2:0);x<CW+ds;x+=ds){ ctx.beginPath(); ctx.arc(x,y,ds*0.16,0,6.283); ctx.fill(); } }
-    ctx.restore(); return;
-  }
+  if(TH.benday) return;                                 // dots are baked into the cached cabinet
   if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
   if(TH.glow){
     const g=ctx.createRadialGradient(CW/2,CH*0.5,CH*0.18,CW/2,CH*0.5,CH*0.78);
@@ -209,19 +228,37 @@ function ease(t){ return 1-Math.pow(1-t,2); }   // ease-out
 
 function drawMarker(color, cx, cy, scale, rot){
   const img=MK[color], w=X(11)*scale, h=X(11)*scale;
-  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); glowOn(ctx);
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); glowOn(ctx,color);
   if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; ctx.drawImage(img,-w/2,-w/(2*ar),w,w/ar); }
   else { ctx.fillStyle=(color==='red'?'#ff3030':color==='green'?'#30d060':'#3a7bff'); ctx.beginPath(); ctx.arc(0,0,w*0.45,0,7); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=X(0.5); ctx.stroke(); }
   glowOff(ctx); ctx.restore();
 }
 
-function draw(){
-  ctx.setTransform(1,0,0,1,0,0);
+let FIELDC=null, fieldcKey='';
+function ensureFieldCache(){
+  const key=CW+'x'+CH+'|'+THEME+'|'+(ready(FIELD)?1:0);
+  if(FIELDC && fieldcKey===key) return;
+  FIELDC=document.createElement('canvas'); FIELDC.width=CW; FIELDC.height=CH;
+  const g=FIELDC.getContext('2d');
   s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
   if(ready(FIELD)) s2.drawImage(FIELD,0,0,CW,CH); else { s2.fillStyle='#111'; s2.fillRect(0,0,CW,CH); }
-  if(CANFILTER && TH.filter) ctx.filter=TH.filter;
-  ctx.drawImage(sc,0,0);
-  ctx.filter='none';
+  if(CANFILTER && TH.filter) g.filter=TH.filter;
+  g.drawImage(sc,0,0);
+  g.filter='none';
+  if(THEME==='neon'){                                   // bloom baked in so the machine glows
+    g.save(); g.globalCompositeOperation='screen'; g.globalAlpha=0.30; g.drawImage(sc,0,0);
+    g.globalAlpha=0.16; g.filter='blur(6px)'; g.drawImage(sc,0,0); g.filter='none'; g.restore();
+  }
+  if(TH.benday){
+    g.save(); g.globalCompositeOperation='multiply';
+    g.fillStyle=bendayPattern(g, CH*0.015); g.fillRect(0,0,CW,CH); g.restore();
+  }
+  fieldcKey=key;
+}
+function draw(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ensureFieldCache();
+  ctx.drawImage(FIELDC,0,0);                            // static cabinet: one blit per frame
   drawThemeOverlay();
   // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';

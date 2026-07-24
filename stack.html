@@ -179,6 +179,13 @@ function drawBody(b){
   else if(THEME==='galaxy') glow='#b46bff';
   const w=ready(im)? ML*(im.naturalWidth/im.naturalHeight) : MW;
   const ox=INK? -(INK.cx-0.5)*w : 0, oy=INK? -(INK.cy-0.5)*ML : 0;
+  if(THEME==='cartoon'){                       // white plate so the line-art marker reads on any background
+    const pw=(b.bw||MW)*1.02, ph=(b.bh||ML)*1.01, rr2=Math.min(pw,ph)*0.34;
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(-pw/2,-ph/2,pw,ph,rr2); else ctx.rect(-pw/2,-ph/2,pw,ph);
+    ctx.fill();
+  }
   if(glow){ ctx.shadowColor=glow; ctx.shadowBlur=CW*0.055;
     if(ready(im)){ ctx.drawImage(im,-w/2+ox,-ML/2+oy,w,ML); ctx.drawImage(im,-w/2+ox,-ML/2+oy,w,ML); } else { ctx.fillStyle=HEX[b.color]; rr(-MW/2,-ML/2,MW,ML,MW/2); ctx.fill(); }
     ctx.shadowBlur=0;
