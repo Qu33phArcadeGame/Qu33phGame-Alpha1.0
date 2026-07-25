@@ -601,7 +601,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v335</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v336</div>
 
 <canvas id="game"></canvas>
 
@@ -660,7 +660,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=335" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=336" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -896,7 +896,8 @@
     <div class="theme-half-label">SIMPLE</div>
     <div class="theme-half-sub">full size playing field · easy</div>
   </div>
-  <div class="theme-half" id="thReal" onclick="showThemeList('realistic')" style="background:#222 url('originalfield.png') center/cover no-repeat;">
+  <div class="theme-half" id="thReal" onclick="showThemeList('realistic')" style="background:#222;">
+    <canvas id="thRealCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;display:block;"></canvas>
     <div class="theme-half-label">REALISTIC</div>
     <div class="theme-half-sub">thinner playing field · more challenging</div>
   </div>
@@ -1290,22 +1291,108 @@ function showThemeScreen(){
   document.getElementById("themeScreen").style.display="flex";
   var rp=document.getElementById("thReal"); if(rp) rp.style.backgroundImage="url('originalfield.png')";
   themeThePreviews();
-  drawSimpleFieldPreview(); setTimeout(drawSimpleFieldPreview,40);
+  drawFieldPreviews(); setTimeout(drawFieldPreviews,40);
+  if(!window._thPrevTick) window._thPrevTick=setInterval(function(){
+    var ts=document.getElementById("themeScreen");
+    if(ts && ts.style.display!=="none") drawFieldPreviews();
+  },120);
 }
 // the two halves should read as the actual playing field in whatever theme is selected,
 // so they take the same filter the real field takes plus that theme's signature layer
 function themeThePreviews(){
-  var f=themeFilter(), st=(typeof styleOf==="function")?styleOf():currentTheme;
   ["thSimple","thReal"].forEach(function(id){
     var el=document.getElementById(id); if(!el) return;
-    el.style.filter=(f==="none")?"":f;
-    el.className="theme-half tp-"+((st==="cartoon"||st==="neon"||st==="sunset"||st==="galaxy")?st:"default");
+    el.style.filter=""; el.className="theme-half";      // the canvas paints the theme now, not a CSS wash
   });
+  drawFieldPreviews();
+}
+var _realFieldImg=null;
+function drawFieldPreviews(){ drawSimpleFieldPreview(); drawRealFieldPreview(); }
+// the exact backdrop recipes the game itself uses, so the halves read as the real thing
+function previewBackdrop(c,W,H,st){
+  if(st==="cartoon"){
+    c.fillStyle="rgba(150,150,150,0.55)"; c.fillRect(0,0,W,H);
+    c.fillStyle="rgba(20,20,20,0.5)";
+    var ds=Math.max(9,W*0.035), r=ds*0.17;
+    for(var yy=0; yy<H+ds; yy+=ds){ var row=Math.round(yy/ds);
+      for(var xx=((row%2)?ds/2:0); xx<W+ds; xx+=ds){ c.beginPath(); c.arc(xx,yy,r,0,6.283); c.fill(); } }
+  } else if(st==="neon"){
+    c.save(); c.globalCompositeOperation="screen";
+    c.fillStyle="rgba(40,255,150,0.16)"; c.fillRect(0,0,W*0.62,H);
+    c.fillStyle="rgba(200,60,255,0.20)"; c.fillRect(W*0.62,0,W*0.38,H);
+    c.restore();
+    c.save(); c.strokeStyle="rgba(40,255,150,0.16)"; c.lineWidth=1;
+    c.shadowColor="rgba(40,255,150,0.6)"; c.shadowBlur=5;
+    var gs=Math.max(18,W*0.09);
+    for(var gx=0; gx<W; gx+=gs){ c.beginPath(); c.moveTo(gx,0); c.lineTo(gx,H); c.stroke(); }
+    for(var gy=0; gy<H; gy+=gs){ c.beginPath(); c.moveTo(0,gy); c.lineTo(W,gy); c.stroke(); }
+    c.strokeStyle="rgba(120,255,220,0.9)"; c.lineWidth=2; c.shadowBlur=12; c.strokeRect(1,1,W-2,H-2);
+    c.restore();
+  } else if(st==="sunset"){
+    c.save(); c.globalCompositeOperation="screen";
+    var gg=c.createLinearGradient(0,0,0,H); gg.addColorStop(0,"rgba(255,205,90,0.30)"); gg.addColorStop(1,"rgba(150,80,10,0.22)");
+    c.fillStyle=gg; c.fillRect(0,0,W,H);
+    for(var i=0;i<26;i++){ var sx=((i*137)%100)/100*W, sy=((i*71)%100)/100*H;
+      c.globalAlpha=0.75; c.fillStyle=i%2?"#ffe9a0":"#fff"; star(c,sx,sy,Math.max(2.2,W*0.011)); }
+    c.restore();
+  } else if(st==="galaxy"){
+    c.save(); c.globalCompositeOperation="multiply";
+    var g2=c.createLinearGradient(0,0,0,H); g2.addColorStop(0,"#3a2168"); g2.addColorStop(1,"#140c30");
+    c.fillStyle=g2; c.fillRect(0,0,W,H); c.restore();
+    if(typeof drawGalaxyPlatesInto==="function") drawGalaxyPlatesInto(c,W,H);
+    c.save();
+    for(var j=0;j<40;j++){ var px=((j*173)%100)/100*W, py=((j*97)%100)/100*H;
+      c.globalAlpha=0.35+0.5*(((j*53)%100)/100); c.fillStyle="#fff";
+      c.beginPath(); c.arc(px,py,Math.max(0.8,W*0.004),0,6.283); c.fill(); }
+    c.restore();
+  }
+}
+function star(c,x,y,r){
+  c.beginPath();
+  for(var i=0;i<10;i++){ var a=-Math.PI/2+i*Math.PI/5, rr=(i%2)?r*0.45:r;
+    c[i?"lineTo":"moveTo"](x+Math.cos(a)*rr, y+Math.sin(a)*rr); }
+  c.closePath(); c.fill();
+}
+// the deepdream plates, drawn into any 2d context
+function drawGalaxyPlatesInto(c,W,H){
+  var loaded=pfGalaxyBgImgs.filter(function(im){ return im.complete && im.naturalWidth; });
+  if(!loaded.length) return false;
+  var T=Date.now()/1000, prog=T*0.05, gb=Math.floor(prog), gf=prog-gb;
+  var iA=((gb%loaded.length)+loaded.length)%loaded.length, iB=(iA+1)%loaded.length;
+  function layer(img,alpha,seed,dir){
+    if(alpha<=0.01) return;
+    var iw=img.naturalWidth, ih=img.naturalHeight;
+    var cover=Math.max(W/iw,H/ih)*1.55, tw=iw*cover, th=ih*cover;
+    var pulse=1+0.17*Math.sin(T*0.55+seed), rot=dir*0.026*T + Math.sin(T*0.12+seed)*0.18;
+    c.save(); c.globalAlpha=alpha; c.globalCompositeOperation="lighter";
+    c.translate(W/2+Math.sin(T*0.29+seed)*W*0.13, H/2+Math.cos(T*0.23+seed*1.3)*H*0.13);
+    c.rotate(rot); c.scale(pulse,pulse); c.drawImage(img,-tw/2,-th/2,tw,th); c.restore();
+  }
+  layer(loaded[iA],(1-gf)*0.85,iA*1.7, 1); layer(loaded[iB],gf*0.85,iB*1.7,-1);
+  c.save(); c.fillStyle="rgba(8,4,20,0.35)"; c.fillRect(0,0,W,H); c.restore();
+  return true;
+}
+function drawRealFieldPreview(){
+  var cv=document.getElementById("thRealCanvas"); if(!cv) return;
+  var r=cv.getBoundingClientRect();
+  var W=Math.round(r.width)||Math.round(window.innerWidth)||320, H=Math.round(r.height)||160;
+  if(!W||!H) return;
+  cv.width=W; cv.height=H; var c=cv.getContext("2d");
+  var st=(typeof styleOf==="function")?styleOf():currentTheme;
+  if(!_realFieldImg){ _realFieldImg=new Image(); _realFieldImg.onload=drawRealFieldPreview; _realFieldImg.src="originalfield.png"; }
+  c.fillStyle="#222"; c.fillRect(0,0,W,H);
+  if(_realFieldImg.complete && _realFieldImg.naturalWidth){
+    var iw=_realFieldImg.naturalWidth, ih=_realFieldImg.naturalHeight, sc=Math.max(W/iw,H/ih);
+    c.save(); try{ c.filter=themeFilter(); }catch(e){}
+    c.drawImage(_realFieldImg,(W-iw*sc)/2,(H-ih*sc)/2,iw*sc,ih*sc); c.restore();
+  }
+  previewBackdrop(c,W,H,st);
 }
 function drawSimpleFieldPreview(){
   var cv=document.getElementById("thSimpleCanvas"); if(!cv) return;
   var r=cv.getBoundingClientRect(); var W=Math.round(r.width)||Math.round(window.innerWidth)||320, H=Math.round(r.height)||160;
   cv.width=W; cv.height=H; var c=cv.getContext("2d");
+  c.save(); try{ c.filter=themeFilter(); }catch(e){}
   c.fillStyle="#d8cfc4"; c.fillRect(0,0,W,H);
   c.fillStyle="#3d5a4e"; c.fillRect(0,0,W,H*0.13);
   c.fillStyle="#c7cfc9"; c.fillRect(W*0.16,H*0.13,W*0.56,H);
@@ -1319,6 +1406,8 @@ function drawSimpleFieldPreview(){
   c.fillStyle="#5a7a4a"; for(var wy=H*0.72;wy<H;wy+=H*0.13){ c.fillRect(W*0.76,wy,W*0.235,2); }
   c.fillStyle="#fff"; c.fillRect(W*0.724,H*0.155,W*0.022,H*0.035);
   c.fillStyle="#e03030"; c.beginPath(); c.arc(W*0.735,H*0.178,1.8,0,Math.PI*2); c.fill();
+  c.restore();
+  previewBackdrop(c,W,H,(typeof styleOf==="function")?styleOf():currentTheme);
 }
 function showThemeList(section){
   currentThemeSection=section;
@@ -4379,11 +4468,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=335&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=335&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=335&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4394,9 +4483,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=335&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=335&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }

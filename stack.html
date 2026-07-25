@@ -275,6 +275,34 @@ function drawTreesV(){
     ctx.restore();
   }
 }
+// the same deepdream plates Qu33ph Jump uses for its galaxy sky
+const GAL_SRCS=["dreamling76.png","dreamling77.png","dreamling82.png","dreamling83.png","dreamling85.png","dreamling87.png"];
+const GAL_IMGS=GAL_SRCS.map(function(s){ const i=new Image(); i.src=s; return i; });
+function galLayer(c, img, alpha, T, seed, dir, W, H){
+  if(alpha<=0.01 || !(img && img.complete && img.naturalWidth)) return;
+  const iw=img.naturalWidth, ih=img.naturalHeight;
+  const cover=Math.max(W/iw,H/ih)*1.55, tw=iw*cover, th=ih*cover;   // overscan so edges never show
+  const pulse=1+0.17*Math.sin(T*0.55+seed);
+  const rot=dir*0.026*T + Math.sin(T*0.12+seed)*0.18;
+  const dx=W/2 + Math.sin(T*0.29+seed)*W*0.13;
+  const dy=H/2 + Math.cos(T*0.23+seed*1.3)*H*0.13;
+  c.save(); c.globalAlpha=alpha; c.globalCompositeOperation="lighter";
+  c.translate(dx,dy); c.rotate(rot); c.scale(pulse,pulse);
+  c.drawImage(img, -tw/2, -th/2, tw, th);
+  c.restore();
+}
+function drawGalaxyPlates(c, W, H){
+  const loaded=GAL_IMGS.filter(function(im){ return im.complete && im.naturalWidth; });
+  if(!loaded.length) return false;
+  const T=Date.now()/1000, prog=T*0.05, gb=Math.floor(prog), gf=prog-gb;
+  const iA=((gb%loaded.length)+loaded.length)%loaded.length, iB=(iA+1)%loaded.length;
+  c.save(); c.globalCompositeOperation="lighter";
+  galLayer(c, loaded[iA], (1-gf)*0.85, T, iA*1.7,  1, W, H);
+  galLayer(c, loaded[iB], gf*0.85,     T, iB*1.7, -1, W, H);
+  c.restore();
+  c.save(); c.fillStyle="rgba(8,4,20,0.40)"; c.fillRect(0,0,W,H); c.restore();  // darken so play reads
+  return true;
+}
 function drawBackground(){
   const bg=BG[THEME]||BG.default, g=ctx.createLinearGradient(0,0,0,CH); g.addColorStop(0,bg[0]); g.addColorStop(1,bg[1]); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
   tileWindowsV(PIXELBG?WIN_P:WIN_R, THEME==='cartoon'?0.55:0.80, 0.16);
@@ -285,7 +313,8 @@ function drawBackground(){
   if(THEME==='cartoon'){                       // B&W Ben-Day dots
     const d=CW*0.03, r=d*0.26; ctx.fillStyle='rgba(20,20,20,0.5)';
     for(let gy=0; gy<CH+d; gy+=d){ const off=((Math.round(gy/d))%2)?d/2:0; for(let gx=off; gx<CW+d; gx+=d){ ctx.beginPath(); ctx.arc(gx,gy,r,0,7); ctx.fill(); } }
-  } else if(THEME==='galaxy'){                  // nebulae + spiral galaxies + LOTS of stars
+  } else if(THEME==='galaxy'){                  // real deepdream plates, then nebulae and stars over them
+    drawGalaxyPlates(ctx,CW,CH);
     [['rgb(120,60,220)',0.25,0.2,0.6],['rgb(40,120,220)',0.8,0.68,0.5],['rgb(210,60,180)',0.6,0.9,0.45]].forEach(([c,x,y,rr2])=>{ const rg=ctx.createRadialGradient(x*CW,y*CH,0,x*CW,y*CH,rr2*CW); rg.addColorStop(0,c.replace('rgb','rgba').replace(')',',0.35)')); rg.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=rg; ctx.fillRect(0,0,CW,CH); });
     drawSpiral(CW*0.28,CH*0.22,CW*0.16,'rgb(150,110,255)'); drawSpiral(CW*0.78,CH*0.72,CW*0.12,'rgb(90,150,255)');
     ctx.fillStyle='#fff'; for(let i=0;i<260;i++){ const x=(i*79.3)%CW, y=(i*146.7)%CH, sp=(i%7===0)?2:1; ctx.globalAlpha=0.35+((i%6)/9); ctx.fillRect(x,y,sp,sp); } ctx.globalAlpha=1;

@@ -497,12 +497,40 @@ function paintBG(c){
     const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#160a2e'); g.addColorStop(1,'#0a0618');
     c.fillStyle=g; c.fillRect(0,0,CW,CH);
-    drawGalaxies(c);
+    if(!drawGalaxyPlates(c,CW,CH)) drawGalaxies(c);   // real plates when loaded, drawn spirals as fallback
   } else {
     const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#2a2358'); g.addColorStop(0.55,'#332670'); g.addColorStop(1,'#211a4a');
     c.fillStyle=g; c.fillRect(0,0,CW,CH);
   }
+}
+// the same deepdream plates Qu33ph Jump uses for its galaxy sky
+const GAL_SRCS=["dreamling76.png","dreamling77.png","dreamling82.png","dreamling83.png","dreamling85.png","dreamling87.png"];
+const GAL_IMGS=GAL_SRCS.map(function(s){ const i=new Image(); i.src=s; return i; });
+function galLayer(c, img, alpha, T, seed, dir, W, H){
+  if(alpha<=0.01 || !(img && img.complete && img.naturalWidth)) return;
+  const iw=img.naturalWidth, ih=img.naturalHeight;
+  const cover=Math.max(W/iw,H/ih)*1.55, tw=iw*cover, th=ih*cover;   // overscan so edges never show
+  const pulse=1+0.17*Math.sin(T*0.55+seed);
+  const rot=dir*0.026*T + Math.sin(T*0.12+seed)*0.18;
+  const dx=W/2 + Math.sin(T*0.29+seed)*W*0.13;
+  const dy=H/2 + Math.cos(T*0.23+seed*1.3)*H*0.13;
+  c.save(); c.globalAlpha=alpha; c.globalCompositeOperation="lighter";
+  c.translate(dx,dy); c.rotate(rot); c.scale(pulse,pulse);
+  c.drawImage(img, -tw/2, -th/2, tw, th);
+  c.restore();
+}
+function drawGalaxyPlates(c, W, H){
+  const loaded=GAL_IMGS.filter(function(im){ return im.complete && im.naturalWidth; });
+  if(!loaded.length) return false;
+  const T=Date.now()/1000, prog=T*0.05, gb=Math.floor(prog), gf=prog-gb;
+  const iA=((gb%loaded.length)+loaded.length)%loaded.length, iB=(iA+1)%loaded.length;
+  c.save(); c.globalCompositeOperation="lighter";
+  galLayer(c, loaded[iA], (1-gf)*0.85, T, iA*1.7,  1, W, H);
+  galLayer(c, loaded[iB], gf*0.85,     T, iB*1.7, -1, W, H);
+  c.restore();
+  c.save(); c.fillStyle="rgba(8,4,20,0.40)"; c.fillRect(0,0,W,H); c.restore();  // darken so play reads
+  return true;
 }
 let FSTARS=null, FCON=null;
 function drawGalaxies(c){                            // spirals, scattered stars and constellations
