@@ -126,24 +126,27 @@ function grant(n){ for(let i=0;i<n;i++){ queue.push(cycle%3); cycle++; } markers
 function reset(total){
   items=[]; coins=0; queue=[]; cycle=0; grant(3);
   tTotal=total||60; tLeft=tTotal; pz=PZ_MIN; pzPrev=PZ_MIN; pzPhase=0;
-  dragU=0.5; dropping=null; chairOn=false; chairT=0; popups=[]; paid=false; refillT=0; fallers=[];
+  dragU=0.5; dropping=null; chairOn=false; chairT=0; popups=[]; paid=false; refillT=2.2; fallers=[];   // let the field settle before the first refill
   // dense bed of coins packed just beyond the pusher's own reach
-  for(let v=ROW_START, r=0; v<=0.94; v+=ROW_GAP, r++){
+  for(let v=ROW_START, r=0; v<=0.80; v+=ROW_GAP, r++){        // stop well short of the ledge
     const n=(r%2===0)?9:8, off=(r%2===0)?0:(0.84/16);
     for(let i=0;i<n;i++){
       const u=0.08+off+i*(0.84/(n-1||1));
       items.push(newCoin(Math.max(R_COIN,Math.min(1-R_COIN,u+rnd(-0.010,0.010))), v+rnd(-0.008,0.008)));
     }
   }
-  for(let i=0;i<12;i++) items.push(newMarker(rnd(0.15,0.85), rnd(0.56,0.88), (Math.random()*3)|0));
+  for(let i=0;i<9;i++) items.push(newMarker(rnd(0.15,0.85), rnd(0.56,0.76), (Math.random()*3)|0));
   // settle, then make sure nothing starts inside the pusher's own reach —
   // otherwise the machine ratchets the pile forward and pays out while you idle
-  const minBack=PZ_MAX+0.025;
-  for(let pass=0; pass<3; pass++){
+  const minBack=PZ_MAX+0.025, maxFront=0.82;      // ...and nothing may settle within a nudge of falling
+  for(let pass=0; pass<4; pass++){
     for(let k=0;k<6;k++) separate();
-    for(const a of items){ const bv=backV(a); if(bv<minBack) a.v+=(minBack-bv); }
+    for(const a of items){
+      const bv=backV(a); if(bv<minBack) a.v+=(minBack-bv);
+      if(a.v>maxFront) a.v=maxFront-Math.random()*0.02;
+    }
   }
-  items=items.filter(a=>a.v<=0.955);
+  items=items.filter(a=>a.v<=maxFront+0.005);
   state='menu';
 }
 
