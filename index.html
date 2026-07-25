@@ -285,7 +285,6 @@
     #pinballScreen.pb-comic #pbBenday { display:block; }
     #cabMini img { width:100%; aspect-ratio:150/230; max-height:168px; object-fit:contain; border:0; border-radius:0;
       background:transparent; box-shadow:none; box-sizing:border-box; filter:drop-shadow(0 6px 16px rgba(0,0,0,0.6)); }
-    #arcadeMenu.arc-galaxy #cabMini::after { display:none; }
     #arcadeMenu.arc-comic  #cabMini img { filter:grayscale(1) contrast(1.18) drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-neon   #cabMini img { filter:drop-shadow(0 0 4px #ff2d55) drop-shadow(0 0 10px #ff2d55) drop-shadow(0 0 18px rgba(255,45,85,0.6)); }
     #arcadeMenu.arc-sunset #cabMini img { filter:sepia(0.55) saturate(1.7) brightness(1.1) drop-shadow(0 0 5px #ffc23a) drop-shadow(0 0 13px #ffb020) drop-shadow(0 0 24px rgba(255,176,32,0.72)); }
@@ -536,7 +535,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v330</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v331</div>
 
 <canvas id="game"></canvas>
 
@@ -595,7 +594,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=330" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=331" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -1175,8 +1174,13 @@ window.addEventListener("message", function(ev){
     var d=ev.data;
     if(!d || d.type!=="qu33phCoins") return;
     var n=Math.round(Number(d.n));
-    if(!isFinite(n) || n<=0) return;
-    addCoins(Math.min(n,5000));
+    if(!isFinite(n) || n===0) return;
+    if(n<0){                                   // the game already took it out of the wallet; just resync
+      coins = parseInt(localStorage.getItem("qu33phCoins")||"0",10)||0;
+      coinsSpent += (-n); try{ localStorage.setItem("qu33phCoinsSpent",coinsSpent); }catch(e){}
+    } else {
+      addCoins(Math.min(n,5000));
+    }
     ["titleCoinCount","shopCoins","themeCoinsDisplay"].forEach(function(id){
       var el=document.getElementById(id); if(el) el.textContent=coins;
     });
@@ -1371,7 +1375,20 @@ function keyWhiteCanvas(im){
   for(var i=0;i<p.length;i+=4){ if(!p[i+3]) continue;
     var mx=Math.max(p[i],p[i+1],p[i+2]), mn=Math.min(p[i],p[i+1],p[i+2]);
     if(mx-mn<30){ if(mn>=232) p[i+3]=0; else if(mn>202) p[i+3]=Math.min(p[i+3], Math.round((232-mn)*(255/30))); } }
-  g.putImageData(d,0,0); return c;
+  g.putImageData(d,0,0); return thickenOutline(c, Math.max(2, Math.min(c.width,c.height)*0.030));
+}
+function thickenOutline(src, r){            // stamps a dark silhouette in a ring behind the art
+  var w=src.naturalWidth||src.width, h=src.naturalHeight||src.height;
+  if(!w||!h) return src;
+  var sil=document.createElement("canvas"); sil.width=w; sil.height=h;
+  var sg=sil.getContext("2d"); sg.drawImage(src,0,0);
+  sg.globalCompositeOperation="source-in"; sg.fillStyle="#141414"; sg.fillRect(0,0,w,h);
+  var out=document.createElement("canvas"); out.width=w; out.height=h;
+  var og=out.getContext("2d");
+  for(var i=0;i<16;i++){ var a=i/16*6.2832; og.drawImage(sil, Math.cos(a)*r, Math.sin(a)*r); }
+  og.drawImage(src,0,0);
+  out.naturalWidth=w; out.naturalHeight=h; out.complete=true;
+  return out;
 }
 var _keyCache={};
 function setIconSrc(el, src, key){
@@ -4257,11 +4274,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=331&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=331&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=331&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4272,9 +4289,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=331&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=330&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=331&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
@@ -6461,9 +6478,15 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   c.save(); var megaOn=pbMega.flash>0; c.shadowColor="#ffd24a"; c.shadowBlur=megaOn?22:11; c.fillStyle=megaOn?"rgba(255,210,74,0.30)":"rgba(255,210,74,0.12)"; pbDrawQuad(pbMega.x,pbMega.y,pbMega.w,pbMega.h);c.fill();c.strokeStyle=megaOn?"#fff2b0":"#ffd24a";c.lineWidth=megaOn?4:2.5;c.stroke(); c.restore();
   var mp=pbProject(pbMega.x+pbMega.w/2,pbMega.y-0.005); c.save();c.fillStyle="#ffd24a";c.shadowColor="#ffd24a";c.shadowBlur=8;c.font="bold "+pbSizePx(0.055,pbMega.y)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="bottom";c.fillText("MEGA",mp[0],mp[1]);c.restore();
   _gs(false);                                  // ...but the chair and the paddles stay in colour
-  if(_cm && chairImg && chairImg.complete && chairImg.naturalWidth){
-    var _ca=pbProject(pbChair.x,pbChair.y), _cb=pbProject(pbChair.x+pbChair.w,pbChair.y+pbChair.h);
-    c.drawImage(chairImg,_ca[0],_ca[1],Math.max(4,_cb[0]-_ca[0]),Math.max(4,_cb[1]-_ca[1]));
+  if(_cm){                                     // redraw the original art inside a circle over the chair,
+    var _bgi=document.getElementById("pinballBg");   // so the chair reads in its natural colour — no second sprite
+    if(_bgi && _bgi.complete && _bgi.naturalWidth){
+      var _cc=pbProject(pbChair.x+pbChair.w/2, pbChair.y+pbChair.h/2);
+      var _cr=pbSizePx(Math.max(pbChair.w,pbChair.h)*0.85, pbChair.y);
+      c.save(); c.beginPath(); c.arc(_cc[0],_cc[1],_cr,0,6.283); c.clip();
+      c.drawImage(_bgi, pbImgOX, pbImgOY, pbImgRW, pbImgRH);
+      c.restore();
+    }
   }
   pbDrawFlipper(0.22,1.02, 0.5-pbFL*1.0, 0.20, true); pbDrawFlipper(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, false);
   _gs(true);

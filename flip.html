@@ -105,8 +105,22 @@ function keyWhite(im){
     return c;
   }catch(e){ return im; }
 }
+function thickenOutline(src, r){            // stamps a dark silhouette in a ring behind the art
+  const w=src.naturalWidth||src.width, h=src.naturalHeight||src.height;
+  if(!w||!h) return src;
+  const sil=document.createElement('canvas'); sil.width=w; sil.height=h;
+  const sg=sil.getContext('2d'); sg.drawImage(src,0,0);
+  sg.globalCompositeOperation='source-in'; sg.fillStyle='#141414'; sg.fillRect(0,0,w,h);
+  const out=document.createElement('canvas'); out.width=w; out.height=h;
+  const og=out.getContext('2d');
+  for(let i=0;i<16;i++){ const a=i/16*6.2832; og.drawImage(sil, Math.cos(a)*r, Math.sin(a)*r); }
+  og.drawImage(src,0,0);
+  out.naturalWidth=w; out.naturalHeight=h; out.complete=true;
+  return out;
+}
+function keyAndThicken(im){ const k=keyWhite(im); return thickenOutline(k, Math.max(2, Math.min(k.width||k.naturalWidth, k.height||k.naturalHeight)*0.030)); }
 let MARKER=IMG(THEME==='cartoon'?'blueC.png':'blue.png');
-if(THEME==='cartoon'){ MARKER.addEventListener('load',function(){ MARKER=keyWhite(MARKER); try{ updOrient(); }catch(e){} }); }
+if(THEME==='cartoon'){ MARKER.addEventListener('load',function(){ MARKER=keyAndThicken(MARKER); try{ updOrient(); }catch(e){} }); }
 const MK_RED=IMG('red.png'), MK_GREEN=IMG('green.png');
 const CHAIR=IMG('Chair.png'), FIELD=IMG('originalfield.png');
 const WIN_R=IMG('window.png'), WIN_P=IMG('windowP.png');

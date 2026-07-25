@@ -414,20 +414,25 @@ function drawScene(c){
 function drawHUD(){
   const F=Math.round(CH*0.021);
   ctx.textAlign='center'; ctx.textBaseline='top';
+  // centre column: clock, running score, then the turn — score updates the moment a round is banked
+  const cy0=CH*0.022;
   ctx.font='bold '+Math.round(F*1.5)+'px Helvetica,Arial,sans-serif';
   ctx.fillStyle=sudden?'#ff5a5a':'#ffd700';
-  ctx.fillText(tLeft.toFixed(1), CW/2, CH*0.022);
+  ctx.fillText(tLeft.toFixed(1), CW/2, cy0);
+  ctx.font='bold '+Math.round(F*1.35)+'px Helvetica,Arial,sans-serif';
+  ctx.fillStyle= score<0 ? '#ff6b6b' : '#fff';
+  ctx.fillText(score+' PTS', CW/2, cy0+F*1.85);
   ctx.font='bold '+F+'px Helvetica,Arial,sans-serif';
-  ctx.fillStyle='#fff'; ctx.fillText(sudden?'SUDDEN DEATH':'TURN '+turn, CW/2, CH*0.022+F*1.8);
+  ctx.fillStyle= sudden ? '#ff5a5a' : '#8fd0ff';
+  ctx.fillText(sudden?'SUDDEN DEATH':'TURN '+turn, CW/2, cy0+F*3.5);
   ctx.textAlign='left';
-  ctx.fillStyle='#fff'; ctx.fillText(score+' PTS', CW*0.04, CH*0.022);
-  ctx.fillStyle='#888'; ctx.fillText('BEST '+best, CW*0.04, CH*0.022+F*1.5);
+  ctx.fillStyle='#888'; ctx.fillText('BEST '+best, CW*0.04, cy0);
   ctx.textAlign='right';
   ctx.fillStyle='#ffd700'; ctx.fillText(TH.name, CW*0.96, CH*0.022);
   // still to throw — stacked above the near edge of the first table, same as the original game
   const rem=order.slice(idx+((state==='play'&&!live)?1:0));
   if(rem.length && camMix<0.85){
-    const base=proj(0.5,0.02), bh=CH*0.030, PX=CW*0.22;   // off to the left, clear of the one in your hand
+    const base=proj(0.5,0.02), bh=CH*0.030, PX=CW*0.20;   // off to the left, clear of the one in your hand
     ctx.save(); ctx.globalAlpha=0.85*(1-camMix);
     for(let i=0;i<rem.length;i++){
       const im=MK[rem[i]], y=base.y-bh*0.55-i*bh*1.05;

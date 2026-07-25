@@ -353,16 +353,22 @@ window.addEventListener('pointerup',()=>{
   dropping={u:dragU,t:0,col:col,rot:dropRot()};
   updateBuy();
 });
+function wallet(){ try{ return parseInt(localStorage.getItem('qu33phCoins')||'0',10)||0; }catch(e){ return 0; } }
+function spendWallet(n){                                   // the +3 markers come out of your main coin wallet
+  try{ localStorage.setItem('qu33phCoins', Math.max(0, wallet()-n)); }catch(e){}
+  try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'qu33phCoins',n:-n},'*'); }catch(e){}
+}
 function updateBuy(){
   const show=(state==='play'&&queue.length<=0&&!dropping);
   $('buyBtn').style.display=show?'inline-flex':'none';
-  $('buyBtn').disabled=coins<10;
-  $('buyBtn').textContent=coins>=10?'+3 MARKERS \u00b7 10 COINS':'NEED 10 COINS';
+  const w=wallet();
+  $('buyBtn').disabled=w<10;
+  $('buyBtn').textContent=w>=10?'+3 MARKERS \u00b7 10 COINS':'NEED 10 COINS';
   $('orientBtn').style.display=(state==='play')?'flex':'none';
 }
 $('buyBtn').onclick=e=>{ e.stopPropagation();
-  if(coins<10||queue.length>0) return;
-  coins-=10; grant(3); updateBuy();
+  if(wallet()<10||queue.length>0) return;   // price comes out of the main wallet, not this session's haul
+  spendWallet(10); grant(3); updateBuy();
   popups.push({txt:'+3 MARKERS',life:60,col:'#7bff9a'});
 };
 function begin(total){ reset(total); state='play'; $('menu').classList.remove('on'); $('overOvl').classList.remove('on'); updateBuy(); }
@@ -423,7 +429,12 @@ function drawCoinAt(c,x,y,rad){
 function drawMarkerAt(c,x,y,len,rot,col){
   const img=MKS[col%3];
   c.save(); c.translate(x,y); c.rotate(rot);
-  if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; c.drawImage(img,-len/2,-(len/ar)/2,len,len/ar); }
+  if(ready(img)){
+    const w=img.naturalWidth, h=img.naturalHeight;
+    if(w>=h){ c.drawImage(img,-len/2,-(len*h/w)/2,len,len*h/w); }          // art drawn lying down
+    else { c.rotate(Math.PI/2); const ww=len*w/h;                           // art drawn standing up (the comic set)
+           c.drawImage(img,-ww/2,-len/2,ww,len); }                          // stand it back down so rot still means rot
+  }
   else { c.fillStyle=MK_FALLBACK[col%3]; c.fillRect(-len/2,-len*0.11,len,len*0.22); }
   c.restore();
 }
