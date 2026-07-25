@@ -130,7 +130,7 @@ const TREES_P=[IMG('treeP.png')];
 // ─── the one selected theme, applied throughout ───────────────────────────
 const TH={
   'default':{name:'DEFAULT', filter:'',                                    glow:null,      deck:'default'},
-  'cartoon':{name:'COMIC',   filter:'grayscale(1) contrast(1.2)',          glow:null,      deck:'comic', benday:true, plate:true},
+  'cartoon':{name:'COMIC',   filter:'grayscale(1) contrast(1.2)',          glow:null,      deck:'comic', benday:true},
   'neon':   {name:'NEON',    filter:'saturate(1.6) brightness(1.08)',      glow:'#28ff82', deck:'neon'},
   'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020', deck:'sunset', tint:'rgba(255,176,32,0.16)'},
   'galaxy': {name:'GALAXY',  filter:'hue-rotate(215deg) saturate(1.4)',    glow:'#9a6bff', deck:'galaxy', galaxies:true}
@@ -656,13 +656,7 @@ function drawMarker(){
     ctx.ellipse(cx,marker.y+CH*0.004,MH()*0.20,MH()*0.05,0,0,7); ctx.fill();
   }
   ctx.save(); ctx.translate(cx,cy); ctx.rotate(markerRot()+marker.rot); ctx.scale(1/sq,sq);
-  if(TH.plate){                                  // comic: white backing so the line-art marker reads
-    ctx.fillStyle='#fff';
-    const pw=dw*1.06, ph=dh*1.06, r=Math.min(pw,ph)*0.35;
-    ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(-pw/2,-ph/2,pw,ph,r); else ctx.rect(-pw/2,-ph/2,pw,ph);
-    ctx.fill();
-  }
+  // comic: no white backing — the art is keyed transparent and carries its own thick border
   glowOn();
   if(ready(MARKER)) ctx.drawImage(MARKER,-dw/2,-dh/2,dw,dh);
   else { ctx.fillStyle='#3a7bff'; ctx.fillRect(-MH()/2,-MH()*0.09,MH(),MH()*0.18); }
