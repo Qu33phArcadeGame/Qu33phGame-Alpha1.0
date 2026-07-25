@@ -216,9 +216,13 @@ function popCap(m){
 
 // ─── scoring the layout ───────────────────────────────────────────────────
 function dist(a,b){ const dx=a.u-b.u, dy=(a.v-b.v)*LANE_AR; return Math.hypot(dx,dy); }
+// scoring uses a softer metric than the physics: markers are capsules lying in all directions,
+// so a gap along the table shouldn't count four times as far as the same gap across it.
+const TOUCH_AR=3.2, TOUCH_R=RAD*2.6;
+function touching(a,b){ const dx=a.u-b.u, dy=(a.v-b.v)*TOUCH_AR; return Math.hypot(dx,dy) < TOUCH_R; }
 function scoreTable(){
   const on=markers.filter(m=>!m.off);
-  const touch=(a,b)=>dist(a,b) < RAD*2.25;
+  const touch=touching;
   // union-find over everything that's touching
   const par=on.map((_,i)=>i);
   const find=i=>{ while(par[i]!==i){ par[i]=par[par[i]]; i=par[i]; } return i; };
@@ -397,15 +401,28 @@ function drawScene(c){
 }
 // the chair and the case are props, not scenery — they draw after the theme filter so they keep their colour
 function drawProps(c){
-  const b=proj(BOXU,BOXV), bs=BOXW*b.s*2;
-  if(ready(BOX)){ const ar=BOX.naturalWidth/BOX.naturalHeight;
-    c.drawImage(BOX,b.x-bs/2,b.y-bs/(ar*2),bs,bs/ar); }
-  else { c.fillStyle='rgba(255,255,255,0.85)'; c.fillRect(b.x-bs/2,b.y-bs*0.18,bs,bs*0.36); }
-  for(const ch of chairs()){
+  // the case and the far chair live down the far end — you only see them once the camera pans there.
+  // the near chair is allowed a faint sliver at the top of the near view so you know it's coming.
+  const caseA=camE;
+  if(caseA>0.02){
+    const b=proj(BOXU,BOXV), bs=BOXW*b.s*2;
+    c.save(); c.globalAlpha=caseA;
+    if(ready(BOX)){ const ar=BOX.naturalWidth/BOX.naturalHeight;
+      c.drawImage(BOX,b.x-bs/2,b.y-bs/(ar*2),bs,bs/ar); }
+    else { c.fillStyle='rgba(255,255,255,0.85)'; c.fillRect(b.x-bs/2,b.y-bs*0.18,bs,bs*0.36); }
+    c.restore();
+  }
+  const chs=chairs();
+  for(let i=0;i<chs.length;i++){
+    const ch=chs[i];
+    const a = (i===0) ? (0.22+0.78*camE) : camE;      // nearer chair peeks, far one waits for the pan
+    if(a<=0.02) continue;
     const p=proj(ch.u,ch.v), s=ch.w*p.s*2;
+    c.save(); c.globalAlpha=a;
     if(ready(CHAIR)){ const ar=CHAIR.naturalWidth/CHAIR.naturalHeight;
       c.drawImage(CHAIR,p.x-s/2,p.y-s/ar,s,s/ar); }
     else { c.fillStyle='#c33'; c.fillRect(p.x-s/2,p.y-s*0.6,s,s*0.6); }
+    c.restore();
   }
 }
 function drawHUD(){
