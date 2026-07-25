@@ -497,7 +497,6 @@ function paintBG(c){
     const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#160a2e'); g.addColorStop(1,'#0a0618');
     c.fillStyle=g; c.fillRect(0,0,CW,CH);
-    if(!drawGalaxyPlates(c,CW,CH)) drawGalaxies(c);   // real plates when loaded, drawn spirals as fallback
   } else {
     const g=c.createLinearGradient(0,0,0,CH);
     g.addColorStop(0,'#2a2358'); g.addColorStop(0.55,'#332670'); g.addColorStop(1,'#211a4a');
@@ -758,6 +757,8 @@ function draw(){
   paintBG(s2);
   tileWin(s2, PIXEL?WIN_P:WIN_R, 0.85, 0.10);
   drawTrees(s2);
+  // galaxy plates go on AFTER the building photos, or they'd be buried under them
+  if(TH.deck==='galaxy' && !drawGalaxyPlates(s2,CW,CH)) drawGalaxies(s2);
   const gr=s2.createLinearGradient(0,0,0,CH);
   gr.addColorStop(0,'rgba(0,0,0,0.42)'); gr.addColorStop(0.55,'rgba(0,0,0,0.14)'); gr.addColorStop(1,'rgba(0,0,0,0.72)');
   s2.fillStyle=gr; s2.fillRect(0,0,CW,CH);

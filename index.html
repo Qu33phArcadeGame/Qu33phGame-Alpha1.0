@@ -601,7 +601,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v336</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v337</div>
 
 <canvas id="game"></canvas>
 
@@ -660,7 +660,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=336" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=337" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -1317,16 +1317,16 @@ function previewBackdrop(c,W,H,st){
     for(var yy=0; yy<H+ds; yy+=ds){ var row=Math.round(yy/ds);
       for(var xx=((row%2)?ds/2:0); xx<W+ds; xx+=ds){ c.beginPath(); c.arc(xx,yy,r,0,6.283); c.fill(); } }
   } else if(st==="neon"){
-    c.save(); c.globalCompositeOperation="screen";
-    c.fillStyle="rgba(40,255,150,0.16)"; c.fillRect(0,0,W*0.62,H);
-    c.fillStyle="rgba(200,60,255,0.20)"; c.fillRect(W*0.62,0,W*0.38,H);
+    c.save();                                   // horizontal scanlines, like the real field
+    c.strokeStyle="rgba(150,255,220,0.10)"; c.lineWidth=1;
+    var ls=Math.max(3,H*0.012);
+    for(var ly=0; ly<H; ly+=ls){ c.beginPath(); c.moveTo(0,ly+0.5); c.lineTo(W,ly+0.5); c.stroke(); }
     c.restore();
-    c.save(); c.strokeStyle="rgba(40,255,150,0.16)"; c.lineWidth=1;
-    c.shadowColor="rgba(40,255,150,0.6)"; c.shadowBlur=5;
-    var gs=Math.max(18,W*0.09);
-    for(var gx=0; gx<W; gx+=gs){ c.beginPath(); c.moveTo(gx,0); c.lineTo(gx,H); c.stroke(); }
-    for(var gy=0; gy<H; gy+=gs){ c.beginPath(); c.moveTo(0,gy); c.lineTo(W,gy); c.stroke(); }
-    c.strokeStyle="rgba(120,255,220,0.9)"; c.lineWidth=2; c.shadowBlur=12; c.strokeRect(1,1,W-2,H-2);
+    c.save();                                   // lit frame just inside the edge
+    c.strokeStyle="rgba(120,255,225,0.95)"; c.lineWidth=Math.max(2,W*0.006);
+    c.shadowColor="rgba(90,255,215,0.9)"; c.shadowBlur=Math.max(8,W*0.045);
+    var pad=Math.max(3,W*0.012);
+    c.strokeRect(pad,pad,W-pad*2,H-pad*2); c.stroke();
     c.restore();
   } else if(st==="sunset"){
     c.save(); c.globalCompositeOperation="screen";
@@ -1337,15 +1337,35 @@ function previewBackdrop(c,W,H,st){
     c.restore();
   } else if(st==="galaxy"){
     c.save(); c.globalCompositeOperation="multiply";
-    var g2=c.createLinearGradient(0,0,0,H); g2.addColorStop(0,"#3a2168"); g2.addColorStop(1,"#140c30");
+    var g2=c.createLinearGradient(0,0,0,H);
+    g2.addColorStop(0,"#5a3f9e"); g2.addColorStop(0.55,"#33246b"); g2.addColorStop(1,"#1a1140");
     c.fillStyle=g2; c.fillRect(0,0,W,H); c.restore();
-    if(typeof drawGalaxyPlatesInto==="function") drawGalaxyPlatesInto(c,W,H);
+    previewSpiral(c, W*0.5, H*0.46, Math.min(W,H)*0.30);
     c.save();
-    for(var j=0;j<40;j++){ var px=((j*173)%100)/100*W, py=((j*97)%100)/100*H;
-      c.globalAlpha=0.35+0.5*(((j*53)%100)/100); c.fillStyle="#fff";
-      c.beginPath(); c.arc(px,py,Math.max(0.8,W*0.004),0,6.283); c.fill(); }
+    for(var j=0;j<52;j++){
+      var px=((j*173)%1000)/1000*W, py=((j*97)%1000)/1000*H;
+      c.globalAlpha=0.30+0.55*(((j*53)%100)/100); c.fillStyle="#fff";
+      c.beginPath(); c.arc(px,py,Math.max(0.7,W*0.0035),0,6.283); c.fill();
+    }
     c.restore();
   }
+}
+// the dotted spiral the galaxy field draws, not the deepdream plates
+function previewSpiral(c,cx,cy,r){
+  c.save(); c.globalCompositeOperation="lighter";
+  var rg=c.createRadialGradient(cx,cy,0,cx,cy,r*1.25);
+  rg.addColorStop(0,"rgba(170,140,255,0.42)"); rg.addColorStop(1,"rgba(0,0,0,0)");
+  c.fillStyle=rg; c.fillRect(cx-r*1.3,cy-r*1.3,r*2.6,r*2.6);
+  c.fillStyle="rgba(225,215,255,0.85)";
+  for(var arm=0; arm<2; arm++){
+    for(var i=0;i<70;i++){
+      var t=i/70, ang=arm*Math.PI + t*3.5, rr=r*t;
+      var x=cx+Math.cos(ang)*rr, y=cy+Math.sin(ang)*rr*0.86;
+      c.globalAlpha=(1-t)*0.85;
+      c.beginPath(); c.arc(x,y,Math.max(0.7,r*0.020*(1-t*0.5)),0,6.283); c.fill();
+    }
+  }
+  c.restore();
 }
 function star(c,x,y,r){
   c.beginPath();
@@ -4468,11 +4488,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4483,9 +4503,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=336&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
