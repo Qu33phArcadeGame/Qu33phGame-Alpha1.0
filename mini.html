@@ -33,7 +33,7 @@
   <canvas id="game"></canvas>
   <div id="menu" class="ovl on">
     <h1>MINI QU33PH</h1>
-    <div class="sub">FOUR MINI MARKERS &middot; ONE TABLE<br>BLUE ALWAYS GOES LAST</div>
+    <div class="sub">FOUR MINI MARKERS &middot; THREE TABLES<br>BLUE ALWAYS GOES LAST</div>
     <div class="rules">
       <b>FLICK UP</b> to throw &mdash; harder sends it further, angle it to steer.<br>
       Markers touching score. All four touching is a <b>QU33PH</b>.<br>
@@ -396,14 +396,13 @@ function drawScene(c){
   const l=proj(0,V_DESTINY), r=proj(1,V_DESTINY);
   c.save(); c.setLineDash([CW*0.02,CW*0.016]); c.strokeStyle='rgba(255,255,255,0.42)'; c.lineWidth=Math.max(1,CH*0.0022);
   c.beginPath(); c.moveTo(l.x,l.y); c.lineTo(r.x,r.y); c.stroke(); c.restore();
-  // the case sits on the table the whole match — Mega Qu33ph is main-game scoring
-  {
-    const b=proj(BOXU,BOXV), bs=BOXW*b.s*2;
-    if(ready(BOX)){ const ar=BOX.naturalWidth/BOX.naturalHeight;
-      c.drawImage(BOX,b.x-bs/2,b.y-bs/(ar*2),bs,bs/ar); }
-    else { c.fillStyle='rgba(255,255,255,0.85)'; c.fillRect(b.x-bs/2,b.y-bs*0.18,bs,bs*0.36); }
-  }
-  // chairs, once sudden death lands
+}
+// the chair and the case are props, not scenery — they draw after the theme filter so they keep their colour
+function drawProps(c){
+  const b=proj(BOXU,BOXV), bs=BOXW*b.s*2;
+  if(ready(BOX)){ const ar=BOX.naturalWidth/BOX.naturalHeight;
+    c.drawImage(BOX,b.x-bs/2,b.y-bs/(ar*2),bs,bs/ar); }
+  else { c.fillStyle='rgba(255,255,255,0.85)'; c.fillRect(b.x-bs/2,b.y-bs*0.18,bs,bs*0.36); }
   for(const ch of chairs()){
     const p=proj(ch.u,ch.v), s=ch.w*p.s*2;
     if(ready(CHAIR)){ const ar=CHAIR.naturalWidth/CHAIR.naturalHeight;
@@ -471,6 +470,7 @@ function draw(){
     if(TH.benday){ ctx.globalCompositeOperation='multiply'; ctx.fillStyle=bendayPattern(ctx,CH*0.016); ctx.fillRect(0,0,CW,CH); ctx.globalCompositeOperation='source-over'; }
     ctx.restore();
   } else { drawScene(ctx); }
+  drawProps(ctx);                       // chair stays red, case stays full colour, in every theme
   if(TH.room){ drawNeonRoom(ctx); }
   if(TH.tint){ ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=TH.tint; ctx.fillRect(0,0,CW,CH); ctx.restore(); }
   if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
