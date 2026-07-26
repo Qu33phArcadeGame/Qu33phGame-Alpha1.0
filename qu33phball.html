@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Qu33ph Skee-Ball</title>
+<style>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#000; }
+  #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #stage{ position:relative; }
+  #game{ display:block; }
+
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage"><canvas id="game"></canvas></div></div>
+<script>
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
+const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+const FIELD=new Image(); FIELD.src='skeefield.png?v=306';
+const MK={ red:new Image(), green:new Image(), blue:new Image() };
+const CMC=(THEME==='cartoon');
+MK.red.src=CMC?'redC.png':'red.png'; MK.green.src=CMC?'greenC.png':'green.png'; MK.blue.src=CMC?'blueC.png':'blue.png';
+function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
+
+const PW=100, PH=177;              // field logical space (matches skeefield aspect 0.563)
+let CW=0,CH=0,DPR=1,SC=1;
+function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
+  const ar=PW/PH; let cw=r.width,ch=r.width/ar; if(ch>r.height){ch=r.height;cw=r.height*ar;}
+  cv.style.width=cw+'px'; cv.style.height=ch+'px';
+  const st=document.getElementById('stage'); if(st){ st.style.width=cw+'px'; st.style.height=ch+'px'; }
+  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; sc.width=CW; sc.height=CH; SC=CW/PW; }
+sz();
+window.addEventListener('resize',()=>{ try{ sz(); FIELDC=null; }catch(e){} });
+// ---- themes: the cabinet gets the filter, the markers keep their colour ----
+const TH={
+  'default':{name:'DEFAULT',     filter:'',                                          glow:null},
+  'cartoon':{name:'COMIC',       filter:'grayscale(1) contrast(1.2)',                glow:null, benday:true},
+  'neon':   {name:'NEON',        filter:'saturate(1.6) brightness(1.08)',            glow:'#28ff82'},
+  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020'},
+  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff', galaxies:true}
+}[THEME] || {name:'DEFAULT', filter:'', glow:null};
+const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
+let BEND=null, BENDkey=0;
+function bendayPattern(c, ds){
+  ds=Math.max(6, Math.round(ds));
+  if(BEND && BENDkey===ds) return BEND;
+  const t=document.createElement('canvas');
+  t.width=ds; t.height=ds*2;
+  const g=t.getContext('2d');
+  g.fillStyle='rgba(20,20,20,0.45)';
+  const r=Math.max(1, ds*0.16);
+  // staggered rows, drawn once into a tile instead of thousands of arcs every frame
+  const pts=[[0,0],[ds,0],[0,ds*2],[ds,ds*2],[ds*0.5,ds]];
+  for(const p of pts){ g.beginPath(); g.arc(p[0],p[1],r,0,6.283); g.fill(); }
+  BEND=c.createPattern(t,'repeat'); BENDkey=ds;
+  return BEND;
+}
+const MK_GLOW={red:'#ff3b3b',green:'#39ff6a',blue:'#4f9dff'};
+function glowFor(kind){
+  if(!TH.glow) return null;
+  if(THEME==='neon'){ if(kind==='coin') return '#ffd700'; if(MK_GLOW[kind]) return MK_GLOW[kind]; }
+  return TH.glow;
+}
+function glowOn(c,kind){
+  const g=glowFor(kind);
+  if(g){ c.shadowColor=g; c.shadowBlur=CH*(THEME==='neon'?0.020:0.016); }
+}
+function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
+// sporadic stars, constellations and slow spirals — no grid, nothing that reads like ben-day
+let STARS=null, CONSTEL=null;
+function buildSky(){
+  STARS=[]; CONSTEL=[];
+  for(let i=0;i<70;i++) STARS.push({x:Math.random(),y:Math.random(),r:0.4+Math.random()*1.5,p:Math.random()*6.283});
+  for(let k=0;k<3;k++){
+    const cx=0.15+Math.random()*0.7, cy=0.10+Math.random()*0.7, pts=[];
+    for(let i=0;i<3+((Math.random()*3)|0);i++)
+      pts.push({x:cx+(Math.random()-0.5)*0.22, y:cy+(Math.random()-0.5)*0.20});
+    CONSTEL.push(pts);
+  }
+}
+function drawSky(c){
+  if(!STARS) buildSky();
+  const t=Date.now()/1000;
+  c.save();
+  for(const st of STARS){
+    c.globalAlpha=0.35+0.5*Math.abs(Math.sin(t*0.9+st.p));
+    c.fillStyle='#fff'; c.beginPath(); c.arc(st.x*CW, st.y*CH, st.r*(CH/900), 0, 6.283); c.fill();
+  }
+  c.globalAlpha=0.35; c.strokeStyle='rgba(190,165,255,0.75)'; c.lineWidth=Math.max(1,CH*0.0013);
+  for(const pts of CONSTEL){
+    c.beginPath();
+    pts.forEach((p,i)=> i? c.lineTo(p.x*CW,p.y*CH) : c.moveTo(p.x*CW,p.y*CH));
+    c.stroke();
+    c.fillStyle='rgba(220,205,255,0.9)';
+    for(const p of pts){ c.beginPath(); c.arc(p.x*CW,p.y*CH,CH*0.0022,0,6.283); c.fill(); }
+  }
+  c.globalAlpha=1;
+  for(let i=0;i<3;i++){                                  // slow spiral galaxies
+    const R=CH*(0.06+0.03*(i%2));
+    const gx=CW*(0.16+0.34*i), gy=CH*(0.08+0.10*i);
+    c.save(); c.translate(gx,gy); c.rotate(t*(0.09+0.04*i)*(i%2?-1:1));
+    const g=c.createRadialGradient(0,0,0,0,0,R);
+    g.addColorStop(0,'rgba(235,215,255,0.5)'); g.addColorStop(0.4,'rgba(150,90,255,0.20)'); g.addColorStop(1,'rgba(90,40,160,0)');
+    c.fillStyle=g; c.beginPath(); c.arc(0,0,R,0,6.283); c.fill();
+    c.strokeStyle='rgba(200,170,255,0.28)'; c.lineWidth=Math.max(1,R*0.05);
+    for(let arm=0;arm<2;arm++){
+      c.beginPath();
+      for(let q=0;q<=24;q++){ const th=arm*Math.PI+q*0.14, rr=R*0.12+(q/24)*R*0.9;
+        const px=Math.cos(th)*rr, py=Math.sin(th)*rr*0.42;
+        q? c.lineTo(px,py) : c.moveTo(px,py); }
+      c.stroke();
+    }
+    c.restore();
+  }
+  c.restore();
+}
+function drawThemeOverlay(){
+  if(TH.benday) return;                                 // dots are baked into the cached cabinet
+  if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
+  if(TH.glow){
+    const g=ctx.createRadialGradient(CW/2,CH*0.5,CH*0.18,CW/2,CH*0.5,CH*0.78);
+    const c=TH.glow==='#28ff82'?'40,255,130':TH.glow==='#ffb020'?'255,176,32':'150,90,255';
+    g.addColorStop(0,'rgba('+c+',0)'); g.addColorStop(1,'rgba('+c+',0.26)');
+    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH); ctx.restore();
+  }
+}
+
+function X(u){ return u*SC; }                 // field-units -> px
+function fx(f){ return f*CW; }                 // field-fraction x -> px
+function fy(f){ return f*CH; }                 // field-fraction y -> px
+
+// high-value inner targets — value + hit radius. The big RED ring (10) and
+// the outer YELLOW ring (miss) are handled by ellipse bands in scoreLanding().
+const ZONES=[
+  {x:0.345,y:0.262,r:0.040,p:100,c:'#b03030'},
+  {x:0.650,y:0.262,r:0.040,p:100,c:'#b03030'},
+  {x:0.502,y:0.268,r:0.038,p:50, c:'#cccccc'},
+  {x:0.502,y:0.300,r:0.036,p:40, c:'#e23b3b'},
+  {x:0.502,y:0.323,r:0.034,p:30, c:'#3a7bff'}
+];
+// ring bands (field-fraction ellipses, measured from the art)
+const RING_CX=0.503, RING_CY=0.325;
+const RED_HW=0.150, RED_HH=0.058;    // inside this -> 10 (the big red circle)
+const ROLL_START={x:0.50,y:0.70};             // where the current marker sits to be flicked
+const QUEUE_Y=0.565;                           // preview markers sit up on the lane
+const QSLOTS=8, QX0=0.325, QSPAN=0.35;         // fixed slots so the row never shuffles
+const COLORS=['red','green','blue'];          // cycle order
+const TOTAL=9, LAND_HOLD=20, FEED_DUR=16;
+
+// curIdx = the marker in play; resolved = how many have finished.
+// The waiting queue is always (QSLOTS - curIdx) long, in every state, so nothing pops in or out.
+let curIdx, resolved, score, best, state, ball, popups, landT, feed;
+try{ best=parseInt(localStorage.getItem('qu33phSkeeballBest')||'0',10)||0; }catch(e){ best=0; }
+function qx(k){ return QX0 + ((k-1)/(QSLOTS-1))*QSPAN; }   // marker k (1..8) owns a fixed slot
+function colOf(i){ return COLORS[i%3]; }                    // 0 red, 1 green, 2 blue, 3 red ...
+
+function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; }
+reset();
+
+// ---- flick input ----
+let dragging=false, dStart=null, dNow=null;
+function pt(e){ const r=cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height }; }
+cv.addEventListener('pointerdown',e=>{ if(state==='over'){ reset(); return; } if(state!=='ready') return; dragging=true; dStart=pt(e); dNow=dStart; });
+cv.addEventListener('pointermove',e=>{ if(dragging) dNow=pt(e); });
+window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
+  const dx=dNow.x-dStart.x, dy=dNow.y-dStart.y;                 // flick UP = negative dy
+  const up=Math.max(0,-dy);                                     // upward pull
+  if(up<0.04){ dStart=dNow=null; return; }                     // too small, ignore
+  roll(up, dx);
+  dStart=dNow=null;
+});
+
+function roll(up, dx){
+  const power=Math.min(1, up/0.42);                            // 0..1
+  const aim=Math.max(-1,Math.min(1, dx/0.28));                 // -1..1
+  const scat=(1.05-power*0.35);                                 // stronger, cleaner rolls scatter less
+  const landX=0.50 + aim*0.20 + (Math.random()-0.5)*0.06*scat;
+  const landY=0.42 - power*0.17 + (Math.random()-0.5)*0.045*scat;
+  ball={ x0:ROLL_START.x, y0:ROLL_START.y, x1:landX, y1:landY, t:0, dur:38, color:colOf(curIdx), spin:0, scored:false };
+  state='rolling';
+}
+
+function scoreLanding(lx,ly){
+  // 1) nearest high-value inner target
+  let best=null,bd=1e9;
+  for(const z of ZONES){ const d=Math.hypot(lx-z.x,ly-z.y); if(d<bd){ bd=d; best=z; } }
+  if(best && bd < best.r*0.95) return best.p;
+  // 2) anywhere inside the big red ring -> 10
+  const dx=(lx-RING_CX)/RED_HW, dy=(ly-RING_CY)/RED_HH;
+  if(dx*dx+dy*dy <= 1) return 10;
+  // 3) yellow ring / off the target -> miss
+  return 0;
+}
+
+function step(){
+  if(state==='rolling' && ball){
+    ball.t++; ball.spin+=0.4;
+    if(ball.t>=ball.dur){
+      ball.t=ball.dur;                                  // marker stays put at the hole
+      const pts=scoreLanding(ball.x1,ball.y1); score+=pts; resolved++;
+      popups.push({x:ball.x1,y:ball.y1,txt:pts>0?('+'+pts):'MISS',life:52,pts:pts});
+      state='landed'; landT=0;                          // score/miss shows now, marker still visible
+    }
+  } else if(state==='landed'){
+    landT++;
+    if(landT>=LAND_HOLD){
+      ball=null;
+      if(resolved>=TOTAL){
+        state='over';
+        if(score>best){ best=score; try{ localStorage.setItem('qu33phSkeeballBest',best); }catch(e){} }
+      } else {
+        curIdx++;                                       // next marker leaves the queue...
+        feed={ t:0, dur:FEED_DUR, fromX:qx(curIdx), color:colOf(curIdx) };
+        state='feed';                                   // ...and travels down to the roll spot
+      }
+    }
+  } else if(state==='feed' && feed){
+    feed.t++;
+    if(feed.t>=feed.dur){ feed=null; state='ready'; }
+  }
+  for(let i=popups.length-1;i>=0;i--){ popups[i].life--; popups[i].y-=0.0015; if(popups[i].life<=0) popups.splice(i,1); }
+}
+
+function ease(t){ return 1-Math.pow(1-t,2); }   // ease-out
+
+function drawMarker(color, cx, cy, scale, rot){
+  const img=MK[color], w=X(11)*scale, h=X(11)*scale;
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); glowOn(ctx,color);
+  if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; ctx.drawImage(img,-w/2,-w/(2*ar),w,w/ar); }
+  else { ctx.fillStyle=(color==='red'?'#ff3030':color==='green'?'#30d060':'#3a7bff'); ctx.beginPath(); ctx.arc(0,0,w*0.45,0,7); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=X(0.5); ctx.stroke(); }
+  glowOff(ctx); ctx.restore();
+}
+
+let FIELDC=null, fieldcKey='';
+function ensureFieldCache(){
+  const key=CW+'x'+CH+'|'+THEME+'|'+(ready(FIELD)?1:0);
+  if(FIELDC && fieldcKey===key) return;
+  FIELDC=document.createElement('canvas'); FIELDC.width=CW; FIELDC.height=CH;
+  const g=FIELDC.getContext('2d');
+  s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
+  if(ready(FIELD)) s2.drawImage(FIELD,0,0,CW,CH); else { s2.fillStyle='#111'; s2.fillRect(0,0,CW,CH); }
+  if(CANFILTER && TH.filter) g.filter=TH.filter;
+  g.drawImage(sc,0,0);
+  g.filter='none';
+  if(THEME==='neon'){                                   // bloom baked in so the machine glows
+    g.save(); g.globalCompositeOperation='screen'; g.globalAlpha=0.30; g.drawImage(sc,0,0);
+    g.globalAlpha=0.16; g.filter='blur(6px)'; g.drawImage(sc,0,0); g.filter='none'; g.restore();
+  }
+  if(TH.benday){
+    g.save(); g.globalCompositeOperation='multiply';
+    g.fillStyle=bendayPattern(g, CH*0.015); g.fillRect(0,0,CW,CH); g.restore();
+  }
+  fieldcKey=key;
+}
+function draw(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ensureFieldCache();
+  ctx.drawImage(FIELDC,0,0);                            // static cabinet: one blit per frame
+  drawThemeOverlay();
+  // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
+  ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica';
+  ctx.fillText(TOTAL-resolved, fx(0.346), fy(0.1937));
+  ctx.fillText(score,          fx(0.502), fy(0.1937));
+  ctx.fillText(best,           fx(0.662), fy(0.1937));
+
+  // preview queue — each marker keeps its own slot, so the row never reshuffles
+  ctx.globalAlpha=0.38;
+  for(let k=curIdx+1; k<TOTAL; k++) drawMarker(colOf(k), fx(qx(k)), fy(QUEUE_Y), 0.5, 0);
+  ctx.globalAlpha=1;
+
+  // the next marker travelling down from the queue to the roll spot
+  if(state==='feed' && feed){
+    const t=ease(feed.t/feed.dur);
+    const cx=fx(feed.fromX+(ROLL_START.x-feed.fromX)*t);
+    const cy=fy(QUEUE_Y+(ROLL_START.y-QUEUE_Y)*t);
+    ctx.globalAlpha=0.38+0.62*t;
+    drawMarker(feed.color, cx, cy, 0.5+0.5*t, 0);
+    ctx.globalAlpha=1;
+  }
+
+  // current marker on the roll spot
+  if(state==='ready') drawMarker(colOf(curIdx), fx(ROLL_START.x), fy(ROLL_START.y), 1.0, 0);
+
+  // rolling marker — stays on screen the whole way up the lane and rests at the hole
+  if((state==='rolling'||state==='landed') && ball){
+    const t=ease(Math.min(1, ball.t/ball.dur));
+    const cx=fx(ball.x0+(ball.x1-ball.x0)*t);
+    const cy=fy(ball.y0+(ball.y1-ball.y0)*t);
+    const sc=1.0 - t*0.45;                          // gentler perspective so it stays readable
+    let al=1;
+    if(state==='landed'){ const k=landT/LAND_HOLD; al = k<0.6 ? 1 : 1-(k-0.6)/0.4; }  // sinks in at the end
+    ctx.globalAlpha=Math.max(0,al);
+    ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(cx,cy+X(2)*sc,X(5)*sc,X(2)*sc,0,0,7); ctx.fill();
+    drawMarker(ball.color, cx, cy, sc, ball.spin);
+    ctx.globalAlpha=1;
+  }
+
+  // score popups
+  for(const p of popups){ ctx.globalAlpha=Math.max(0,p.life/40);
+    ctx.fillStyle=p.pts>=100?'#ffd24a':p.pts>=30?'#7bff9a':p.pts>0?'#8fd0ff':'#ff7a7a';
+    ctx.font='bold '+Math.round(CW*0.055)+'px Helvetica'; ctx.textAlign='center';
+    ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=X(0.8); ctx.strokeText(p.txt,fx(p.x),fy(p.y)); ctx.fillText(p.txt,fx(p.x),fy(p.y)); ctx.globalAlpha=1; }
+
+  // hint
+  if(state==='ready' && !dragging){ ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font='bold '+Math.round(CW*0.035)+'px Helvetica'; ctx.textAlign='center';
+    ctx.fillText('flick UP to roll \u2014 aim for the rings', CW/2, fy(0.93)); }
+
+  // game over
+  if(state==='over'){ ctx.fillStyle='rgba(0,0,0,0.66)'; ctx.fillRect(0,0,CW,CH);
+    ctx.textAlign='center'; ctx.fillStyle='#e23b3b'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; ctx.fillText('GAME OVER',CW/2,CH*0.42);
+    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.08)+'px Helvetica'; ctx.fillText('SCORE '+score,CW/2,CH*0.50);
+    ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText('BEST '+best,CW/2,CH*0.555);
+    ctx.fillText('tap to play again',CW/2,CH*0.62); }
+}
+
+function loop(){ step(); draw(); requestAnimationFrame(loop); }
+window.addEventListener('resize',()=>{ sz(); });
+loop();
+</script>
+</body>
+</html>

@@ -601,7 +601,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v343</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v344</div>
 
 <canvas id="game"></canvas>
 
@@ -660,7 +660,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=343" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=344" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -1608,6 +1608,39 @@ function applyBodyTheme(){
   ["th-cartoon","th-neon","th-sunset","th-galaxy","th-default"].forEach(function(c){ b.classList.remove(c); });
   b.classList.add("th-"+((st==="cartoon"||st==="neon"||st==="sunset"||st==="galaxy")?st:"default"));
   markThemedScreens();
+}
+// Two-stage so a stray tap can't wipe a save: the first tap only arms the button.
+var _rsArmed=null, _rsTimer=null;
+function resetTap(which){
+  var btn=document.getElementById(which); if(!btn) return;
+  if(_rsArmed!==which){
+    if(_rsArmed){ var old=document.getElementById(_rsArmed); if(old) old.textContent="RESET"; }
+    _rsArmed=which; btn.textContent="SURE?";
+    clearTimeout(_rsTimer);
+    _rsTimer=setTimeout(function(){ if(_rsArmed===which){ var b=document.getElementById(which); if(b) b.textContent="RESET"; _rsArmed=null; } },4000);
+    try{ haptic(14); }catch(e){}
+    return;
+  }
+  clearTimeout(_rsTimer); _rsArmed=null;
+  if(which==="rsScores") resetScores(); else resetEverything();
+}
+// every score the arcade keeps, including the iframe games (same origin, so same store)
+var RESET_SCORE_KEYS=["qu33phHigh","qu33phPinballHigh","qu33phDozerBest","qu33phStackBest",
+  "qu33phMiniBest","qu33phSkeeballBest","qu33phBallBest","qu33phFlipBestP","qu33phFlipBest"];
+function resetScores(){
+  try{
+    RESET_SCORE_KEYS.forEach(function(k){ localStorage.removeItem(k); });
+    Object.keys(localStorage).forEach(function(k){            // Jump: every mode, human and cat
+      if(k.indexOf("qu33phPfBest")===0 || /Best$|High$|BestP$/.test(k)) localStorage.removeItem(k);
+    });
+  }catch(e){}
+  try{ haptic([25,40,25]); }catch(e){}
+  location.reload();
+}
+function resetEverything(){
+  try{ localStorage.clear(); }catch(e){}
+  try{ haptic([30,60,30,60,30]); }catch(e){}
+  location.reload();
 }
 function applyThemeFilters(){
   applyBodyTheme();
@@ -4497,11 +4530,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=343&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=344&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=343&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=344&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=343&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=344&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4512,9 +4545,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=343&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=344&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=343&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=344&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -5221,7 +5254,7 @@ const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing le
 // ── playable characters ──────────────────────────────────────────────────
 // Qu33ph has hand-drawn left AND right art. The other three only have right-facing
 // art, so they get mirrored on the canvas when facing left.
-var CHAR_V="342";   // bump when character art is replaced, so browsers drop the cached copy
+var CHAR_V="344";   // bump when character art is replaced, so browsers drop the cached copy
 function CIMG(src){ var i=new Image(); i.src=src+"?v="+CHAR_V; return i; }
 var PF_CHARS=[
   { id:"qu33ph", name:"QU33PH",     speed:1,   jump:1,    note:"",
@@ -7404,6 +7437,14 @@ function renderSettings(){
       +'<div style="display:flex;gap:2px;border-radius:6px;overflow:hidden;">'+btns+'</div></div>';
   }
 
+  function resetRow(lbl,sub,col,id){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:#0e0e0e;border:1px solid '+col+'44;border-radius:8px;">'
+      +'<div style="display:flex;flex-direction:column;gap:3px;padding-right:10px;"><span style="font-family:Helvetica,Arial,sans-serif;font-size:13px;color:'+col+';letter-spacing:0.5px;">'+lbl+'</span>'
+      +'<span style="font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#777;letter-spacing:0.3px;">'+sub+'</span></div>'
+      +'<button id="'+id+'" onclick="resetTap(\''+id+'\')" style="flex:0 0 auto;background:transparent;border:1.5px solid '+col+';color:'+col+';'
+      +'font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;padding:7px 12px;border-radius:7px;">RESET</button></div>';
+  }
+
   let h="";
   h+=toggleRow("Haptic feedback","vibrate on taps &amp; game events",hapticsOn,"toggleHaptics()");
   h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
@@ -7413,6 +7454,8 @@ function renderSettings(){
   h+=segRow("Default orientation","marker angle at the start of a game",[["vertical","VERT"],["angled","ANGLED"],["horizontal","FLAT"]],(localStorage.getItem("qu33phOrientation")||"vertical"),"setDefaultOrientation");
   h+=toggleRow("Mirror mode","flip the entire playing field left-to-right",mirrorMode,"toggleMirror()");
   h+=toggleRow("Colorblind flags","show country codes on the flags",colorblind,"toggleColorblind()");
+  h+=resetRow("Reset high scores","every score in every game &mdash; keeps coins, themes and achievements","#ffb020","rsScores");
+  h+=resetRow("Reset everything","wipes all saved data and starts the game fresh","#ff5a5a","rsAll");
   body.innerHTML=h;
 }
 function toggleHaptics(){ hapticsOn=!hapticsOn; try{localStorage.setItem("qu33phHaptics",hapticsOn?"on":"off");}catch(e){} renderSettings(); if(hapticsOn) haptic(20); }
