@@ -601,7 +601,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v337</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v339</div>
 
 <canvas id="game"></canvas>
 
@@ -660,7 +660,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=337" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=339" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -4483,16 +4483,16 @@ function showArcadeMenu(){
 }
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
-function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showJumpMenu(); }
+function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showCharSelect(); }
 function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("golfScreen"); s.style.display="block"; var f=document.getElementById("golfFrame"); if(!/qu33ph-golf\.html/.test(f.getAttribute("src")||"")) f.setAttribute("src","qu33ph-golf.html"); arcadeGame="golf"; try{ haptic(10); }catch(e){} }
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=339&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=339&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","skeeball.html?v=339&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4503,10 +4503,65 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=339&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=337&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=339&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
+function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
+function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
+function csSelect(){
+  try{ localStorage.setItem("qu33phJumpChar", pfCharIdx); }catch(e){}
+  try{haptic([12,18]);}catch(e){}
+  showJumpMenu();
+}
+function csCanvasTap(x,y){
+  var r=pfCanvas.getBoundingClientRect(), W=pfCanvas.width, H=pfCanvas.height;
+  var lx=(x-r.left)*(W/r.width), ly=(y-r.top)*(H/r.height);
+  var gx=lx<W/2?0:1, gy=ly<H*0.55?0:1;        // top row / bottom row split
+  if(ly<H*0.16) return;                        // title strip
+  pfCharIdx=gy*2+gx; csSelect();
+}
+function drawCharSelect(){
+  if(!pfctx) return;
+  var W=pfCanvas.width, H=pfCanvas.height, c=pfctx;
+  drawPfBg(W,H);
+  var S=Math.max(0.6, Math.min(1.7, H/470));
+  c.save(); c.textAlign="center";
+  c.fillStyle="#fff"; c.font="bold "+Math.round(17*S)+"px Helvetica,Arial,sans-serif";
+  c.fillText("PICK YOUR CHARACTER", W/2, H*0.085);
+  var cw=W/2, chh=H*0.42, top=H*0.16;
+  for(var i=0;i<4;i++){
+    var gx=i%2, gy=(i/2)|0;
+    var x0=gx*cw, y0=top+gy*chh, cx=x0+cw/2, ch2=PF_CHARS[i], sel=(i===pfCharIdx);
+    c.save();
+    c.fillStyle= sel ? "rgba(255,215,0,0.13)" : "rgba(0,0,0,0.28)";
+    c.fillRect(x0+4, y0+3, cw-8, chh-6);
+    c.strokeStyle= sel ? "#ffd700" : "rgba(255,255,255,0.28)";
+    c.lineWidth= sel ? 3 : 1.5;
+    c.strokeRect(x0+4, y0+3, cw-8, chh-6);
+    c.restore();
+    // portrait: the standing sprite (Qu33ph uses his own hand-drawn stand)
+    var im = ch2.stand || jgStand;
+    if(im && im.complete && im.naturalWidth){
+      var maxH=chh*(ch2.note?0.52:0.60), ar=im.naturalWidth/im.naturalHeight;
+      var dh=maxH, dw=dh*ar;
+      if(dw>cw*0.62){ dw=cw*0.62; dh=dw/ar; }
+      c.drawImage(im, cx-dw/2, y0+chh*0.09, dw, dh);
+    }
+    c.fillStyle= sel ? "#ffd700" : "#fff";
+    c.font="bold "+Math.round(12.5*S)+"px Helvetica,Arial,sans-serif";
+    c.fillText(ch2.name, cx, y0+chh*0.76);
+    if(ch2.note){
+      c.fillStyle="#8affea"; c.font="bold "+Math.round(8.5*S)+"px Helvetica,Arial,sans-serif";
+      c.fillText(ch2.note, cx, y0+chh*0.86);
+      c.fillStyle="#9fe08a"; c.fillText("1.5x SPEED", cx, y0+chh*0.94);
+    }
+  }
+  c.fillStyle="rgba(255,255,255,0.65)"; c.font="bold "+Math.round(9*S)+"px Helvetica,Arial,sans-serif";
+  c.fillText("TAP A CHARACTER  \u00b7  OR USE \u25c0 \u25b6 THEN JUMP", W/2, H*0.985);
+  c.restore();
+}
+function updateCharSelect(){ jmT++; }
 function showJumpMenu(){ jmSettings=false; pfMusicStop(); showPlatformer("jumpmenu"); }
 function jmNav(dir){ if(jmSettings) return; jmSel=(jmSel+dir+PF_MODES.length)%PF_MODES.length; try{haptic(6);}catch(e){} }
 function jmSelect(){
@@ -4589,7 +4644,7 @@ function exitDreamon(){
 function showPlatformer(game){
   arcadeGame = game||"jump";
   if(arcadeGame!=="jump") pfMusicStop();
-  var nav = (arcadeGame==="levelselect"||arcadeGame==="binder"||arcadeGame==="fusepick"||arcadeGame==="jumpmenu");
+  var nav = (arcadeGame==="levelselect"||arcadeGame==="binder"||arcadeGame==="fusepick"||arcadeGame==="jumpmenu"||arcadeGame==="charselect");
   var _bg=document.getElementById("platformerBg"); if(_bg) _bg.src = (arcadeGame==="dream"||(nav&&arcadeGame!=="jumpmenu"))?"dreamlingoverlay.png":"qu33phjump.png";
   document.getElementById("arcadeMenu").style.display="none";
   document.getElementById("titleScreen").style.display="none";
@@ -4600,17 +4655,17 @@ function showPlatformer(game){
   layoutPlatformer();
   if(!pfCanvas._bound){
     pfCanvas._bound=true;
-    var isNavMode=function(){ return arcadeGame==="levelselect"||arcadeGame==="binder"||arcadeGame==="fusepick"||arcadeGame==="jumpmenu"; };
+    var isNavMode=function(){ return arcadeGame==="levelselect"||arcadeGame==="binder"||arcadeGame==="fusepick"||arcadeGame==="jumpmenu"||arcadeGame==="charselect"; };
     var lb=document.getElementById("pfLeftBtn"), rb=document.getElementById("pfRightBtn");
-    lb.addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmNav(-1); } else if(arcadeGame==="levelselect"){ lsNav(-1); } else if(arcadeGame==="binder"){ binderNav(-1); } else if(arcadeGame==="fusepick"){ fpNav(-1); } else if(arcadeGame==="dream") dmPan=-1; else pfMove=-1; });
+    lb.addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="charselect"){ csNav(-1); } else if(arcadeGame==="jumpmenu"){ jmNav(-1); } else if(arcadeGame==="levelselect"){ lsNav(-1); } else if(arcadeGame==="binder"){ binderNav(-1); } else if(arcadeGame==="fusepick"){ fpNav(-1); } else if(arcadeGame==="dream") dmPan=-1; else pfMove=-1; });
     lb.addEventListener("pointerup",function(){ if(arcadeGame==="dream"){ if(dmPan<0)dmPan=0; } else if(!isNavMode() && pfMove<0) pfMove=0; });
     lb.addEventListener("pointerleave",function(){ if(arcadeGame==="dream"){ if(dmPan<0)dmPan=0; } else if(!isNavMode() && pfMove<0) pfMove=0; });
-    rb.addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmNav(1); } else if(arcadeGame==="levelselect"){ lsNav(1); } else if(arcadeGame==="binder"){ binderNav(1); } else if(arcadeGame==="fusepick"){ fpNav(1); } else if(arcadeGame==="dream") dmPan=1; else pfMove=1; });
+    rb.addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="charselect"){ csNav(1); } else if(arcadeGame==="jumpmenu"){ jmNav(1); } else if(arcadeGame==="levelselect"){ lsNav(1); } else if(arcadeGame==="binder"){ binderNav(1); } else if(arcadeGame==="fusepick"){ fpNav(1); } else if(arcadeGame==="dream") dmPan=1; else pfMove=1; });
     rb.addEventListener("pointerup",function(){ if(arcadeGame==="dream"){ if(dmPan>0)dmPan=0; } else if(!isNavMode() && pfMove>0) pfMove=0; });
     rb.addEventListener("pointerleave",function(){ if(arcadeGame==="dream"){ if(dmPan>0)dmPan=0; } else if(!isNavMode() && pfMove>0) pfMove=0; });
-    document.getElementById("pfJumpBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmSelect(); } else if(arcadeGame==="levelselect"){ lsEnter(); } else if(arcadeGame==="binder"){ binderRed(); } else if(arcadeGame==="fusepick"){ fpConfirm(); } else if(arcadeGame==="dream"){ if(dmState==="boss") dmFuse(); else dmCapture(); } else if(pfState==="over"){ resetPlatformer(); } else { pfJumpQ=true; try{haptic(12);}catch(e){} } });
-    document.getElementById("pfActionBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="jumpmenu"){ jmSelect(); } else if(arcadeGame==="levelselect"){ lsBinder(); } else if(arcadeGame==="binder"){ binderBlue(); } else if(arcadeGame==="fusepick"){ fpToggle(); } else if(arcadeGame==="dream"){ dmCapture(); } else pfActionQ=true; });
-    pfCanvas.addEventListener("pointerdown",function(e){ if(arcadeGame==="jumpmenu"){ jmCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="binder"){ bcCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="fusepick"){ fpCanvasTap(e.clientX,e.clientY); } });
+    document.getElementById("pfJumpBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="charselect"){ csSelect(); } else if(arcadeGame==="jumpmenu"){ jmSelect(); } else if(arcadeGame==="levelselect"){ lsEnter(); } else if(arcadeGame==="binder"){ binderRed(); } else if(arcadeGame==="fusepick"){ fpConfirm(); } else if(arcadeGame==="dream"){ if(dmState==="boss") dmFuse(); else dmCapture(); } else if(pfState==="over"){ resetPlatformer(); } else { pfJumpQ=true; try{haptic(12);}catch(e){} } });
+    document.getElementById("pfActionBtn").addEventListener("pointerdown",function(e){ if(e&&e.cancelable)e.preventDefault(); arcadeTapped(); if(arcadeGame==="charselect"){ csSelect(); } else if(arcadeGame==="jumpmenu"){ jmSelect(); } else if(arcadeGame==="levelselect"){ lsBinder(); } else if(arcadeGame==="binder"){ binderBlue(); } else if(arcadeGame==="fusepick"){ fpToggle(); } else if(arcadeGame==="dream"){ dmCapture(); } else pfActionQ=true; });
+    pfCanvas.addEventListener("pointerdown",function(e){ if(arcadeGame==="charselect"){ csCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="jumpmenu"){ jmCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="binder"){ bcCanvasTap(e.clientX,e.clientY); } else if(arcadeGame==="fusepick"){ fpCanvasTap(e.clientX,e.clientY); } });
   }
   var _bb=document.getElementById("dlBinderBtn"); if(_bb) _bb.style.display = (arcadeGame==="dream")?"block":"none";
   var _pb=document.getElementById("arcadePauseBtn"); if(_pb) _pb.style.display = nav?"none":"block";
@@ -4701,7 +4756,7 @@ function layoutPlatformer(){
     cv.style.left="0px"; cv.style.top=cvTop+"px"; cv.style.width=cvW+"px"; cv.style.height=cvH+"px";
     cv.width=Math.max(120,cvW); cv.height=Math.max(80,cvH); pfctx=cv.getContext("2d");
     var cy0=cvTop+cvH, ch=sh-cy0;
-    var isMenu=(arcadeGame==="jumpmenu");
+    var isMenu=(arcadeGame==="jumpmenu"||arcadeGame==="charselect");
     // painted round cabinet buttons (2 green + red + blue), same in every mode — fullscreen mirrors the cabinet
     document.getElementById("pfDpad").style.display="none";
     var br=Math.min(sw*0.17, ch*0.6), byC=cy0+(ch-br)/2, gap=sw*0.02;
@@ -4992,6 +5047,7 @@ function pfGenPath(){
 }
 function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   if(arcadeGame==="dream"){ updateDeep(); drawDeep(); }
+  else if(arcadeGame==="charselect"){ updateCharSelect(); drawCharSelect(); }
   else if(arcadeGame==="jumpmenu"){ updateJumpMenu(); drawJumpMenu(); }
   else if(arcadeGame==="levelselect"){ updateLevelSelect(); drawLevelSelect(); }
   else if(arcadeGame==="binder"){ updateBinderCab(); drawBinderCab(); }
@@ -5042,10 +5098,11 @@ function updatePlatformer(){
     pfJumpQ=false; pfActionQ=false;
     p.vy += 0.58; if(p.vy>15) p.vy=15;
   } else {
-    p.vx = pfMove*3.4;
+    var _ch=pfChar();
+    p.vx = pfMove*3.4*_ch.speed;
     if(pfMove!==0) p.face = pfMove>0?1:-1;
-    if(pfJumpQ && p.onGround){ p.vy=JUMP; p.onGround=false; try{haptic(10);}catch(e){} } pfJumpQ=false;
-    if(pfActionQ){ if(p.onGround){ p.vy=JUMP; p.onGround=false; } pfActionQ=false; } // action also jumps
+    if(pfJumpQ && p.onGround){ p.vy=JUMP*_ch.jump; p.onGround=false; try{haptic(10);}catch(e){} } pfJumpQ=false;
+    if(pfActionQ){ if(p.onGround){ p.vy=JUMP*_ch.jump; p.onGround=false; } pfActionQ=false; } // action also jumps
     p.vy += 0.58; if(p.vy>15) p.vy=15;
   }
   var prevBottom=p.y+p.h*0.5;
@@ -5152,18 +5209,69 @@ const jgRunR =new Image(); jgRunR.src ="jump_runR.png";   // running right
 const jgJumpR=new Image(); jgJumpR.src="jump_jumpR.png";  // airborne, facing right
 const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing left
 // ---- Custom pixel jump guy (Coby's drawing) + real coin head + animated marker arms ----
+// ── playable characters ──────────────────────────────────────────────────
+// Qu33ph has hand-drawn left AND right art. The other three only have right-facing
+// art, so they get mirrored on the canvas when facing left.
+function CIMG(src){ var i=new Image(); i.src=src; return i; }
+var PF_CHARS=[
+  { id:"qu33ph", name:"QU33PH",     speed:1,   jump:1,    note:"",
+    stand:null, run:null, jump_:null },
+  { id:"coby",   name:"COBYQU33PH", speed:1,   jump:1,    note:"",
+    stand:CIMG("cobystand.png"),    run:CIMG("cobyrun.png"),    jump_:CIMG("cobyjump.png") },
+  { id:"3ph3",   name:"3PH3",       speed:1.5, jump:1.414, note:"JUMPS TWICE AS HIGH",
+    stand:CIMG("eph3stand.png"),    run:CIMG("eph3run.png"),    jump_:CIMG("eph3jump.png") },
+  { id:"smok3y", name:"SMOK3Y",     speed:1.5, jump:1.414, note:"JUMPS TWICE AS HIGH",
+    stand:CIMG("smok3ystand.png"),  run:CIMG("smok3yrun.png"),  jump_:CIMG("smok3yjump.png") }
+];
+var pfCharIdx=0;
+try{ var _sc=parseInt(localStorage.getItem("qu33phJumpChar")||"0",10); if(_sc>=0&&_sc<4) pfCharIdx=_sc; }catch(e){}
+function pfChar(){ return PF_CHARS[pfCharIdx]||PF_CHARS[0]; }
 var PF_GUY_H=54;          // on-screen height of the guy (tweakable)
 var PF_GUY_FEET=15;       // how far below player-center the feet sit
+// How much of a sprite image the character actually occupies, as fractions of the image.
+// Sampled once per image on a small canvas and cached — cheap and plenty accurate for sizing.
+var _sbCache={};
+function spriteBox(img){
+  if(!(img&&img.complete&&img.naturalWidth)) return {x:0,y:0,w:1,h:1};
+  var key=img.src;
+  if(_sbCache[key]) return _sbCache[key];
+  var box={x:0,y:0,w:1,h:1};
+  try{
+    var n=64, cv=document.createElement("canvas"); cv.width=n; cv.height=n;
+    var g=cv.getContext("2d",{willReadFrequently:true});
+    g.drawImage(img,0,0,n,n);
+    var d=g.getImageData(0,0,n,n).data, x0=n,y0=n,x1=-1,y1=-1;
+    for(var yy=0;yy<n;yy++) for(var xx=0;xx<n;xx++){
+      if(d[(yy*n+xx)*4+3]>24){ if(xx<x0)x0=xx; if(xx>x1)x1=xx; if(yy<y0)y0=yy; if(yy>y1)y1=yy; } }
+    if(x1>=x0 && y1>=y0) box={x:x0/n, y:y0/n, w:(x1-x0+1)/n, h:(y1-y0+1)/n};
+  }catch(e){}
+  _sbCache[key]=box; return box;
+}
 function pfGuy(x,y,face,tilt){
   var p=pfPlayer, air=!p.onGround, moving=Math.abs(p.vx)>0.6;
   // pick sprite by state: airborne -> jump, moving -> run L/R, else -> stand (arms crossed)
-  var img, mirror=false;
-  if(air){ img = (face<0?jgJumpL:jgJumpR); }
+  var img, mirror=false, ch=pfChar();
+  if(ch.stand){                                  // right-facing art only: mirror it to face left
+    img = air ? ch.jump_ : (moving ? ch.run : ch.stand);
+    mirror = (face<0);
+  } else if(air){ img = (face<0?jgJumpL:jgJumpR); }
   else if(moving){ img = (face<0?jgRunL:jgRunR); }
   else { img = jgStand; mirror = (face<0); }   // idle: mirror the right-facing stand to face left
   if(!(img&&img.complete&&img.naturalWidth)){ pfGuyProc(x,y,face,tilt); return; }
   var c=pfctx, ar=img.naturalWidth/img.naturalHeight;
   var dh=PF_GUY_H*1.18, dw=dh*ar, dx=-dw/2, dy=PF_GUY_FEET-dh;   // sprites are full characters (own head)
+  if(ch.stand){
+    // Different artists, different framing: some sprites are tightly cropped, others have
+    // padding. Measure how much of each image the character actually fills and rescale so
+    // every character stands the same height as Qu33ph, feet on the same line.
+    var ref=spriteBox(jgStand), bb=spriteBox(img);
+    var rh=ref.h||1, bh=bb.h||1;
+    dh = PF_GUY_H*1.18 * (rh/bh);
+    dw = dh*ar;
+    var feet = PF_GUY_FEET - PF_GUY_H*1.18 + (ref.y+ref.h)*(PF_GUY_H*1.18);
+    dy = feet - (bb.y+bb.h)*dh;
+    dx = -(bb.x+bb.w/2)*dw;
+  }
   c.save(); c.translate(x,y); if(tilt){ c.rotate(tilt); } if(mirror){ c.scale(-1,1); }
   if(pfTheme()==="neon"){ // neon green glow silhouette behind him (shadow-only trick)
     var og = mirror ? (dx+2000) : (dx-2000);   // mirrored space flips the off-screen direction
@@ -6553,7 +6661,8 @@ function openArcadePause(){ arcadePaused=true; document.getElementById("arcadePa
 function resumeArcade(){ arcadePaused=false; document.getElementById("arcadePause").style.display="none"; pfMusicStart(); }
 function returnToArcade(){
   arcadePaused=false; var pv=document.getElementById("arcadePause"); if(pv) pv.style.display="none";
-  if(arcadeGame==="jump"){ pfMusicStop(); showJumpMenu(); return; }   // back to the mode menu, not the cabinet
+  if(arcadeGame==="jump"){ pfMusicStop(); showJumpMenu(); return; }        // back to the mode menu, not the cabinet
+  if(arcadeGame==="jumpmenu"){ pfMusicStop(); showCharSelect(); return; }  // and from there back to the roster
   pfActive=false; if(pfRAF){ cancelAnimationFrame(pfRAF); pfRAF=null; }
   var b=document.getElementById("dlBinder"); if(b)b.style.display="none";
   var f=document.getElementById("dlFuse"); if(f)f.style.display="none";

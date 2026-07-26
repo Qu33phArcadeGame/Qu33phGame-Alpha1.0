@@ -522,7 +522,9 @@ function galLayer(c, img, alpha, T, seed, dir, W, H){
 function drawGalaxyPlates(c, W, H){
   const loaded=GAL_IMGS.filter(function(im){ return im.complete && im.naturalWidth; });
   if(!loaded.length) return false;
-  const T=Date.now()/1000, prog=T*0.05, gb=Math.floor(prog), gf=prog-gb;
+  const T=Date.now()/1000;
+  const prog = T*0.22 + (typeof camX!=='undefined' ? camX/1400 : 0);   // faster, and it advances as you go
+  const gb=Math.floor(prog), gf=prog-gb;
   const iA=((gb%loaded.length)+loaded.length)%loaded.length, iB=(iA+1)%loaded.length;
   c.save(); c.globalCompositeOperation="lighter";
   galLayer(c, loaded[iA], (1-gf)*0.85, T, iA*1.7,  1, W, H);
