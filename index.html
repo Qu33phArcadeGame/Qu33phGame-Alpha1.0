@@ -601,7 +601,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v346</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v347</div>
 
 <canvas id="game"></canvas>
 
@@ -660,7 +660,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=346" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=347" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -4466,17 +4466,21 @@ const PF_MODES=[
 ];
 // Cats play a different game (faster, double jump height, wider view), so they keep
 // their own best for every mode rather than competing with the human runs.
-function pfBestKey(m,cat){ return "qu33phPfBest_"+m+(cat?"_cat":""); }
-function pfIsCat(){ try{ var c=pfChar(); return c.id==="3ph3"||c.id==="smok3y"; }catch(e){ return false; } }
-let pfBestByMode={}, pfBestByModeCat={};
+function pfClass(){ try{ return pfChar().cls||"human"; }catch(e){ return "human"; } }
+function pfIsCat(){ return pfClass()==="cat"; }
+function pfBestKey(m,cls){ return "qu33phPfBest_"+m+((cls&&cls!=="human")?("_"+cls):""); }
+let pfBestTables={human:{},cat:{},bird:{}};
 (function(){ var mig=parseInt(localStorage.getItem("qu33phPfBest")||"0",10)||0;
-  PF_MODES.forEach(function(m){
-    var v=parseInt(localStorage.getItem(pfBestKey(m.id,false))||"0",10)||0; if(m.id==="combo"&&mig>v)v=mig;
-    pfBestByMode[m.id]=v;
-    pfBestByModeCat[m.id]=parseInt(localStorage.getItem(pfBestKey(m.id,true))||"0",10)||0;
+  ["human","cat","bird"].forEach(function(cls){
+    PF_MODES.forEach(function(m){
+      var v=parseInt(localStorage.getItem(pfBestKey(m.id,cls))||"0",10)||0;
+      if(cls==="human" && m.id==="combo" && mig>v) v=mig;
+      pfBestTables[cls][m.id]=v;
+    });
   }); })();
-function pfBestTable(){ return pfIsCat()?pfBestByModeCat:pfBestByMode; }
-let pfBest=pfBestByMode["combo"]||0;
+let pfBestByMode=pfBestTables.human;
+function pfBestTable(){ return pfBestTables[pfClass()]||pfBestTables.human; }
+let pfBest=pfBestTables.human["combo"]||0;
 let pfFlapEndless=false, pfFlapLastX=0, pfFlapBandY=0, pfFlapPipeN=0;
 let pfMove=0, pfJumpQ=false, pfActionQ=false;
 // horizontal (platformer) phase — kicks in after height 100
@@ -4485,7 +4489,8 @@ let pfGenMode="up", pfGenX=0, pfGenY=0, pfSegLeft=0, pfLastPlatX=0, pfStairDir=-
 let pfStartX=0, pfStartY=0, pfBestX=0, pfBestUp=0, pfLastGroundY=0, pfT=0;
 let pfProgress=0;
 // chair-launch flight mechanic
-function pfBaseZoom(){ return pfIsCat()?0.76:1; }   // cats see more of the level around them
+function pfBaseZoom(){ return (pfClass()!=="human")?0.76:1; }   // cats and chickens see more of the level
+let pfAirJumps=0;
 let pfMega=null, pfFlight=false, pfZoom=1, pfZoomT=1, pfCycles=0, pfLastLaunchCycle=-99, pfMegaFlash=0, pfMegaFlashT=0;
 let pfBouncing=false, pfBounceCombo=0, pfBounceFlash=0, pfNoMarkerUntilX=0;
 let pfFlappy=false, pfFlappyFreeze=false, pfPipes=[], pfFlappyFloorY=0, pfFlappyCeilY=0, pfFlappyEndX=0, pfFlappyPassed=0, pfFlappyHint=0;
@@ -4538,11 +4543,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=346&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=347&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=346&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=347&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=346&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=347&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4553,9 +4558,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=346&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=347&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=346&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=347&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -4564,49 +4569,74 @@ function csSelect(){
   try{haptic([12,18]);}catch(e){}
   showJumpMenu();
 }
+function csGrid(){                      // 2 columns, as many rows as it takes
+  var W=pfCanvas.width, H=pfCanvas.height;
+  var cols=2, rows=Math.ceil(PF_CHARS.length/cols);
+  var top=H*0.145, bot=H*0.985, gapY=H*0.012, gapX=W*0.03, pad=W*0.035;
+  var bw=(W-pad*2-gapX)/cols, bh=(bot-top-gapY*(rows-1))/rows;
+  return {cols:cols, rows:rows, top:top, pad:pad, gapX:gapX, gapY:gapY, bw:bw, bh:bh};
+}
 function csCanvasTap(x,y){
   var r=pfCanvas.getBoundingClientRect(), W=pfCanvas.width, H=pfCanvas.height;
   var lx=(x-r.left)*(W/r.width), ly=(y-r.top)*(H/r.height);
-  var gx=lx<W/2?0:1, gy=ly<H*0.55?0:1;        // top row / bottom row split
-  if(ly<H*0.16) return;                        // title strip
-  pfCharIdx=gy*2+gx; csSelect();
+  var g=csGrid();
+  for(var i=0;i<PF_CHARS.length;i++){
+    var cx=i%g.cols, cy=(i/g.cols)|0;
+    var bx=g.pad+cx*(g.bw+g.gapX), by=g.top+cy*(g.bh+g.gapY);
+    if(lx>=bx && lx<=bx+g.bw && ly>=by && ly<=by+g.bh){ pfCharIdx=i; csSelect(); return; }
+  }
+}
+function csRR(c,x,y,w,h,r){
+  c.beginPath();
+  if(c.roundRect){ c.roundRect(x,y,w,h,r); return; }
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+// the marker button the rest of the game uses: black body, thick outline, little cap on the left
+function csMarkerBtn(c,x,y,w,h,sel){
+  var cap=Math.max(9,w*0.085), r=Math.min(10,h*0.30), lw=sel?3.5:2.2;
+  var col=sel?"#ffd700":"#ffffff";
+  c.save();
+  c.fillStyle=sel?"#141004":"#000"; c.strokeStyle=col; c.lineWidth=lw;
+  csRR(c, x, y+h*0.16, cap, h*0.68, r*0.55); c.fill(); c.stroke();
+  csRR(c, x+cap, y, w-cap, h, r); c.fill(); c.stroke();
+  c.restore();
+  return {bx:x+cap, bw:w-cap};
 }
 function drawCharSelect(){
   if(!pfctx) return;
   var W=pfCanvas.width, H=pfCanvas.height, c=pfctx;
   drawPfBg(W,H);
-  var S=Math.max(0.6, Math.min(1.7, H/470));
-  c.save(); c.textAlign="center";
-  c.fillStyle="#fff"; c.font="bold "+Math.round(17*S)+"px Helvetica,Arial,sans-serif";
-  c.fillText("PICK YOUR CHARACTER", W/2, H*0.062);
-  c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold "+Math.round(9*S)+"px Helvetica,Arial,sans-serif";
-  c.fillText("TAP A CHARACTER  \u00b7  OR USE \u25c0 \u25b6 THEN JUMP", W/2, H*0.115);
-  var cw=W/2, chh=H*0.41, top=H*0.155;
-  for(var i=0;i<4;i++){
-    var gx=i%2, gy=(i/2)|0;
-    var x0=gx*cw, y0=top+gy*chh, cx=x0+cw/2, ch2=PF_CHARS[i], sel=(i===pfCharIdx);
-    c.save();
-    c.fillStyle= sel ? "rgba(255,215,0,0.13)" : "rgba(0,0,0,0.28)";
-    c.fillRect(x0+4, y0+3, cw-8, chh-6);
-    c.strokeStyle= sel ? "#ffd700" : "rgba(255,255,255,0.28)";
-    c.lineWidth= sel ? 3 : 1.5;
-    c.strokeRect(x0+4, y0+3, cw-8, chh-6);
-    c.restore();
-    // portrait: the standing sprite (Qu33ph uses his own hand-drawn stand)
-    var im = ch2.stand || jgStand;
+  var S=Math.max(0.55, Math.min(1.7, H/470));
+  c.save(); c.textAlign="center"; c.textBaseline="alphabetic";
+  c.fillStyle="#fff"; c.font="bold "+Math.round(16*S)+"px Helvetica,Arial,sans-serif";
+  c.fillText("PICK YOUR CHARACTER", W/2, H*0.058);
+  c.fillStyle="rgba(255,255,255,0.6)"; c.font="bold "+Math.round(8.5*S)+"px Helvetica,Arial,sans-serif";
+  c.fillText("TAP A CHARACTER  \u00b7  OR USE \u25c0 \u25b6 THEN JUMP", W/2, H*0.105);
+
+  var g=csGrid();
+  for(var i=0;i<PF_CHARS.length;i++){
+    var col=i%g.cols, row=(i/g.cols)|0;
+    var bx=g.pad+col*(g.bw+g.gapX), by=g.top+row*(g.bh+g.gapY);
+    var ch2=PF_CHARS[i], sel=(i===pfCharIdx);
+    var inner=csMarkerBtn(c,bx,by,g.bw,g.bh,sel);
+    // portrait on the left of the body, text stacked to the right of it
+    var im=ch2.stand||jgStand;
+    var artW=inner.bw*0.40, cxp=inner.bx+artW*0.55;
     if(im && im.complete && im.naturalWidth){
-      var maxH=chh*(ch2.note?0.52:0.60), ar=im.naturalWidth/im.naturalHeight;
-      var dh=maxH, dw=dh*ar;
-      if(dw>cw*0.62){ dw=cw*0.62; dh=dw/ar; }
-      c.drawImage(im, cx-dw/2, y0+chh*0.09, dw, dh);
+      var ar=im.naturalWidth/im.naturalHeight, dh=g.bh*0.76, dw=dh*ar;
+      if(dw>artW*0.95){ dw=artW*0.95; dh=dw/ar; }
+      c.drawImage(im, cxp-dw/2, by+g.bh*0.5-dh/2, dw, dh);
     }
-    c.fillStyle= sel ? "#ffd700" : "#fff";
-    c.font="bold "+Math.round(12.5*S)+"px Helvetica,Arial,sans-serif";
-    c.fillText(ch2.name, cx, y0+chh*0.76);
+    var tx=inner.bx+artW, tw=inner.bw-artW;
+    c.textAlign="center";
+    c.fillStyle=sel?"#ffd700":"#fff";
+    c.font="bold "+Math.round((ch2.name.length>8?9.5:11.5)*S)+"px Helvetica,Arial,sans-serif";
+    c.fillText(ch2.name, tx+tw/2, by+g.bh*(ch2.note?0.48:0.58));
     if(ch2.note){
-      c.fillStyle="#8affea"; c.font="bold "+Math.round(8.5*S)+"px Helvetica,Arial,sans-serif";
-      c.fillText(ch2.note, cx, y0+chh*0.86);
-      c.fillStyle="#9fe08a"; c.fillText("1.5x SPEED", cx, y0+chh*0.94);
+      c.fillStyle="#8affea"; c.font="bold "+Math.round(7*S)+"px Helvetica,Arial,sans-serif";
+      c.fillText(ch2.note, tx+tw/2, by+g.bh*0.68);
+      c.fillStyle="#9fe08a"; c.fillText("1.5x SPEED", tx+tw/2, by+g.bh*0.86);
     }
   }
   c.restore();
@@ -5082,17 +5112,21 @@ function pfGenPath(){
     return;
   }
   while(guard++<800){
-    if(pfGenMode==="up"){ if(pfGenY <= pfCamY - H*1.8) break; }   // generate a touch further ahead -> less pop-in
-    else { if(pfGenX >= pfCamX + W*2.7) break; }
+    // zoomed-out characters see further, so build further — otherwise the level literally
+    // runs out ahead of you and you meet an unjumpable dead end
+    var _za=1/Math.max(0.4, pfZoom||1);
+    if(pfGenMode==="up"){ if(pfGenY <= pfCamY - H*1.8*_za) break; }
+    else { if(pfGenX >= pfCamX + W*2.7*_za) break; }
     pfGenStep();
   }
   // prune only every 8 frames (far fewer array allocations -> smoother, less GC jank)
   if((pfT&7)===0){
-    var _pm = (pfFlight||pfFlappy||pfFlappyFreeze) ? H*3.6 : H*1.7;
-    pfPlatforms=pfPlatforms.filter(function(p){ return p.y < pfCamY+_pm && (p.x+p.w) > pfCamX-W*0.7; });
-    pfObstacles=pfObstacles.filter(function(o){ return o.y < pfCamY+_pm && o.x > pfCamX-W*0.7; });
-    pfCoinsWorld=pfCoinsWorld.filter(function(c){ return c.y < pfCamY+_pm && c.x > pfCamX-W*0.7; });
-    pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-W*0.7; });
+    var _zb=1/Math.max(0.4, pfZoom||1);
+    var _pm = ((pfFlight||pfFlappy||pfFlappyFreeze) ? H*3.6 : H*1.7)*_zb, _bx=W*0.7*_zb;
+    pfPlatforms=pfPlatforms.filter(function(p){ return p.y < pfCamY+_pm && (p.x+p.w) > pfCamX-_bx; });
+    pfObstacles=pfObstacles.filter(function(o){ return o.y < pfCamY+_pm && o.x > pfCamX-_bx; });
+    pfCoinsWorld=pfCoinsWorld.filter(function(c){ return c.y < pfCamY+_pm && c.x > pfCamX-_bx; });
+    pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-_bx; });
   }
 }
 function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
@@ -5106,7 +5140,7 @@ function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   pfRAF=requestAnimationFrame(pfLoop); }
 function pfGameOver(){
   pfState="over";
-  if(pfScore>pfBest){ pfBest=pfScore; pfBestTable()[pfMode]=pfScore; try{localStorage.setItem(pfBestKey(pfMode,pfIsCat()),pfBest);}catch(e){} }
+  if(pfScore>pfBest){ pfBest=pfScore; pfBestTable()[pfMode]=pfScore; try{localStorage.setItem(pfBestKey(pfMode,pfClass()),pfBest);}catch(e){} }
   try{ if(pfScore>0) addCoins(Math.floor(pfScore/25)); }catch(e){}
   try{haptic([40,30,40]);}catch(e){}
 }
@@ -5151,9 +5185,14 @@ function updatePlatformer(){
     var _ch=pfChar();
     p.vx = pfMove*3.4*_ch.speed;
     if(pfMove!==0) p.face = pfMove>0?1:-1;
-    if(pfJumpQ && p.onGround){ p.vy=JUMP*_ch.jump; p.onGround=false; try{haptic(10);}catch(e){} } pfJumpQ=false;
-    if(pfActionQ){ if(p.onGround){ p.vy=JUMP*_ch.jump; p.onGround=false; } pfActionQ=false; } // action also jumps
-    p.vy += 0.58; if(p.vy>15) p.vy=15;
+    if(p.onGround) pfAirJumps=0;
+    var _tryJump=function(){
+      if(p.onGround){ p.vy=JUMP*_ch.jump; p.onGround=false; try{haptic(10);}catch(e){} return; }
+      if((_ch.airJumps||0) > pfAirJumps){ pfAirJumps++; p.vy=JUMP*_ch.jump*0.94; try{haptic(8);}catch(e){} }
+    };
+    if(pfJumpQ){ _tryJump(); } pfJumpQ=false;
+    if(pfActionQ){ _tryJump(); pfActionQ=false; }          // action also jumps
+    p.vy += 0.58*(_ch.grav||1); if(p.vy>15*(_ch.grav||1)) p.vy=15*(_ch.grav||1);
   }
   var prevBottom=p.y+p.h*0.5;
   p.x += p.vx; p.y += p.vy;
@@ -5262,23 +5301,31 @@ const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing le
 // ── playable characters ──────────────────────────────────────────────────
 // Qu33ph has hand-drawn left AND right art. The other three only have right-facing
 // art, so they get mirrored on the canvas when facing left.
-var CHAR_V="346";   // bump when character art is replaced, so browsers drop the cached copy
+var CHAR_V="347";   // bump when character art is replaced, so browsers drop the cached copy
 function CIMG(src){ var i=new Image(); i.src=src+"?v="+CHAR_V; return i; }
 var PF_CHARS=[
-  { id:"qu33ph", name:"QU33PH",     speed:1,   jump:1,    note:"",
+  { id:"qu33ph", name:"QU33PH",     cls:"human", speed:1,   jump:1,     grav:1,    airJumps:0, note:"",
     stand:null, run:null, jump_:null },
   // Coby's art is lankier than Qu33ph's (0.39 wide-per-tall vs 0.46), so at equal height he
   // reads skinnier. Widen him to match the build, and stand him a touch taller than Qu33ph.
-  { id:"coby",   name:"COBYQU33PH", speed:1,   jump:1,    note:"", hScale:1.06, wStretch:1.15,
+  { id:"coby",   name:"COBYQU33PH", cls:"human", speed:1,   jump:1,     grav:1,    airJumps:0, note:"", hScale:1.06, wStretch:1.15,
     stand:CIMG("cobystand.png"),    run:CIMG("cobyrun.png"),    jump_:CIMG("cobyjump.png") },
-  // cats are half the size of the humans
-  { id:"3ph3",   name:"3PH3",       speed:1.5, jump:1.414, note:"JUMPS TWICE AS HIGH", hScale:0.72,
+  // cats: quick and springy
+  { id:"3ph3",   name:"3PH3",       cls:"cat",   speed:1.5, jump:1.414, grav:1,    airJumps:0, note:"JUMPS TWICE AS HIGH", hScale:0.85,
     stand:CIMG("eph3stand.png"),    run:CIMG("eph3run.png"),    jump_:CIMG("eph3jump.png") },
-  { id:"smok3y", name:"SMOK3Y",     speed:1.5, jump:1.414, note:"JUMPS TWICE AS HIGH", hScale:0.72,
-    stand:CIMG("smok3ystand.png"),  run:CIMG("smok3yrun.png"),  jump_:CIMG("smok3yjump.png") }
+  { id:"smok3y", name:"SMOK3Y",     cls:"cat",   speed:1.5, jump:1.414, grav:1,    airJumps:0, note:"JUMPS TWICE AS HIGH", hScale:0.85,
+    stand:CIMG("smok3ystand.png"),  run:CIMG("smok3yrun.png"),  jump_:CIMG("smok3yjump.png") },
+  // chickens: lower gravity means they hang and float down. Height goes as v^2/2g, so with
+  // gravity at 0.70 an impulse of 1.025 lands exactly 1.5x a human jump. Plus one air jump.
+  { id:"b3ll",   name:"B3LL",       cls:"bird",  speed:1.5, jump:1.025, grav:0.70, airJumps:1, note:"DOUBLE JUMP \u00b7 FLOATS", hScale:0.85,
+    stand:CIMG("b3llstand.png"),    run:CIMG("b3llrun.png"),    jump_:CIMG("b3lljump.png") },
+  { id:"bo",     name:"BO",         cls:"bird",  speed:1.5, jump:1.025, grav:0.70, airJumps:1, note:"DOUBLE JUMP \u00b7 FLOATS", hScale:0.85,
+    stand:CIMG("bostand.png"),      run:CIMG("borun.png"),      jump_:CIMG("bojump.png") },
+  { id:"hem",    name:"H3MMINGWAY", cls:"bird",  speed:1.5, jump:1.025, grav:0.70, airJumps:1, note:"DOUBLE JUMP \u00b7 FLOATS", hScale:0.85,
+    stand:CIMG("hemstand.png"),     run:CIMG("hemrun.png"),     jump_:CIMG("hemjump.png") }
 ];
 var pfCharIdx=0;
-try{ var _sc=parseInt(localStorage.getItem("qu33phJumpChar")||"0",10); if(_sc>=0&&_sc<4) pfCharIdx=_sc; }catch(e){}
+try{ var _sc=parseInt(localStorage.getItem("qu33phJumpChar")||"0",10); if(_sc>=0&&_sc<PF_CHARS.length) pfCharIdx=_sc; }catch(e){}
 function pfChar(){ return PF_CHARS[pfCharIdx]||PF_CHARS[0]; }
 var PF_GUY_H=54;          // on-screen height of the guy (tweakable)
 var PF_GUY_FEET=15;       // how far below player-center the feet sit
