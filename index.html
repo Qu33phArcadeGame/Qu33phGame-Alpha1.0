@@ -318,6 +318,33 @@
     body.th-sunset  .mk-btn{ color:#ffeec2 !important; }
     body.th-galaxy  .mk-btn, body.th-galaxy  .mk-btn::before{ border-color:#b478ff !important; box-shadow:0 0 9px rgba(154,107,255,0.55) !important; }
     body.th-galaxy  .mk-btn{ color:#e7dcff !important; }
+    /* ── galaxy in the main game: stars and spirals in the margins only ──
+       Masked hollow down the middle so nothing ever lands on the playing field. */
+    #gameGalaxyFx{ position:fixed; inset:0; pointer-events:none; z-index:3; display:none; overflow:hidden;
+      -webkit-mask-image:radial-gradient(ellipse 42% 40% at 50% 52%, transparent 0 62%, #000 88%);
+              mask-image:radial-gradient(ellipse 42% 40% at 50% 52%, transparent 0 62%, #000 88%); }
+    body.th-galaxy #gameGalaxyFx{ display:block; }
+    #gameGalaxyFx .st{ position:absolute; inset:0; animation:arcTwinkle 3.1s ease-in-out infinite;
+      background-repeat:no-repeat; background-image:
+        radial-gradient(circle at 6% 9%,  #fff 0 1.4px, transparent 2px), radial-gradient(circle at 15% 27%, #fff 0 1px, transparent 1.5px),
+        radial-gradient(circle at 4% 46%, #fff 0 1.2px, transparent 1.7px),radial-gradient(circle at 11% 63%, #fff 0 1.5px, transparent 2px),
+        radial-gradient(circle at 8% 81%, #fff 0 1px, transparent 1.5px),  radial-gradient(circle at 19% 93%, #fff 0 1.3px, transparent 1.8px),
+        radial-gradient(circle at 92% 7%, #fff 0 1.4px, transparent 2px),  radial-gradient(circle at 84% 22%, #fff 0 1px, transparent 1.5px),
+        radial-gradient(circle at 96% 38%,#fff 0 1.2px, transparent 1.7px),radial-gradient(circle at 88% 56%, #fff 0 1.5px, transparent 2px),
+        radial-gradient(circle at 94% 72%,#fff 0 1px, transparent 1.5px),  radial-gradient(circle at 81% 88%, #fff 0 1.3px, transparent 1.8px),
+        radial-gradient(circle at 30% 4%, #fff 0 1.2px, transparent 1.7px),radial-gradient(circle at 48% 3%,  #fff 0 1px, transparent 1.5px),
+        radial-gradient(circle at 66% 6%, #fff 0 1.4px, transparent 1.9px),radial-gradient(circle at 36% 96%, #fff 0 1.2px, transparent 1.7px),
+        radial-gradient(circle at 55% 97%,#fff 0 1px, transparent 1.5px),  radial-gradient(circle at 72% 94%, #fff 0 1.4px, transparent 1.9px),
+        radial-gradient(circle at 25% 15%,#fff 0 0.9px, transparent 1.4px),radial-gradient(circle at 77% 15%, #fff 0 0.9px, transparent 1.4px),
+        radial-gradient(circle at 22% 84%,#fff 0 1.1px, transparent 1.6px),radial-gradient(circle at 79% 79%, #fff 0 1.1px, transparent 1.6px); }
+    #gameGalaxyFx i{ position:absolute; border-radius:50%; opacity:0.30;
+      background:conic-gradient(from 0deg, rgba(190,150,255,0.6), rgba(120,80,220,0.04) 40%, rgba(215,185,255,0.55) 70%, rgba(120,80,220,0.04));
+      -webkit-mask-image:radial-gradient(circle, #000 12%, rgba(0,0,0,0.5) 44%, transparent 74%);
+              mask-image:radial-gradient(circle, #000 12%, rgba(0,0,0,0.5) 44%, transparent 74%); }
+    #gameGalaxyFx i.g1{ width:62vw; height:62vw; left:-26vw; top:4vh;   animation:gxSpin 52s linear infinite; }
+    #gameGalaxyFx i.g2{ width:48vw; height:48vw; right:-20vw; top:34vh; animation:gxSpin2 68s linear infinite; opacity:0.24; }
+    #gameGalaxyFx i.g3{ width:40vw; height:40vw; left:-14vw; bottom:2vh; animation:gxSpin 84s linear infinite; opacity:0.22; }
+    #gameGalaxyFx i.g4{ width:44vw; height:44vw; right:-18vw; bottom:-6vh; animation:gxSpin2 74s linear infinite; opacity:0.20; }
     /* ── galaxy: drifting starfield + slowly turning spirals, kept see-through ── */
     @keyframes gxSpin { from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
     @keyframes gxSpin2{ from{ transform:rotate(360deg); } to{ transform:rotate(0deg); } }
@@ -661,7 +688,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v350</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v351</div>
 
 <canvas id="game"></canvas>
 
@@ -720,7 +747,7 @@
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee" onclick="launchSkee()"><img src="qu33phball.png" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH-BALL</div></div>
     <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
-    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=350" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
+    <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=351" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
 </div>
@@ -838,6 +865,7 @@
   </div>
 </div>
 
+<div id="gameGalaxyFx"><div class="st"></div><i class="g1"></i><i class="g2"></i><i class="g3"></i><i class="g4"></i></div>
 <div class="gx-layer"><i class="a"></i><i class="b"></i><i class="c"></i></div>
 <div id="platformerScreen" oncontextmenu="return false" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#05050a;display:none;z-index:100;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;">
   <button id="dlBinderBtn" onclick="openBinder()" style="display:none;position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(138,255,234,0.55);color:#8affea;font-family:monospace;font-size:10px;letter-spacing:1px;padding:6px 11px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;">BINDER</button>
@@ -4608,11 +4636,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=350&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=351&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=350&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=351&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=350&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=351&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4623,9 +4651,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=350&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=351&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=350&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=351&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -5373,7 +5401,7 @@ const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing le
 // ── playable characters ──────────────────────────────────────────────────
 // Qu33ph has hand-drawn left AND right art. The other three only have right-facing
 // art, so they get mirrored on the canvas when facing left.
-var CHAR_V="350";   // bump when character art is replaced, so browsers drop the cached copy
+var CHAR_V="351";   // bump when character art is replaced, so browsers drop the cached copy
 function CIMG(src){ var i=new Image(); i.src=src+"?v="+CHAR_V; return i; }
 var PF_CHARS=[
   { id:"qu33ph", name:"QU33PH",     cls:"human", speed:1,   jump:1,     grav:1,    airJumps:0, note:"",

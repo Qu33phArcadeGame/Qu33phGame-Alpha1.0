@@ -377,18 +377,39 @@ $('orientBtn').addEventListener('click',e=>{ e.stopPropagation();
 updOrient(); if(!ready(MARKER)) MARKER.onload=updOrient;
 
 // ─── input ────────────────────────────────────────────────────────────────
+// Swipe the marker itself: how fast you flick and which way decides where it lands.
+let swStart=null, swLast=null, swT=0;
+function swPt(e){ const r=cv.getBoundingClientRect();
+  return { x:(e.clientX-r.left)*(CW/r.width), y:(e.clientY-r.top)*(CH/r.height) }; }
 cv.addEventListener('pointerdown',e=>{
   if(e&&e.cancelable) e.preventDefault();
   if(state!=='ready') return;
-  charging=true; charge=0;
+  const p=swPt(e);
+  const mx=marker.x-camX, my=marker.y;
+  const grab=Math.max(CW*0.16, CH*0.10);                 // generous grab box around the marker
+  if(Math.abs(p.x-mx)>grab || Math.abs(p.y-my)>grab*1.4) return;
+  swStart=p; swLast=p; swT=performance.now(); charging=true;
 });
+cv.addEventListener('pointermove',e=>{ if(!charging) return;
+  if(e&&e.cancelable) e.preventDefault(); swLast=swPt(e); });
 window.addEventListener('pointerup',()=>{
   if(!charging) return; charging=false;
-  if(state!=='ready') return;
-  flip(Math.max(0.10,charge));
+  if(state!=='ready'||!swStart||!swLast){ swStart=swLast=null; return; }
+  const dx=swLast.x-swStart.x, dy=swLast.y-swStart.y;
+  const dt=Math.max(40,performance.now()-swT);
+  const dist=Math.hypot(dx,dy);
+  swStart=swLast=null;
+  if(dist<CW*0.03) return;                               // a tap isn't a flick
+  const speed=dist/dt;                                   // px per ms — how hard you flicked
+  const p=Math.max(0.10,Math.min(1, speed/(CW*0.0042)));
+  const aim=Math.max(-1,Math.min(1, dx/(CW*0.35)));      // which way you flicked steers it
+  const lift=Math.max(0.35,Math.min(1.35, (-dy)/(CH*0.16)+0.55));
+  flip(p, aim, lift);
 });
-function flip(p){
-  marker.vx=(0.008+p*0.014)*CW; marker.vy=-(0.026+p*0.012)*CH;
+function flip(p, aim, lift){
+  aim=(aim===undefined)?0.45:aim; lift=(lift===undefined)?1:lift;
+  marker.vx=(0.008+p*0.014)*CW*(0.55+0.75*Math.max(0,aim+0.5));
+  marker.vy=-(0.026+p*0.012)*CH*lift;
   const T=2*Math.abs(marker.vy)/G();
   marker.spin=(Math.PI*2*(1+Math.round(p*2)))/T; marker.rot=0;
   state='flying'; timerOn=true;
@@ -414,8 +435,8 @@ function land(p){
   const idx=plats.indexOf(p);
   const gained=Math.max(1, idx-marker.pIdx);
   marker.pIdx=idx; combo++;
-  let pts=gained*10+Math.min(10,combo)*2;
-  if(p.obs==='G' && !p.got){ p.got=true; pts+=25;
+  let pts=gained;                              // one point per platform, nothing else
+  if(p.obs==='G' && !p.got){ p.got=true;
     popups.push({x:marker.x,y:p.y-MH()*2.4,txt:'BONUS +25',life:52,col:'#7bff9a'}); }
   score+=pts;
   popups.push({x:marker.x,y:p.y-MH()*1.3,txt:'+'+gained,life:44,col:'#8fd0ff'});
@@ -429,7 +450,7 @@ function finishLevel(){
   won=true; state='over'; timerOn=false;
   if(levelIdx+1>levelsDone()) setLevelsDone(levelIdx+1);
   $('ovTitle').textContent='LEVEL CLEAR'; $('ovTitle').style.color='#7bff9a';
-  $('ovSub').textContent=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+score+' PTS';
+  $('ovSub').textContent=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+marker.pIdx+' PLATFORMS';
   showNextBtn(levelIdx < LEVEL_COUNT-1);        // straight into the next one
   show('overOvl',true);
 }
@@ -438,7 +459,7 @@ function gameOver(reason){
   if(marker.pIdx>bestP){ bestP=marker.pIdx; try{ localStorage.setItem('qu33phFlipBestP',bestP); }catch(e){} }
   $('ovTitle').textContent = reason==='TIME UP' ? 'TIME UP' : 'TIPPED OVER';
   $('ovTitle').style.color = reason==='TIME UP' ? '#ffd700' : '#e23b3b';
-  $('ovSub').textContent = marker.pIdx+' PLATFORMS \u00b7 '+score+' PTS \u00b7 BEST '+bestP;
+  $('ovSub').textContent = marker.pIdx+' PLATFORMS \u00b7 BEST '+bestP;
   showNextBtn(false);
   show('overOvl',true);
 }
@@ -447,7 +468,6 @@ function gameOver(reason){
 function step(){
   if(state==='menu'||state==='over') return;
   if(settle>0) settle--;
-  if(charging && state==='ready') charge=Math.min(1,charge+0.022);
   if(mode==='timed' && timerOn && state!=='over'){
     timeLeft-=1/60;
     if(timeLeft<=0){ timeLeft=0; gameOver('TIME UP'); return; }
@@ -692,6 +712,7 @@ function drawMarker(){
   ctx.restore();
 }
 function drawAim(){
+  return;   // no dotted guide any more — you read the flick, not a line
   if(!(charging&&state==='ready')) return;
   const g=G(), p=Math.max(0.10,charge);
   let vx=(0.008+p*0.014)*CW, vy=-(0.026+p*0.012)*CH, x=marker.x, y=marker.y;
@@ -724,7 +745,7 @@ function drawHUD(){
   ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CH*0.013)+'px Helvetica';
   ctx.fillText('PLATFORMS',pad+CH*0.002,pad+CH*0.045);
   ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-  ctx.fillText((mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestP)+'   '+score+' PTS',pad+CH*0.002,pad+CH*0.064);
+  ctx.fillText((mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestP)+'   '+marker.pIdx+' PLATFORMS',pad+CH*0.002,pad+CH*0.064);
   ctx.textAlign='center';
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.021)+'px Helvetica';
   ctx.fillText('QU33PH FLIP',CW/2,pad);
@@ -737,13 +758,9 @@ function drawHUD(){
   }
   if(combo>2){ ctx.fillStyle='#7bff9a'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
     ctx.fillText('COMBO x'+combo,CW/2,pad+CH*(mode==='timed'?0.094:0.048)); }
-  if(charging&&state==='ready'){
-    const bw=CW*0.46,bh=CH*0.012,bx=(CW-bw)/2,by=CH*0.935;
-    ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.fillRect(bx,by,bw,bh);
-    ctx.fillStyle=ACC; ctx.fillRect(bx,by,bw*charge,bh);
-  } else if(state==='ready'){
+  if(state==='ready'){
     ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.018)+'px Helvetica';
-    ctx.fillText('hold to charge \u2014 release to flip',CW/2,CH*0.932);
+    ctx.fillText('swipe the marker to flip it',CW/2,CH*0.932);
   }
   for(const q of popups){
     ctx.globalAlpha=Math.max(0,q.life/50); ctx.fillStyle=q.col; ctx.textAlign='center';
