@@ -397,7 +397,6 @@
       background-image:radial-gradient(circle at 25% 25%, rgba(20,20,20,0.42) 1.5px, transparent 1.8px),
                        radial-gradient(circle at 75% 75%, rgba(20,20,20,0.42) 1.5px, transparent 1.8px); }
     #platformerScreen.pf-cartoon #platformerBg{ filter:grayscale(1) contrast(1.18); }
-    #platformerScreen.pf-cartoon #pfBenday{ display:block; }
     #platformerScreen.pf-neon    #platformerBg{ filter:saturate(1.7) brightness(1.06) drop-shadow(0 0 14px rgba(40,255,130,0.45)); }
     #platformerScreen.pf-sunset  #platformerBg{ filter:sepia(0.62) saturate(2) brightness(1.12) drop-shadow(0 0 14px rgba(255,176,32,0.45)); }
     #platformerScreen.pf-galaxy  #platformerBg{ filter:hue-rotate(225deg) saturate(1.5) brightness(1.04) drop-shadow(0 0 14px rgba(154,107,255,0.5)); }
@@ -688,7 +687,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v355</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v356</div>
 
 <canvas id="game"></canvas>
 
@@ -882,7 +881,6 @@
     <button onclick="arcadeToMenu()" class="mk-btn">MAIN MENU</button>
   </div>
   <img id="platformerBg" src="platformeroverlay.png" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;" onerror="this.style.opacity=0.15">
-  <div id="pfBenday"></div>
   <canvas id="platformerCanvas" style="position:absolute;background:#0a0f1e;border-radius:2px;"></canvas>
   <div id="pfLeftBtn" style="position:absolute;border-radius:50%;z-index:4;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;touch-action:none;"></div>
   <div id="pfRightBtn" style="position:absolute;border-radius:50%;z-index:4;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;touch-action:none;"></div>
@@ -4636,11 +4634,11 @@ function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("ar
 function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=355&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=356&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=355&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=356&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=355&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=356&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4651,9 +4649,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=355&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=356&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=355&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=356&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -5401,7 +5399,7 @@ const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing le
 // ── playable characters ──────────────────────────────────────────────────
 // Qu33ph has hand-drawn left AND right art. The other three only have right-facing
 // art, so they get mirrored on the canvas when facing left.
-var CHAR_V="355";   // bump when character art is replaced, so browsers drop the cached copy
+var CHAR_V="356";   // bump when character art is replaced, so browsers drop the cached copy
 function CIMG(src){ var i=new Image(); i.src=src+"?v="+CHAR_V; return i; }
 var PF_CHARS=[
   { id:"qu33ph", name:"QU33PH",     cls:"human", speed:1,   jump:1,     grav:1,    airJumps:0, note:"",
@@ -7041,13 +7039,13 @@ function pbTriCollide(b){
     // (b - closest point) points from the edge INTO the shape, because we only get
     // here when the ball is inside. The way out is the opposite direction.
     nx=-nx/nl; ny=-ny/nl;
-    b.x=bcx+nx*(PB_R*1.25); b.y=bcy+ny*(PB_R*1.25);
+    b.x=bcx+nx*(PB_R*1.9); b.y=bcy+ny*(PB_R*1.9);   // well clear, so gravity can't drag it straight back in
     var dot=b.vx*nx+b.vy*ny;
-    if(dot<0){ b.vx-=1.6*dot*nx; b.vy-=1.6*dot*ny; }
-    var sp=Math.hypot(b.vx,b.vy);
-    if(sp<0.004){                                 // never leave it resting against the wall
-      b.vx=nx*0.006; b.vy=ny*0.006-0.002;
-    }
+    if(dot<0){ b.vx-=1.7*dot*nx; b.vy-=1.7*dot*ny; }
+    // guarantee it leaves along the normal instead of jittering on the surface
+    var out=b.vx*nx+b.vy*ny;
+    if(out<0.010){ b.vx+=nx*(0.010-out); b.vy+=ny*(0.010-out); }
+    b.vy+=0.004;                                    // and a nudge downhill so it slides off
     try{ haptic(5); }catch(e){}
     return true;
   }
