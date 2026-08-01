@@ -213,7 +213,7 @@
     #arcadeMenu.arc-comic .cab-card::after { content:""; position:absolute; inset:0 0 26px 0; pointer-events:none; mix-blend-mode:multiply; border-radius:18px; background-image:radial-gradient(circle, rgba(0,0,0,0.55) 1.5px, transparent 1.7px); background-size:7px 7px; }
     #arcadeMenu.arc-neon #cabJump img { filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 9px #28ff82) drop-shadow(0 0 16px rgba(40,255,130,0.6)); }
     #arcadeMenu.arc-neon #cabPinball img { filter:drop-shadow(0 0 4px #ff2b2b) drop-shadow(0 0 9px #ff2b2b) drop-shadow(0 0 16px rgba(255,43,43,0.6)); }
-    #arcadeMenu.arc-neon #cabGolf img { filter:drop-shadow(0 0 4px #3a86ff) drop-shadow(0 0 10px #3a86ff) drop-shadow(0 0 18px rgba(58,134,255,0.65)); }
+    #arcadeMenu.arc-neon #cabBowling img { filter:drop-shadow(0 0 4px #ffb020) drop-shadow(0 0 10px #ffb020) drop-shadow(0 0 18px rgba(255,176,32,0.65)); }
     #arcadeMenu.arc-neon #cabSkee img { filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 10px #28ff82) drop-shadow(0 0 20px rgba(40,255,130,0.6)); }
     #arcadeMenu.arc-neon #cabDozer img { filter:drop-shadow(0 0 4px #ff2b2b) drop-shadow(0 0 10px #ff2b2b) drop-shadow(0 0 18px rgba(255,43,43,0.6)); }
     #arcadeMenu.arc-sunset #cabDozer img { filter:sepia(0.6) saturate(2) brightness(1.12) drop-shadow(0 0 9px rgba(255,200,60,0.8)); }
@@ -267,7 +267,7 @@
              drop-shadow(0 0 26px rgba(154,107,255,0.5)) !important; }
     #arcadeMenu.arc-neon #cabJump img { filter:drop-shadow(0 0 4px rgba(40,255,130,1)) drop-shadow(0 0 12px rgba(40,255,130,0.9)) drop-shadow(0 0 22px rgba(40,255,130,0.55)) !important; }
     #arcadeMenu.arc-neon #cabPinball img { filter:drop-shadow(0 0 4px rgba(255,43,43,1)) drop-shadow(0 0 12px rgba(255,43,43,0.9)) drop-shadow(0 0 22px rgba(255,43,43,0.55)) !important; }
-    #arcadeMenu.arc-neon #cabGolf img { filter:drop-shadow(0 0 4px rgba(58,134,255,1)) drop-shadow(0 0 12px rgba(58,134,255,0.9)) drop-shadow(0 0 22px rgba(58,134,255,0.55)) !important; }
+    #arcadeMenu.arc-neon #cabBowling img { filter:drop-shadow(0 0 4px rgba(255,176,32,1)) drop-shadow(0 0 12px rgba(255,176,32,0.9)) drop-shadow(0 0 22px rgba(255,176,32,0.55)) !important; }
     #arcadeMenu.arc-neon #cabStack img { filter:drop-shadow(0 0 4px rgba(58,134,255,1)) drop-shadow(0 0 12px rgba(58,134,255,0.9)) drop-shadow(0 0 22px rgba(58,134,255,0.55)) !important; }
     #arcadeMenu.arc-neon #cabFidget img { filter:drop-shadow(0 0 4px rgba(255,43,43,1)) drop-shadow(0 0 12px rgba(255,43,43,0.9)) drop-shadow(0 0 22px rgba(255,43,43,0.55)) !important; }
     #arcadeMenu.arc-neon #cabFlip img { filter:drop-shadow(0 0 4px rgba(40,255,130,1)) drop-shadow(0 0 12px rgba(40,255,130,0.9)) drop-shadow(0 0 22px rgba(40,255,130,0.55)) !important; }
@@ -687,7 +687,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v361</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v362</div>
 
 <canvas id="game"></canvas>
 
@@ -739,8 +739,8 @@
   <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:3px;color:#555;margin-bottom:14px;">3 × 3 · PICK A CABINET</div>
   <div class="cab-row">
     <div class="cab-card" id="cabJump" onclick="launchPfGame()"><img src="qu33phjump.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH JUMP</div></div>
-    <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png?v=361" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
-    <div class="cab-card" id="cabGolf" onclick="launchGolf()"><img src="golfoverlay.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH MINI GOLF</div></div>
+    <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png?v=362" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
+    <div class="cab-card" id="cabBowling" onclick="launchBowling()"><img src="bowlingicon.png?v=362" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH BOWLING</div></div>
     <div class="cab-card" id="cabStack" onclick="launchStack()"><img src="stackicon.png?v=311" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH STACK</div></div>
     <div class="cab-card" id="cabFidget" onclick="launchFidget()"><img src="fidgetqu33phfield.png" onerror="this.style.opacity=0.2"><div class="cab-label">FIDGET QU33PH</div></div>
     <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
@@ -752,7 +752,7 @@
 </div>
 
 <div id="pinballScreen" oncontextmenu="return false" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0818;z-index:110;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;">
-  <img id="pinballBg" src="pinball.png" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;" onerror="this.style.opacity=0.12">
+  <img id="pinballBg" src="pinball.jpg?v=362" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;" onerror="this.style.opacity=0.12">
   <div id="pbBenday"></div>
   <canvas id="pinballCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
   <button class="back-tl" id="pbPauseBtn" onclick="pbBack()" style="position:absolute;top:8px;left:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
@@ -789,9 +789,9 @@
   <iframe id="fidgetFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
   <button class="back-tl" onclick="fidgetBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
 </div>
-<div id="golfScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
-  <iframe id="golfFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="back-tl" onclick="golfBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
+<div id="bowlingScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
+  <iframe id="bowlingFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
+  <button class="back-tl" onclick="bowlingBack()" style="position:absolute;top:8px;right:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
 </div>
 
 <div id="dreamonScreen" style="display:none; position:absolute;top:0;left:0;width:100%;height:100%;background:#04050a;z-index:120;">
@@ -4736,7 +4736,7 @@ function showArcadeMenu(){
   var st=document.getElementById("sideTabs"); if(st) st.style.display="none";
   var ps=document.getElementById("platformerScreen"); if(ps) ps.style.display="none";
   var ds=document.getElementById("dreamonScreen"); if(ds) ds.style.display="none";
-  var gs=document.getElementById("golfScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("golfFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; } var fs=document.getElementById("fidgetScreen"); if(fs && fs.style.display!=="none"){ var ff=document.getElementById("fidgetFrame"); if(ff){ try{ ff.setAttribute("src","about:blank"); }catch(e){} } fs.style.display="none"; } var ps=document.getElementById("pinball2dScreen"); if(ps && ps.style.display!=="none"){ var pf=document.getElementById("pinball2dFrame"); if(pf){ try{ pf.setAttribute("src","about:blank"); }catch(e){} } ps.style.display="none"; } var ss=document.getElementById("stackScreen"); if(ss && ss.style.display!=="none"){ var sf=document.getElementById("stackFrame"); if(sf){ try{ sf.setAttribute("src","about:blank"); }catch(e){} } ss.style.display="none"; } var sk=document.getElementById("skeeScreen"); if(sk && sk.style.display!=="none"){ var skf=document.getElementById("skeeFrame"); if(skf){ try{ skf.setAttribute("src","about:blank"); }catch(e){} } sk.style.display="none"; }
+  var gs=document.getElementById("bowlingScreen"); if(gs && gs.style.display!=="none"){ var gf=document.getElementById("bowlingFrame"); if(gf){ try{ gf.setAttribute("src","about:blank"); }catch(e){} } gs.style.display="none"; } var fs=document.getElementById("fidgetScreen"); if(fs && fs.style.display!=="none"){ var ff=document.getElementById("fidgetFrame"); if(ff){ try{ ff.setAttribute("src","about:blank"); }catch(e){} } fs.style.display="none"; } var ps=document.getElementById("pinball2dScreen"); if(ps && ps.style.display!=="none"){ var pf=document.getElementById("pinball2dFrame"); if(pf){ try{ pf.setAttribute("src","about:blank"); }catch(e){} } ps.style.display="none"; } var ss=document.getElementById("stackScreen"); if(ss && ss.style.display!=="none"){ var sf=document.getElementById("stackFrame"); if(sf){ try{ sf.setAttribute("src","about:blank"); }catch(e){} } ss.style.display="none"; } var sk=document.getElementById("skeeScreen"); if(sk && sk.style.display!=="none"){ var skf=document.getElementById("skeeFrame"); if(skf){ try{ skf.setAttribute("src","about:blank"); }catch(e){} } sk.style.display="none"; }
   var dm=document.getElementById("dlMap"); if(dm) dm.style.display="none";
   document.getElementById("arcadeMenu").style.display="flex";
   try{ applyThemeFilters(); }catch(e){}
@@ -4744,15 +4744,15 @@ function showArcadeMenu(){
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
 function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showCharSelect(); }
-function launchGolf(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("golfScreen"); s.style.display="block"; var f=document.getElementById("golfFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33ph-golf.html?v=361&theme="+encodeURIComponent(_t)); arcadeGame="golf"; try{ haptic(10); }catch(e){} }
-function golfBack(){ var f=document.getElementById("golfFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("golfScreen").style.display="none"; showArcadeMenu(); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("bowlingScreen"); s.style.display="block"; var f=document.getElementById("bowlingFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","bowling.html?v=362&theme="+encodeURIComponent(_t)); arcadeGame="bowling"; try{ haptic(10); }catch(e){} }
+function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=361&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=362&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=361&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=362&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=361&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=362&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4763,9 +4763,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=361&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=362&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=361&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=362&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -5513,7 +5513,7 @@ const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing le
 // ── playable characters ──────────────────────────────────────────────────
 // Qu33ph has hand-drawn left AND right art. The other three only have right-facing
 // art, so they get mirrored on the canvas when facing left.
-var CHAR_V="361";   // bump when character art is replaced, so browsers drop the cached copy
+var CHAR_V="362";   // bump when character art is replaced, so browsers drop the cached copy
 function CIMG(src){ var i=new Image(); i.src=src+"?v="+CHAR_V; return i; }
 var PF_CHARS=[
   { id:"qu33ph", name:"QU33PH",     cls:"human", speed:1,   jump:1,     grav:1,    airJumps:0, note:"",
