@@ -53,12 +53,51 @@ document.getElementById('bg').style.filter=T.filter;
 
 // ─── marker art ───────────────────────────────────────────────────────────
 function IMG(src){ const i=new Image(); i.src=src; return i; }
-const MK={ red:IMG(COMIC?'redC.png':'red.png'),
-           green:IMG(COMIC?'greenC.png':'green.png'),
-           blue:IMG(COMIC?'blueC.png':'blue.png') };
+// Same art and the same convention Qu33ph Stack uses: these markers are drawn
+// upright in their source, so rotation 0 is a marker standing on its cap.
+const MPREF=COMIC?'comic':'stack';
+function keyWhite(im){
+  try{
+    const c=document.createElement('canvas'); c.width=im.naturalWidth||im.width; c.height=im.naturalHeight||im.height;
+    if(!c.width||!c.height) return im;
+    const g=c.getContext('2d',{willReadFrequently:true}); g.drawImage(im,0,0);
+    const d=g.getImageData(0,0,c.width,c.height), p=d.data;
+    for(let i=0;i<p.length;i+=4){
+      if(!p[i+3]) continue;
+      const mx=Math.max(p[i],p[i+1],p[i+2]), mn=Math.min(p[i],p[i+1],p[i+2]);
+      if(mx-mn<30){                                  // neutral pixel: white matte, not coloured art
+        if(mn>=232) p[i+3]=0;
+        else if(mn>202) p[i+3]=Math.min(p[i+3], Math.round((232-mn)*(255/30)));
+      }
+    }
+    g.putImageData(d,0,0);
+    c.naturalWidth=c.width; c.naturalHeight=c.height; c.complete=true;
+    return c;
+  }catch(e){ return im; }
+}
+function thickenOutline(src,r){
+  const w=src.naturalWidth||src.width, h=src.naturalHeight||src.height;
+  if(!w||!h) return src;
+  const sil=document.createElement('canvas'); sil.width=w; sil.height=h;
+  const sg=sil.getContext('2d'); sg.drawImage(src,0,0);
+  sg.globalCompositeOperation='source-in'; sg.fillStyle='#141414'; sg.fillRect(0,0,w,h);
+  const out=document.createElement('canvas'); out.width=w; out.height=h;
+  const og=out.getContext('2d');
+  for(let i=0;i<16;i++){ const a=i/16*6.2832; og.drawImage(sil,Math.cos(a)*r,Math.sin(a)*r); }
+  og.drawImage(src,0,0);
+  out.naturalWidth=w; out.naturalHeight=h; out.complete=true;
+  return out;
+}
+function keyAndThicken(im){ const k=keyWhite(im); return thickenOutline(k, Math.max(2, Math.min(k.width||k.naturalWidth,k.height||k.naturalHeight)*0.030)); }
+const MK={};
+['red','green','blue'].forEach(function(k){
+  const im=new Image();
+  im.onload=function(){ if(COMIC) MK[k]=keyAndThicken(im); };
+  im.src=MPREF+k+'.png'; MK[k]=im;
+});
 const CHAIR=IMG('Chair.png');
-const MEGACARD=IMG('megacard.png?v=364');
-function ready(i){ return i && i.complete && i.naturalWidth>0; }
+const MEGACARD=IMG('megacard.png?v=365');
+function ready(i){ return i && i.complete && (i.naturalWidth||i.width)>0; }
 
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
 let CW=0,CH=0,DPR=1;
@@ -208,9 +247,9 @@ const BASE_HOOK=-0.085;
 // the boards it tracks nearly straight; stood along the line it carves hardest but
 // arrives thin, so it carries fewer markers through the deck.
 const ORIENTS=[
-  {id:'vertical',  label:'VERT',   rot:Math.PI/2, hook:1.65, speed:0.93, carry:0.84},
+  {id:'vertical',  label:'VERT',   rot:0,         hook:1.65, speed:0.93, carry:0.84},
   {id:'angled',    label:'ANGLED', rot:Math.PI/4, hook:1.00, speed:1.00, carry:1.00},
-  {id:'horizontal',label:'FLAT',   rot:0,         hook:0.42, speed:1.07, carry:1.18}
+  {id:'horizontal',label:'FLAT',   rot:Math.PI/2, hook:0.42, speed:1.07, carry:1.18}
 ];
 let orientIdx=1;
 try{ const o=localStorage.getItem('qu33phOrientation');            // match the main game's default
@@ -457,9 +496,9 @@ function drawPins(){
     const img=MK[p.col];
     if(p.down){
       // knocked flat: lies across the lane and fades as it's swept
-      drawMarker(img,q.x,q.y+h*0.16,h*0.92,p.rot,1-p.sink*0.55);
+      drawMarker(img,q.x,q.y+h*0.16,h*0.92,Math.PI/2+p.rot,1-p.sink*0.55);
     } else {
-      drawMarker(img,q.x,q.y-h*0.30,h,Math.PI/2);   // standing on its cap
+      drawMarker(img,q.x,q.y-h*0.30,h,0);           // standing on its cap
     }
   }
 }
@@ -491,7 +530,7 @@ function drawQueue(){
       ctx.fillStyle=T.accent; ctx.shadowColor=T.accent; ctx.shadowBlur=AH*0.022;
       ctx.beginPath(); ctx.arc(x,y,h*0.62,0,7); ctx.fill(); ctx.restore();
     }
-    drawMarker(MK[queue[i]],x,y,cur?h*1.30:h*1.06,0, done?0.22:(cur?1:0.72));
+    drawMarker(MK[queue[i]],x,y,cur?h*1.30:h*1.06,Math.PI/2, done?0.22:(cur?1:0.72));
   }
 }
 
