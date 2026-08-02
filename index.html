@@ -687,7 +687,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v370</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v371</div>
 
 <canvas id="game"></canvas>
 
@@ -4744,15 +4744,15 @@ function showArcadeMenu(){
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
 function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showCharSelect(); }
-function launchBowling(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("bowlingScreen"); s.style.display="block"; var f=document.getElementById("bowlingFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","bowling.html?v=370&theme="+encodeURIComponent(_t)); arcadeGame="bowling"; try{ haptic(10); }catch(e){} }
+function launchBowling(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("bowlingScreen"); s.style.display="block"; var f=document.getElementById("bowlingFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","bowling.html?v=371&theme="+encodeURIComponent(_t)); arcadeGame="bowling"; try{ haptic(10); }catch(e){} }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=370&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=371&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=370&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=371&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=370&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=371&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4763,9 +4763,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=370&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=371&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=370&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=371&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -5344,7 +5344,7 @@ function pfGenPath(){
 // Gate it to 60 steps a second so the feel is identical on every device — all the
 // existing physics tuning is untouched, the extra frames are simply skipped.
 var pfNextStep=0;
-const PF_STEP_MS=1000/60;
+const PF_STEP_MS=1000/90;   // 90Hz — needs a 90Hz+ display to hit it; a 60Hz screen still runs 60
 function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   var _now=performance.now();
   if(_now<pfNextStep){ pfRAF=requestAnimationFrame(pfLoop); return; }
@@ -5523,7 +5523,7 @@ const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing le
 // ── playable characters ──────────────────────────────────────────────────
 // Qu33ph has hand-drawn left AND right art. The other three only have right-facing
 // art, so they get mirrored on the canvas when facing left.
-var CHAR_V="370";   // bump when character art is replaced, so browsers drop the cached copy
+var CHAR_V="371";   // bump when character art is replaced, so browsers drop the cached copy
 function CIMG(src){ var i=new Image(); i.src=src+"?v="+CHAR_V; return i; }
 var PF_CHARS=[
   { id:"qu33ph", name:"QU33PH",     cls:"human", speed:1,   jump:1,     grav:1,    airJumps:0, note:"",

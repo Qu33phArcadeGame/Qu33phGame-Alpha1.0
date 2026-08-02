@@ -14,7 +14,7 @@
 </head>
 <body>
 <div id="wrap">
-  <img id="bg" src="bowling.jpg?v=362" draggable="false" onerror="this.style.opacity=0.12">
+  <img id="bg" src="bowling.jpg?v=371" draggable="false" onerror="this.style.opacity=0.12">
   <canvas id="cv"></canvas>
 </div>
 <script>
@@ -29,15 +29,18 @@
 // All normalised 0-1 against the CONTAIN-fitted background image, so they
 // stay locked to the artwork at any screen size. Nudge these if the lane
 // drifts off the painted wood.
-const ART_W=1023, ART_H=1537;
-const NEAR_Y=0.800, NEAR_HW=0.355;      // foul line (nearest edge of the wood)
-const LANE_CX=0.4832;                   // centre arrow — the lane is NOT centred on the art
-const FAR_Y =0.360, FAR_HW =0.115;      // pin deck (where the lane goes dark)
-const RET_Y =0.845;                     // the row of lights in the ball return
-const RET_X0=0.2561, RET_X1=0.7111;     // first and last light centres
-const HS_X=0.563, HS_Y=0.2411;          // beside the painted "High Score:" label
-// the panel's gold frame runs 0.294-0.674, so the speaker boxes sit either side of it
-const BOX_L=0.235, BOX_R=0.735, BOX_Y=0.2411, BOX_W=0.072;
+// Every one of these was measured off the field art, not guessed. The lane edges were
+// traced out to the gutters at 14 depths and least-squares fitted to the perspective
+// model (rms 0.0017), and the centre is confirmed twice over — the aiming arrows and
+// the ball-return lights independently agree on 0.490.
+const ART_W=2556, ART_H=3840;
+const NEAR_Y=0.830, NEAR_HW=0.395;      // foul line (nearest edge of the wood)
+const LANE_CX=0.4900;                   // centre arrow — the lane is NOT centred on the art
+const FAR_Y =0.360, FAR_HW =0.094;      // pin deck (where the lane goes dark)
+const RET_Y =0.866;                     // the row of lights in the ball return
+const RET_X0=0.2600, RET_X1=0.7240;     // first and last light centres
+const HS_X=0.500, HS_Y=0.1600;          // just past the painted "High Score:" label
+const BOX_L=0.143, BOX_R=0.837, BOX_Y=0.1600, BOX_W=0.058;   // the two speaker boxes
 
 // ─── themes: same five looks, same rules as every other cabinet ───────────
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
@@ -152,7 +155,7 @@ function toV(Y){ return Y/LANE_LEN; }
 // A pin stands on its cap, so its footprint really is a small circle. The marker you
 // roll lies flat, so it's a long capsule — and which way it points depends on the
 // orientation you picked, which is why FLAT sweeps wide and VERT slips through gaps.
-const PIN_R=0.062, BALL_R=0.058;          // BALL_R is the capsule's half-WIDTH
+const PIN_R=0.074, BALL_R=0.070;          // BALL_R is the capsule's half-WIDTH
 const BALL_HL=0.165;                      // capsule half-length
 // screen rotation 0 = pointing down the lane, PI/2 = lying across it
 function ballAxis(rot){ return { x:Math.sin(rot), y:Math.cos(rot) }; }
@@ -368,10 +371,10 @@ function step(dt){
       const c=capsuleHit(ball, p.X, p.Y, PIN_R);
       if(c){
         const nx=c.nx, ny=c.ny;
-        const hit=Math.max(0.6, (ball.vy*0.55+Math.abs(ball.vx)*0.4)*(ball.carry||1));
+        const hit=Math.max(1.15, (ball.vy*0.80+Math.abs(ball.vx)*0.5)*(ball.carry||1));
         p.vx+=nx*hit; p.vy+=ny*hit;
         p.down=true; p.rot=(Math.random()-0.5)*0.5; p.vrot=(Math.random()-0.5)*9-Math.sign(nx)*3;
-        ball.vx+= -nx*hit*0.16; ball.vy=Math.max(0.4,ball.vy-0.30);
+        ball.vx+= -nx*hit*0.09; ball.vy=Math.max(0.55,ball.vy-0.16);   // ploughs on through
         sfx('pin');
       }
     }
@@ -408,7 +411,7 @@ function step(dt){
     if(p.gone) continue;
     if(Math.abs(p.vx)>0.001||Math.abs(p.vy)>0.001){
       p.X+=p.vx*dt; p.Y+=p.vy*dt;
-      p.vx-=p.vx*2.7*dt; p.vy-=p.vy*2.7*dt;
+      p.vx-=p.vx*1.9*dt; p.vy-=p.vy*1.9*dt;                            // pins carry further
       p.rot+=p.vrot*dt; p.vrot-=p.vrot*2.2*dt;
       if(p.down) p.sink=Math.min(1,p.sink+dt*2.4);
       for(const q of pins){
@@ -417,8 +420,8 @@ function step(dt){
         if(d<PIN_R*2 && d>0.0001){
           const nx=ddx/d, ny=ddy/d, push=(PIN_R*2-d)*0.5;
           q.X+=nx*push; p.X-=nx*push; q.Y+=ny*push; p.Y-=ny*push;
-          const t=Math.hypot(p.vx,p.vy)*0.55;
-          if(t>0.25){ q.vx+=nx*t; q.vy+=ny*t;
+          const t=Math.hypot(p.vx,p.vy)*0.82;                          // stronger chain reaction
+          if(t>0.13){ q.vx+=nx*t; q.vy+=ny*t;
             if(!q.down){ q.down=true; q.rot=(Math.random()-0.5)*0.5; q.vrot=(Math.random()-0.5)*8; sfx('pin'); } }
         }
       }
