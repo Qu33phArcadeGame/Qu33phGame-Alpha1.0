@@ -319,8 +319,9 @@ function endGame(){
 window.addEventListener('pagehide', payout);
 
 // ─── orientation: how the marker lies when it lands ───────────────────────
+function _defOri(){ var d='vertical'; try{ d=localStorage.getItem('qu33phOrientation')||'vertical'; }catch(e){} return d==='horizontal'?'horizontal':'vertical'; }   // no 'angled' here, so it reads as upright
 let ORIENT=null; try{ ORIENT=localStorage.getItem('qu33phDozerOrient')||null; }catch(e){}
-function curOrient(){ return ORIENT||'vertical'; }
+function curOrient(){ return ORIENT||_defOri(); }
 function dropRot(){ return curOrient()==='vertical' ? Math.PI/2 : 0; }   // vertical = along the push
 function orientIcon(){
   const v=curOrient()==='vertical';

@@ -82,6 +82,7 @@ function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); 
 sz();
 
 let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, best=0, state='loading', overT=0;
+function _defOri(){ var d='vertical'; try{ d=localStorage.getItem('qu33phOrientation')||'vertical'; }catch(e){} return d==='horizontal'?'horizontal':'vertical'; }   // no 'angled' here, so it reads as upright
 let SORIENT=null; try{ SORIENT=localStorage.getItem('qu33phStackOrient')||null; }catch(e){}
 let INK=null;
 function measureInk(){
@@ -102,7 +103,7 @@ function measureInk(){
              cx:((x0+x1+1)/2)/c.width, cy:((y0+y1+1)/2)/c.height };
   }catch(e){ return null; }
 }
-function stackOrient(){ return SORIENT||'vertical'; }
+function stackOrient(){ return SORIENT||_defOri(); }
 function baseAngle(){ return stackOrient()==='horizontal' ? Math.PI/2 : 0; }
 function halfSpan(){ if(!cur) return MW*0.5; return (cur.baseAngle? (cur.bh||ML) : (cur.bw||MW))*0.5; }
 function orientSvg(){

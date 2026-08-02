@@ -352,10 +352,9 @@ $('bNext').onclick   =()=>{ levelIdx=Math.min(LEVEL_COUNT-1, levelIdx+1); startM
 function showNextBtn(on){ $('bNext').style.display = on?'inline-flex':'none'; }
 
 // ─── orientation ──────────────────────────────────────────────────────────
+function _defOri(){ var d='vertical'; try{ d=localStorage.getItem('qu33phOrientation')||'vertical'; }catch(e){} return d==='horizontal'?'horizontal':'vertical'; }   // no 'angled' here, so it reads as upright
 let ORIENT=null; try{ ORIENT=localStorage.getItem('qu33phFlipOrient')||null; }catch(e){}
-function curOrient(){ if(ORIENT) return ORIENT;
-  if(!ready(MARKER)) return 'vertical';
-  return MARKER.naturalWidth>=MARKER.naturalHeight?'vertical':'horizontal'; }
+function curOrient(){ return ORIENT||_defOri(); }
 function markerRot(){ if(!ready(MARKER)) return -Math.PI/2;
   const wide=MARKER.naturalWidth>=MARKER.naturalHeight;
   return (wide===(curOrient()==='vertical'))?-Math.PI/2:0; }
