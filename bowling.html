@@ -31,6 +31,7 @@
 // drifts off the painted wood.
 const ART_W=1023, ART_H=1537;
 const NEAR_Y=0.800, NEAR_HW=0.355;      // foul line (nearest edge of the wood)
+const LANE_CX=0.4832;                   // centre arrow — the lane is NOT centred on the art
 const FAR_Y =0.360, FAR_HW =0.115;      // pin deck (where the lane goes dark)
 const RET_Y =0.845;                     // the row of lights in the ball return
 const RET_X0=0.2561, RET_X1=0.7111;     // first and last light centres
@@ -126,7 +127,7 @@ const S1=FAR_HW/NEAR_HW;
 function scaleAt(v){ return 1/(1+v*K); }
 function proj(u,v){
   const s=scaleAt(v);
-  return { x: ax(0.5+u*NEAR_HW*s),
+  return { x: ax(LANE_CX+u*NEAR_HW*s),
            y: ay(NEAR_Y+(FAR_Y-NEAR_Y)*(1-s)/(1-S1)),
            s: s };
 }
@@ -199,6 +200,45 @@ function scoreTotal(){
 }
 
 function finalScore(){ return scoreTotal()+(megaWon?33:0); }
+// per-frame view for the scoreboard: X for a Qu33ph, / for a spare, - for a miss
+function frameView(){
+  const out=[]; let i=0, run=0;
+  const mark=(v)=> v===0 ? '-' : String(v);
+  for(let f=0; f<10; f++){
+    const cell={marks:['',''], total:null};
+    if(i>=rolls.length){ out.push(cell); continue; }
+    if(f<9){
+      if(rolls[i]===10){
+        cell.marks=['','X'];
+        if(rolls[i+1]!==undefined&&rolls[i+2]!==undefined){ run+=10+rolls[i+1]+rolls[i+2]; cell.total=run; }
+        i+=1;
+      } else if(rolls[i+1]!==undefined && rolls[i]+rolls[i+1]===10){
+        cell.marks=[mark(rolls[i]),'/'];
+        if(rolls[i+2]!==undefined){ run+=10+rolls[i+2]; cell.total=run; }
+        i+=2;
+      } else if(rolls[i+1]!==undefined){
+        cell.marks=[mark(rolls[i]),mark(rolls[i+1])];
+        run+=rolls[i]+rolls[i+1]; cell.total=run;
+        i+=2;
+      } else {
+        cell.marks=[mark(rolls[i]),''];        // first ball down, second still to come
+        i+=1;
+      }
+    } else {
+      const a=rolls[i], c=rolls[i+1], d=rolls[i+2];
+      const m=[];
+      if(a!==undefined) m.push(a===10?'X':mark(a));
+      if(c!==undefined) m.push(c===10?'X':(a!==10&&a+c===10?'/':mark(c)));
+      if(d!==undefined) m.push(d===10?'X':(c!==10&&a===10&&c+d===10?'/':mark(d)));
+      cell.marks=m;
+      const bonus=(a===10)||(a!==undefined&&c!==undefined&&a+c===10);
+      const done= bonus ? (d!==undefined) : (a!==undefined&&c!==undefined);
+      if(done){ run+=(a||0)+(c||0)+(d||0); cell.total=run; }
+    }
+    out.push(cell);
+  }
+  return out;
+}
 function say(text,col){ msg={t:text,c:col||T.accent}; msgT=95; }
 
 // ─── throwing ─────────────────────────────────────────────────────────────
@@ -276,9 +316,10 @@ function step(dt){
     ball.vy -= ball.vy*0.13*dt;                       // lane friction
     ball.X  += ball.vx*dt;  ball.Y += ball.vy*dt;
     ball.wob+= ball.vy*dt*7;                          // rolls on its axis, angle stays put
-    if(Math.abs(ball.X)>1.0-BALL_R*0.5){              // PEEF — into the gutter
+    if(Math.abs(ball.X)>1.0-BALL_R*0.5){              // PEEF — in the gutter, roll is dead
       ball.X=Math.sign(ball.X)*(1.0-BALL_R*0.5);
-      ball.vx=0; ball.spin=0; ball.gutter=true;
+      ball.vx=0; ball.vy=0; ball.spin=0; ball.gutter=true;
+      ball.live=false; settleT=0;                     // no bouncing out and carrying on
     }
     if(chair && !chair.shoved){
       const cdx=chair.X-ball.X, cdy=chair.Y-ball.Y, cd=Math.hypot(cdx,cdy);
@@ -366,39 +407,45 @@ function step(dt){
   if(msgT>0) msgT-=dt*60;
 }
 
+function rackFresh(){
+  rackPins(null); standingAtFrameStart=10;
+  chair = (frame===9) ? { X:0, Y:CHAIR_Y, vx:0, vy:0, shoved:false, rot:0 } : null;
+}
+function sweepAndStand(){                    // downed markers cleared, standing ones stay put
+  for(const p of pins) if(p.down) p.gone=true;
+  standingAtFrameStart=standing();
+}
+function readyNext(){ ball=null; phase='aim'; }
+function endGame(){ gameOver=true; phase='over'; sfx('over'); saveHigh(); }
+
 function endRoll(fromMega){
   if(phase==='mega'&&!fromMega) return;
   const felled=standingAtFrameStart-standing();
+  const cleared=(standing()===0);
   rolls.push(felled);
-  const tenth=(frame===9);
-  if(roll===0 && felled===10){
-    if(!fromMega){ say('QU33PH\u2122','#ffd54a'); sfx('quephe'); }
-    nextFrame(tenth);
-  } else if(roll===1 && standing()===0){
-    if(!fromMega){ say('SPARE','#3fd07a'); sfx('mega'); }
-    nextFrame(tenth);
-  } else if(felled===0 && ball && ball.gutter && !fromMega){
-    say('PEEF','#ff5a5a'); sfx('peef');
-    afterOpen(tenth);
-  } else {
-    afterOpen(tenth);
+  const strike=(felled===10);
+  if(!fromMega){
+    if(roll===0 && strike){ say('QU33PH\u2122','#ffd54a'); sfx('quephe'); }
+    else if(roll>0 && cleared){ say('SPARE','#3fd07a'); sfx('mega'); }
+    else if(felled===0 && ball && ball.gutter){ say('PEEF','#ff5a5a'); sfx('peef'); }
   }
-}
-function afterOpen(tenth){
+  if(frame<9){
+    if(roll===0 && !strike){ roll=1; sweepAndStand(); readyNext(); }
+    else { frame++; roll=0; rackFresh(); readyNext(); }
+    return;
+  }
+  // ── tenth frame: a strike or a spare buys the bonus rolls ──
   if(roll===0){
-    roll=1; standingAtFrameStart=standing();
-    // downed markers are swept, the standing ones stay put
-    for(const p of pins) if(p.down) p.gone=true;
-    ball=null; phase='aim';
+    roll=1;
+    if(strike) rackFresh(); else sweepAndStand();
+    readyNext();
+  } else if(roll===1){
+    const openedWithStrike=(rolls[rolls.length-2]===10);
+    if(openedWithStrike || cleared){ roll=2; rackFresh(); readyNext(); }
+    else endGame();
   } else {
-    nextFrame(tenth);
+    endGame();
   }
-}
-function nextFrame(tenth){
-  if(tenth){ gameOver=true; phase='over'; sfx('over'); saveHigh(); return; }
-  frame++; roll=0; rackPins(null); standingAtFrameStart=10; ball=null; phase='aim';
-  // the chair only ever appears for the blue marker in the tenth
-  chair = (frame===9) ? { X:0, Y:CHAIR_Y, vx:0, vy:0, shoved:false, rot:0 } : null;
 }
 
 // ─── high score ───────────────────────────────────────────────────────────
@@ -539,10 +586,42 @@ function drawHUD(){
   ctx.save();
   ctx.font='bold '+f+'px Helvetica,Arial,sans-serif';
   ctx.textBaseline='top'; ctx.fillStyle=T.ink;
-  // sit above the cabinet, clear of the marquee and the BACK button
-  const topY=Math.max(CH*0.105, AY-AH*0.055);
-  ctx.textAlign='left';  ctx.fillText('FRAME '+Math.min(frame+1,10)+'/10', ax(0.10), topY);
-  ctx.textAlign='right'; ctx.fillText('SCORE '+finalScore(), ax(0.90), topY);
+  // running total top-right, clear of the BACK button on the left
+  const view=frameView();
+  const scoreY=Math.max(CH*0.050, AY-AH*0.130);
+  ctx.textAlign='right'; ctx.fillText('SCORE '+finalScore(), ax(0.955), scoreY);
+  if(megaWon){ ctx.fillStyle='#ff4d3d'; ctx.font='bold '+Math.round(f*0.72)+'px Helvetica,Arial,sans-serif';
+    ctx.fillText('+33 MEGA', ax(0.955), scoreY+f*1.18); ctx.fillStyle=T.ink;
+    ctx.font='bold '+f+'px Helvetica,Arial,sans-serif'; }
+
+  // ── ten frame boxes: marks on top, running total underneath ──
+  const bx0=ax(0.045), bx1=ax(0.955), bw=(bx1-bx0)/10;
+  const by0=Math.max(CH*0.086, AY-AH*0.092);
+  const bh=Math.max(AH*0.045, Math.min(AH*0.082, AY-by0-AH*0.005));
+  const mh=bh*0.58;
+  ctx.lineWidth=Math.max(1,AH*0.0012);
+  for(let i=0;i<10;i++){
+    const cx=bx0+bw*i, cur=(i===frame&&!gameOver);
+    ctx.fillStyle= cur? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.045)';
+    ctx.fillRect(cx,by0,bw,bh);
+    ctx.strokeStyle= cur? T.accent : 'rgba(255,255,255,0.24)';
+    ctx.strokeRect(cx+0.5,by0+0.5,bw-1,bh-1);
+    ctx.beginPath(); ctx.moveTo(cx,by0+mh); ctx.lineTo(cx+bw,by0+mh);
+    ctx.strokeStyle='rgba(255,255,255,0.20)'; ctx.stroke();
+    ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillStyle='rgba(255,255,255,0.34)';
+    ctx.font='bold '+Math.round(bh*0.20)+'px Helvetica,Arial,sans-serif';
+    ctx.fillText(String(i+1), cx+bw*0.08, by0+bh*0.03);
+    const m=view[i].marks.filter(s=>s!=='');
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=T.ink;
+    ctx.font='bold '+Math.round(mh*(m.length>2?0.46:0.58))+'px Helvetica,Arial,sans-serif';
+    if(m.length) ctx.fillText(m.join(' '), cx+bw*0.56, by0+mh*0.58);
+    if(view[i].total!==null){
+      ctx.fillStyle=T.accent;
+      ctx.font='bold '+Math.round((bh-mh)*0.60)+'px Helvetica,Arial,sans-serif';
+      ctx.fillText(String(view[i].total), cx+bw*0.5, by0+mh+(bh-mh)*0.52);
+    }
+  }
+  ctx.font='bold '+f+'px Helvetica,Arial,sans-serif'; ctx.textBaseline='top'; ctx.fillStyle=T.ink;
   // the high score goes in the cabinet's own painted readout
   ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle='#ff4d3d';
   ctx.font='bold '+Math.round(AH*0.021)+'px Helvetica,Arial,sans-serif';
