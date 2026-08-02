@@ -14,7 +14,7 @@
 </head>
 <body>
 <div id="wrap">
-  <img id="bg" src="bowling.jpg?v=373" draggable="false" onerror="this.style.opacity=0.12">
+  <img id="bg" src="bowling.jpg?v=374" draggable="false" onerror="this.style.opacity=0.12">
   <canvas id="cv"></canvas>
 </div>
 <script>
@@ -39,8 +39,8 @@ const LANE_CX=0.4900;                   // centre arrow — the lane is NOT cent
 const FAR_Y =0.360, FAR_HW =0.094;      // pin deck (where the lane goes dark)
 const RET_Y =0.866;                     // the row of lights in the ball return
 const RET_X0=0.2600, RET_X1=0.7240;     // first and last light centres
-const HS_X=0.500, HS_Y=0.1600;          // just past the painted "High Score:" label
-const BOX_L=0.143, BOX_R=0.837, BOX_Y=0.1600, BOX_W=0.058;   // the two speaker boxes
+const HS_X=0.591, HS_Y=0.2717;          // just past the painted "High Score:" label
+const BOX_L=0.233, BOX_R=0.752, BOX_Y=0.2717, BOX_W=0.070;   // the two speaker boxes
 
 // ─── themes: same five looks, same rules as every other cabinet ───────────
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
