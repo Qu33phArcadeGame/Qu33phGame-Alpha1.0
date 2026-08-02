@@ -14,7 +14,7 @@
 </head>
 <body>
 <div id="wrap">
-  <img id="bg" src="bowling.jpg?v=371" draggable="false" onerror="this.style.opacity=0.12">
+  <img id="bg" src="bowling.jpg?v=373" draggable="false" onerror="this.style.opacity=0.12">
   <canvas id="cv"></canvas>
 </div>
 <script>
@@ -155,7 +155,7 @@ function toV(Y){ return Y/LANE_LEN; }
 // A pin stands on its cap, so its footprint really is a small circle. The marker you
 // roll lies flat, so it's a long capsule — and which way it points depends on the
 // orientation you picked, which is why FLAT sweeps wide and VERT slips through gaps.
-const PIN_R=0.074, BALL_R=0.070;          // BALL_R is the capsule's half-WIDTH
+const PIN_R=0.080, BALL_R=0.076;          // BALL_R is the capsule's half-WIDTH
 const BALL_HL=0.165;                      // capsule half-length
 // screen rotation 0 = pointing down the lane, PI/2 = lying across it
 function ballAxis(rot){ return { x:Math.sin(rot), y:Math.cos(rot) }; }
@@ -326,7 +326,7 @@ try{ const o=localStorage.getItem('qu33phOrientation');            // match the 
      const k=ORIENTS.findIndex(x=>x.id===o); if(k>=0) orientIdx=k; }catch(e){}
 function ORI(){ return ORIENTS[orientIdx]; }
 // button lives just under the spotted marker
-function oriBtn(){ return { x:ax(0.5)-AW*0.105, y:ay(0.885), w:AW*0.21, h:AH*0.032 }; }
+function oriBtn(){ const d=Math.min(AW*0.115,AH*0.062); return { x:ax(0.5)-d/2, y:ay(0.905)-d/2, w:d, h:d }; }
 function throwBall(dx,power){
   const o=ORI();
   ball={ X: aimX, Y:0, vx: dx*1.7, vy: 3.5*power*o.speed,
@@ -420,8 +420,8 @@ function step(dt){
         if(d<PIN_R*2 && d>0.0001){
           const nx=ddx/d, ny=ddy/d, push=(PIN_R*2-d)*0.5;
           q.X+=nx*push; p.X-=nx*push; q.Y+=ny*push; p.Y-=ny*push;
-          const t=Math.hypot(p.vx,p.vy)*0.82;                          // stronger chain reaction
-          if(t>0.13){ q.vx+=nx*t; q.vy+=ny*t;
+          const t=Math.hypot(p.vx,p.vy)*0.92;                          // stronger chain reaction
+          if(t>0.10){ q.vx+=nx*t; q.vy+=ny*t;
             if(!q.down){ q.down=true; q.rot=(Math.random()-0.5)*0.5; q.vrot=(Math.random()-0.5)*8; sfx('pin'); } }
         }
       }
@@ -437,9 +437,13 @@ function step(dt){
   if(msgT>0) msgT-=dt*60;
 }
 
-function rackFresh(){
-  rackPins(null); standingAtFrameStart=10;
-  chair = (frame===9) ? { X:0, Y:CHAIR_Y, vx:0, vy:0, shoved:false, rot:0 } : null;
+function rackFresh(){ rackPins(null); standingAtFrameStart=10; setChair(); }
+// The chair only ever appears for the third ball of the tenth, and only onto a clean
+// full rack. Chasing a spare doesn't earn it, so the mega can land exactly once and the
+// ceiling is a perfect 300 plus 33.
+function setChair(){
+  chair = (frame===9 && roll===2 && standing()===10 && !megaWon)
+    ? { X:0, Y:CHAIR_Y, vx:0, vy:0, shoved:false, rot:0 } : null;
 }
 function sweepAndStand(){                    // downed markers cleared, standing ones stay put
   for(const p of pins) if(p.down) p.gone=true;
@@ -460,7 +464,7 @@ function endRoll(fromMega){
     else if(felled===0 && ball && ball.gutter){ say('PEEF','#ff5a5a'); sfx('peef'); }
   }
   if(frame<9){
-    if(roll===0 && !strike){ roll=1; sweepAndStand(); readyNext(); }
+    if(roll===0 && !strike){ roll=1; sweepAndStand(); setChair(); readyNext(); }
     else { frame++; roll=0; rackFresh(); readyNext(); }
     return;
   }
@@ -468,7 +472,7 @@ function endRoll(fromMega){
   if(roll===0){
     roll=1;
     if(strike) rackFresh(); else sweepAndStand();
-    readyNext();
+    setChair(); readyNext();
   } else if(roll===1){
     const openedWithStrike=(rolls[rolls.length-2]===10);
     if(openedWithStrike || cleared){ roll=2; rackFresh(); readyNext(); }
@@ -715,19 +719,28 @@ function drawMegaFly(){
   const y=megaFly.y0+(ty-megaFly.y0)*e-arc;
   drawMarker(MK.blue,x,y,AH*0.045*(1-t*0.45),t*10);
 }
+// Redrawn from the hub's orientIcon SVG so bowling's button is the same object:
+// a rotating-arrow ring with the blue marker turning inside it.
 function drawOriBtn(){
   if(phase!=='aim'||gameOver) return;
-  const r=oriBtn(), o=ORI();
+  const r=oriBtn(), deg=ORI().rot*180/Math.PI;
+  const k=r.w/24;                                   // the SVG is a 24x24 viewBox
   ctx.save();
-  ctx.fillStyle='rgba(8,9,16,0.78)'; ctx.strokeStyle=T.accent; ctx.lineWidth=Math.max(1.2,AH*0.0018);
-  const rad=r.h*0.42;
+  ctx.translate(r.x,r.y); ctx.scale(k,k);
+  ctx.fillStyle='rgba(8,9,16,0.72)';
+  ctx.beginPath(); ctx.arc(12,12,12,0,7); ctx.fill();
+  ctx.lineWidth=1.7; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#bbb';
+  ctx.beginPath();                                  // the ring, open at the top right
+  ctx.arc(12,11,7.5,-Math.PI*0.06,Math.PI*1.62);
+  ctx.stroke();
+  ctx.beginPath();                                  // its arrowhead
+  ctx.moveTo(20,4.5); ctx.lineTo(20,9.5); ctx.lineTo(15,9.5); ctx.stroke();
+  ctx.translate(12,12); ctx.rotate(deg*Math.PI/180); ctx.translate(-12,-12);
+  ctx.fillStyle='#4d9bff';
+  const x=10.5,y=6.4,w=3,h=11.2,rad=1.5;            // the marker itself
   ctx.beginPath();
-  ctx.moveTo(r.x+rad,r.y); ctx.arcTo(r.x+r.w,r.y,r.x+r.w,r.y+r.h,rad);
-  ctx.arcTo(r.x+r.w,r.y+r.h,r.x,r.y+r.h,rad); ctx.arcTo(r.x,r.y+r.h,r.x,r.y,rad);
-  ctx.arcTo(r.x,r.y,r.x+r.w,r.y,rad); ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=T.accent;
-  ctx.font='bold '+Math.round(r.h*0.52)+'px Helvetica,Arial,sans-serif';
-  ctx.fillText(o.label+'  \u21BB', r.x+r.w/2, r.y+r.h/2);
+  ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad);
+  ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); ctx.fill();
   ctx.restore();
 }
 function drawAimMarker(){
