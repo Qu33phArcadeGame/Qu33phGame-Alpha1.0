@@ -41,20 +41,22 @@ const BOX_L=0.235, BOX_R=0.735, BOX_Y=0.2411, BOX_W=0.072;
 
 // ─── themes: same five looks, same rules as every other cabinet ───────────
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+// These match themeFilter() in the hub exactly, so the bowling cabinet reads the same
+// as pinball and jump do — neon is the green hue-rotate, not a separate magenta look.
 const LOOK={
-  'default':{filter:'',                                wash:null, dots:false,stars:false,ink:'#ffffff',accent:'#ffd54a',glow:null,  vig:0},
-  // hard black-and-white with a proper printed halftone over the top
-  'cartoon':{filter:'grayscale(1) contrast(2.05) brightness(1.12)',
-             wash:null, dots:true, stars:false,ink:'#ffffff',accent:'#ffffff',glow:'#ffffff',vig:0.34},
-  // pushed hot: everything bleeds magenta and cyan
-  'neon':   {filter:'saturate(2.6) contrast(1.55) brightness(0.78) hue-rotate(-22deg)',
-             wash:'rgba(120,0,210,0.46)', dots:false,stars:false,ink:'#8ffcff',accent:'#ff3df0',glow:'#ff3df0',vig:0.46},
-  // deep golden hour, sun sitting right on the horizon
-  'sunset': {filter:'sepia(0.85) saturate(1.85) hue-rotate(-24deg) brightness(1.12) contrast(1.15)',
-             wash:'rgba(255,108,18,0.34)', dots:false,stars:false,ink:'#fff0d6',accent:'#ffb347',glow:'#ff9a2e',vig:0.38},
-  // far darker and colder, so the starfield actually reads
-  'galaxy': {filter:'saturate(0.62) brightness(0.50) hue-rotate(222deg) contrast(1.35)',
-             wash:'rgba(26,8,86,0.52)', dots:false,stars:true, ink:'#e7e2ff',accent:'#b892ff',glow:'#b892ff',vig:0.52}
+  'default':{filter:'', wash:null, dots:false,stars:false,ink:'#ffffff',accent:'#ffd54a',glow:null, vig:0},
+  // hard black-and-white under a printed halftone
+  'cartoon':{filter:'grayscale(1) contrast(1.85) brightness(1.10)',
+             wash:null, dots:true, stars:false,ink:'#ffffff',accent:'#ffffff',glow:'#ffffff',vig:0.28},
+  // the arcade's neon: hue-rotate 95deg is what turns every cabinet that electric green
+  'neon':   {filter:'hue-rotate(95deg) saturate(2.3) brightness(1.12) contrast(1.18)',
+             wash:'rgba(0,70,36,0.20)', dots:false,stars:false,ink:'#b9ffd6',accent:'#28ff82',glow:'#28ff82',vig:0.34},
+  // golden hour: bright and molten, not hazy
+  'sunset': {filter:'sepia(0.5) saturate(1.9) brightness(1.22) hue-rotate(-8deg) contrast(1.20)',
+             wash:'rgba(255,140,20,0.14)', dots:false,stars:false,ink:'#fff3dc',accent:'#ffc83c',glow:'#ffd24a',vig:0.30},
+  // deep space purple with the starfield reading clearly on top
+  'galaxy': {filter:'hue-rotate(230deg) saturate(1.7) brightness(0.86) contrast(1.30)',
+             wash:'rgba(16,4,64,0.34)', dots:false,stars:true, ink:'#e7e2ff',accent:'#b892ff',glow:'#b892ff',vig:0.40}
 };
 const T=LOOK[THEME]||LOOK['default'];
 const COMIC=(THEME==='cartoon');
@@ -545,14 +547,18 @@ function benDay(){
 
 // ─── drawing ──────────────────────────────────────────────────────────────
 // Markers are drawn full colour on top of the themed scene, same rule everywhere.
-function drawMarker(img,cx,cy,h,rot,alpha){
+function drawMarker(img,cx,cy,h,rot,alpha,hot){
   if(!ready(img)) return;
-  const w=h*(img.naturalWidth/img.naturalHeight);
+  const w=h*((img.naturalWidth||img.width)/(img.naturalHeight||img.height));
   ctx.save();
   if(alpha!==undefined) ctx.globalAlpha=alpha;
   ctx.translate(cx,cy);
   if(rot) ctx.rotate(rot);
-  if(T.glow){ ctx.shadowColor=T.glow; ctx.shadowBlur=h*0.55; }
+  if(T.glow){
+    // the live marker burns brighter than the rack — two passes so it really lifts
+    ctx.shadowColor=T.glow; ctx.shadowBlur=h*(hot?0.95:0.45);
+    if(hot){ ctx.drawImage(img,-w/2,-h/2,w,h); ctx.shadowBlur=h*0.55; }
+  }
   ctx.drawImage(img,-w/2,-h/2,w,h);
   ctx.restore();
 }
@@ -591,7 +597,7 @@ function drawBall(){
   // shadow grounds it on the lane
   markerShadow(q,h,ball.rot);
   // rolling marker lies on its side, spinning
-  drawMarker(MK[ball.col],q.x,q.y-h*0.06,h*0.86,ball.rot+Math.sin(ball.wob)*0.10);
+  drawMarker(MK[ball.col],q.x,q.y-h*0.06,h*0.86,ball.rot+Math.sin(ball.wob)*0.10,undefined,true);
 }
 
 // the ten lights in the ball return = your ten frames, blue always in the last
@@ -726,7 +732,7 @@ function drawAimMarker(){
   const q=proj(aimX,0.012);
   const h=AH*0.085*q.s*1.75;
   markerShadow(q,h,ORI().rot);
-  drawMarker(MK[queue[frame]],q.x,q.y-h*0.06,h*0.86,ORI().rot);
+  drawMarker(MK[queue[frame]],q.x,q.y-h*0.06,h*0.86,ORI().rot,undefined,true);
 }
 function drawPrompt(){
   if(phase!=='aim'||gameOver) return;
@@ -759,9 +765,7 @@ function overlay(){
   if(T.stars){ ctx.save(); ctx.globalAlpha=0.95; ctx.globalCompositeOperation='screen';
     ctx.drawImage(starfield(Math.round(CW),Math.round(CH)),0,0); ctx.restore(); }
   if(T.wash){ ctx.save(); ctx.globalCompositeOperation='multiply';
-    ctx.fillStyle=T.wash; ctx.fillRect(0,0,CW,CH); ctx.restore();
-    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.globalAlpha=0.30;
-    ctx.fillStyle=T.accent; ctx.fillRect(0,0,CW,CH); ctx.restore(); }
+    ctx.fillStyle=T.wash; ctx.fillRect(0,0,CW,CH); ctx.restore(); }
   if(T.dots){ ctx.save(); ctx.fillStyle=benDay(); ctx.fillRect(0,0,CW,CH); ctx.restore(); }
   if(T.vig){                                        // pull the corners down into the mood
     const g=ctx.createRadialGradient(CW*0.5,CH*0.48,Math.min(CW,CH)*0.20,
