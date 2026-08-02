@@ -203,7 +203,7 @@
     .cab-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px 3%; width:100%; max-width:430px; padding:6px; box-sizing:border-box; justify-items:center; align-items:start; }
     .cab-card { width:100%; max-width:132px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .cab-card:active { transform:scale(0.96); }
-    .cab-card img { width:100%; height:auto; max-height:168px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
+    .cab-card img { width:100%; height:168px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
     .cab-soon { width:100%; aspect-ratio:150/230; max-height:168px; border:2px dashed #26263a; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:36px; color:#33334a; background:rgba(255,255,255,0.015); box-sizing:border-box; }
     .cab-card .cab-label { font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:bold; letter-spacing:1px; color:#fff; text-align:center; line-height:1.2; }
     .cab-card img { position:relative; border-radius:18px; }
@@ -687,7 +687,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v365</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v367</div>
 
 <canvas id="game"></canvas>
 
@@ -4744,15 +4744,15 @@ function showArcadeMenu(){
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
 function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showCharSelect(); }
-function launchBowling(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("bowlingScreen"); s.style.display="block"; var f=document.getElementById("bowlingFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","bowling.html?v=365&theme="+encodeURIComponent(_t)); arcadeGame="bowling"; try{ haptic(10); }catch(e){} }
+function launchBowling(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("bowlingScreen"); s.style.display="block"; var f=document.getElementById("bowlingFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","bowling.html?v=367&theme="+encodeURIComponent(_t)); arcadeGame="bowling"; try{ haptic(10); }catch(e){} }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=365&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=367&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=365&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=367&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=365&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=367&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4763,9 +4763,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=365&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=367&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=365&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=367&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -4963,7 +4963,7 @@ function showPlatformer(game){
   arcadePaused=false; var _pv=document.getElementById("arcadePause"); if(_pv) _pv.style.display="none";
   if(arcadeGame==="dream") resetDeep(); else if(!nav) resetPlatformer();
   pfActive=true;
-  if(!pfRAF) pfRAF=requestAnimationFrame(pfLoop);
+  if(!pfRAF){ pfResetStepClock(); pfRAF=requestAnimationFrame(pfLoop); }
 }
 function showLevelSelect(){ arcadeGame="levelselect"; lsSel=Math.min(dmProgress,DL_AREAS.length-1); showPlatformer("levelselect"); }
 function pfMapBack(){
@@ -5340,7 +5340,16 @@ function pfGenPath(){
     pfPipes=pfPipes.filter(function(p){ return (p.x+p.w) > pfCamX-_bx; });
   }
 }
+// One step per animation frame means a 120Hz screen runs the game at double speed.
+// Gate it to 60 steps a second so the feel is identical on every device — all the
+// existing physics tuning is untouched, the extra frames are simply skipped.
+var pfNextStep=0;
+const PF_STEP_MS=1000/60;
 function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
+  var _now=performance.now();
+  if(_now<pfNextStep){ pfRAF=requestAnimationFrame(pfLoop); return; }
+  // if the tab was backgrounded or a frame ran long, resync instead of sprinting to catch up
+  pfNextStep = (_now-pfNextStep>PF_STEP_MS*4) ? _now+PF_STEP_MS : pfNextStep+PF_STEP_MS;
   if(arcadeGame==="dream"){ updateDeep(); drawDeep(); }
   else if(arcadeGame==="charselect"){ updateCharSelect(); drawCharSelect(); }
   else if(arcadeGame==="jumpmenu"){ updateJumpMenu(); drawJumpMenu(); }
@@ -5349,6 +5358,7 @@ function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   else if(arcadeGame==="fusepick"){ updateFusePick(); drawFusePick(); }
   else { updatePlatformer(); drawPlatformer(); }
   pfRAF=requestAnimationFrame(pfLoop); }
+function pfResetStepClock(){ pfNextStep=performance.now(); }
 function pfGameOver(){
   pfState="over";
   if(pfScore>pfBest){ pfBest=pfScore; pfBestTable()[pfMode]=pfScore; try{localStorage.setItem(pfBestKey(pfMode,pfClass()),pfBest);}catch(e){} }
@@ -5513,7 +5523,7 @@ const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing le
 // ── playable characters ──────────────────────────────────────────────────
 // Qu33ph has hand-drawn left AND right art. The other three only have right-facing
 // art, so they get mirrored on the canvas when facing left.
-var CHAR_V="365";   // bump when character art is replaced, so browsers drop the cached copy
+var CHAR_V="367";   // bump when character art is replaced, so browsers drop the cached copy
 function CIMG(src){ var i=new Image(); i.src=src+"?v="+CHAR_V; return i; }
 var PF_CHARS=[
   { id:"qu33ph", name:"QU33PH",     cls:"human", speed:1,   jump:1,     grav:1,    airJumps:0, note:"",
@@ -6570,7 +6580,7 @@ function openFusePickCab(free){
   var mb=document.getElementById("pfMapBackBtn"); if(mb) mb.style.display="inline-flex";
   var pb=document.getElementById("arcadePauseBtn"); if(pb) pb.style.display="none";
   var bb=document.getElementById("dlBinderBtn"); if(bb) bb.style.display="none";
-  pfActive=true; if(!pfRAF) pfRAF=requestAnimationFrame(pfLoop);
+  pfActive=true; if(!pfRAF){ pfResetStepClock(); pfRAF=requestAnimationFrame(pfLoop); }
 }
 function fpIsSel(c){ for(var k=0;k<dmFuseSel.length;k++){ if(dmFuseSel[k].t===c.t && dmFuseSel[k].i===c.i) return true; } return false; }
 function fpNav(dir){ if(!fpCand.length) return; fpSel+=dir; if(fpSel<0)fpSel=0; if(fpSel>fpCand.length-1)fpSel=fpCand.length-1; try{haptic(8);}catch(e){} }

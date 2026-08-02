@@ -486,7 +486,7 @@ function drawMarker(img,cx,cy,h,rot,alpha){
 }
 
 function drawPins(){
-  const order=pins.slice().sort((a,b)=>a.Y-b.Y);   // far pins behind near ones
+  const order=pins.slice().sort((a,b)=>b.Y-a.Y);   // furthest first, so near pins paint on top
   for(const p of order){
     if(p.gone) continue;
     const v=toV(p.Y);
@@ -660,7 +660,7 @@ function frameLoop(now){
   step(dt);
   ctx.clearRect(0,0,CW,CH);
   overlay();                 // themed wash sits under the markers
-  drawChair(); drawPins(); drawBall(); drawMegaFly(); drawAimMarker(); drawQueue(); drawMegaCard(); drawOriBtn();
+  drawPins(); drawBall(); drawChair(); drawMegaFly(); drawAimMarker(); drawQueue(); drawMegaCard(); drawOriBtn();
   drawHUD(); drawPrompt(); drawMsg(); drawOver();
   requestAnimationFrame(frameLoop);
 }
