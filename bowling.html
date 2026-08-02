@@ -42,11 +42,19 @@ const BOX_L=0.235, BOX_R=0.735, BOX_Y=0.2411, BOX_W=0.072;
 // ─── themes: same five looks, same rules as every other cabinet ───────────
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 const LOOK={
-  'default':{filter:'',                                                            wash:null,                     dots:false,stars:false,ink:'#ffffff',accent:'#ffd54a',glow:null},
-  'cartoon':{filter:'grayscale(1) contrast(1.45) brightness(1.05)',                 wash:null,                     dots:true, stars:false,ink:'#ffffff',accent:'#ffffff',glow:null},
-  'neon':   {filter:'saturate(1.7) contrast(1.2) brightness(0.92) hue-rotate(-12deg)',wash:'rgba(80,0,140,0.28)',   dots:false,stars:false,ink:'#8ffcff',accent:'#ff3df0',glow:'#ff3df0'},
-  'sunset': {filter:'sepia(0.5) saturate(1.35) hue-rotate(-18deg) brightness(1.06)', wash:'rgba(255,138,40,0.18)', dots:false,stars:false,ink:'#fff0d6',accent:'#ffb347',glow:null},
-  'galaxy': {filter:'saturate(0.85) brightness(0.72) hue-rotate(215deg) contrast(1.12)',wash:'rgba(20,10,60,0.32)',dots:false,stars:true, ink:'#e7e2ff',accent:'#b892ff',glow:'#b892ff'}
+  'default':{filter:'',                                wash:null, dots:false,stars:false,ink:'#ffffff',accent:'#ffd54a',glow:null,  vig:0},
+  // hard black-and-white with a proper printed halftone over the top
+  'cartoon':{filter:'grayscale(1) contrast(2.05) brightness(1.12)',
+             wash:null, dots:true, stars:false,ink:'#ffffff',accent:'#ffffff',glow:'#ffffff',vig:0.34},
+  // pushed hot: everything bleeds magenta and cyan
+  'neon':   {filter:'saturate(2.6) contrast(1.55) brightness(0.78) hue-rotate(-22deg)',
+             wash:'rgba(120,0,210,0.46)', dots:false,stars:false,ink:'#8ffcff',accent:'#ff3df0',glow:'#ff3df0',vig:0.46},
+  // deep golden hour, sun sitting right on the horizon
+  'sunset': {filter:'sepia(0.85) saturate(1.85) hue-rotate(-24deg) brightness(1.12) contrast(1.15)',
+             wash:'rgba(255,108,18,0.34)', dots:false,stars:false,ink:'#fff0d6',accent:'#ffb347',glow:'#ff9a2e',vig:0.38},
+  // far darker and colder, so the starfield actually reads
+  'galaxy': {filter:'saturate(0.62) brightness(0.50) hue-rotate(222deg) contrast(1.35)',
+             wash:'rgba(26,8,86,0.52)', dots:false,stars:true, ink:'#e7e2ff',accent:'#b892ff',glow:'#b892ff',vig:0.52}
 };
 const T=LOOK[THEME]||LOOK['default'];
 const COMIC=(THEME==='cartoon');
@@ -139,7 +147,25 @@ function toY(v){ return v*LANE_LEN; }
 function toV(Y){ return Y/LANE_LEN; }
 
 // ─── pins: ten markers standing on their caps ─────────────────────────────
-const PIN_R=0.078, BALL_R=0.095;
+// A pin stands on its cap, so its footprint really is a small circle. The marker you
+// roll lies flat, so it's a long capsule — and which way it points depends on the
+// orientation you picked, which is why FLAT sweeps wide and VERT slips through gaps.
+const PIN_R=0.062, BALL_R=0.058;          // BALL_R is the capsule's half-WIDTH
+const BALL_HL=0.165;                      // capsule half-length
+// screen rotation 0 = pointing down the lane, PI/2 = lying across it
+function ballAxis(rot){ return { x:Math.sin(rot), y:Math.cos(rot) }; }
+// nearest point on the marker's length to a circle, then a normal circle test
+function capsuleHit(ball, cx, cy, r){
+  const a=ballAxis(ball.rot);
+  let t=(cx-ball.X)*a.x+(cy-ball.Y)*a.y;
+  t=Math.max(-BALL_HL,Math.min(BALL_HL,t));
+  const px=ball.X+a.x*t, py=ball.Y+a.y*t;
+  const dx=cx-px, dy=cy-py, d=Math.hypot(dx,dy);
+  if(d>=r+BALL_R||d<=0.0001) return null;
+  return { nx:dx/d, ny:dy/d, d:d };
+}
+// how far the marker reaches sideways, for the gutter test
+function ballHalfWidth(rot){ return Math.abs(Math.sin(rot))*BALL_HL+BALL_R; }
 const PIN_D=0.215, ROW_D=0.325, HEAD_Y=5.95;
 const PIN_LAYOUT=[
   [0,0],
@@ -148,7 +174,7 @@ const PIN_LAYOUT=[
   [-3*PIN_D,3],[-PIN_D,3],[PIN_D,3],[3*PIN_D,3]
 ];
 // head pin is blue; the rest alternate so the triangle reads clearly
-const PIN_COL=['blue','red','green','green','red','green','red','green','red','green'];
+const PIN_COL=['blue','red','green','red','green','red','green','red','green','red'];
 
 let pins=[];
 function rackPins(keep){
@@ -172,9 +198,8 @@ const MEGA_CHANCE=0.42;                  // otherwise the chair just barrels int
 let standingAtFrameStart=10;
 
 function newGame(){
-  queue=[];
-  for(let i=0;i<9;i++) queue.push(Math.random()<0.5?'red':'green');
-  queue.push('blue');                       // blue marker always thrown last
+  // always red, green, red, green ... and blue last. Never shuffled, never theme-dependent.
+  queue=['red','green','red','green','red','green','red','green','red','blue'];
   frame=0; roll=0; rolls=[]; gameOver=false; aimX=0;
   megaBox=Math.random()<0.5?'left':'right'; megaWon=false; megaFly=null; chair=null;
   rackPins(null); ball=null; phase='aim'; msg=null;
@@ -316,14 +341,14 @@ function step(dt){
     ball.vy -= ball.vy*0.13*dt;                       // lane friction
     ball.X  += ball.vx*dt;  ball.Y += ball.vy*dt;
     ball.wob+= ball.vy*dt*7;                          // rolls on its axis, angle stays put
-    if(Math.abs(ball.X)>1.0-BALL_R*0.5){              // PEEF — in the gutter, roll is dead
-      ball.X=Math.sign(ball.X)*(1.0-BALL_R*0.5);
+    const hw=ballHalfWidth(ball.rot);
+    if(Math.abs(ball.X)>1.0-hw){                      // PEEF — in the gutter, roll is dead
+      ball.X=Math.sign(ball.X)*(1.0-hw);
       ball.vx=0; ball.vy=0; ball.spin=0; ball.gutter=true;
       ball.live=false; settleT=0;                     // no bouncing out and carrying on
     }
     if(chair && !chair.shoved){
-      const cdx=chair.X-ball.X, cdy=chair.Y-ball.Y, cd=Math.hypot(cdx,cdy);
-      if(cd<CHAIR_R+BALL_R){
+      if(capsuleHit(ball, chair.X, chair.Y, CHAIR_R)){
         if(Math.random()<MEGA_CHANCE){
           // the marker rides up off the chair and goes for the card
           const q=proj(ball.X,toV(ball.Y));
@@ -338,9 +363,9 @@ function step(dt){
     }
     for(const p of pins){
       if(p.gone) continue;
-      const ddx=p.X-ball.X, ddy=p.Y-ball.Y, d=Math.hypot(ddx,ddy);
-      if(d<PIN_R+BALL_R && d>0.0001){
-        const nx=ddx/d, ny=ddy/d;
+      const c=capsuleHit(ball, p.X, p.Y, PIN_R);
+      if(c){
+        const nx=c.nx, ny=c.ny;
         const hit=Math.max(0.6, (ball.vy*0.55+Math.abs(ball.vx)*0.4)*(ball.carry||1));
         p.vx+=nx*hit; p.vy+=ny*hit;
         p.down=true; p.rot=(Math.random()-0.5)*0.5; p.vrot=(Math.random()-0.5)*9-Math.sign(nx)*3;
@@ -512,9 +537,9 @@ let dotPat=null;
 function benDay(){
   if(dotPat) return dotPat;
   const d=document.createElement('canvas'); d.width=d.height=6;
-  const x=d.getContext('2d'); x.fillStyle='rgba(0,0,0,0.28)';
-  x.beginPath(); x.arc(1.6,1.6,1.15,0,7); x.fill();
-  x.beginPath(); x.arc(4.6,4.6,1.15,0,7); x.fill();
+  const x=d.getContext('2d'); x.fillStyle='rgba(0,0,0,0.46)';
+  x.beginPath(); x.arc(1.6,1.6,1.45,0,7); x.fill();
+  x.beginPath(); x.arc(4.6,4.6,1.45,0,7); x.fill();
   dotPat=ctx.createPattern(d,'repeat'); return dotPat;
 }
 
@@ -527,7 +552,7 @@ function drawMarker(img,cx,cy,h,rot,alpha){
   if(alpha!==undefined) ctx.globalAlpha=alpha;
   ctx.translate(cx,cy);
   if(rot) ctx.rotate(rot);
-  if(T.glow){ ctx.shadowColor=T.glow; ctx.shadowBlur=h*0.32; }
+  if(T.glow){ ctx.shadowColor=T.glow; ctx.shadowBlur=h*0.55; }
   ctx.drawImage(img,-w/2,-h/2,w,h);
   ctx.restore();
 }
@@ -550,6 +575,13 @@ function drawPins(){
   }
 }
 
+// an oriented shadow matching the capsule, so what you see is what collides
+function markerShadow(q,h,rot){
+  ctx.save(); ctx.globalAlpha=0.38; ctx.fillStyle='#000';
+  ctx.translate(q.x,q.y+h*0.09); ctx.rotate(-rot); ctx.scale(1,0.34);
+  ctx.beginPath(); ctx.ellipse(0,0,h*0.14,h*0.46,0,0,7); ctx.fill();
+  ctx.restore();
+}
 function drawBall(){
   if(!ball) return;
   const v=toV(ball.Y);
@@ -557,8 +589,7 @@ function drawBall(){
   const q=proj(ball.X,Math.max(0,Math.min(v,1.15)));
   const h=AH*0.085*q.s*1.75;
   // shadow grounds it on the lane
-  ctx.save(); ctx.globalAlpha=0.34; ctx.fillStyle='#000';
-  ctx.beginPath(); ctx.ellipse(q.x,q.y+h*0.10,h*0.34,h*0.12,0,0,7); ctx.fill(); ctx.restore();
+  markerShadow(q,h,ball.rot);
   // rolling marker lies on its side, spinning
   drawMarker(MK[ball.col],q.x,q.y-h*0.06,h*0.86,ball.rot+Math.sin(ball.wob)*0.10);
 }
@@ -694,8 +725,7 @@ function drawAimMarker(){
   if(phase!=='aim'||gameOver) return;
   const q=proj(aimX,0.012);
   const h=AH*0.085*q.s*1.75;
-  ctx.save(); ctx.globalAlpha=0.34; ctx.fillStyle='#000';
-  ctx.beginPath(); ctx.ellipse(q.x,q.y+h*0.10,h*0.34,h*0.12,0,0,7); ctx.fill(); ctx.restore();
+  markerShadow(q,h,ORI().rot);
   drawMarker(MK[queue[frame]],q.x,q.y-h*0.06,h*0.86,ORI().rot);
 }
 function drawPrompt(){
@@ -726,10 +756,19 @@ cv.addEventListener('click',function(){ if(gameOver) newGame(); });
 cv.addEventListener('touchend',function(){ if(gameOver) newGame(); },{passive:true});
 
 function overlay(){
-  if(T.stars){ ctx.save(); ctx.globalAlpha=0.55; ctx.globalCompositeOperation='screen';
+  if(T.stars){ ctx.save(); ctx.globalAlpha=0.95; ctx.globalCompositeOperation='screen';
     ctx.drawImage(starfield(Math.round(CW),Math.round(CH)),0,0); ctx.restore(); }
-  if(T.wash){ ctx.save(); ctx.fillStyle=T.wash; ctx.fillRect(0,0,CW,CH); ctx.restore(); }
+  if(T.wash){ ctx.save(); ctx.globalCompositeOperation='multiply';
+    ctx.fillStyle=T.wash; ctx.fillRect(0,0,CW,CH); ctx.restore();
+    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.globalAlpha=0.30;
+    ctx.fillStyle=T.accent; ctx.fillRect(0,0,CW,CH); ctx.restore(); }
   if(T.dots){ ctx.save(); ctx.fillStyle=benDay(); ctx.fillRect(0,0,CW,CH); ctx.restore(); }
+  if(T.vig){                                        // pull the corners down into the mood
+    const g=ctx.createRadialGradient(CW*0.5,CH*0.48,Math.min(CW,CH)*0.20,
+                                     CW*0.5,CH*0.48,Math.max(CW,CH)*0.72);
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,'+T.vig+')');
+    ctx.save(); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH); ctx.restore();
+  }
 }
 
 // ─── loop ─────────────────────────────────────────────────────────────────
