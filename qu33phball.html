@@ -239,6 +239,7 @@ loadBest();   // each lane keeps its own record, since they don't score alike
 function qx(k){ return QX0 + ((k-1)/(QSLOTS-1))*QSPAN; }   // marker k (1..8) owns a fixed slot
 function colOf(i){ return COLORS[i%3]; }                    // 0 red, 1 green, 2 blue, 3 red ...
 
+let lastHitChair=null, hop=null;      // declared before reset() runs, not after
 function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; hop=null; }
 reset();
 
@@ -322,7 +323,6 @@ function roll(up, dx){
   state='rolling';
 }
 
-let lastHitChair=null, hop=null;
 function scoreLanding(lx,ly){
   const f=F();
   // GAUNTLET scores by rectangle, in listed order — holes first, apron last
