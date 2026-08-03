@@ -193,6 +193,8 @@ function launch(pw, aim){
   markers.push(m); live=m; idx++; camTarget=1;
 }
 // how far along it got when it left the table decides what it costs you
+const V_WALL=1.0;            // the back wall of the far table
+const WALL_BOUNCE=0.42;      // how much pace survives the rebound
 function fellOff(m, byBlue){
   m.off=true; m.alive=false;
   let d=0;
@@ -300,7 +302,19 @@ function step(dt){
         if(Math.abs(m.dv)>1.1) popCap(m);
       }
     }
-    if(m.u<-0.02||m.u>1.02||m.v>1.0){ fellOff(m,!!m.hitByBlue); if(m===live){ live=null; camTarget=0; } }
+    // The far end is a wall, not a drop. It bounces you back with most of the pace
+    // scrubbed off, so a long throw doesn't cost you anything on its own.
+    if(m.v>V_WALL-RAD){
+      m.v=V_WALL-RAD;
+      if(m.dv>0){
+        m.dv=-m.dv*WALL_BOUNCE;
+        m.spin+=(Math.random()-0.5)*3 - m.du*1.5;
+        if(Math.abs(m.dv)>1.35) popCap(m);     // a hard enough smack can still knock the cap
+        addShake(4); haptic(18);
+      }
+    }
+    // PEEF is only ever the sides — a marker actually leaving the counter
+    if(m.u<-0.02||m.u>1.02){ fellOff(m,!!m.hitByBlue); if(m===live){ live=null; camTarget=0; } }
   }
   // marker on marker
   for(let i=0;i<markers.length;i++) for(let j=i+1;j<markers.length;j++){
