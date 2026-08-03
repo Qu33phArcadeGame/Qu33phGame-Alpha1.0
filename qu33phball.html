@@ -40,7 +40,7 @@ const FIELDS=[
  // sits off to one side in each shot, the board centre (cx) is not 0.5.
  { id:'classic', name:'CLASSIC', art:'skeefield.jpg?v=384', PH:178,
    start:{x:0.490,y:0.860}, queueY:0.775, dur:46, shrink:0.55,
-   hud:{x:[0.400,0.527,0.654], y:0.1920},   // BALLS / SCORE / HIGH SCORE windows
+   hud:{x:[0.400,0.527,0.654], y:0.1920}, topY:0.218,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.523, aimSpan:0.175, aimScat:0.95,
    baseY:0.505, powY:0.265, jitterX:0.059, jitterY:0.062,
    scat:function(p){ return 0.55+Math.abs(p-0.70)*1.5; }, overFrom:2, overK:0,
@@ -61,7 +61,7 @@ const FIELDS=[
 
  { id:'advanced', name:'ADVANCED', art:'skeefield2.jpg?v=384', PH:178,
    start:{x:0.490,y:0.880}, queueY:0.790, dur:48, shrink:0.58,
-   hud:{x:[0.310,0.440,0.560], y:0.2007},   // this machine sits further left in frame
+   hud:{x:[0.310,0.440,0.560], y:0.2007}, topY:0.232,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.443, aimSpan:0.256, aimScat:1.15,
    baseY:0.560, powY:0.320, jitterX:0.043, jitterY:0.048,
    scat:function(p){ return 0.55+Math.abs(p-0.74)*1.2+Math.max(0,p-0.80)*4.5; },
@@ -71,20 +71,20 @@ const FIELDS=[
      {x0:0.247,x1:0.338,y0:0.462,y1:0.575,p:75,chair:1,tox:0.2245,toy:0.399},
      {x0:0.564,x1:0.658,y0:0.462,y1:0.575,p:75,chair:1,tox:0.6715,toy:0.399},
      // back row
-     {x0:0.270,x1:0.313,y0:0.268,y1:0.316,p:50 },
+     {x0:0.252,x1:0.318,y0:0.256,y1:0.314,p:50 },
      {x0:0.322,x1:0.393,y0:0.265,y1:0.313,p:100},
      {x0:0.431,x1:0.455,y0:0.264,y1:0.292,p:333},
      {x0:0.498,x1:0.566,y0:0.265,y1:0.313,p:100},
-     {x0:0.592,x1:0.633,y0:0.268,y1:0.316,p:50 },
+     {x0:0.578,x1:0.645,y0:0.256,y1:0.314,p:50 },
      // mid row
-     {x0:0.285,x1:0.354,y0:0.346,y1:0.386,p:30 },
-     {x0:0.411,x1:0.480,y0:0.346,y1:0.386,p:40 },
-     {x0:0.538,x1:0.603,y0:0.346,y1:0.386,p:30 },
+     {x0:0.284,x1:0.353,y0:0.327,y1:0.386,p:30 },
+     {x0:0.414,x1:0.478,y0:0.327,y1:0.386,p:40 },
+     {x0:0.537,x1:0.611,y0:0.327,y1:0.386,p:30 },
      // side pockets
      {x0:0.200,x1:0.249,y0:0.356,y1:0.442,p:75 },
      {x0:0.644,x1:0.699,y0:0.356,y1:0.442,p:75 },
      // apron
-     {x0:0.255,x1:0.630,y0:0.320,y1:0.470,p:10 }
+     {x0:0.255,x1:0.630,y0:0.318,y1:0.470,p:10 }
    ],
    bestKey:'qu33phSkeeballBest2' }
 ];
@@ -239,7 +239,7 @@ loadBest();   // each lane keeps its own record, since they don't score alike
 function qx(k){ return QX0 + ((k-1)/(QSLOTS-1))*QSPAN; }   // marker k (1..8) owns a fixed slot
 function colOf(i){ return COLORS[i%3]; }                    // 0 red, 1 green, 2 blue, 3 red ...
 
-function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; }
+function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; hop=null; }
 reset();
 
 // ── lane switch: only between rolls, and it restarts the game, since the two
@@ -311,14 +311,18 @@ function roll(up, dx){
   let   landY=f.baseY - power*f.powY + (Math.random()-0.5)*f.jitterY*scat;
   // long lane only: bury it and the marker climbs the backboard and comes back empty
   // clamped, so even a full-power mash still gets through occasionally
+  // bury it and the marker climbs the backboard — but it stops at the top border rather
+  // than sailing off into the marquee
   const over=(power>f.overFrom && Math.random() < Math.min(0.85,(power-f.overFrom)*(f.overK||7)));
-  if(over) landY=-0.05;
+  const top=(f.topY!==undefined?f.topY:0.20);
+  if(over) landY=top+0.006;
+  landY=Math.max(top, landY);                    // nothing ever lands above the board
   ball={ x0:f.start.x, y0:f.start.y, x1:landX, y1:landY, t:0, dur:f.dur,
          color:colOf(curIdx), spin:0, scored:false, over:over };
   state='rolling';
 }
 
-let lastHitChair=null;
+let lastHitChair=null, hop=null;
 function scoreLanding(lx,ly){
   const f=F();
   // GAUNTLET scores by rectangle, in listed order — holes first, apron last
@@ -348,14 +352,21 @@ function step(){
       const pts=scoreLanding(ball.x1,ball.y1); score+=pts; resolved++;
       // a chair catch reads as its own thing, and the popup shows up at the pocket
       const chair=lastHitChair;
-      popups.push({x:chair?chair.x:ball.x1, y:chair?chair.y:ball.y1,
-                   txt:chair?'CHAIR +75':(pts>0?('+'+pts):'MISS'), life:chair?66:52, pts:pts});
-      if(lastHitChair){ ball.x1=lastHitChair.x; ball.y1=lastHitChair.y; }   // bounced up into the 75
+      // the popup waits for the hop to land, so it reads as cause and effect
+      popups.push({x:chair?chair.x:ball.x1, y:chair?chair.y:ball.y1, delay:chair?26:0,
+                   txt:chair?'CHAIR +75':(pts>0?('+'+pts):'MISS'), life:chair?72:52, pts:pts});
+      if(lastHitChair){                                  // launch it, don't teleport it
+        hop={ x0:ball.x1, y0:ball.y1, x1:lastHitChair.x, y1:lastHitChair.y, t:0, dur:26 };
+      }
       state='landed'; landT=0;                          // score/miss shows now, marker still visible
     }
   } else if(state==='landed'){
     landT++;
-    if(landT>=LAND_HOLD){
+    if(hop){                                            // the chair kick, mid-flight
+      hop.t++;
+      if(hop.t>=hop.dur){ ball.x1=hop.x1; ball.y1=hop.y1; hop=null; }
+    }
+    if(landT>=LAND_HOLD && !hop){
       ball=null;
       if(resolved>=TOTAL){
         state='over';
@@ -440,10 +451,19 @@ function draw(){
 
   // rolling marker — stays on screen the whole way up the lane and rests at the hole
   if((state==='rolling'||state==='landed') && ball){
-    const t=ease(Math.min(1, ball.t/ball.dur));
-    const cx=fx(ball.x0+(ball.x1-ball.x0)*t);
-    const cy=fy(ball.y0+(ball.y1-ball.y0)*t);
-    const sc=1.0 - t*(F().shrink||0.45);            // shrinks with distance up the lane
+    let t=ease(Math.min(1, ball.t/ball.dur));
+    let cx=fx(ball.x0+(ball.x1-ball.x0)*t);
+    let cy=fy(ball.y0+(ball.y1-ball.y0)*t);
+    let sc=1.0 - t*(F().shrink||0.45);              // shrinks with distance up the lane
+    if(hop){
+      // the chair launches it: a real arc up into the pocket, same feel as the mega
+      // jump in the main game rather than a teleport
+      const k=Math.min(1, hop.t/hop.dur), e=k*k*(3-2*k);
+      cx=fx(hop.x0+(hop.x1-hop.x0)*e);
+      cy=fy(hop.y0+(hop.y1-hop.y0)*e) - Math.sin(k*Math.PI)*CH*0.085;
+      sc=(1.0-(F().shrink||0.45))*(1+Math.sin(k*Math.PI)*0.35);   // pops bigger at the apex
+      ball.spin+=0.55;
+    }
     let al=1;
     if(state==='landed'){ const k=landT/LAND_HOLD; al = k<0.6 ? 1 : 1-(k-0.6)/0.4; }  // sinks in at the end
     ctx.globalAlpha=Math.max(0,al);
@@ -453,7 +473,7 @@ function draw(){
   }
 
   // score popups
-  for(const p of popups){ ctx.globalAlpha=Math.max(0,p.life/40);
+  for(const p of popups){ if(p.delay>0){ p.delay--; continue; } ctx.globalAlpha=Math.max(0,p.life/40);
     ctx.fillStyle=p.pts>=100?'#ffd24a':p.pts>=30?'#7bff9a':p.pts>0?'#8fd0ff':'#ff7a7a';
     ctx.font='bold '+Math.round(CW*0.055)+'px Helvetica'; ctx.textAlign='center';
     ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=X(0.8); ctx.strokeText(p.txt,fx(p.x),fy(p.y)); ctx.fillText(p.txt,fx(p.x),fy(p.y)); ctx.globalAlpha=1; }
