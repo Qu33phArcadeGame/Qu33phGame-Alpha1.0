@@ -9,26 +9,62 @@
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#000; }
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #stage{ position:relative; }
+  #laneBtn{ position:fixed; left:10px; bottom:14px; z-index:6; padding:7px 12px; border-radius:9px;
+    background:rgba(8,9,16,0.82); border:1px solid rgba(255,255,255,0.34); color:#fff;
+    font-family:Helvetica,Arial,sans-serif; font-size:11px; font-weight:bold; letter-spacing:1px;
+    cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  #laneBtn:disabled{ opacity:0.35; }
   #game{ display:block; }
 
 </style>
 </head>
 <body>
 <div id="wrap"><div id="stage"><canvas id="game"></canvas></div></div>
+<button id="laneBtn"></button>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
-const FIELD=new Image(); FIELD.src='skeefield.png?v=306';
+// Two lanes. CLASSIC is the original board, untouched; LONG is the new one — a
+// longer run with tighter cups and a 333 at the back lip.
+const FIELDS=[
+ { id:'classic', name:'CLASSIC', art:'skeefield.png?v=306', PH:177,
+   start:{x:0.50,y:0.70}, queueY:0.565, dur:38,
+   pullDiv:0.42, aimDiv:0.28, aimSpan:0.20, aimScat:0,
+   baseY:0.42, powY:0.17, jitterX:0.06, jitterY:0.045,
+   scat:function(p){ return 1.05-p*0.35; }, overFrom:2,
+   ring:{cx:0.503,cy:0.325,w20:0,h20:0,w10:0.150,h10:0.058},
+   zones:[ {x:0.345,y:0.262,r:0.040,p:100},{x:0.650,y:0.262,r:0.040,p:100},
+           {x:0.502,y:0.268,r:0.038,p:50 },{x:0.502,y:0.300,r:0.036,p:40 },
+           {x:0.502,y:0.323,r:0.034,p:30 } ], cupTol:0.95, bestKey:'qu33phSkeeballBest' },
+ { id:'long', name:'LONG LANE', art:'skeefield2.png?v=380', PH:232,
+   start:{x:0.50,y:0.83}, queueY:0.700, dur:46,
+   pullDiv:0.46, aimDiv:0.28, aimSpan:0.340, aimScat:0.42,
+   baseY:0.315, powY:0.265, jitterX:0.075, jitterY:0.055,
+   scat:function(p){ return 0.55+Math.abs(p-0.74)*1.9; }, overFrom:0.92,
+   ring:{cx:0.500,cy:0.200,w20:0.230,h20:0.098,w10:0.360,h10:0.156},
+   zones:[ {x:0.175,y:0.108,r:0.030,p:100},{x:0.825,y:0.108,r:0.030,p:100},
+           {x:0.500,y:0.062,r:0.020,p:333},
+           {x:0.310,y:0.183,r:0.032,p:50 },{x:0.690,y:0.183,r:0.032,p:50 },
+           {x:0.500,y:0.166,r:0.033,p:40 },{x:0.500,y:0.246,r:0.035,p:30 } ],
+   cupTol:0.90, bestKey:'qu33phSkeeballBest2' }
+];
+let fieldIdx=0;
+try{ const k=localStorage.getItem('qu33phSkeeField'); if(k==='long') fieldIdx=1; }catch(e){}
+function F(){ return FIELDS[fieldIdx]; }
+const FIELD=new Image();
+function loadField(){ FIELD.src=F().art; }
+loadField();
 const MK={ red:new Image(), green:new Image(), blue:new Image() };
 const CMC=(THEME==='cartoon');
 MK.red.src=CMC?'redC.png':'red.png'; MK.green.src=CMC?'greenC.png':'green.png'; MK.blue.src=CMC?'blueC.png':'blue.png';
 function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 
-const PW=100, PH=177;              // field logical space (matches skeefield aspect 0.563)
+const PW=100;
+function PH(){ return F().PH; }    // each lane has its own length
 let CW=0,CH=0,DPR=1,SC=1;
 function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
-  const ar=PW/PH; let cw=r.width,ch=r.width/ar; if(ch>r.height){ch=r.height;cw=r.height*ar;}
+  const ar=PW/PH(); let cw=r.width,ch=r.width/ar; if(ch>r.height){ch=r.height;cw=r.height*ar;}
   cv.style.width=cw+'px'; cv.style.height=ch+'px';
   const st=document.getElementById('stage'); if(st){ st.style.width=cw+'px'; st.style.height=ch+'px'; }
   CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; sc.width=CW; sc.height=CH; SC=CW/PW; }
@@ -132,20 +168,6 @@ function X(u){ return u*SC; }                 // field-units -> px
 function fx(f){ return f*CW; }                 // field-fraction x -> px
 function fy(f){ return f*CH; }                 // field-fraction y -> px
 
-// high-value inner targets — value + hit radius. The big RED ring (10) and
-// the outer YELLOW ring (miss) are handled by ellipse bands in scoreLanding().
-const ZONES=[
-  {x:0.345,y:0.262,r:0.040,p:100,c:'#b03030'},
-  {x:0.650,y:0.262,r:0.040,p:100,c:'#b03030'},
-  {x:0.502,y:0.268,r:0.038,p:50, c:'#cccccc'},
-  {x:0.502,y:0.300,r:0.036,p:40, c:'#e23b3b'},
-  {x:0.502,y:0.323,r:0.034,p:30, c:'#3a7bff'}
-];
-// ring bands (field-fraction ellipses, measured from the art)
-const RING_CX=0.503, RING_CY=0.325;
-const RED_HW=0.150, RED_HH=0.058;    // inside this -> 10 (the big red circle)
-const ROLL_START={x:0.50,y:0.70};             // where the current marker sits to be flicked
-const QUEUE_Y=0.565;                           // preview markers sit up on the lane
 const QSLOTS=8, QX0=0.325, QSPAN=0.35;         // fixed slots so the row never shuffles
 const COLORS=['red','green','blue'];          // cycle order
 const TOTAL=9, LAND_HOLD=20, FEED_DUR=16;
@@ -153,12 +175,29 @@ const TOTAL=9, LAND_HOLD=20, FEED_DUR=16;
 // curIdx = the marker in play; resolved = how many have finished.
 // The waiting queue is always (QSLOTS - curIdx) long, in every state, so nothing pops in or out.
 let curIdx, resolved, score, best, state, ball, popups, landT, feed;
-try{ best=parseInt(localStorage.getItem('qu33phSkeeballBest')||'0',10)||0; }catch(e){ best=0; }
+function loadBest(){ try{ best=parseInt(localStorage.getItem(F().bestKey)||'0',10)||0; }catch(e){ best=0; } }
+loadBest();   // each lane keeps its own record, since they don't score alike
 function qx(k){ return QX0 + ((k-1)/(QSLOTS-1))*QSPAN; }   // marker k (1..8) owns a fixed slot
 function colOf(i){ return COLORS[i%3]; }                    // 0 red, 1 green, 2 blue, 3 red ...
 
 function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; }
 reset();
+
+// ── lane switch: only between rolls, and it restarts the game, since the two
+//    boards don't score alike and a mixed card would be meaningless ──────────
+const laneBtn=document.getElementById('laneBtn');
+function updLaneBtn(){
+  laneBtn.textContent='LANE \u00b7 '+F().name;
+  laneBtn.disabled=(state!=='ready'&&state!=='over');
+}
+laneBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  if(state!=='ready'&&state!=='over') return;
+  fieldIdx=(fieldIdx+1)%FIELDS.length;
+  try{ localStorage.setItem('qu33phSkeeField',F().id); }catch(e2){}
+  loadField(); loadBest(); reset(); sz(); updLaneBtn();
+});
+updLaneBtn();
 
 // ---- flick input ----
 let dragging=false, dStart=null, dNow=null;
@@ -174,24 +213,33 @@ window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
 });
 
 function roll(up, dx){
-  const power=Math.min(1, up/0.42);                            // 0..1
-  const aim=Math.max(-1,Math.min(1, dx/0.28));                 // -1..1
-  const scat=(1.05-power*0.35);                                 // stronger, cleaner rolls scatter less
-  const landX=0.50 + aim*0.20 + (Math.random()-0.5)*0.06*scat;
-  const landY=0.42 - power*0.17 + (Math.random()-0.5)*0.045*scat;
-  ball={ x0:ROLL_START.x, y0:ROLL_START.y, x1:landX, y1:landY, t:0, dur:38, color:colOf(curIdx), spin:0, scored:false };
+  const f=F();
+  const power=Math.min(1, up/f.pullDiv);
+  const aim=Math.max(-1,Math.min(1, dx/f.aimDiv));
+  // On the long lane scatter is a U on power AND grows with angle, so a hard cross-lane
+  // roll is the least controllable shot there is. The classic lane keeps its old curve.
+  const scat=f.scat(power)+Math.abs(aim)*f.aimScat;
+  const landX=0.50 + aim*f.aimSpan + (Math.random()-0.5)*f.jitterX*scat;
+  let   landY=f.baseY - power*f.powY + (Math.random()-0.5)*f.jitterY*scat;
+  // long lane only: bury it and the marker climbs the backboard and comes back empty
+  const over=(power>f.overFrom && Math.random() < (power-f.overFrom)*7);
+  if(over) landY=-0.05;
+  ball={ x0:f.start.x, y0:f.start.y, x1:landX, y1:landY, t:0, dur:f.dur,
+         color:colOf(curIdx), spin:0, scored:false, over:over };
   state='rolling';
 }
 
 function scoreLanding(lx,ly){
-  // 1) nearest high-value inner target
-  let best=null,bd=1e9;
-  for(const z of ZONES){ const d=Math.hypot(lx-z.x,ly-z.y); if(d<bd){ bd=d; best=z; } }
-  if(best && bd < best.r*0.95) return best.p;
-  // 2) anywhere inside the big red ring -> 10
-  const dx=(lx-RING_CX)/RED_HW, dy=(ly-RING_CY)/RED_HH;
+  const f=F(), R=f.ring;
+  // 1) a cup, if the marker actually dropped in one
+  let b2=null,bd=1e9;
+  for(const z of f.zones){ const d=Math.hypot(lx-z.x,ly-z.y); if(d<bd){ bd=d; b2=z; } }
+  if(b2 && bd < b2.r*f.cupTol) return b2.p;
+  // 2) inner band (long lane only) -> 20
+  if(R.w20>0){ const dx=(lx-R.cx)/R.w20, dy=(ly-R.cy)/R.h20; if(dx*dx+dy*dy<=1) return 20; }
+  // 3) outer band -> 10
+  const dx=(lx-R.cx)/R.w10, dy=(ly-R.cy)/R.h10;
   if(dx*dx+dy*dy <= 1) return 10;
-  // 3) yellow ring / off the target -> miss
   return 0;
 }
 
@@ -210,7 +258,7 @@ function step(){
       ball=null;
       if(resolved>=TOTAL){
         state='over';
-        if(score>best){ best=score; try{ localStorage.setItem('qu33phSkeeballBest',best); }catch(e){} }
+        if(score>best){ best=score; try{ localStorage.setItem(F().bestKey,best); }catch(e){} }
       } else {
         curIdx++;                                       // next marker leaves the queue...
         feed={ t:0, dur:FEED_DUR, fromX:qx(curIdx), color:colOf(curIdx) };
@@ -236,7 +284,7 @@ function drawMarker(color, cx, cy, scale, rot){
 
 let FIELDC=null, fieldcKey='';
 function ensureFieldCache(){
-  const key=CW+'x'+CH+'|'+THEME+'|'+(ready(FIELD)?1:0);
+  const key=CW+'x'+CH+'|'+THEME+'|'+F().id+'|'+(ready(FIELD)?1:0);
   if(FIELDC && fieldcKey===key) return;
   FIELDC=document.createElement('canvas'); FIELDC.width=CW; FIELDC.height=CH;
   const g=FIELDC.getContext('2d');
@@ -256,6 +304,7 @@ function ensureFieldCache(){
   fieldcKey=key;
 }
 function draw(){
+  updLaneBtn();
   ctx.setTransform(1,0,0,1,0,0);
   ensureFieldCache();
   ctx.drawImage(FIELDC,0,0);                            // static cabinet: one blit per frame
@@ -269,21 +318,21 @@ function draw(){
 
   // preview queue — each marker keeps its own slot, so the row never reshuffles
   ctx.globalAlpha=0.38;
-  for(let k=curIdx+1; k<TOTAL; k++) drawMarker(colOf(k), fx(qx(k)), fy(QUEUE_Y), 0.5, 0);
+  for(let k=curIdx+1; k<TOTAL; k++) drawMarker(colOf(k), fx(qx(k)), fy(F().queueY), 0.5, 0);
   ctx.globalAlpha=1;
 
   // the next marker travelling down from the queue to the roll spot
   if(state==='feed' && feed){
     const t=ease(feed.t/feed.dur);
-    const cx=fx(feed.fromX+(ROLL_START.x-feed.fromX)*t);
-    const cy=fy(QUEUE_Y+(ROLL_START.y-QUEUE_Y)*t);
+    const cx=fx(feed.fromX+(F().start.x-feed.fromX)*t);
+    const cy=fy(F().queueY+(F().start.y-F().queueY)*t);
     ctx.globalAlpha=0.38+0.62*t;
     drawMarker(feed.color, cx, cy, 0.5+0.5*t, 0);
     ctx.globalAlpha=1;
   }
 
   // current marker on the roll spot
-  if(state==='ready') drawMarker(colOf(curIdx), fx(ROLL_START.x), fy(ROLL_START.y), 1.0, 0);
+  if(state==='ready') drawMarker(colOf(curIdx), fx(F().start.x), fy(F().start.y), 1.0, 0);
 
   // rolling marker — stays on screen the whole way up the lane and rests at the hole
   if((state==='rolling'||state==='landed') && ball){

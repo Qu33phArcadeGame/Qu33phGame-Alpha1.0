@@ -692,7 +692,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v379</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v380</div>
 
 <canvas id="game"></canvas>
 
@@ -4736,6 +4736,8 @@ let pfStartX=0, pfStartY=0, pfBestX=0, pfBestUp=0, pfLastGroundY=0, pfT=0;
 let pfProgress=0;
 // chair-launch flight mechanic
 function pfBaseZoom(){ return (pfClass()!=="human")?0.76:1; }   // cats and chickens see more of the level
+const PF_CAB_ZOOM=0.74;    // the cabinet screen is tiny, so pull the camera back on it
+function pfEZ(){ return (pfZoom||1) * (arcadeFullscreen?1:PF_CAB_ZOOM); }
 let pfAirJumps=0;
 let pfMega=null, pfFlight=false, pfZoom=1, pfZoomT=1, pfCycles=0, pfLastLaunchCycle=-99, pfMegaFlash=0, pfMegaFlashT=0;
 let pfBouncing=false, pfBounceCombo=0, pfBounceFlash=0, pfNoMarkerUntilX=0;
@@ -4785,15 +4787,15 @@ function showArcadeMenu(){
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
 function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showCharSelect(); }
-function launchBowling(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("bowlingScreen"); s.style.display="block"; var f=document.getElementById("bowlingFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","bowling.html?v=379&theme="+encodeURIComponent(_t)); arcadeGame="bowling"; try{ haptic(10); }catch(e){} }
+function launchBowling(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("bowlingScreen"); s.style.display="block"; var f=document.getElementById("bowlingFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","bowling.html?v=380&theme="+encodeURIComponent(_t)); arcadeGame="bowling"; try{ haptic(10); }catch(e){} }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
 function launchFidget(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var s=document.getElementById("fidgetScreen"); s.style.display="block"; var f=document.getElementById("fidgetFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","fidget.html?theme="+encodeURIComponent(_t)); arcadeGame="fidget"; try{ haptic(10); }catch(e){} }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=379&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
+function launchMini(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("miniScreen").style.display="block"; var f=document.getElementById("miniFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","mini.html?v=380&theme="+encodeURIComponent(_t)); arcadeGame="mini"; try{ haptic(10); }catch(e){} }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=379&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=380&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=379&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=380&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4804,9 +4806,9 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=379&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
+function launchFlip(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("flipScreen"); sc.style.display="block"; var f=document.getElementById("flipFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","flip.html?v=380&theme="+encodeURIComponent(_t)); arcadeGame="flip"; try{ haptic(10); }catch(e){} }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=379&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=380&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ pfMusicStop(); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -5113,7 +5115,8 @@ function layoutPlatformer(){
     var L=(arcadeGame==="dream")?[0.205,0.605,0.05]:PF_LEFT, R=(arcadeGame==="dream")?[0.315,0.605,0.05]:PF_RIGHT;   // dream cabinet now has a D-pad
     pc("pfLeftBtn",L); pc("pfRightBtn",R); pc("pfJumpBtn",PF_JUMP); pc("pfActionBtn",PF_ACT);
     var _fcb=document.getElementById("fuseContinueBtn"); if(_fcb){ var _cw=0.15*rw; _fcb.style.left=(ox+0.478*rw-_cw/2)+"px"; _fcb.style.top=(oy+0.732*rh)+"px"; _fcb.style.width=_cw+"px"; var _cg=document.getElementById("fuseCoinGlow"); if(_cg) _cg.style.height=(0.036*rh)+"px"; }
-    expand.style.display="block"; expand.style.left=(ox+PF_SCREEN[2]*rw-44)+"px"; expand.style.right=""; expand.style.top=(oy+PF_SCREEN[1]*rh+(PF_SCREEN[3]-PF_SCREEN[1])*rh*0.16)+"px"; expand.innerHTML="&#9974;";
+    // clear of the play area entirely: sat just above the screen's top-right corner
+    expand.style.display="block"; expand.style.left=(ox+PF_SCREEN[2]*rw-40)+"px"; expand.style.right=""; expand.style.top=Math.max(2,(oy+PF_SCREEN[1]*rh-40))+"px"; expand.innerHTML="&#9974;";
   }
 }
 function resetPlatformer(){
@@ -5366,14 +5369,14 @@ function pfGenPath(){
   while(guard++<800){
     // zoomed-out characters see further, so build further — otherwise the level literally
     // runs out ahead of you and you meet an unjumpable dead end
-    var _za=1/Math.max(0.4, pfZoom||1);
+    var _za=1/Math.max(0.4, pfEZ());
     if(pfGenMode==="up"){ if(pfGenY <= pfCamY - H*1.8*_za) break; }
     else { if(pfGenX >= pfCamX + W*2.7*_za) break; }
     pfGenStep();
   }
   // prune only every 8 frames (far fewer array allocations -> smoother, less GC jank)
   if((pfT&7)===0){
-    var _zb=1/Math.max(0.4, pfZoom||1);
+    var _zb=1/Math.max(0.4, pfEZ());
     var _pm = ((pfFlight||pfFlappy||pfFlappyFreeze) ? H*3.6 : H*1.7)*_zb, _bx=W*0.7*_zb;
     pfPlatforms=pfPlatforms.filter(function(p){ return p.y < pfCamY+_pm && (p.x+p.w) > pfCamX-_bx; });
     pfObstacles=pfObstacles.filter(function(o){ return o.y < pfCamY+_pm && o.x > pfCamX-_bx; });
@@ -5526,7 +5529,7 @@ function updatePlatformer(){
   if(pfMega && (pfMega.x < pfCamX - W*0.8 || pfMega.y > pfCamY + H*1.9)) pfMega=null;
   // ── FLAPPY: pipe collision, pass rewards, and its own floor/ceiling death ──
   if(pfFlappy){
-    if(pfFlapEndless){ var _vh=(H*0.5)/(pfZoom||1); pfFlappyCeilY = pfCamY + H*0.5 - _vh + 18; pfFlappyFloorY = pfCamY + H*0.5 + _vh - 18; }  // die at the (zoomed) screen edges
+    if(pfFlapEndless){ var _vh=(H*0.5)/pfEZ(); pfFlappyCeilY = pfCamY + H*0.5 - _vh + 18; pfFlappyFloorY = pfCamY + H*0.5 + _vh - 18; }  // die at the (zoomed) screen edges
     for(var pp=0;pp<pfPipes.length;pp++){ var pipe=pfPipes[pp], hg=pipe.gapH*0.5;
       if(p.x+6>pipe.x && p.x-6<pipe.x+pipe.w){
         if(p.y-p.h*0.35 < pipe.gapY-hg || p.y+p.h*0.35 > pipe.gapY+hg){ pfFlappy=false; pfZoomT=pfBaseZoom(); pfGameOver(); return; }
@@ -5568,7 +5571,7 @@ const jgJumpL=new Image(); jgJumpL.src="jump_jumpL.png";  // airborne, facing le
 // ── playable characters ──────────────────────────────────────────────────
 // Qu33ph has hand-drawn left AND right art. The other three only have right-facing
 // art, so they get mirrored on the canvas when facing left.
-var CHAR_V="379";   // bump when character art is replaced, so browsers drop the cached copy
+var CHAR_V="380";   // bump when character art is replaced, so browsers drop the cached copy
 function CIMG(src){ var i=new Image(); i.src=src+"?v="+CHAR_V; return i; }
 var PF_CHARS=[
   { id:"qu33ph", name:"QU33PH",     cls:"human", speed:1,   jump:1,     grav:1,    airJumps:0, note:"",
@@ -5860,7 +5863,7 @@ function pfSlab(x,y,w){
 }
 function pfDrawPipes(){
   if(!pfPipes.length) return;
-  var c=pfctx, H=pfCanvas.height, _vh=(H*0.5)/(pfZoom||1), visT=pfCamY+H*0.5-_vh-60, visB=pfCamY+H*0.5+_vh+60;
+  var c=pfctx, H=pfCanvas.height, _vh=(H*0.5)/pfEZ(), visT=pfCamY+H*0.5-_vh-60, visB=pfCamY+H*0.5+_vh+60;
   for(var i=0;i<pfPipes.length;i++){
     var pipe=pfPipes[i], hg=pipe.gapH*0.5, img=markerImages[pipe.color];
     var glow=(pipe.color==="red"?"#ff3040":pipe.color==="green"?"#30ff70":"#3a7bff");
@@ -5886,7 +5889,8 @@ function drawPlatformer(){
   drawPfBg(W,H);
   pfctx.save();
   // zoom out around screen centre during flight
-  if(pfZoom!==1){ pfctx.translate(W/2,H/2); pfctx.scale(pfZoom,pfZoom); pfctx.translate(-W/2,-H/2); }
+  var _ez=pfEZ();
+  if(_ez!==1){ pfctx.translate(W/2,H/2); pfctx.scale(_ez,_ez); pfctx.translate(-W/2,-H/2); }
   pfctx.translate(-pfCamX,-pfCamY);
   pfPlatforms.forEach(function(pl){
     if(pl.chair){
