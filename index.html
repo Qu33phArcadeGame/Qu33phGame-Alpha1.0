@@ -4850,10 +4850,11 @@ function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAtt
 // two machines side by side: the arrows page between them and the choice sticks
 var SKEE_MACHINES=[
   { id:"classic",  label:"QU33PH-BALL \u00b7 CLASSIC",  icon:"qu33phball.png?v=382" },
-  { id:"advanced", label:"QU33PH-BALL \u00b7 ADVANCED", icon:"qu33phballadv.png?v=382" }
+  { id:"advanced", label:"QU33PH-BALL \u00b7 ADVANCED", icon:"qu33phballadv.png?v=382" },
+  { id:"pro",      label:"QU33PH-BALL \u00b7 CHAIR TOWER", icon:"qu33phballpro.png?v=401" }
 ];
 var skeeIdx=0;
-try{ if(localStorage.getItem("qu33phSkeeField")==="advanced") skeeIdx=1; }catch(e){}
+try{ var _savedSkee=localStorage.getItem("qu33phSkeeField"); var _savedIdx=SKEE_MACHINES.findIndex(function(m){return m.id===_savedSkee;}); if(_savedIdx>=0) skeeIdx=_savedIdx; }catch(e){}
 function updSkeeCard(){
   var m=SKEE_MACHINES[skeeIdx];
   var img=document.getElementById("skeeIcon"), lab=document.getElementById("skeeLabel");
@@ -4870,7 +4871,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=387&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
+function launchSkee(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("skeeScreen"); sc.style.display="block"; var f=document.getElementById("skeeFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","qu33phball.html?v=401&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t)); arcadeGame="skee"; try{ haptic(10); }catch(e){} }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
