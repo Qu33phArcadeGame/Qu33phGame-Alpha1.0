@@ -39,8 +39,8 @@ const FIELDS=[
  // Every coordinate below is a fraction of the WHOLE frame, and because the machine
  // sits off to one side in each shot, the board centre (cx) is not 0.5.
  { id:'classic', name:'CLASSIC', art:'skeefield.png?v=401', PH:178,
-   start:{x:0.490,y:0.860}, queueY:0.775, dur:46, shrink:0.55,
-   hud:{x:[0.400,0.527,0.654], y:0.1920}, topY:0.218,   // ceiling sits under the readouts
+   start:{x:0.490,y:0.800}, queueY:0.775, dur:46, shrink:0.55,
+   hud:{x:[0.359,0.516,0.664], y:0.195}, topY:0.218,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.523, aimSpan:0.175, aimScat:0.95,
    baseY:0.505, powY:0.265, jitterX:0.059, jitterY:0.062,
    scat:function(p){ return 0.55+Math.abs(p-0.70)*1.5; }, overFrom:2, overK:0,
@@ -60,8 +60,8 @@ const FIELDS=[
    bestKey:'qu33phSkeeballBest' },
 
  { id:'advanced', name:'ADVANCED', art:'skeefield2.png?v=401', PH:178,
-   start:{x:0.490,y:0.880}, queueY:0.790, dur:48, shrink:0.58,
-   hud:{x:[0.310,0.440,0.560], y:0.2007}, topY:0.232,   // ceiling sits under the readouts
+   start:{x:0.490,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
+   hud:{x:[0.323,0.454,0.595], y:0.228}, topY:0.232,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.443, aimSpan:0.256, aimScat:1.15,
    baseY:0.560, powY:0.320, jitterX:0.043, jitterY:0.048,
    scat:function(p){ return 0.55+Math.abs(p-0.74)*1.2+Math.max(0,p-0.80)*4.5; },
@@ -89,31 +89,35 @@ const FIELDS=[
    bestKey:'qu33phSkeeballBest2' },
 
  { id:'pro', name:'CHAIR TOWER', art:'skeefield3.png?v=401', PH:178,
-   start:{x:0.500,y:0.875}, queueY:0.790, dur:48, shrink:0.58,
+   start:{x:0.500,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
    hud:{x:[0.405,0.510,0.615], y:0.273}, topY:0.105,
    pullDiv:0.46, aimDiv:0.28, cx:0.500, aimSpan:0.285, aimScat:1.08,
    baseY:0.600, powY:0.355, jitterX:0.040, jitterY:0.045,
    scat:function(p){ return 0.52+Math.abs(p-0.73)*1.25+Math.max(0,p-0.84)*3.6; },
    overFrom:0.92, overK:5,
+   // Points here run 1/10th of the cabinet-art numbers (chair tags, cup labels) so a
+   // full 9-ball score still fits inside the SCORE readout box without overlapping
+   // MARKERS / HIGH SCORE. Visual labels (chair tags, the mega '3,333') are scaled
+   // to match — see scoreLanding()'s chain and the mega text draw below.
    rects:[
-     // Bottom tier: both chairs always launch to 1,000. Then 75% continue upward.
-     {x0:0.180,x1:0.370,y0:0.635,y1:0.765,p:1000,chair:1,chainSide:'left'},
-     {x0:0.630,x1:0.820,y0:0.635,y1:0.765,p:1000,chair:1,chainSide:'right'},
+     // Bottom tier: both chairs always launch to 100. Then 75% continue upward.
+     {x0:0.180,x1:0.370,y0:0.635,y1:0.765,p:100,chair:1,chainSide:'left'},
+     {x0:0.630,x1:0.820,y0:0.635,y1:0.765,p:100,chair:1,chainSide:'right'},
      // Direct scoring zones and the upper chair faces.
-     {x0:0.135,x1:0.365,y0:0.195,y1:0.305,p:20000},
-     {x0:0.635,x1:0.865,y0:0.195,y1:0.305,p:20000},
-     {x0:0.180,x1:0.355,y0:0.365,y1:0.505,p:5000},
-     {x0:0.645,x1:0.820,y0:0.365,y1:0.505,p:5000},
+     {x0:0.135,x1:0.365,y0:0.195,y1:0.305,p:2000},
+     {x0:0.635,x1:0.865,y0:0.195,y1:0.305,p:2000},
+     {x0:0.180,x1:0.355,y0:0.365,y1:0.505,p:500},
+     {x0:0.645,x1:0.820,y0:0.365,y1:0.505,p:500},
      // White rectangle / mega red dot (label is drawn clearly over the artwork).
-     {x0:0.445,x1:0.575,y0:0.135,y1:0.218,p:33333,mega:1},
+     {x0:0.445,x1:0.575,y0:0.135,y1:0.218,p:3333,mega:1},
      // Playing-field cups and rings.
-     {x0:0.455,x1:0.565,y0:0.325,y1:0.405,p:5000},
-     {x0:0.365,x1:0.455,y0:0.380,y1:0.445,p:2000},
-     {x0:0.545,x1:0.635,y0:0.380,y1:0.445,p:2000},
-     {x0:0.450,x1:0.555,y0:0.420,y1:0.485,p:1000},
-     {x0:0.340,x1:0.660,y0:0.430,y1:0.535,p:500},
-     {x0:0.325,x1:0.675,y0:0.500,y1:0.575,p:250},
-     {x0:0.300,x1:0.700,y0:0.545,y1:0.620,p:100}
+     {x0:0.455,x1:0.565,y0:0.325,y1:0.405,p:500},
+     {x0:0.365,x1:0.455,y0:0.380,y1:0.445,p:200},
+     {x0:0.545,x1:0.635,y0:0.380,y1:0.445,p:200},
+     {x0:0.450,x1:0.555,y0:0.420,y1:0.485,p:100},
+     {x0:0.340,x1:0.660,y0:0.430,y1:0.535,p:50},
+     {x0:0.325,x1:0.675,y0:0.500,y1:0.575,p:25},
+     {x0:0.300,x1:0.700,y0:0.545,y1:0.620,p:10}
    ],
    bestKey:'qu33phSkeeballBest3' }
 ];
@@ -359,16 +363,16 @@ function scoreLanding(lx,ly){
     for(const r of f.rects) if(lx>=r.x0&&lx<=r.x1&&ly>=r.y0&&ly<=r.y1){
       if(r.chair && r.chainSide){
         const left=r.chainSide==='left';
-        // Guaranteed 1,000; 75% reaches tier two; 45% of those reaches tier
-        // three; the final chair splits evenly between 20,000 and the mega.
-        hopQueue=[{x:left?0.220:0.780,y:0.585,p:1000,label:'+1,000'}];
-        let final=1000;
+        // Guaranteed 100; 75% reaches tier two; 45% of those reaches tier
+        // three; the final chair splits evenly between 2,000 and the mega.
+        hopQueue=[{x:left?0.220:0.780,y:0.585,p:100,label:'+100'}];
+        let final=100;
         if(Math.random()<0.75){
-          hopQueue.push({x:left?0.260:0.740,y:0.445,p:5000,label:'+5,000'}); final=5000;
+          hopQueue.push({x:left?0.260:0.740,y:0.445,p:500,label:'+500'}); final=500;
           if(Math.random()<0.45){
             hopQueue.push({x:left?0.255:0.745,y:0.250,p:0,label:'TOP CHAIR'});
-            if(Math.random()<0.50){ hopQueue.push({x:left?0.245:0.755,y:0.175,p:20000,label:'+20,000'}); final=20000; }
-            else { hopQueue.push({x:0.510,y:0.174,p:33333,label:'MEGA +33,333'}); final=33333; }
+            if(Math.random()<0.50){ hopQueue.push({x:left?0.245:0.755,y:0.175,p:2000,label:'+2,000'}); final=2000; }
+            else { hopQueue.push({x:0.510,y:0.174,p:3333,label:'MEGA +3,333'}); final=3333; }
           }
         }
         lastHitChair=hopQueue.shift();
@@ -482,8 +486,8 @@ function draw(){
     ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.font='bold '+Math.round(CW*0.027)+'px Helvetica,Arial,sans-serif';
     ctx.lineWidth=Math.max(2,CW*0.006); ctx.strokeStyle='rgba(0,0,0,0.9)';
-    ctx.fillStyle='#ffd24a'; ctx.strokeText('33,333',fx(0.510),fy(0.218));
-    ctx.fillText('33,333',fx(0.510),fy(0.218)); ctx.restore();
+    ctx.fillStyle='#ffd24a'; ctx.strokeText('3,333',fx(0.510),fy(0.218));
+    ctx.fillText('3,333',fx(0.510),fy(0.218)); ctx.restore();
   }
   drawHitboxes();                                       // debug overlay, off by default
   drawThemeOverlay();
