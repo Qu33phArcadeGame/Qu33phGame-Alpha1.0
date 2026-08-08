@@ -9,10 +9,17 @@
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#000; }
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #stage{ position:relative; }
-  #laneBtn{ position:fixed; left:10px; bottom:14px; z-index:6; padding:7px 12px; border-radius:9px;
-    background:rgba(8,9,16,0.82); border:1px solid rgba(255,255,255,0.34); color:#fff;
-    font-family:Helvetica,Arial,sans-serif; font-size:11px; font-weight:bold; letter-spacing:1px;
-    cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  #laneBtn{ position:fixed; left:26px; bottom:14px; z-index:6;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:#000; color:#fff; border:2.5px solid #fff;
+    font-family:Helvetica,Arial,sans-serif; font-size:10.5px; font-weight:bold; letter-spacing:1px;
+    padding:8px 12px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  #laneBtn.cap-right{ margin-right:18px; border-radius:4px 9px 9px 4px; }
+  #laneBtn.cap-right::before{ content:""; position:absolute; right:-15px; top:2px; bottom:2px; width:15px;
+    background:#000; border:2.5px solid #fff; border-radius:2px 8px 8px 2px; }
+  #laneBtn.cap-left{ margin-left:18px; border-radius:9px 4px 4px 9px; }
+  #laneBtn.cap-left::before{ content:""; position:absolute; left:-15px; top:2px; bottom:2px; width:15px;
+    background:#000; border:2.5px solid #fff; border-radius:8px 2px 2px 8px; }
   #laneBtn:disabled{ opacity:0.35; }
   #boxBtn{ position:fixed; right:10px; bottom:14px; z-index:6; padding:7px 12px; border-radius:9px;
     background:rgba(8,9,16,0.82); border:1px solid rgba(255,255,255,0.34); color:#fff;
@@ -33,6 +40,9 @@ const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet 
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 // Three connected Qu33ph-Ball machines. Each field uses the full room render so
 // changing lanes feels like sliding to the next cabinet.
+// The mega jackpot — only reachable by climbing the chair chain (see the pro
+// field's chainSide rects below), never by aiming for it directly.
+const MEGA_VAL=33000;
 const FIELDS=[
  // Full uncropped renders, so the neighbouring cabinet stays in frame — switching
  // machines reads as sliding one lane over. Both are 0.5625 aspect, so PH is 178.
@@ -40,7 +50,7 @@ const FIELDS=[
  // sits off to one side in each shot, the board centre (cx) is not 0.5.
  { id:'classic', name:'CLASSIC', art:'skeefield.png?v=401', PH:178,
    start:{x:0.490,y:0.800}, queueY:0.775, dur:46, shrink:0.55,
-   hud:{x:[0.359,0.516,0.664], y:0.195}, topY:0.218,   // ceiling sits under the readouts
+   hud:{x:[0.359,0.516,0.664], y:[0.202,0.202,0.202]}, topY:0.218,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.523, aimSpan:0.175, aimScat:0.95,
    baseY:0.505, powY:0.265, jitterX:0.059, jitterY:0.062,
    scat:function(p){ return 0.55+Math.abs(p-0.70)*1.5; }, overFrom:2, overK:0,
@@ -61,7 +71,7 @@ const FIELDS=[
 
  { id:'advanced', name:'ADVANCED', art:'skeefield2.png?v=401', PH:178,
    start:{x:0.490,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
-   hud:{x:[0.323,0.454,0.595], y:0.228}, topY:0.232,   // ceiling sits under the readouts
+   hud:{x:[0.323,0.454,0.580], y:[0.234,0.234,0.238]}, topY:0.232,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.443, aimSpan:0.256, aimScat:1.15,
    baseY:0.560, powY:0.320, jitterX:0.043, jitterY:0.048,
    scat:function(p){ return 0.55+Math.abs(p-0.74)*1.2+Math.max(0,p-0.80)*4.5; },
@@ -90,7 +100,7 @@ const FIELDS=[
 
  { id:'pro', name:'CHAIR TOWER', art:'skeefield3.png?v=401', PH:178,
    start:{x:0.500,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
-   hud:{x:[0.405,0.510,0.615], y:0.273}, topY:0.105,
+   hud:{x:[0.405,0.510,0.615], y:[0.283,0.283,0.283]}, topY:0.105,
    pullDiv:0.46, aimDiv:0.28, cx:0.500, aimSpan:0.285, aimScat:1.08,
    // Weakest flick lands right at the bottom chairs (0.765); full power reaches
    // the mega up top (~0.16). A side-aimed weak/medium flick is the only way
@@ -98,19 +108,17 @@ const FIELDS=[
    baseY:0.765, powY:0.589, jitterX:0.040, jitterY:0.045,
    scat:function(p){ return 0.52+Math.abs(p-0.73)*1.25+Math.max(0,p-0.84)*3.6; },
    overFrom:0.92, overK:5,
-   // Points here run 1/10th of the cabinet-art numbers (chair tags, cup labels) so a
-   // full 9-ball score still fits inside the SCORE readout box without overlapping
-   // MARKERS / HIGH SCORE. Visual labels (chair tags, the mega '3,333') are scaled
-   // to match — see scoreLanding()'s chain and the mega text draw below.
+   // Points here run 1/10th of the cabinet-art numbers on the chair tags (1,000/
+   // 5,000/20,000 -> 100/500/2,000) so a full 9-ball score still fits inside the
+   // SCORE readout box. The mega jackpot keeps its full value (33,000, shown as
+   // "33K") since it's rare enough not to blow out the box on its own.
    // Only the bottom chairs and the centre cups/rings are landable zones — the
-   // 5,000/20,000 chair tags higher up the side rails are NOT separate targets,
-   // so there's no way to bank those points without going through the chair chain.
+   // chair tags higher up the side rails, and the mega dot, are NOT separate
+   // targets. The only way to them is up the chair chain (see scoreLanding()).
    rects:[
      // Bottom tier: both chairs always launch to 100. Then 75% continue upward.
      {x0:0.180,x1:0.370,y0:0.635,y1:0.765,p:100,chair:1,chainSide:'left'},
      {x0:0.630,x1:0.820,y0:0.635,y1:0.765,p:100,chair:1,chainSide:'right'},
-     // White rectangle / mega red dot (label is drawn clearly over the artwork).
-     {x0:0.445,x1:0.575,y0:0.135,y1:0.218,p:3333,mega:1},
      // Playing-field cups and rings.
      {x0:0.455,x1:0.565,y0:0.325,y1:0.405,p:500},
      {x0:0.365,x1:0.455,y0:0.380,y1:0.445,p:200},
@@ -128,8 +136,10 @@ try{ const k=localStorage.getItem('qu33phSkeeField'); const i=FIELDS.findIndex(f
 { const q=(new URLSearchParams(location.search).get('lane')||'').toLowerCase();
   const i=FIELDS.findIndex(f=>f.id===q); if(i>=0) fieldIdx=i; }
 function F(){ return FIELDS[fieldIdx]; }
-const FIELD=new Image();
-function loadField(){ FIELD.src=F().art; }
+const FIELD_IMGS={};
+FIELDS.forEach(function(f){ const im=new Image(); im.src=f.art; FIELD_IMGS[f.id]=im; });
+function FIELD_IMG(){ return FIELD_IMGS[F().id]; }
+function loadField(){ /* no-op — every lane's art is already preloading from page load */ }
 loadField();
 const MK={ red:new Image(), green:new Image(), blue:new Image() };
 const CMC=(THEME==='cartoon');
@@ -280,9 +290,16 @@ reset();
 // ── lane switch: only between rolls, and it restarts the game, since the two
 //    boards don't score alike and a mixed card would be meaningless ──────────
 const laneBtn=document.getElementById('laneBtn');
+function canSwitchLane(){ return (state==='ready'&&resolved===0) || state==='over'; }
 function updLaneBtn(){
   laneBtn.textContent='LANE \u00b7 '+F().name;
-  laneBtn.disabled=(state!=='ready'&&state!=='over');
+  laneBtn.disabled=!canSwitchLane();
+  // the cap points the direction the NEXT tap will move — wrapping from the
+  // last lane back to the first reads as "left", same as paging backward
+  const nextIdx=(fieldIdx+1)%FIELDS.length;
+  const goingRight=nextIdx>fieldIdx;
+  laneBtn.classList.toggle('cap-right', goingRight);
+  laneBtn.classList.toggle('cap-left', !goingRight);
 }
 // draws every scoring rect over the art, labelled, so alignment can be eyeballed
 let showBoxes=false;
@@ -315,7 +332,7 @@ function drawHitboxes(){
 }
 laneBtn.addEventListener('click',function(e){
   e.stopPropagation();
-  if(state!=='ready'&&state!=='over') return;
+  if(!canSwitchLane()) return;
   fieldIdx=(fieldIdx+1)%FIELDS.length;
   try{ localStorage.setItem('qu33phSkeeField',F().id); }catch(e2){}
   loadField(); loadBest(); reset(); sz(); updLaneBtn();
@@ -353,7 +370,7 @@ function roll(up, dx){
   if(over) landY=top+0.006;
   landY=Math.max(top, landY);                    // nothing ever lands above the board
   ball={ x0:f.start.x, y0:f.start.y, x1:landX, y1:landY, t:0, dur:f.dur,
-         color:colOf(curIdx), spin:0, scored:false, over:over };
+         color:colOf(curIdx), spin:0, scored:false, over:over, caught:false };
   state='rolling';
 }
 
@@ -365,7 +382,8 @@ function scoreLanding(lx,ly){
       if(r.chair && r.chainSide){
         const left=r.chainSide==='left';
         // Guaranteed 100; 75% reaches tier two; 45% of those reaches tier
-        // three; the final chair splits evenly between 2,000 and the mega.
+        // three; the final chair splits evenly between 2,000 and the mega —
+        // the mega is ONLY reachable through this chain, never a direct hit.
         hopQueue=[{x:left?0.220:0.780,y:0.585,p:100,label:'+100'}];
         let final=100;
         if(Math.random()<0.75){
@@ -373,7 +391,7 @@ function scoreLanding(lx,ly){
           if(Math.random()<0.45){
             hopQueue.push({x:left?0.255:0.745,y:0.250,p:0,label:'TOP CHAIR'});
             if(Math.random()<0.50){ hopQueue.push({x:left?0.245:0.755,y:0.175,p:2000,label:'+2,000'}); final=2000; }
-            else { hopQueue.push({x:0.510,y:0.174,p:3333,label:'MEGA +3,333'}); final=3333; }
+            else { hopQueue.push({x:0.510,y:0.174,p:MEGA_VAL,label:'MEGA +'+fmtK(MEGA_VAL)}); final=MEGA_VAL; }
           }
         }
         lastHitChair=hopQueue.shift();
@@ -398,6 +416,18 @@ function scoreLanding(lx,ly){
 function step(){
   if(state==='rolling' && ball){
     ball.t++; ball.spin+=0.4;
+    // Chairs react the instant the marker's flight path touches them — it
+    // doesn't need to have been aimed at the exact resting pixel.
+    if(!ball.caught){
+      const f=F();
+      if(f.rects){
+        const kk=ease(Math.min(1, ball.t/ball.dur));
+        const curX=ball.x0+(ball.x1-ball.x0)*kk, curY=ball.y0+(ball.y1-ball.y0)*kk;
+        for(const r of f.rects) if(r.chair && curX>=r.x0&&curX<=r.x1&&curY>=r.y0&&curY<=r.y1){
+          ball.x1=curX; ball.y1=curY; ball.t=ball.dur; ball.caught=true; break;
+        }
+      }
+    }
     if(ball.t>=ball.dur){
       ball.t=ball.dur;                                  // marker stays put at the hole
       const pts=scoreLanding(ball.x1,ball.y1); score+=pts; resolved++;
@@ -424,7 +454,7 @@ function step(){
         if(hopQueue.length){
           const n=hopQueue.shift();
           hop={x0:ball.x1,y0:ball.y1,x1:n.x,y1:n.y,t:0,dur:26};
-        } else hop=null;
+        } else { hop=null; landT=0; }    // settled — hold/fade timer starts fresh from here
       }
     }
     if(landT>=LAND_HOLD && !hop){
@@ -442,7 +472,12 @@ function step(){
     feed.t++;
     if(feed.t>=feed.dur){ feed=null; state='ready'; }
   }
-  for(let i=popups.length-1;i>=0;i--){ popups[i].life--; popups[i].y-=0.0015; if(popups[i].life<=0) popups.splice(i,1); }
+  for(let i=popups.length-1;i>=0;i--){
+    const p=popups[i];
+    if(p.delay>0){ p.delay--; continue; }        // don't age it while it's still waiting to appear
+    p.life--; p.y-=0.0015;
+    if(p.life<=0) popups.splice(i,1);
+  }
 }
 
 function ease(t){ return 1-Math.pow(1-t,2); }   // ease-out
@@ -465,12 +500,12 @@ function drawMarker(color, cx, cy, scale, rot){
 
 let FIELDC=null, fieldcKey='';
 function ensureFieldCache(){
-  const key=CW+'x'+CH+'|'+THEME+'|'+F().id+'|'+(ready(FIELD)?1:0);
+  const key=CW+'x'+CH+'|'+THEME+'|'+F().id+'|'+(ready(FIELD_IMG())?1:0);
   if(FIELDC && fieldcKey===key) return;
   FIELDC=document.createElement('canvas'); FIELDC.width=CW; FIELDC.height=CH;
   const g=FIELDC.getContext('2d');
   s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
-  if(ready(FIELD)) s2.drawImage(FIELD,0,0,CW,CH);
+  if(ready(FIELD_IMG())) s2.drawImage(FIELD_IMG(),0,0,CW,CH);
   else { s2.fillStyle='#111'; s2.fillRect(0,0,CW,CH); drawBoardFallback(s2); }
   if(CANFILTER && TH.filter) g.filter=TH.filter;
   g.drawImage(sc,0,0);
@@ -495,8 +530,8 @@ function draw(){
     ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.font='bold '+Math.round(CW*0.027)+'px Helvetica,Arial,sans-serif';
     ctx.lineWidth=Math.max(2,CW*0.006); ctx.strokeStyle='rgba(0,0,0,0.9)';
-    ctx.fillStyle='#ffd24a'; ctx.strokeText('3,333',fx(0.510),fy(0.218));
-    ctx.fillText('3,333',fx(0.510),fy(0.218)); ctx.restore();
+    ctx.fillStyle='#ffd24a'; ctx.strokeText(fmtK(MEGA_VAL),fx(0.510),fy(0.218));
+    ctx.fillText(fmtK(MEGA_VAL),fx(0.510),fy(0.218)); ctx.restore();
   }
   drawHitboxes();                                       // debug overlay, off by default
   drawThemeOverlay();
@@ -504,10 +539,11 @@ function draw(){
   // K-abbreviated so five/six-figure chair-tower scores don't overrun the box.
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
   ctx.font='bold '+Math.round(CW*0.032)+'px Helvetica';
-  const HD=F().hud||{x:[0.346,0.502,0.662],y:0.1937};
-  ctx.fillText(TOTAL-resolved, fx(HD.x[0]), fy(HD.y));
-  ctx.fillText(fmtK(score),    fx(HD.x[1]), fy(HD.y));
-  ctx.fillText(fmtK(best),     fx(HD.x[2]), fy(HD.y));
+  const HD=F().hud||{x:[0.346,0.502,0.662],y:[0.1937,0.1937,0.1937]};
+  const HY=Array.isArray(HD.y)?HD.y:[HD.y,HD.y,HD.y];
+  ctx.fillText(TOTAL-resolved, fx(HD.x[0]), fy(HY[0]));
+  ctx.fillText(fmtK(score),    fx(HD.x[1]), fy(HY[1]));
+  ctx.fillText(fmtK(best),     fx(HD.x[2]), fy(HY[2]));
 
   // preview queue — each marker keeps its own slot, so the row never reshuffles
   ctx.globalAlpha=0.38;
@@ -533,25 +569,30 @@ function draw(){
     let cx=fx(ball.x0+(ball.x1-ball.x0)*t);
     let cy=fy(ball.y0+(ball.y1-ball.y0)*t);
     let sc=1.0 - t*(F().shrink||0.45);              // shrinks with distance up the lane
+    let al=1;
     if(hop){
-      // the chair launches it: a real arc up into the pocket, same feel as the mega
-      // jump in the main game rather than a teleport
+      // the chair launches it: a real arc up into the pocket, bigger and fully
+      // opaque the whole way so the climb up the chair tower actually reads
       const k=Math.min(1, hop.t/hop.dur), e=k*k*(3-2*k);
       cx=fx(hop.x0+(hop.x1-hop.x0)*e);
-      cy=fy(hop.y0+(hop.y1-hop.y0)*e) - Math.sin(k*Math.PI)*CH*0.085;
-      sc=(1.0-(F().shrink||0.45))*(1+Math.sin(k*Math.PI)*0.35);   // pops bigger at the apex
+      cy=fy(hop.y0+(hop.y1-hop.y0)*e) - Math.sin(k*Math.PI)*CH*0.10;
+      sc=(1.0-(F().shrink||0.45))*(1.15+Math.sin(k*Math.PI)*0.55);   // pops bigger at the apex
       ball.spin+=0.55;
+    } else if(state==='landed'){
+      // settled for good — sink into the hole and fade, instead of just vanishing
+      const k=Math.min(1, landT/LAND_HOLD);
+      al = k<0.55 ? 1 : Math.max(0, 1-(k-0.55)/0.45);
+      sc = sc*(1-0.45*k);
+      cy = cy + X(1.7)*k;
     }
-    let al=1;
-    if(state==='landed'){ const k=landT/LAND_HOLD; al = k<0.6 ? 1 : 1-(k-0.6)/0.4; }  // sinks in at the end
     ctx.globalAlpha=Math.max(0,al);
     ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(cx,cy+X(2)*sc,X(5)*sc,X(2)*sc,0,0,7); ctx.fill();
     drawMarker(ball.color, cx, cy, sc, ball.spin);
     ctx.globalAlpha=1;
   }
 
-  // score popups
-  for(const p of popups){ if(p.delay>0){ p.delay--; continue; } ctx.globalAlpha=Math.max(0,p.life/40);
+  // score popups — delay/life are both advanced in step(), draw() just reads them
+  for(const p of popups){ if(p.delay>0) continue; ctx.globalAlpha=Math.max(0,p.life/40);
     ctx.fillStyle=p.pts>=100?'#ffd24a':p.pts>=30?'#7bff9a':p.pts>0?'#8fd0ff':'#ff7a7a';
     ctx.font='bold '+Math.round(CW*0.055)+'px Helvetica'; ctx.textAlign='center';
     ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=X(0.8); ctx.strokeText(p.txt,fx(p.x),fy(p.y)); ctx.fillText(p.txt,fx(p.x),fy(p.y)); ctx.globalAlpha=1; }
