@@ -249,6 +249,11 @@
     #arcadeMenu.arc-neon   #arcadeLogo { filter:hue-rotate(95deg) saturate(2) brightness(1.12) drop-shadow(0 0 12px rgba(40,255,130,0.7)); }
     #arcadeMenu.arc-sunset #arcadeLogo { filter:sepia(0.6) saturate(2) brightness(1.16) hue-rotate(-10deg) drop-shadow(0 0 12px rgba(255,200,60,0.65)); }
     #arcadeMenu.arc-galaxy #arcadeLogo { filter:hue-rotate(230deg) saturate(1.6) brightness(1.05) drop-shadow(0 0 12px rgba(180,120,255,0.7)); }
+    /* Comic theme: coin / SLOT / PLINQU33PH on the main menu go greyscale + halftone dots */
+    .comic-benday-icon img, .comic-benday-icon svg { filter:grayscale(1) contrast(1.2); }
+    .comic-benday-icon::after{ content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+      background-image:radial-gradient(circle, rgba(0,0,0,0.6) 1px, transparent 1.4px); background-size:5px 5px;
+      mix-blend-mode:multiply; opacity:0.55; }
     /* ── Stack + Flip: glow hugs the markers themselves, never a border box ── */
     #cabStack img, #cabFlip .flipbox img { box-shadow:none; border:0; }
     #cabStack img { filter:drop-shadow(0 6px 16px rgba(0,0,0,0.6)); }
@@ -697,7 +702,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v389</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v391</div>
 
 <canvas id="game"></canvas>
 
@@ -747,13 +752,14 @@
   <img id="arcadeLogo" src="arcadelogo.png?v=377" alt="Qu33ph Arcade"
        style="width:min(248px,56vw);height:auto;display:block;margin:4px auto 12px;pointer-events:none;"
        onerror="this.style.display='none'">
+  <div id="arcadeSeasonTag" style="font-family:'Brush Script MT','Segoe Script','Bradley Hand',cursive;font-size:22px;color:#ffd24a;text-align:center;margin:-10px 0 12px;letter-spacing:1px;pointer-events:none;">Season 1</div>
   <div class="cab-row">
     <div class="cab-card" id="cabJump" onclick="launchPfGame()"><img src="qu33phjump.png" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH JUMP</div></div>
     <div class="cab-card" id="cabPinball" onclick="launchPinball()"><img src="pinballicon.png?v=362" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH PINBALL</div></div>
     <div class="cab-card" id="cabBowling" onclick="launchBowling()"><img src="bowlingicon.png?v=362" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH BOWLING</div></div>
     <div class="cab-card" id="cabStack" onclick="launchStack()"><img src="stackicon.png?v=311" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH STACK</div></div>
     <div class="cab-card" id="cabFidget" onclick="launchFidget()"><img src="fidgetqu33phfield.png" onerror="this.style.opacity=0.2"><div class="cab-label">FIDGET QU33PH</div></div>
-    <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
+    <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" style="width:auto;height:94%;transform:rotate(97deg);" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee">
       <div style="position:relative;width:100%;">
         <img id="skeeIcon" src="qu33phball.png?v=382" onclick="launchSkee()"
@@ -1790,8 +1796,12 @@ function applyThemeFilters(){
   if(am){ am.className = s==="cartoon"?"arc-comic":s==="neon"?"arc-neon":s==="galaxy"?"arc-galaxy":s==="sunset"?"arc-sunset":""; }
   { var _ff=({ "default":"fidgetqu33phfield.png","cartoon":"fidgetcomicfield.png","neon":"fidgetneonfield.png","sunset":"fidgetgoldenfield.png","galaxy":"fidgetgalaxyfield.png" })[s]||"fidgetqu33phfield.png"; var _fi=document.querySelector("#cabFidget img"); if(_fi && _fi.getAttribute("src")!==_ff) _fi.setAttribute("src",_ff); }
   { var _ss=(s==="cartoon")?"stackicon_comic.png?v=311":"stackicon.png?v=311"; var _si=document.querySelector("#cabStack img"); if(_si) setIconSrc(_si,_ss,s==="cartoon"); }
-  { var _bs=(s==="cartoon")?"blueC.png":"blue.png"; var _bi=document.querySelector("#cabFlip img"); if(_bi){ setIconSrc(_bi,_bs,s==="cartoon"); orientFlipIcon(_bi); } }
+  { var _bs=(s==="cartoon")?"blueC.png":"blue.png"; var _bi=document.querySelector("#cabFlip img"); if(_bi){ setIconSrc(_bi,_bs,s==="cartoon");
+      if(s==="cartoon"){ _bi.style.width=""; _bi.style.height=""; _bi.style.transform=""; orientFlipIcon(_bi); }
+      else { _bi.style.width="auto"; _bi.style.height="94%"; _bi.style.transform="rotate(97deg)"; }   // default blue marker: stood upright, angled a touch
+    } }
   var pbg=document.getElementById("pinballBg"); if(pbg) pbg.style.filter=(s==="cartoon")?"grayscale(1) contrast(1.18)":css;
+  { var _cb=(s==="cartoon"); ["slotBtn","plinkoBtn","titleCoins"].forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.toggle("comic-benday-icon", _cb); }); }
   { var _ps=document.getElementById("pinballScreen"); if(_ps) _ps.classList.toggle("pb-comic", s==="cartoon"); }
   var pcv=document.getElementById("pinballCanvas"); if(pcv) pcv.style.filter="";
 }
@@ -7214,10 +7224,16 @@ function returnToArcade(){
 }
 // ================= QU33PH PINBALL =================
 var pbCanvas=null,pbctx=null,pbRAF=null,pbActive=false,pbW=0,pbH=0,PB_R=0;
-var pbBall=null,pbScore=0,pbBalls=3,pbState="ready",pbT=0,pbHigh=0,pbChairCD=0; try{pbHigh=+(localStorage.getItem("qu33phPinballHigh")||0);}catch(e){}
+var pbBall=null,pbScore=0,pbBalls=3,pbState="ready",pbT=0,pbHigh=0,pbChairCD=0,pbBallSeq=0; try{pbHigh=+(localStorage.getItem("qu33phPinballHigh")||0);}catch(e){}
 var pbFL=0,pbFR=0,pbFLtarget=0,pbFRtarget=0,pbMsg="",pbMsgT=0;
 var pbBumpers=[],pbChair=null,pbMega=null,pbListenersSet=false;
 var PB_GRAV=0.3,PB_DAMP=0.62;
+// the ball is now a Qu33ph marker — red/green alternate each life, and the
+// hitbox is a narrow-tall rectangle (PB_RX/PB_RY) instead of a round PB_R,
+// to match its actual footprint instead of the old ball's circle.
+var pbMarkerImg={ red:new Image(), green:new Image() };
+pbMarkerImg.red.src="stackred.png"; pbMarkerImg.green.src="stackgreen.png";
+var PB_RX=0.020, PB_RY=0.043;
 // ── perspective play-field: physics live in a flat logical table, rendered into the tilted quad of pinball.png ──
 var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  // 4 corners (fractions of pinball.png)
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
@@ -7232,7 +7248,7 @@ function layoutPinball(){
   pbctx=pbCanvas.getContext("2d");pbW=pbCanvas.width;pbH=pbCanvas.height;
   var bg=document.getElementById("pinballBg"),iw=(bg&&bg.naturalWidth)||1183,ih=(bg&&bg.naturalHeight)||2560;
   var scale=Math.min(sw/iw,sh/ih);pbImgRW=iw*scale;pbImgRH=ih*scale;pbImgOX=(sw-pbImgRW)/2;pbImgOY=(sh-pbImgRH)/2;
-  PB_R=0.032; pbBuildTable();
+  PB_R=0.032; PB_RX=PB_R*0.62; PB_RY=PB_R*1.35; pbBuildTable();
   var fl=document.getElementById("pbFlipLeft"),fr=document.getElementById("pbFlipRight"),lb=document.getElementById("pbLaunchBtn");
   fl.style.left="0px";fl.style.right="";fl.style.bottom="0px";fl.style.width="50%";fl.style.height="40%";
   fr.style.right="0px";fr.style.left="";fr.style.bottom="0px";fr.style.width="50%";fr.style.height="40%";
@@ -7248,8 +7264,8 @@ function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
 function pbDepth(y){ return 0.45+pbVP(y)*1.15; }                 // things nearer the front (bottom) are bigger
 function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
 function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.485,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
-function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbNewBall(); }
-function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true}; pbState="ready"; }
+function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbBallSeq=0;pbNewBall(); }
+function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true,color:(pbBallSeq%2===0?"red":"green"),spin:0}; pbBallSeq++; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.055;pbBall.vx=-0.015;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
 function launchPinball(){ try{ var _st=(typeof styleOf==="function"?styleOf():currentTheme); pbBlueImg.src=(_st==="cartoon")?"bluepaddleC.png":"bluepaddle.png"; var _ps=document.getElementById("pinballScreen"); _ps.classList.toggle("pb-comic", _st==="cartoon"); }catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
 function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
@@ -7334,9 +7350,10 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   b.vx*=0.99; b.vy*=0.996;                                    // friction so energy dissipates
   var mv=0.05; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
   var tw=0.02;
+  b.spin=(b.spin||0)+(Math.abs(b.vx)+Math.abs(b.vy))*2.4;      // tumbles as it rolls, like a marker would
   if(b.inChute){
-    if(b.x<0.98+PB_R){ b.x=0.98+PB_R; if(b.vx<0)b.vx*=-0.3; }      // chute inner wall
-    if(b.x>1.14-PB_R){ b.x=1.14-PB_R; b.vx=-b.vx*PB_DAMP; }        // chute outer wall
+    if(b.x<0.98+PB_RX){ b.x=0.98+PB_RX; if(b.vx<0)b.vx*=-0.3; }      // chute inner wall
+    if(b.x>1.14-PB_RX){ b.x=1.14-PB_RX; b.vx=-b.vx*PB_DAMP; }        // chute outer wall
     if(b.y<0.42){ b.inChute=false; b.x=0.9; b.vx=-0.02; }          // exit the chute cleanly inside the field
   } else {
     // wide straight upper field, then a SMOOTH continuous funnel down to the flippers — no corner, no outlane pocket
@@ -7344,10 +7361,10 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
     if(b.y < 0.6){ _lw=0.04; _rw=0.94; }
     else { var _tf=Math.min(1,Math.max(0,(b.y-0.6)/0.58)), _e=_tf*_tf*(3-2*_tf);   // smoothstep ease into the paddle zone
            _lw=0.04+_e*0.15; _rw=0.94-_e*0.23; }                                     // -> [0.19, 0.71] (the smooth one)
-    if(b.x<_lw+PB_R){ b.x=_lw+PB_R; if(b.vx<0) b.vx=-b.vx*PB_DAMP; }   // only bounce if moving INTO the wall (no sideways jitter)
-    if(b.x>_rw-PB_R){ b.x=_rw-PB_R; if(b.vx>0) b.vx=-b.vx*PB_DAMP; }
+    if(b.x<_lw+PB_RX){ b.x=_lw+PB_RX; if(b.vx<0) b.vx=-b.vx*PB_DAMP; }   // only bounce if moving INTO the wall (no sideways jitter)
+    if(b.x>_rw-PB_RX){ b.x=_rw-PB_RX; if(b.vx>0) b.vx=-b.vx*PB_DAMP; }
   }
-  if(b.y<tw+PB_R){b.y=tw+PB_R;b.vy=-b.vy*PB_DAMP;}
+  if(b.y<tw+PB_RY){b.y=tw+PB_RY;b.vy=-b.vy*PB_DAMP;}
   if(pbChairCD>0)pbChairCD--;
   if(b.toMega){ b.vx += ((pbMega.x+pbMega.w/2)-b.x)*0.006; b.upT=0; b.megaT=(b.megaT||0)+1;
     if(b.megaT>70 || (b.y>0.42 && b.vy>0.006)){ b.toMega=false; b.megaT=0; }   // missed the mega → drop the rail, roll down normally (no logo loop)
@@ -7363,11 +7380,17 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   // ANTI-JITTER: if the ball hasn't actually descended over ~16 frames, it's wedged/jittering → glide it down smooth and kill the sideways twitch
   b.chkT=(b.chkT||0)+1;
   if(b.chkT>=16){ if(!b.toMega && !b.inChute && b.y>0.24 && b.y<0.94 && (b.y-(b.chkY==null?b.y:b.chkY))<0.02){ b.vx*=0.4; if(b.vy<0.016)b.vy=0.016; b.vx += (0.5-b.x)*0.002; } b.chkY=b.y; b.chkT=0; }
-  for(var i=0;i<pbBumpers.length;i++){ if(pbForceDown||b.toMega)break; var bp=pbBumpers[i],dx=b.x-bp.x,dy=b.y-bp.y,d=Math.hypot(dx,dy)||1; if(d<bp.r+PB_R){ var nx=dx/d,ny=dy/d; b.x=bp.x+nx*(bp.r+PB_R); b.y=bp.y+ny*(bp.r+PB_R);
+  for(var i=0;i<pbBumpers.length;i++){ if(pbForceDown||b.toMega)break; var bp=pbBumpers[i];
+      // closest point on the marker's rectangle to the bumper's centre — proper rect-vs-circle,
+      // instead of treating the marker like a round ball
+      var rx0=b.x-PB_RX, rx1=b.x+PB_RX, ry0=b.y-PB_RY, ry1=b.y+PB_RY;
+      var qx=Math.max(rx0,Math.min(bp.x,rx1)), qy=Math.max(ry0,Math.min(bp.y,ry1));
+      var ddx=qx-bp.x, ddy=qy-bp.y, d=Math.hypot(ddx,ddy)||1;
+      if(d<bp.r){ var nx=ddx/d,ny=ddy/d,push=(bp.r-d); b.x+=nx*push; b.y+=ny*push;
       if(bp.sling){ b.vx=(0.5-bp.x)*0.05; b.vy=0.03; }   // slingshot: shove the ball DOWN toward the flippers, never wedge it in the corner
       else { var dot=b.vx*nx+b.vy*ny; b.vx-=2*dot*nx; b.vy-=2*dot*ny; b.vx=b.vx*0.5+nx*0.006; b.vy=b.vy*0.5+ny*0.006; }
       bp.hit=8; pbScore+=(bp.sling?25:100); try{haptic(6);}catch(e){} } }
-  if(b.x>pbChair.x-PB_R&&b.x<pbChair.x+pbChair.w+PB_R&&b.y>pbChair.y-PB_R&&b.y<pbChair.y+pbChair.h+PB_R&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=22; b.y=pbChair.y-PB_R; b.vx=0.026; b.vy=-0.078; b.toMega=true; b.megaT=0; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
+  if(b.x>pbChair.x-PB_RX&&b.x<pbChair.x+pbChair.w+PB_RX&&b.y>pbChair.y-PB_RY&&b.y<pbChair.y+pbChair.h+PB_RY&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=22; b.y=pbChair.y-PB_RY; b.vx=0.026; b.vy=-0.078; b.toMega=true; b.megaT=0; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
   if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.megaT=0; b.vy=0.014; b.vx=(0.5-b.x)*0.02; try{haptic([25,15,35]);}catch(e){} }
   pbTriCollide(b);
   pbFlipperCollide(0.22,1.02, 0.5-pbFL*1.0, 0.20, b, pbFL);
@@ -7404,7 +7427,12 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   }
   pbDrawFlipper(0.22,1.02, 0.5-pbFL*1.0, 0.20, true); pbDrawFlipper(0.70,1.05, (Math.PI-0.5)+pbFR*1.0, 0.20, false);
   _gs(true);
-  if(b){ var BP=pbProject(b.x,b.y),br=pbSizePx(PB_R,b.y); c.save();c.shadowColor="#fff";c.shadowBlur=4;var bg=c.createRadialGradient(BP[0]-br*0.3,BP[1]-br*0.3,br*0.2,BP[0],BP[1],br);bg.addColorStop(0,"#fff");bg.addColorStop(1,"#8892a0");c.fillStyle=bg;c.beginPath();c.arc(BP[0],BP[1],br,0,6.283);c.fill();c.restore(); }
+  if(b){ var BP=pbProject(b.x,b.y),brw=pbSizePx(PB_RX*2,b.y),brh=pbSizePx(PB_RY*2,b.y);
+    var mImg=pbMarkerImg[b.color||"red"];
+    c.save(); c.translate(BP[0],BP[1]); c.rotate(b.spin||0); c.shadowColor="rgba(0,0,0,0.45)"; c.shadowBlur=4;
+    if(mImg&&mImg.complete&&mImg.naturalWidth){ c.drawImage(mImg,-brw/2,-brh/2,brw,brh); }
+    else { c.shadowColor="#fff"; var bg=c.createRadialGradient(-brw*0.15,-brh*0.15,brw*0.1,0,0,brw*0.5); bg.addColorStop(0,"#fff");bg.addColorStop(1,(b.color==="green")?"#2fae5a":"#c93a3a"); c.fillStyle=bg; c.beginPath(); c.ellipse(0,0,brw/2,brh/2,0,0,6.283); c.fill(); }
+    c.restore(); }
   _gs(false);
   c.fillStyle="#8fe0ff";c.textBaseline="middle"; c.font="bold "+(pbImgRW*0.03)+"px Helvetica, Arial, sans-serif"; c.textAlign="right"; c.fillText(pbHigh||0, pbImgOX+0.63*pbImgRW, pbImgOY+0.315*pbImgRH);
   c.font="bold "+(pbImgRW*0.023)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.fillText("SCORE "+pbScore+"    BALLS "+pbBalls, pbImgOX+0.5*pbImgRW, pbImgOY+0.328*pbImgRH);
