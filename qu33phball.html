@@ -26,6 +26,29 @@
     font-family:Helvetica,Arial,sans-serif; font-size:11px; font-weight:bold; letter-spacing:1px;
     cursor:pointer; -webkit-tap-highlight-color:transparent; }
   #boxBtn.on{ border-color:#4d9bff; color:#4d9bff; }
+  #editBtn{ position:fixed; right:10px; bottom:52px; z-index:6; padding:7px 12px; border-radius:9px;
+    background:rgba(8,9,16,0.82); border:1px solid rgba(255,255,255,0.34); color:#fff;
+    font-family:Helvetica,Arial,sans-serif; font-size:11px; font-weight:bold; letter-spacing:1px;
+    cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  #editBtn.on{ border-color:#ff8a2b; color:#ff8a2b; }
+  #exportBtn,#resetRectsBtn{ position:fixed; top:10px; z-index:6; padding:6px 10px; border-radius:9px;
+    background:rgba(8,9,16,0.82); border:1px solid rgba(255,255,255,0.34); color:#fff;
+    font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:bold; letter-spacing:0.5px;
+    cursor:pointer; -webkit-tap-highlight-color:transparent; display:none; }
+  #exportBtn{ right:10px; } #resetRectsBtn{ left:10px; }
+  body.editing #exportBtn,body.editing #resetRectsBtn{ display:block; }
+  #editHint{ position:fixed; top:46px; left:0; right:0; text-align:center; z-index:6; display:none;
+    font-family:Helvetica,Arial,sans-serif; font-size:11px; color:#ff8a2b; letter-spacing:0.3px;
+    text-shadow:0 1px 3px rgba(0,0,0,0.9); pointer-events:none; }
+  body.editing #editHint{ display:block; }
+  #exportOverlay{ position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.92); display:none;
+    flex-direction:column; padding:14px; }
+  #exportOverlay.show{ display:flex; }
+  #exportOverlay textarea{ flex:1; width:100%; background:#111; color:#8fffa0; border:1px solid #444;
+    font-family:'SF Mono',Consolas,monospace; font-size:11px; padding:10px; border-radius:8px; resize:none; }
+  #exportOverlay .exRow{ display:flex; gap:10px; margin-top:10px; }
+  #exportOverlay button{ flex:1; padding:12px; border-radius:9px; border:1px solid rgba(255,255,255,0.4);
+    background:#000; color:#fff; font-weight:bold; font-family:Helvetica,Arial,sans-serif; }
   #game{ display:block; }
 
 </style>
@@ -34,6 +57,17 @@
 <div id="wrap"><div id="stage"><canvas id="game"></canvas></div></div>
 <button id="laneBtn"></button>
 <button id="boxBtn">BOXES</button>
+<button id="editBtn">EDIT</button>
+<button id="exportBtn">EXPORT</button>
+<button id="resetRectsBtn">RESET LANE</button>
+<div id="editHint">drag a box to move it \u00b7 drag a corner to resize \u00b7 tap it to change its points</div>
+<div id="exportOverlay">
+  <textarea id="exportText" readonly></textarea>
+  <div class="exRow">
+    <button id="exportCopyBtn">COPY</button>
+    <button id="exportCloseBtn">CLOSE</button>
+  </div>
+</div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
@@ -310,11 +344,17 @@ function drawHitboxes(){
   ctx.textAlign='center'; ctx.textBaseline='middle';
   for(const r of f.rects){
     const x=fx(r.x0), y=fy(r.y0), w=fx(r.x1)-fx(r.x0), h=fy(r.y1)-fy(r.y0);
+    const isSel=(editMode && editSel && editSel.r===r);
     const col = r.chair?'#ff8a2b' : r.p>=333?'#ffd24a' : r.p>=100?'#ff4d4d' : r.p>=75?'#3cd07a' : r.p>=30?'#4d9bff':'#9aa0b5';
-    ctx.strokeStyle=col; ctx.strokeRect(x,y,w,h);
-    ctx.fillStyle=col+'22'; ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle=isSel?'#ffffff':col; ctx.lineWidth=isSel?Math.max(2.5,CW*0.007):Math.max(1.5,CW*0.004);
+    ctx.strokeRect(x,y,w,h);
+    ctx.fillStyle=col+(isSel?'55':'22'); ctx.fillRect(x,y,w,h);
     ctx.fillStyle=col; ctx.font='bold '+Math.round(Math.min(h*0.5,CW*0.038))+'px Helvetica,Arial,sans-serif';
     ctx.fillText(r.chair?('CHAIR '+r.p):String(r.p), x+w/2, y+h/2);
+    if(editMode){                                       // little grab handles at each corner
+      const hs=Math.max(6,CW*0.016); ctx.fillStyle='#ffffff';
+      [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(function(c){ ctx.fillRect(c[0]-hs/2,c[1]-hs/2,hs,hs); });
+    }
   }
   // where the marker starts, and the full spread aim can reach
   const cx=(f.cx!==undefined?f.cx:0.5);
@@ -325,6 +365,120 @@ function drawHitboxes(){
   ctx.fillStyle='#00e5ff'; ctx.beginPath(); ctx.arc(fx(f.start.x),fy(f.start.y),CW*0.012,0,7); ctx.fill();
   ctx.restore();
 }
+
+// ---- manual box editor: drag a rect to move it, drag a corner to resize it,
+// tap it (no drag) to type in a new point value. Everything autosaves per
+// lane to localStorage, so it survives a reload while you're testing it.
+const DEFAULT_RECTS={};
+FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
+(function loadRectOverrides(){
+  FIELDS.forEach(function(fl){
+    if(!fl.rects) return;
+    try{
+      const raw=localStorage.getItem('qu33phRects_'+fl.id);
+      if(raw){ const parsed=JSON.parse(raw); if(Array.isArray(parsed)&&parsed.length){ fl.rects.length=0; parsed.forEach(function(r){ fl.rects.push(r); }); } }
+    }catch(e){}
+  });
+})();
+function saveRectOverride(fl){ try{ localStorage.setItem('qu33phRects_'+fl.id, JSON.stringify(fl.rects)); }catch(e){} }
+
+let editMode=false, editSel=null, editStart=null, editMoved=false, editT0=0;
+const editBtn=document.getElementById('editBtn');
+editBtn.addEventListener('click',function(e){
+  e.stopPropagation(); editMode=!editMode; editBtn.classList.toggle('on',editMode);
+  document.body.classList.toggle('editing',editMode);
+  if(editMode){ showBoxes=true; boxBtn.classList.add('on'); } editSel=null;
+});
+
+const EDGE_TOL=0.020, MIN_SIZE=0.018;
+function hitTestRect(px,py){
+  const f=F(); if(!f.rects) return null;
+  let best=null,bestArea=1e9;
+  for(const r of f.rects){
+    const inX=px>r.x0-EDGE_TOL&&px<r.x1+EDGE_TOL, inY=py>r.y0-EDGE_TOL&&py<r.y1+EDGE_TOL;
+    if(!(inX&&inY)) continue;
+    const area=(r.x1-r.x0)*(r.y1-r.y0);
+    if(area<bestArea){
+      bestArea=area;
+      const nearL=Math.abs(px-r.x0)<EDGE_TOL, nearR=Math.abs(px-r.x1)<EDGE_TOL;
+      const nearT=Math.abs(py-r.y0)<EDGE_TOL, nearB=Math.abs(py-r.y1)<EDGE_TOL;
+      let handle='move';
+      if(nearL&&nearT) handle='nw'; else if(nearR&&nearT) handle='ne';
+      else if(nearL&&nearB) handle='sw'; else if(nearR&&nearB) handle='se';
+      else if(nearL) handle='w'; else if(nearR) handle='e';
+      else if(nearT) handle='n'; else if(nearB) handle='s';
+      best={ r:r, handle:handle };
+    }
+  }
+  return best;
+}
+cv.addEventListener('pointerdown',function(e){
+  if(!editMode) return; e.stopPropagation();
+  const p=pt(e); editSel=hitTestRect(p.x,p.y); editStart=p; editMoved=false; editT0=performance.now();
+});
+cv.addEventListener('pointermove',function(e){
+  if(!editMode || !editSel || !editStart) return; e.stopPropagation();
+  const p=pt(e), ddx=p.x-editStart.x, ddy=p.y-editStart.y;
+  if(Math.abs(ddx)>0.004||Math.abs(ddy)>0.004) editMoved=true;
+  const r=editSel.r, h=editSel.handle;
+  if(h==='move'){ r.x0+=ddx; r.x1+=ddx; r.y0+=ddy; r.y1+=ddy; }
+  else{
+    if(h.indexOf('w')>=0) r.x0+=ddx; if(h.indexOf('e')>=0) r.x1+=ddx;
+    if(h.indexOf('n')>=0) r.y0+=ddy; if(h.indexOf('s')>=0) r.y1+=ddy;
+  }
+  if(r.x1-r.x0<MIN_SIZE){ if(h.indexOf('w')>=0) r.x0=r.x1-MIN_SIZE; else r.x1=r.x0+MIN_SIZE; }
+  if(r.y1-r.y0<MIN_SIZE){ if(h.indexOf('n')>=0) r.y0=r.y1-MIN_SIZE; else r.y1=r.y0+MIN_SIZE; }
+  r.x0=Math.max(0,r.x0); r.x1=Math.min(1,r.x1); r.y0=Math.max(0,r.y0); r.y1=Math.min(1,r.y1);
+  editStart=p;
+});
+window.addEventListener('pointerup',function(){
+  if(!editMode || !editSel) return;
+  const dt=performance.now()-editT0;
+  if(!editMoved && dt<450){
+    const nv=window.prompt('Point value for this box:', editSel.r.p);
+    if(nv!==null && nv.trim()!==''){ const num=Number(nv); if(!isNaN(num)) editSel.r.p=num; }
+  }
+  saveRectOverride(F());
+  editSel=null; editStart=null; editMoved=false;
+});
+
+const resetRectsBtn=document.getElementById('resetRectsBtn');
+resetRectsBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  const f=F(); if(!f.rects) return;
+  if(!window.confirm('Reset '+f.name+"'s boxes back to the original layout?")) return;
+  f.rects.length=0; DEFAULT_RECTS[f.id].forEach(function(r){ f.rects.push(Object.assign({},r)); });
+  try{ localStorage.removeItem('qu33phRects_'+f.id); }catch(e2){}
+  editSel=null;
+});
+
+const exportOverlay=document.getElementById('exportOverlay'), exportText=document.getElementById('exportText');
+document.getElementById('exportBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  let out='';
+  FIELDS.forEach(function(fl){
+    if(!fl.rects) return;
+    out+='// ---- '+fl.id+' ('+fl.name+') ----\nrects:[\n';
+    fl.rects.forEach(function(r){
+      const parts=['x0:'+r.x0.toFixed(3),'x1:'+r.x1.toFixed(3),'y0:'+r.y0.toFixed(3),'y1:'+r.y1.toFixed(3),'p:'+r.p];
+      if(r.chair) parts.push('chair:1');
+      if(r.chainSide) parts.push("chainSide:'"+r.chainSide+"'");
+      if(r.tox!==undefined) parts.push('tox:'+r.tox,'toy:'+r.toy);
+      if(r.mega) parts.push('mega:1');
+      out+='  {'+parts.join(',')+'},\n';
+    });
+    out+=']\n\n';
+  });
+  exportText.value=out;
+  exportOverlay.classList.add('show');
+});
+document.getElementById('exportCloseBtn').addEventListener('click',function(e){ e.stopPropagation(); exportOverlay.classList.remove('show'); });
+document.getElementById('exportCopyBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  exportText.select();
+  try{ navigator.clipboard.writeText(exportText.value); }catch(err){ try{ document.execCommand('copy'); }catch(err2){} }
+});
+
 laneBtn.addEventListener('click',function(e){
   e.stopPropagation();
   if(!canSwitchLane()) return;
@@ -337,9 +491,9 @@ updLaneBtn();
 // ---- flick input ----
 let dragging=false, dStart=null, dNow=null;
 function pt(e){ const r=cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height }; }
-cv.addEventListener('pointerdown',e=>{ if(state==='over'){ reset(); return; } if(state!=='ready') return; dragging=true; dStart=pt(e); dNow=dStart; });
-cv.addEventListener('pointermove',e=>{ if(dragging) dNow=pt(e); });
-window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
+cv.addEventListener('pointerdown',e=>{ if(editMode) return; if(state==='over'){ reset(); return; } if(state!=='ready') return; dragging=true; dStart=pt(e); dNow=dStart; });
+cv.addEventListener('pointermove',e=>{ if(editMode) return; if(dragging) dNow=pt(e); });
+window.addEventListener('pointerup',()=>{ if(editMode) return; if(!dragging) return; dragging=false;
   const dx=dNow.x-dStart.x, dy=dNow.y-dStart.y;                 // flick UP = negative dy
   const up=Math.max(0,-dy);                                     // upward pull
   if(up<0.04){ dStart=dNow=null; return; }                     // too small, ignore
