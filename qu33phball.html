@@ -93,13 +93,15 @@ const FIELDS=[
      {x0:0.473,x1:0.552,y0:0.238,y1:0.270,p:50 },
      {x0:0.469,x1:0.550,y0:0.270,y1:0.301,p:40 },
      {x0:0.450,x1:0.578,y0:0.305,y1:0.332,p:30 },
-     {x0:0.414,x1:0.616,y0:0.335,y1:0.374,p:20 },
-     {x0:0.362,x1:0.654,y0:0.379,y1:0.419,p:10 },
+     // 20 and 10 are the wide outer rings — U-shaped washers now, same idea as
+     // Chair Tower's bands. Best-effort geometry; use the editor's centre/
+     // inner-edge/outer-edge handles (and the new angle handles) to fit them
+     // to the actual curve in the art.
+     {shape:'arc', cx:0.523, cy:0.145, rIn:0.190, rOut:0.230, a0:55, a1:125, p:20},
+     {shape:'arc', cx:0.523, cy:0.145, rIn:0.230, rOut:0.275, a0:50, a1:130, p:10},
      // corner barrels — round, so these are true circles now, not boxes
      {shape:'circle', cx:0.3745, cy:0.2625, r:0.036, p:100},
-     {shape:'circle', cx:0.6515, cy:0.2595, r:0.040, p:100},
-     // your dragged catch-all
-     {x0:0.238,x1:0.259,y0:0.594,y1:0.717,p:10 }
+     {shape:'circle', cx:0.6515, cy:0.2595, r:0.040, p:100}
    ],
    bestKey:'qu33phSkeeballBest' },
 
@@ -158,8 +160,6 @@ const FIELDS=[
      {shape:'circle', cx:0.427, cy:0.385, r:0.037, p:2000},
      {shape:'circle', cx:0.598, cy:0.386, r:0.036, p:2000},
      {shape:'circle', cx:0.511, cy:0.418, r:0.036, p:1000},
-     {shape:'circle', cx:0.432, cy:0.434, r:0.033, p:500},
-     {shape:'circle', cx:0.590, cy:0.434, r:0.033, p:500},   // mirrored to the other side of the 1,000
      // U-shaped bands wrapping under the cup cluster, closest (500) to farthest (100)
      {shape:'arc', cx:0.511, cy:0.40, rIn:0.155, rOut:0.195, a0:10, a1:170, p:500},
      {shape:'arc', cx:0.511, cy:0.40, rIn:0.195, rOut:0.235, a0:10, a1:170, p:250},
@@ -376,6 +376,10 @@ function drawHitboxes(){
         ctx.fillStyle='#ffffff';
         const om=[cx+Math.cos(midA)*rOut,cy+Math.sin(midA)*rOut], im=[cx+Math.cos(midA)*rIn,cy+Math.sin(midA)*rIn];
         ctx.fillRect(om[0]-hs/2,om[1]-hs/2,hs,hs); ctx.fillRect(im[0]-hs/2,im[1]-hs/2,hs,hs); ctx.fillRect(cx-hs/2,cy-hs/2,hs,hs);
+        // angle-corner handles, in yellow so they read as distinct from the move/resize squares
+        ctx.fillStyle='#fff54a';
+        const midRp=(rIn+rOut)/2;
+        [a0,a1].forEach(function(a){ const hx=cx+Math.cos(a)*midRp, hy=cy+Math.sin(a)*midRp; ctx.beginPath(); ctx.arc(hx,hy,hs*0.6,0,7); ctx.fill(); });
       }
     } else {
       const x=fx(r.x0), y=fy(r.y0), w=fx(r.x1)-fx(r.x0), h=fy(r.y1)-fy(r.y0);
@@ -405,7 +409,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='2';
+const RECTS_SCHEMA_VERSION='3';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
@@ -438,10 +442,10 @@ editBtn.addEventListener('click',function(e){
   if(editMode){ showBoxes=true; boxBtn.classList.add('on'); } editSel=null;
 });
 
-const EDGE_TOL=0.020, MIN_SIZE=0.018, MIN_R=0.015;
+const EDGE_TOL=0.020, MIN_SIZE=0.018, MIN_R=0.015, D2R=Math.PI/180;
 function hitTestRect(px,py){
   const f=F(); if(!f.rects) return null;
-  let best=null,bestArea=1e9;
+  let best=null,bestArea=1e9, bestAngle=null,bestAngleDist=1e9;
   const PH=f.PH;
   for(const r of f.rects){
     if(r.shape==='circle'){
@@ -452,6 +456,14 @@ function hitTestRect(px,py){
       continue;
     }
     if(r.shape==='arc'){
+      const midR=(r.rIn+r.rOut)/2;
+      // angle-corner handles, at the middle of each curved edge — small specific
+      // targets, so the CLOSEST one across all shapes wins, checked before area priority
+      const a0x=r.cx+Math.cos(r.a0*D2R)*midR, a0y=r.cy+Math.sin(r.a0*D2R)*midR/(PH/100);
+      const a1x=r.cx+Math.cos(r.a1*D2R)*midR, a1y=r.cy+Math.sin(r.a1*D2R)*midR/(PH/100);
+      const dA0=Math.hypot(px-a0x,(py-a0y)*(PH/100)), dA1=Math.hypot(px-a1x,(py-a1y)*(PH/100));
+      if(dA0<EDGE_TOL*1.6 && dA0<bestAngleDist){ bestAngleDist=dA0; bestAngle={ r:r, handle:'angle0' }; }
+      if(dA1<EDGE_TOL*1.6 && dA1<bestAngleDist){ bestAngleDist=dA1; bestAngle={ r:r, handle:'angle1' }; }
       const dx=px-r.cx, dy=(py-r.cy)*(PH/100), dist=Math.hypot(dx,dy);
       if(dist<r.rIn-EDGE_TOL||dist>r.rOut+EDGE_TOL) continue;
       let ang=Math.atan2(dy,dx)*180/Math.PI; if(ang<0) ang+=360;
@@ -482,7 +494,7 @@ function hitTestRect(px,py){
       best={ r:r, handle:handle };
     }
   }
-  return best;
+  return bestAngle||best;
 }
 cv.addEventListener('pointerdown',function(e){
   if(!editMode) return; e.stopPropagation();
@@ -500,6 +512,11 @@ cv.addEventListener('pointermove',function(e){
     if(h==='move'){ r.cx+=ddx; r.cy+=ddy; }
     else if(h==='resizeOut'){ r.rOut=Math.max(r.rIn+MIN_R, Math.hypot(p.x-r.cx,(p.y-r.cy)*(PH/100))); }
     else if(h==='resizeIn'){ r.rIn=Math.min(r.rOut-MIN_R, Math.max(0,Math.hypot(p.x-r.cx,(p.y-r.cy)*(PH/100)))); }
+    else if(h==='angle0'||h==='angle1'){
+      const adx=p.x-r.cx, ady=(p.y-r.cy)*(PH/100);
+      let ang=Math.atan2(ady,adx)*180/Math.PI; if(ang<0) ang+=360;
+      if(h==='angle0') r.a0=ang; else r.a1=ang;
+    }
   } else if(h==='move'){ r.x0+=ddx; r.x1+=ddx; r.y0+=ddy; r.y1+=ddy; }
   else{
     if(h.indexOf('w')>=0) r.x0+=ddx; if(h.indexOf('e')>=0) r.x1+=ddx;
