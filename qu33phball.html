@@ -400,18 +400,35 @@ function drawHitboxes(){
 // ---- manual box editor: drag a rect to move it, drag a corner to resize it,
 // tap it (no drag) to type in a new point value. Everything autosaves per
 // lane to localStorage, so it survives a reload while you're testing it.
+// Bump this whenever the hardcoded defaults change meaningfully (new shapes,
+// new zones, etc.) — a saved override from an OLDER version gets ignored
+// instead of silently masking the new baseline, which is what was happening
+// with your v394 update: your saved boxes predated the circles/arcs, so they
+// were overwriting them back to plain rectangles on every load.
+const RECTS_SCHEMA_VERSION='2';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
   FIELDS.forEach(function(fl){
     if(!fl.rects) return;
     try{
+      const ver=localStorage.getItem('qu33phRectsVer_'+fl.id);
+      if(ver!==RECTS_SCHEMA_VERSION){                       // stale/older save — drop it, keep the fresh defaults
+        localStorage.removeItem('qu33phRects_'+fl.id);
+        localStorage.removeItem('qu33phRectsVer_'+fl.id);
+        return;
+      }
       const raw=localStorage.getItem('qu33phRects_'+fl.id);
       if(raw){ const parsed=JSON.parse(raw); if(Array.isArray(parsed)&&parsed.length){ fl.rects.length=0; parsed.forEach(function(r){ fl.rects.push(r); }); } }
     }catch(e){}
   });
 })();
-function saveRectOverride(fl){ try{ localStorage.setItem('qu33phRects_'+fl.id, JSON.stringify(fl.rects)); }catch(e){} }
+function saveRectOverride(fl){
+  try{
+    localStorage.setItem('qu33phRects_'+fl.id, JSON.stringify(fl.rects));
+    localStorage.setItem('qu33phRectsVer_'+fl.id, RECTS_SCHEMA_VERSION);
+  }catch(e){}
+}
 
 let editMode=false, editSel=null, editStart=null, editMoved=false, editT0=0;
 const editBtn=document.getElementById('editBtn');
