@@ -461,7 +461,8 @@ function endRoll(fromMega){
   if(!fromMega){
     if(roll===0 && strike){ say('QU33PH\u2122','#ffd54a'); sfx('quephe'); }
     else if(roll>0 && cleared){ say('SPARE','#3fd07a'); sfx('mega'); }
-    else if(felled===0 && ball && ball.gutter){ say('PEEF','#ff5a5a'); sfx('peef'); }
+    else if(felled===0 && ball && ball.gutter){ say('PEEF','#ff5a5a'); sfxPeef(); }
+    else { sfxRollCount(felled); }
   }
   if(frame<9){
     if(roll===0 && !strike){ roll=1; sweepAndStand(); setChair(); readyNext(); }
@@ -492,10 +493,33 @@ function saveHigh(){
 
 // ─── sound hooks (files land later; silent until then) ────────────────────
 const SFX={};
-['roll','pin','quephe','mega','peef','over'].forEach(function(n){
+['roll','pin','quephe','mega','over'].forEach(function(n){
   const a=new Audio('sfx/bowl_'+n+'.mp3'); a.preload='auto'; SFX[n]=a;
 });
 function sfx(n){ const a=SFX[n]; if(!a) return; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+
+// ─── per-roll result sounds — filename number = how many markers that throw
+// knocked down. Trimmed the same way as the mini/skee sets: each clip had the
+// throw baked into the front, so these start right on the crash and fire
+// instantly. Not every count has a clip yet — silently skips if one's missing.
+const ROLL_SND={
+  1:['bowling1'], 3:['bowling3'], 5:['bowling5','bowling5-2'],
+  6:['bowling6washout'], 8:['bowling8'], 9:['bowling9']
+};
+const ROLL_POOL={};
+Object.keys(ROLL_SND).forEach(function(k){
+  ROLL_POOL[k]=ROLL_SND[k].map(function(n){ return [0,1].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
+});
+const PEEF_POOL=[0,1,2].map(function(){ const a=new Audio('bowlingpeeflong.m4a'); a.preload='auto'; return a; });
+let peefIdx=0, rollTake={};
+function sfxPeef(){ const a=PEEF_POOL[peefIdx=(peefIdx+1)%PEEF_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function sfxRollCount(n){
+  const takes=ROLL_POOL[n]; if(!takes) return;                 // no clip for this count yet
+  const t=(Math.random()*takes.length)|0, pool=takes[t];
+  rollTake[n]=((rollTake[n]||0)+1)%pool.length;
+  const a=pool[rollTake[n]];
+  try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){}
+}
 
 // ─── galaxy starfield ─────────────────────────────────────────────────────
 let starCv=null;

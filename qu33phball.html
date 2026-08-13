@@ -37,10 +37,19 @@
     cursor:pointer; -webkit-tap-highlight-color:transparent; display:none; }
   #exportBtn{ right:10px; } #resetRectsBtn{ left:10px; }
   body.editing #exportBtn,body.editing #resetRectsBtn{ display:block; }
+  #drawPolyBtn,#finishPolyBtn,#cancelPolyBtn{ position:fixed; top:42px; z-index:6; padding:6px 10px; border-radius:9px;
+    background:rgba(8,9,16,0.82); border:1px solid rgba(255,255,255,0.34); color:#fff;
+    font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:bold; letter-spacing:0.5px;
+    cursor:pointer; -webkit-tap-highlight-color:transparent; display:none; }
+  #drawPolyBtn{ left:10px; } #finishPolyBtn{ right:10px; } #cancelPolyBtn{ right:10px; top:74px; }
+  body.editing #drawPolyBtn{ display:block; }
+  #drawPolyBtn.on{ border-color:#fff54a; color:#fff54a; }
+  #finishPolyBtn{ border-color:#3cd07a; color:#3cd07a; }
+  #cancelPolyBtn{ border-color:#ff4d4d; color:#ff4d4d; }
   #editHint{ position:fixed; top:46px; left:0; right:0; text-align:center; z-index:6; display:none;
     font-family:Helvetica,Arial,sans-serif; font-size:11px; color:#ff8a2b; letter-spacing:0.3px;
     text-shadow:0 1px 3px rgba(0,0,0,0.9); pointer-events:none; }
-  body.editing #editHint{ display:block; }
+  body.editing #editHint{ display:block; top:104px; }
   #exportOverlay{ position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.92); display:none;
     flex-direction:column; padding:14px; }
   #exportOverlay.show{ display:flex; }
@@ -60,7 +69,10 @@
 <button id="editBtn">EDIT</button>
 <button id="exportBtn">EXPORT</button>
 <button id="resetRectsBtn">RESET LANE</button>
-<div id="editHint">drag a box to move it \u00b7 drag a corner to resize \u00b7 tap it to change its points</div>
+<button id="drawPolyBtn">DRAW SHAPE</button>
+<button id="finishPolyBtn">FINISH</button>
+<button id="cancelPolyBtn">CANCEL</button>
+<div id="editHint">drag a box/curve to move it \u00b7 drag an edge, corner or angle dot to reshape \u00b7 tap it to change its points \u00b7 drag the cyan circles to move MARKERS/SCORE/HIGH SCORE</div>
 <div id="exportOverlay">
   <textarea id="exportText" readonly></textarea>
   <div class="exRow">
@@ -90,18 +102,16 @@ const FIELDS=[
    scat:function(p){ return 0.55+Math.abs(p-0.70)*1.5; }, overFrom:2, overK:0,
    rects:[
      // centre column, contiguous bands so nothing drops through a crack
-     {x0:0.473,x1:0.552,y0:0.238,y1:0.270,p:50 },
+     {x0:0.473,x1:0.554,y0:0.243,y1:0.270,p:50 },
      {x0:0.469,x1:0.550,y0:0.270,y1:0.301,p:40 },
      {x0:0.450,x1:0.578,y0:0.305,y1:0.332,p:30 },
-     // 20 and 10 are the wide outer rings — U-shaped washers now, same idea as
-     // Chair Tower's bands. Best-effort geometry; use the editor's centre/
-     // inner-edge/outer-edge handles (and the new angle handles) to fit them
-     // to the actual curve in the art.
-     {shape:'arc', cx:0.523, cy:0.145, rIn:0.190, rOut:0.230, a0:55, a1:125, p:20},
-     {shape:'arc', cx:0.523, cy:0.145, rIn:0.230, rOut:0.275, a0:50, a1:130, p:10},
-     // corner barrels — round, so these are true circles now, not boxes
-     {shape:'circle', cx:0.3745, cy:0.2625, r:0.036, p:100},
-     {shape:'circle', cx:0.6515, cy:0.2595, r:0.040, p:100}
+     // 20 and 10 are the wide outer rings — U-shaped washers, fitted with the
+     // arc handles.
+     {shape:'arc', cx:0.521, cy:0.143, rIn:0.338, rOut:0.407, a0:68, a1:114, p:20},
+     {shape:'arc', cx:0.512, cy:0.250, rIn:0.230, rOut:0.319, a0:38, a1:142, p:10},
+     // corner barrels — round
+     {shape:'circle', cx:0.374, cy:0.263, r:0.036, p:100},
+     {shape:'circle', cx:0.651, cy:0.260, r:0.040, p:100}
    ],
    bestKey:'qu33phSkeeballBest' },
 
@@ -143,11 +153,8 @@ const FIELDS=[
    scat:function(p){ return 0.52+Math.abs(p-0.73)*1.25+Math.max(0,p-0.84)*3.6; },
    overFrom:0.92, overK:5,
    // Chairs give no guaranteed points — only the chance to climb (see the chain
-   // in scoreLanding()). Cups are round now (shape:'circle'), and the bands
-   // wrapping under them are true U-shaped washers (shape:'arc', rIn/rOut/a0/a1,
-   // angles in degrees where 0=east/90=south/180=west, sweeping clockwise) —
-   // best-effort geometry from the cup positions you dragged; nudge them with
-   // the editor's centre/inner-edge/outer-edge handles to dial them in exactly.
+   // in scoreLanding()). Cups are round (shape:'circle'), and the bands
+   // wrapping under them are true U-shaped washers (shape:'arc').
    // Only the bottom chairs and the centre cups/rings are landable zones — the
    // chair tags higher up the side rails, and the mega dot, are NOT separate
    // targets. The only way to them is up the chair chain (see scoreLanding()).
@@ -161,9 +168,9 @@ const FIELDS=[
      {shape:'circle', cx:0.598, cy:0.386, r:0.036, p:2000},
      {shape:'circle', cx:0.511, cy:0.418, r:0.036, p:1000},
      // U-shaped bands wrapping under the cup cluster, closest (500) to farthest (100)
-     {shape:'arc', cx:0.511, cy:0.40, rIn:0.155, rOut:0.195, a0:10, a1:170, p:500},
-     {shape:'arc', cx:0.511, cy:0.40, rIn:0.195, rOut:0.235, a0:10, a1:170, p:250},
-     {shape:'arc', cx:0.511, cy:0.40, rIn:0.235, rOut:0.275, a0:10, a1:170, p:100}
+     {shape:'arc', cx:0.515, cy:0.388, rIn:0.095, rOut:0.150, a0:10, a1:163, p:500},
+     {shape:'arc', cx:0.511, cy:0.391, rIn:0.157, rOut:0.221, a0:17, a1:160, p:250},
+     {shape:'arc', cx:0.511, cy:0.400, rIn:0.215, rOut:0.262, a0:33, a1:143, p:100}
    ],
    bestKey:'qu33phSkeeballBest3' }
 ];
@@ -381,6 +388,17 @@ function drawHitboxes(){
         const midRp=(rIn+rOut)/2;
         [a0,a1].forEach(function(a){ const hx=cx+Math.cos(a)*midRp, hy=cy+Math.sin(a)*midRp; ctx.beginPath(); ctx.arc(hx,hy,hs*0.6,0,7); ctx.fill(); });
       }
+    } else if(r.shape==='poly'){
+      const pts=r.pts.map(function(v){ return [fx(v[0]),fy(v[1])]; });
+      ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+      for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+      ctx.closePath();
+      ctx.fillStyle=col+(isSel?'55':'22'); ctx.fill();
+      ctx.strokeStyle=isSel?'#ffffff':col; ctx.lineWidth=lw; ctx.stroke();
+      let cxp=0,cyp=0; pts.forEach(function(v){ cxp+=v[0]; cyp+=v[1]; }); cxp/=pts.length; cyp/=pts.length;
+      ctx.fillStyle=col; ctx.font='bold '+Math.round(CW*0.034)+'px Helvetica,Arial,sans-serif';
+      ctx.fillText(String(r.p), cxp, cyp);
+      if(editMode){ ctx.fillStyle='#ffffff'; pts.forEach(function(v){ ctx.fillRect(v[0]-hs/2,v[1]-hs/2,hs,hs); }); }
     } else {
       const x=fx(r.x0), y=fy(r.y0), w=fx(r.x1)-fx(r.x0), h=fy(r.y1)-fy(r.y0);
       ctx.strokeStyle=isSel?'#ffffff':col; ctx.lineWidth=lw;
@@ -390,6 +408,14 @@ function drawHitboxes(){
       ctx.fillText(r.chair?('CHAIR '+r.p):String(r.p), x+w/2, y+h/2);
       if(editMode){ ctx.fillStyle='#ffffff'; [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(function(c){ ctx.fillRect(c[0]-hs/2,c[1]-hs/2,hs,hs); }); }
     }
+  }
+  // freeform polygon currently being drawn (not committed yet)
+  if(editMode && drawingPoly && polyPoints.length){
+    ctx.strokeStyle='#fff54a'; ctx.fillStyle='#fff54a'; ctx.lineWidth=Math.max(2,CW*0.005);
+    ctx.beginPath(); ctx.moveTo(fx(polyPoints[0][0]),fy(polyPoints[0][1]));
+    for(let i=1;i<polyPoints.length;i++) ctx.lineTo(fx(polyPoints[i][0]),fy(polyPoints[i][1]));
+    ctx.stroke();
+    polyPoints.forEach(function(v){ ctx.beginPath(); ctx.arc(fx(v[0]),fy(v[1]),Math.max(5,CW*0.012),0,7); ctx.fill(); });
   }
   // where the marker starts, and the full spread aim can reach
   const cx=(f.cx!==undefined?f.cx:0.5);
@@ -409,7 +435,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='3';
+const RECTS_SCHEMA_VERSION='4';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
@@ -479,7 +505,20 @@ function hitTestRect(px,py){
       }
       continue;
     }
-    const inX=px>r.x0-EDGE_TOL&&px<r.x1+EDGE_TOL, inY=py>r.y0-EDGE_TOL&&py<r.y1+EDGE_TOL;
+    if(r.shape==='poly'){
+      // vertex handles first — small specific targets, closest one wins
+      for(let i=0;i<r.pts.length;i++){
+        const d=Math.hypot(px-r.pts[i][0],(py-r.pts[i][1])*(PH/100));
+        if(d<EDGE_TOL*1.6 && d<bestAngleDist){ bestAngleDist=d; bestAngle={ r:r, handle:'vertex:'+i }; }
+      }
+      if(!pointInShape(r,px,py,PH)) continue;
+      // rough bounding-box area, just to decide priority against overlapping shapes
+      let minx=1,maxx=0,miny=1,maxy=0;
+      r.pts.forEach(function(v){ minx=Math.min(minx,v[0]); maxx=Math.max(maxx,v[0]); miny=Math.min(miny,v[1]); maxy=Math.max(maxy,v[1]); });
+      const area=(maxx-minx)*(maxy-miny);
+      if(area<bestArea){ bestArea=area; best={ r:r, handle:'move' }; }
+      continue;
+    }
     if(!(inX&&inY)) continue;
     const area=(r.x1-r.x0)*(r.y1-r.y0);
     if(area<bestArea){
@@ -496,15 +535,75 @@ function hitTestRect(px,py){
   }
   return bestAngle||best;
 }
+// ---- HUD number positions (markers/score/high score) are draggable too ----
+function hudHitTest(px,py){
+  const f=F(); const HD=f.hud; if(!HD) return null;
+  const HY=Array.isArray(HD.y)?HD.y:[HD.y,HD.y,HD.y];
+  for(let i=0;i<3;i++){ if(Math.hypot(px-HD.x[i],py-HY[i])<0.045) return {hud:i}; }
+  return null;
+}
+const DEFAULT_HUD={};
+FIELDS.forEach(function(fl){ if(fl.hud) DEFAULT_HUD[fl.id]={ x:fl.hud.x.slice(), y:(Array.isArray(fl.hud.y)?fl.hud.y.slice():[fl.hud.y,fl.hud.y,fl.hud.y]) }; });
+(function loadHudOverrides(){
+  FIELDS.forEach(function(fl){
+    if(!fl.hud) return;
+    try{
+      const ver=localStorage.getItem('qu33phHudVer_'+fl.id);
+      if(ver!==RECTS_SCHEMA_VERSION){ localStorage.removeItem('qu33phHud_'+fl.id); localStorage.removeItem('qu33phHudVer_'+fl.id); return; }
+      const raw=localStorage.getItem('qu33phHud_'+fl.id);
+      if(raw){ const parsed=JSON.parse(raw); if(parsed&&parsed.x) fl.hud={x:parsed.x,y:parsed.y}; }
+    }catch(e){}
+  });
+})();
+function saveHudOverride(fl){
+  try{
+    localStorage.setItem('qu33phHud_'+fl.id, JSON.stringify(fl.hud));
+    localStorage.setItem('qu33phHudVer_'+fl.id, RECTS_SCHEMA_VERSION);
+  }catch(e){}
+}
+
+// ---- freeform polygon tool: tap DRAW, tap the field to drop points, FINISH to close it ----
+let drawingPoly=false, polyPoints=[];
+const drawPolyBtn=document.getElementById('drawPolyBtn'), finishPolyBtn=document.getElementById('finishPolyBtn'), cancelPolyBtn=document.getElementById('cancelPolyBtn');
+function updPolyBtns(){
+  drawPolyBtn.classList.toggle('on',drawingPoly);
+  finishPolyBtn.style.display=(drawingPoly&&polyPoints.length>=3)?'block':'none';
+  cancelPolyBtn.style.display=(drawingPoly&&polyPoints.length>0)?'block':'none';
+}
+drawPolyBtn.addEventListener('click',function(e){
+  e.stopPropagation(); drawingPoly=!drawingPoly; polyPoints=[]; editSel=null; updPolyBtns();
+});
+finishPolyBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  if(polyPoints.length<3) return;
+  const nv=window.prompt('Point value for this shape:','0');
+  if(nv!==null && nv.trim()!==''){
+    const num=Number(nv);
+    if(!isNaN(num)){ F().rects.push({shape:'poly', pts:polyPoints.map(function(v){return v.slice();}), p:num}); saveRectOverride(F()); }
+  }
+  polyPoints=[]; drawingPoly=false; updPolyBtns();
+});
+cancelPolyBtn.addEventListener('click',function(e){ e.stopPropagation(); polyPoints=[]; updPolyBtns(); });
+
 cv.addEventListener('pointerdown',function(e){
   if(!editMode) return; e.stopPropagation();
-  const p=pt(e); editSel=hitTestRect(p.x,p.y); editStart=p; editMoved=false; editT0=performance.now();
+  const p=pt(e);
+  if(drawingPoly){ editStart=p; editMoved=false; editT0=performance.now(); return; }
+  editSel = hudHitTest(p.x,p.y) || hitTestRect(p.x,p.y);
+  editStart=p; editMoved=false; editT0=performance.now();
 });
 cv.addEventListener('pointermove',function(e){
-  if(!editMode || !editSel || !editStart) return; e.stopPropagation();
+  if(!editMode || !editStart) return; e.stopPropagation();
   const p=pt(e), ddx=p.x-editStart.x, ddy=p.y-editStart.y;
   if(Math.abs(ddx)>0.004||Math.abs(ddy)>0.004) editMoved=true;
-  const r=editSel.r, h=editSel.handle, f=F(), PH=f.PH;
+  if(drawingPoly) return;
+  if(!editSel) return;
+  const f=F(), PH=f.PH;
+  if(editSel.hud!==undefined){
+    const HD=f.hud, HY=Array.isArray(HD.y)?HD.y:(HD.y=[HD.y,HD.y,HD.y]);
+    HD.x[editSel.hud]+=ddx; HY[editSel.hud]+=ddy; editStart=p; return;
+  }
+  const r=editSel.r, h=editSel.handle;
   if(r.shape==='circle'){
     if(h==='move'){ r.cx+=ddx; r.cy+=ddy; }
     else { r.r=Math.max(MIN_R, Math.hypot(p.x-r.cx,(p.y-r.cy)*(PH/100))); }
@@ -517,6 +616,9 @@ cv.addEventListener('pointermove',function(e){
       let ang=Math.atan2(ady,adx)*180/Math.PI; if(ang<0) ang+=360;
       if(h==='angle0') r.a0=ang; else r.a1=ang;
     }
+  } else if(r.shape==='poly'){
+    if(h==='move'){ r.pts.forEach(function(v){ v[0]+=ddx; v[1]+=ddy; }); }
+    else if(h.indexOf('vertex:')===0){ const i=+h.split(':')[1]; r.pts[i][0]+=ddx; r.pts[i][1]+=ddy; }
   } else if(h==='move'){ r.x0+=ddx; r.x1+=ddx; r.y0+=ddy; r.y1+=ddy; }
   else{
     if(h.indexOf('w')>=0) r.x0+=ddx; if(h.indexOf('e')>=0) r.x1+=ddx;
@@ -528,8 +630,14 @@ cv.addEventListener('pointermove',function(e){
   editStart=p;
 });
 window.addEventListener('pointerup',function(){
-  if(!editMode || !editSel) return;
+  if(!editMode) return;
+  if(drawingPoly){
+    if(editStart && !editMoved){ polyPoints.push([editStart.x,editStart.y]); updPolyBtns(); }
+    editStart=null; editMoved=false; return;
+  }
+  if(!editSel) return;
   const dt=performance.now()-editT0;
+  if(editSel.hud!==undefined){ saveHudOverride(F()); editSel=null; editStart=null; editMoved=false; return; }
   if(!editMoved && dt<450){
     const nv=window.prompt('Point value for this box:', editSel.r.p);
     if(nv!==null && nv.trim()!==''){ const num=Number(nv); if(!isNaN(num)) editSel.r.p=num; }
@@ -542,10 +650,14 @@ const resetRectsBtn=document.getElementById('resetRectsBtn');
 resetRectsBtn.addEventListener('click',function(e){
   e.stopPropagation();
   const f=F(); if(!f.rects) return;
-  if(!window.confirm('Reset '+f.name+"'s boxes back to the original layout?")) return;
+  if(!window.confirm('Reset '+f.name+"'s boxes and HUD numbers back to the original layout?")) return;
   f.rects.length=0; DEFAULT_RECTS[f.id].forEach(function(r){ f.rects.push(Object.assign({},r)); });
-  try{ localStorage.removeItem('qu33phRects_'+f.id); }catch(e2){}
-  editSel=null;
+  if(DEFAULT_HUD[f.id]) f.hud={ x:DEFAULT_HUD[f.id].x.slice(), y:DEFAULT_HUD[f.id].y.slice() };
+  try{
+    localStorage.removeItem('qu33phRects_'+f.id); localStorage.removeItem('qu33phRectsVer_'+f.id);
+    localStorage.removeItem('qu33phHud_'+f.id); localStorage.removeItem('qu33phHudVer_'+f.id);
+  }catch(e2){}
+  editSel=null; polyPoints=[]; drawingPoly=false; updPolyBtns();
 });
 
 const exportOverlay=document.getElementById('exportOverlay'), exportText=document.getElementById('exportText');
@@ -553,12 +665,17 @@ document.getElementById('exportBtn').addEventListener('click',function(e){
   e.stopPropagation();
   let out='';
   FIELDS.forEach(function(fl){
+    if(fl.hud){
+      const HY=Array.isArray(fl.hud.y)?fl.hud.y:[fl.hud.y,fl.hud.y,fl.hud.y];
+      out+='// ---- '+fl.id+' hud ----\nhud:{x:['+fl.hud.x.map(function(v){return v.toFixed(3);}).join(',')+'], y:['+HY.map(function(v){return v.toFixed(3);}).join(',')+']}\n\n';
+    }
     if(!fl.rects) return;
     out+='// ---- '+fl.id+' ('+fl.name+') ----\nrects:[\n';
     fl.rects.forEach(function(r){
       let parts;
       if(r.shape==='circle') parts=["shape:'circle'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'r:'+r.r.toFixed(3),'p:'+r.p];
       else if(r.shape==='arc') parts=["shape:'arc'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'rIn:'+r.rIn.toFixed(3),'rOut:'+r.rOut.toFixed(3),'a0:'+Math.round(r.a0),'a1:'+Math.round(r.a1),'p:'+r.p];
+      else if(r.shape==='poly') parts=["shape:'poly'",'pts:['+r.pts.map(function(v){return '['+v[0].toFixed(3)+','+v[1].toFixed(3)+']';}).join(',')+']','p:'+r.p];
       else parts=['x0:'+r.x0.toFixed(3),'x1:'+r.x1.toFixed(3),'y0:'+r.y0.toFixed(3),'y1:'+r.y1.toFixed(3),'p:'+r.p];
       if(r.chair) parts.push('chair:1');
       if(r.chainSide) parts.push("chainSide:'"+r.chainSide+"'");
@@ -636,6 +753,15 @@ function pointInShape(r,lx,ly,PH){
     if(dist<r.rIn||dist>r.rOut) return false;
     let ang=Math.atan2(dy,dx)*180/Math.PI; if(ang<0) ang+=360;
     return r.a0<=r.a1 ? (ang>=r.a0&&ang<=r.a1) : (ang>=r.a0||ang<=r.a1);
+  }
+  if(r.shape==='poly'){
+    // standard ray-casting point-in-polygon — freeform shapes drawn in the editor
+    const pts=r.pts; let inside=false;
+    for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+      const xi=pts[i][0],yi=pts[i][1], xj=pts[j][0],yj=pts[j][1];
+      if(((yi>ly)!==(yj>ly)) && (lx < (xj-xi)*(ly-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
   }
   return lx>=r.x0&&lx<=r.x1&&ly>=r.y0&&ly<=r.y1;
 }
@@ -810,6 +936,15 @@ function draw(){
   ctx.fillText(TOTAL-resolved, fx(HD.x[0]), fy(HY[0]));
   ctx.fillText(fmtK(score),    fx(HD.x[1]), fy(HY[1]));
   ctx.fillText(fmtK(best),     fx(HD.x[2]), fy(HY[2]));
+  if(editMode){                                          // drag handles for the 3 HUD numbers themselves
+    ctx.save(); ctx.strokeStyle='#00e5ff'; ctx.lineWidth=Math.max(2,CW*0.005);
+    for(let i=0;i<3;i++){
+      const isSel=editSel&&editSel.hud===i;
+      ctx.beginPath(); ctx.arc(fx(HD.x[i]),fy(HY[i]),CW*0.028,0,7);
+      ctx.strokeStyle=isSel?'#fff54a':'#00e5ff'; ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   // preview queue — each marker keeps its own slot, so the row never reshuffles
   ctx.globalAlpha=0.38;
