@@ -105,17 +105,15 @@ const FIELDS=[
      {x0:0.473,x1:0.554,y0:0.243,y1:0.270,p:50 },
      {x0:0.469,x1:0.550,y0:0.270,y1:0.301,p:40 },
      {x0:0.450,x1:0.578,y0:0.305,y1:0.332,p:30 },
-     // 20 and 10 are the wide outer rings — U-shaped washers, fitted with the
-     // arc handles.
-     {shape:'arc', cx:0.521, cy:0.143, rIn:0.338, rOut:0.407, a0:68, a1:114, p:20},
-     {shape:'arc', cx:0.512, cy:0.250, rIn:0.230, rOut:0.319, a0:38, a1:142, p:10},
+     // 20 and 10 are the wide outer rings — one continuous U-shaped washer each
+     // (used to be pieced together from an arc plus hand-drawn fills; merged into
+     // a single shape so there's no seam to miss between them), with a little
+     // radius overlap between the two so there's no gap where a landing scores 0
+     {shape:'arc', cx:0.521, cy:0.143, rIn:0.251, rOut:0.436, a0:67, a1:116, p:20},
+     {shape:'arc', cx:0.512, cy:0.250, rIn:0.205, rOut:0.319, a0:38, a1:142, p:10},
      // corner barrels — round
      {shape:'circle', cx:0.374, cy:0.263, r:0.036, p:100},
-     {shape:'circle', cx:0.651, cy:0.260, r:0.040, p:100},
-     // hand-drawn fill for the gap beside each barrel — cleaned up (duplicate
-     // taps removed, slight jaggedness smoothed) but same coverage you drew
-     {shape:'poly', pts:[[0.380,0.308],[0.445,0.328],[0.437,0.305],[0.460,0.298],[0.460,0.280],[0.420,0.284]], p:20},
-     {shape:'poly', pts:[[0.650,0.319],[0.586,0.322],[0.588,0.307],[0.560,0.303],[0.560,0.283],[0.615,0.289]], p:20}
+     {shape:'circle', cx:0.651, cy:0.260, r:0.040, p:100}
    ],
    bestKey:'qu33phSkeeballBest' },
 
@@ -171,15 +169,13 @@ const FIELDS=[
      {shape:'circle', cx:0.427, cy:0.385, r:0.037, p:2000},
      {shape:'circle', cx:0.598, cy:0.386, r:0.036, p:2000},
      {shape:'circle', cx:0.511, cy:0.418, r:0.036, p:1000},
-     // U-shaped bands wrapping under the cup cluster, closest (500) to farthest (100)
-     {shape:'arc', cx:0.515, cy:0.388, rIn:0.095, rOut:0.150, a0:10, a1:163, p:500},
-     {shape:'arc', cx:0.511, cy:0.391, rIn:0.157, rOut:0.221, a0:17, a1:160, p:250},
-     {shape:'arc', cx:0.511, cy:0.400, rIn:0.215, rOut:0.262, a0:33, a1:143, p:100},
-     // hand-drawn fill for the gaps around the cluster — cleaned up (duplicate
-     // taps removed, slight jaggedness smoothed) but same coverage you drew
-     {shape:'poly', pts:[[0.376,0.403],[0.389,0.379],[0.402,0.397]], p:500},
-     {shape:'poly', pts:[[0.680,0.410],[0.638,0.325],[0.536,0.319],[0.562,0.338],[0.557,0.353],[0.563,0.360],[0.598,0.359],[0.628,0.365],[0.645,0.376],[0.649,0.394]], p:500},
-     {shape:'poly', pts:[[0.362,0.401],[0.386,0.326],[0.475,0.318],[0.465,0.364],[0.434,0.357],[0.402,0.361],[0.386,0.372],[0.376,0.397]], p:500}
+     // U-shaped bands wrapping under the cup cluster — one continuous ring each,
+     // sharing a centre and touching radii so there's no seam between them to
+     // land in and score nothing. 500's a near-complete wrap (just a notch at
+     // the top for the cup cluster); 250 and 100 pick up right where it ends.
+     {shape:'arc', cx:0.515, cy:0.388, rIn:0.066, rOut:0.170, a0:5, a1:350, p:500},
+     {shape:'arc', cx:0.515, cy:0.388, rIn:0.170, rOut:0.220, a0:5, a1:350, p:250},
+     {shape:'arc', cx:0.515, cy:0.388, rIn:0.220, rOut:0.270, a0:5, a1:350, p:100}
    ],
    bestKey:'qu33phSkeeballBest3' }
 ];
@@ -444,7 +440,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='5';
+const RECTS_SCHEMA_VERSION='6';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
@@ -782,16 +778,19 @@ function scoreLanding(lx,ly){
       if(r.chair && r.chainSide){
         const left=r.chainSide==='left';
         // Touching the bottom chair only earns the CHANCE to climb — no guaranteed
-        // points for the first kick. 75% reaches tier two (500); 45% of those
-        // reaches tier three; the final chair splits evenly between 2,000 and the
+        // points for the first kick. 75% reaches tier two (5,000); 45% of those
+        // reaches tier three; the final chair splits evenly between 20,000 and the
         // mega. The mega is ONLY reachable through this chain, never a direct hit.
+        // These match the cabinet-art numbers exactly now (1K/5K/20K), same as
+        // the cups — no more mismatch between what the chair tag says and what
+        // climbing it actually pays.
         hopQueue=[{x:left?0.220:0.780,y:0.585,p:0,label:'CHAIR'}];
         let final=0;
         if(Math.random()<0.75){
-          hopQueue.push({x:left?0.260:0.740,y:0.445,p:500,label:'+500'}); final=500;
+          hopQueue.push({x:left?0.260:0.740,y:0.445,p:5000,label:'+5,000'}); final=5000;
           if(Math.random()<0.45){
             hopQueue.push({x:left?0.255:0.745,y:0.250,p:0,label:'TOP CHAIR'});
-            if(Math.random()<0.50){ hopQueue.push({x:left?0.245:0.755,y:0.175,p:2000,label:'+2,000'}); final=2000; }
+            if(Math.random()<0.50){ hopQueue.push({x:left?0.245:0.755,y:0.175,p:20000,label:'+20,000'}); final=20000; }
             else { hopQueue.push({x:0.510,y:0.174,p:MEGA_VAL,label:'MEGA +'+fmtK(MEGA_VAL)}); final=MEGA_VAL; }
           }
         }
