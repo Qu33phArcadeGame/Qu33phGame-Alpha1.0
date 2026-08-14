@@ -96,7 +96,7 @@ const FIELDS=[
  // sits off to one side in each shot, the board centre (cx) is not 0.5.
  { id:'classic', name:'CLASSIC', art:'skeefield.png?v=401', PH:178,
    start:{x:0.490,y:0.800}, queueY:0.775, dur:46, shrink:0.55,
-   hud:{x:[0.359,0.516,0.664], y:[0.202,0.202,0.202]}, topY:0.218,   // ceiling sits under the readouts
+   hud:{x:[0.364,0.511,0.655], y:[0.197,0.196,0.196]}, topY:0.218,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.523, aimSpan:0.175, aimScat:0.95,
    baseY:0.505, powY:0.265, jitterX:0.059, jitterY:0.062,
    scat:function(p){ return 0.55+Math.abs(p-0.70)*1.5; }, overFrom:2, overK:0,
@@ -111,13 +111,17 @@ const FIELDS=[
      {shape:'arc', cx:0.512, cy:0.250, rIn:0.230, rOut:0.319, a0:38, a1:142, p:10},
      // corner barrels — round
      {shape:'circle', cx:0.374, cy:0.263, r:0.036, p:100},
-     {shape:'circle', cx:0.651, cy:0.260, r:0.040, p:100}
+     {shape:'circle', cx:0.651, cy:0.260, r:0.040, p:100},
+     // hand-drawn fill for the gap beside each barrel — cleaned up (duplicate
+     // taps removed, slight jaggedness smoothed) but same coverage you drew
+     {shape:'poly', pts:[[0.380,0.308],[0.445,0.328],[0.437,0.305],[0.460,0.298],[0.460,0.280],[0.420,0.284]], p:20},
+     {shape:'poly', pts:[[0.650,0.319],[0.586,0.322],[0.588,0.307],[0.560,0.303],[0.560,0.283],[0.615,0.289]], p:20}
    ],
    bestKey:'qu33phSkeeballBest' },
 
  { id:'advanced', name:'ADVANCED', art:'skeefield2.png?v=401', PH:178,
    start:{x:0.490,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
-   hud:{x:[0.315,0.454,0.580], y:[0.228,0.220,0.215]}, topY:0.232,   // ceiling sits under the readouts
+   hud:{x:[0.319,0.455,0.585], y:[0.231,0.231,0.230]}, topY:0.232,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.443, aimSpan:0.256, aimScat:1.15,
    baseY:0.560, powY:0.320, jitterX:0.043, jitterY:0.048,
    scat:function(p){ return 0.55+Math.abs(p-0.74)*1.2+Math.max(0,p-0.80)*4.5; },
@@ -144,7 +148,7 @@ const FIELDS=[
 
  { id:'pro', name:'CHAIR TOWER', art:'skeefield3.png?v=401', PH:178,
    start:{x:0.500,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
-   hud:{x:[0.415,0.520,0.615], y:[0.270,0.270,0.283]}, topY:0.105,
+   hud:{x:[0.408,0.515,0.617], y:[0.281,0.281,0.281]}, topY:0.105,
    pullDiv:0.46, aimDiv:0.28, cx:0.500, aimSpan:0.285, aimScat:1.08,
    // Weakest flick lands right at the bottom chairs (0.765); full power reaches
    // the mega up top (~0.16). A side-aimed weak/medium flick is the only way
@@ -170,7 +174,12 @@ const FIELDS=[
      // U-shaped bands wrapping under the cup cluster, closest (500) to farthest (100)
      {shape:'arc', cx:0.515, cy:0.388, rIn:0.095, rOut:0.150, a0:10, a1:163, p:500},
      {shape:'arc', cx:0.511, cy:0.391, rIn:0.157, rOut:0.221, a0:17, a1:160, p:250},
-     {shape:'arc', cx:0.511, cy:0.400, rIn:0.215, rOut:0.262, a0:33, a1:143, p:100}
+     {shape:'arc', cx:0.511, cy:0.400, rIn:0.215, rOut:0.262, a0:33, a1:143, p:100},
+     // hand-drawn fill for the gaps around the cluster — cleaned up (duplicate
+     // taps removed, slight jaggedness smoothed) but same coverage you drew
+     {shape:'poly', pts:[[0.376,0.403],[0.389,0.379],[0.402,0.397]], p:500},
+     {shape:'poly', pts:[[0.680,0.410],[0.638,0.325],[0.536,0.319],[0.562,0.338],[0.557,0.353],[0.563,0.360],[0.598,0.359],[0.628,0.365],[0.645,0.376],[0.649,0.394]], p:500},
+     {shape:'poly', pts:[[0.362,0.401],[0.386,0.326],[0.475,0.318],[0.465,0.364],[0.434,0.357],[0.402,0.361],[0.386,0.372],[0.376,0.397]], p:500}
    ],
    bestKey:'qu33phSkeeballBest3' }
 ];
@@ -435,7 +444,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='4';
+const RECTS_SCHEMA_VERSION='5';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
