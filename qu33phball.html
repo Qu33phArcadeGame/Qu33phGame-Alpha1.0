@@ -375,7 +375,8 @@ function drawHitboxes(){
       ctx.strokeStyle=isSel?'#ffffff':col; ctx.lineWidth=lw; ctx.stroke();
       ctx.fillStyle=col; ctx.font='bold '+Math.round(Math.min(rp*0.55,CW*0.038))+'px Helvetica,Arial,sans-serif';
       ctx.fillText(String(r.p), cx, cy);
-      if(editMode){ ctx.fillStyle='#ffffff'; ctx.fillRect(cx+rp-hs/2,cy-hs/2,hs,hs); ctx.fillRect(cx-hs/2,cy-hs/2,hs,hs); }
+      if(editMode){ ctx.fillStyle='#ffffff'; ctx.fillRect(cx+rp-hs/2,cy-hs/2,hs,hs); ctx.fillRect(cx-rp-hs/2,cy-hs/2,hs,hs);
+        ctx.fillRect(cx-hs/2,cy+rp-hs/2,hs,hs); ctx.fillRect(cx-hs/2,cy-rp-hs/2,hs,hs); ctx.fillRect(cx-hs/2,cy-hs/2,hs,hs); }
     } else if(r.shape==='arc'){
       const cx=fx(r.cx), cy=fy(r.cy), rIn=r.rIn*CW, rOut=r.rOut*CW, a0=r.a0*D2R, a1=r.a1*D2R;
       ctx.beginPath(); ctx.arc(cx,cy,rOut,a0,a1); ctx.arc(cx,cy,rIn,a1,a0,true); ctx.closePath();
@@ -411,7 +412,13 @@ function drawHitboxes(){
       ctx.fillStyle=col+(isSel?'55':'22'); ctx.fillRect(x,y,w,h);
       ctx.fillStyle=col; ctx.font='bold '+Math.round(Math.min(h*0.5,CW*0.038))+'px Helvetica,Arial,sans-serif';
       ctx.fillText(r.chair?('CHAIR '+r.p):String(r.p), x+w/2, y+h/2);
-      if(editMode){ ctx.fillStyle='#ffffff'; [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(function(c){ ctx.fillRect(c[0]-hs/2,c[1]-hs/2,hs,hs); }); }
+      if(editMode){
+        ctx.fillStyle='#ffffff';
+        [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(function(c){ ctx.fillRect(c[0]-hs/2,c[1]-hs/2,hs,hs); });
+        // edge midpoints too — smaller, so a single-edge drag is a visibly different grab than a corner
+        const hs2=hs*0.75;
+        [[x+w/2,y],[x+w/2,y+h],[x,y+h/2],[x+w,y+h/2]].forEach(function(c){ ctx.fillRect(c[0]-hs2/2,c[1]-hs2/2,hs2,hs2); });
+      }
     }
   }
   // freeform polygon currently being drawn (not committed yet)
@@ -480,10 +487,11 @@ function hitTestRect(px,py){
   const PH=f.PH;
   for(const r of f.rects){
     if(r.shape==='circle'){
+      const tol=Math.min(EDGE_TOL, r.r*0.35);
       const dx=px-r.cx, dy=(py-r.cy)*(PH/100), dist=Math.hypot(dx,dy);
-      if(dist>r.r+EDGE_TOL) continue;
+      if(dist>r.r+tol) continue;
       const area=Math.PI*r.r*r.r;
-      if(area<bestArea){ bestArea=area; best={ r:r, handle:(Math.abs(dist-r.r)<EDGE_TOL?'resize':'move') }; }
+      if(area<bestArea){ bestArea=area; best={ r:r, handle:(Math.abs(dist-r.r)<tol?'resize':'move') }; }
       continue;
     }
     if(r.shape==='arc'){
@@ -524,12 +532,17 @@ function hitTestRect(px,py){
       if(area<bestArea){ bestArea=area; best={ r:r, handle:'move' }; }
       continue;
     }
+    // plain rect — tolerance is capped at a fraction of the box's OWN size, so a
+    // small box (like the 50/40/30 pockets) still has a real interior "move" zone
+    // instead of the fixed edge tolerance swallowing the whole thing
+    const tolX=Math.min(EDGE_TOL,(r.x1-r.x0)*0.30), tolY=Math.min(EDGE_TOL,(r.y1-r.y0)*0.30);
+    const inX=px>r.x0-tolX&&px<r.x1+tolX, inY=py>r.y0-tolY&&py<r.y1+tolY;
     if(!(inX&&inY)) continue;
     const area=(r.x1-r.x0)*(r.y1-r.y0);
     if(area<bestArea){
       bestArea=area;
-      const nearL=Math.abs(px-r.x0)<EDGE_TOL, nearR=Math.abs(px-r.x1)<EDGE_TOL;
-      const nearT=Math.abs(py-r.y0)<EDGE_TOL, nearB=Math.abs(py-r.y1)<EDGE_TOL;
+      const nearL=Math.abs(px-r.x0)<tolX, nearR=Math.abs(px-r.x1)<tolX;
+      const nearT=Math.abs(py-r.y0)<tolY, nearB=Math.abs(py-r.y1)<tolY;
       let handle='move';
       if(nearL&&nearT) handle='nw'; else if(nearR&&nearT) handle='ne';
       else if(nearL&&nearB) handle='sw'; else if(nearR&&nearB) handle='se';
