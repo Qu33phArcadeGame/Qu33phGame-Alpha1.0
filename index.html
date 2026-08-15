@@ -702,7 +702,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v409</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v410</div>
 
 <canvas id="game"></canvas>
 
@@ -7233,7 +7233,7 @@ var PB_GRAV=0.3,PB_DAMP=0.62;
 // to match its actual footprint instead of the old ball's circle.
 var pbMarkerImg={ red:new Image(), green:new Image() };
 pbMarkerImg.red.src="stackred.png"; pbMarkerImg.green.src="stackgreen.png";
-var PB_RX=0.020, PB_RY=0.043;
+var PB_RX=0.0248, PB_RY=0.054;
 // ── perspective play-field: physics live in a flat logical table, rendered into the tilted quad of pinball.png ──
 var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  // 4 corners (fractions of pinball.png)
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
@@ -7248,7 +7248,7 @@ function layoutPinball(){
   pbctx=pbCanvas.getContext("2d");pbW=pbCanvas.width;pbH=pbCanvas.height;
   var bg=document.getElementById("pinballBg"),iw=(bg&&bg.naturalWidth)||1183,ih=(bg&&bg.naturalHeight)||2560;
   var scale=Math.min(sw/iw,sh/ih);pbImgRW=iw*scale;pbImgRH=ih*scale;pbImgOX=(sw-pbImgRW)/2;pbImgOY=(sh-pbImgRH)/2;
-  PB_R=0.032; PB_RX=PB_R*0.62; PB_RY=PB_R*1.35; pbBuildTable();
+  PB_R=0.040; PB_RX=PB_R*0.62; PB_RY=PB_R*1.35; pbBuildTable();
   var fl=document.getElementById("pbFlipLeft"),fr=document.getElementById("pbFlipRight"),lb=document.getElementById("pbLaunchBtn");
   fl.style.left="0px";fl.style.right="";fl.style.bottom="0px";fl.style.width="50%";fl.style.height="40%";
   fr.style.right="0px";fr.style.left="";fr.style.bottom="0px";fr.style.width="50%";fr.style.height="40%";

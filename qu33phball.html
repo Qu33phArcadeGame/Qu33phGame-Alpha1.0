@@ -170,11 +170,20 @@ const FIELDS=[
      // Bottom tier: both chairs — no points, just the shot at climbing.
      {x0:0.180,x1:0.370,y0:0.635,y1:0.765,p:0,chair:1,chainSide:'left'},
      {x0:0.630,x1:0.820,y0:0.635,y1:0.765,p:0,chair:1,chainSide:'right'},
-     // Cup cluster — round, full value, direct hit.
+     // Cup cluster — round, full value, direct hit. Checked before the corner
+     // miss-zones below, so a legitimate cup hit always wins even where the
+     // two overlap slightly.
      {shape:'circle', cx:0.514, cy:0.352, r:0.038, p:5000},
      {shape:'circle', cx:0.429, cy:0.385, r:0.039, p:2000},
      {shape:'circle', cx:0.598, cy:0.386, r:0.036, p:2000},
      {shape:'circle', cx:0.511, cy:0.418, r:0.036, p:1000},
+     // Explicit miss-zones for the two corners under the coins — the 250/100
+     // rings' clipXMin/clipXMax/clipY box was wider than the ring itself, so
+     // those corners were still inside the ring's actual radius and scoring.
+     // Checked before the rings, so this wins there regardless of what a ring
+     // underneath would otherwise say.
+     {x0:0.305,x1:0.445,y0:0.290,y1:0.380,p:0},
+     {x0:0.581,x1:0.721,y0:0.290,y1:0.380,p:0},
      // U-shaped bands wrapping under the cup cluster — one continuous ring each,
      // sharing a centre and touching radii so there's no seam between them to
      // land in and score nothing. 500's a near-complete wrap (just a notch at
@@ -511,7 +520,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='11';
+const RECTS_SCHEMA_VERSION='12';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
