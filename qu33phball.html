@@ -104,13 +104,12 @@ const FIELDS=[
      // centre column, contiguous bands so nothing drops through a crack
      {x0:0.473,x1:0.554,y0:0.243,y1:0.270,p:50 },
      {x0:0.469,x1:0.550,y0:0.270,y1:0.301,p:40 },
-     {x0:0.450,x1:0.578,y0:0.305,y1:0.332,p:30 },
-     // 20 and 10 are the wide outer rings — one continuous U-shaped washer each
-     // (used to be pieced together from an arc plus hand-drawn fills; merged into
-     // a single shape so there's no seam to miss between them), with a little
-     // radius overlap between the two so there's no gap where a landing scores 0
-     {shape:'arc', cx:0.521, cy:0.143, rIn:0.251, rOut:0.436, a0:67, a1:116, p:20},
-     {shape:'arc', cx:0.512, cy:0.250, rIn:0.205, rOut:0.319, a0:38, a1:142, p:10},
+     {x0:0.458,x1:0.564,y0:0.303,y1:0.344,p:30 },
+     // 20 and 10 are the wide outer rings — one continuous U-shaped washer each,
+     // with a little radius overlap between the two so there's no gap where a
+     // landing scores 0
+     {shape:'arc', cx:0.515, cy:0.127, rIn:0.257, rOut:0.433, a0:69, a1:114, p:20},
+     {shape:'arc', cx:0.510, cy:0.290, rIn:0.165, rOut:0.239, a0:0, a1:176, p:10},
      // corner barrels — round
      {shape:'circle', cx:0.374, cy:0.263, r:0.036, p:100},
      {shape:'circle', cx:0.651, cy:0.260, r:0.040, p:100}
@@ -146,17 +145,21 @@ const FIELDS=[
 
  { id:'pro', name:'CHAIR TOWER', art:'skeefield3.png?v=401', PH:178,
    start:{x:0.500,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
-   hud:{x:[0.408,0.515,0.617], y:[0.281,0.281,0.281]}, topY:0.105,
+   hud:{x:[0.408,0.513,0.617], y:[0.281,0.279,0.281]}, topY:0.340,
    pullDiv:0.46, aimDiv:0.28, cx:0.500, aimSpan:0.285, aimScat:1.08,
-   // Weakest flick lands right at the bottom chairs (0.765); full power reaches
-   // the mega up top (~0.16). A side-aimed weak/medium flick is the only way
-   // into the bottom chairs — nothing else on the board sits in that window.
+   // Weakest flick lands right at the bottom chairs (0.765); full power now
+   // stops right around the 5,000 cup (~0.30) instead of flying up past the
+   // whole cluster into the empty space under the HUD — a hard dead-centre
+   // throw has nothing to reach for up there anyway, so there's no reason to
+   // let the marker sail past it. Mega is still chain-only either way.
    baseY:0.765, powY:0.589, jitterX:0.040, jitterY:0.045,
    scat:function(p){ return 0.52+Math.abs(p-0.73)*1.25+Math.max(0,p-0.84)*3.6; },
    overFrom:0.92, overK:5,
    // Chairs give no guaranteed points — only the chance to climb (see the chain
    // in scoreLanding()). Cups are round (shape:'circle'), and the bands
-   // wrapping under them are true U-shaped washers (shape:'arc').
+   // wrapping under them are true U-shaped washers (shape:'arc'). Each band has
+   // a clipY — a flat cutoff so the ring can't be hit above where the actual
+   // cabinet art ends, regardless of what its angle span would otherwise allow.
    // Only the bottom chairs and the centre cups/rings are landable zones — the
    // chair tags higher up the side rails, and the mega dot, are NOT separate
    // targets. The only way to them is up the chair chain (see scoreLanding()).
@@ -166,16 +169,21 @@ const FIELDS=[
      {x0:0.630,x1:0.820,y0:0.635,y1:0.765,p:0,chair:1,chainSide:'right'},
      // Cup cluster — round, full value, direct hit.
      {shape:'circle', cx:0.514, cy:0.352, r:0.038, p:5000},
-     {shape:'circle', cx:0.427, cy:0.385, r:0.037, p:2000},
+     {shape:'circle', cx:0.429, cy:0.385, r:0.039, p:2000},
      {shape:'circle', cx:0.598, cy:0.386, r:0.036, p:2000},
      {shape:'circle', cx:0.511, cy:0.418, r:0.036, p:1000},
      // U-shaped bands wrapping under the cup cluster — one continuous ring each,
      // sharing a centre and touching radii so there's no seam between them to
      // land in and score nothing. 500's a near-complete wrap (just a notch at
      // the top for the cup cluster); 250 and 100 pick up right where it ends.
-     {shape:'arc', cx:0.515, cy:0.388, rIn:0.066, rOut:0.170, a0:5, a1:350, p:500},
-     {shape:'arc', cx:0.515, cy:0.388, rIn:0.170, rOut:0.220, a0:5, a1:350, p:250},
-     {shape:'arc', cx:0.515, cy:0.388, rIn:0.220, rOut:0.270, a0:5, a1:350, p:100}
+     // clipY flattens all three off right below the HUD, matching the art.
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.128, rOut:0.170, a0:5, a1:350, clipY:0.300, p:500},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.170, rOut:0.220, a0:5, a1:350, clipY:0.300, p:250},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.220, rOut:0.270, a0:5, a1:350, clipY:0.300, p:100},
+     // hand-drawn fill tracing the connective gold band around the cluster —
+     // cleaned up (duplicate/near-duplicate taps removed, jaggedness smoothed)
+     // but the same coverage you drew
+     {shape:'poly', pts:[[0.393,0.370],[0.420,0.357],[0.443,0.357],[0.461,0.365],[0.479,0.388],[0.456,0.408],[0.437,0.415],[0.418,0.413],[0.395,0.401],[0.413,0.421],[0.462,0.439],[0.469,0.397],[0.491,0.387],[0.544,0.394],[0.556,0.412],[0.550,0.443],[0.599,0.425],[0.620,0.409],[0.568,0.405],[0.553,0.389],[0.551,0.370],[0.606,0.356],[0.620,0.366],[0.624,0.347],[0.595,0.327],[0.556,0.310],[0.493,0.304],[0.437,0.322],[0.394,0.356],[0.457,0.351],[0.481,0.313],[0.497,0.310],[0.541,0.317],[0.556,0.328],[0.566,0.340],[0.555,0.359]], p:500}
    ],
    bestKey:'qu33phSkeeballBest3' }
 ];
@@ -379,12 +387,17 @@ function drawHitboxes(){
         ctx.fillRect(cx-hs/2,cy+rp-hs/2,hs,hs); ctx.fillRect(cx-hs/2,cy-rp-hs/2,hs,hs); ctx.fillRect(cx-hs/2,cy-hs/2,hs,hs); }
     } else if(r.shape==='arc'){
       const cx=fx(r.cx), cy=fy(r.cy), rIn=r.rIn*CW, rOut=r.rOut*CW, a0=r.a0*D2R, a1=r.a1*D2R;
+      ctx.save();
+      if(r.clipY!==undefined){ const cyp=fy(r.clipY); ctx.beginPath(); ctx.rect(0,cyp,CW,CH-cyp); ctx.clip(); }
       ctx.beginPath(); ctx.arc(cx,cy,rOut,a0,a1); ctx.arc(cx,cy,rIn,a1,a0,true); ctx.closePath();
       ctx.fillStyle=col+(isSel?'55':'22'); ctx.fill();
       ctx.strokeStyle=isSel?'#ffffff':col; ctx.lineWidth=lw; ctx.stroke();
+      ctx.restore();
       const midA=(r.a0+r.a1)/2*D2R, midR=(rIn+rOut)/2;
+      let lx=cx+Math.cos(midA)*midR, ly=cy+Math.sin(midA)*midR;
+      if(r.clipY!==undefined) ly=Math.max(ly,fy(r.clipY)+hs);   // keep the label from sitting above its own cutoff
       ctx.fillStyle=col; ctx.font='bold '+Math.round(Math.min((rOut-rIn)*0.55,CW*0.034))+'px Helvetica,Arial,sans-serif';
-      ctx.fillText(String(r.p), cx+Math.cos(midA)*midR, cy+Math.sin(midA)*midR);
+      ctx.fillText(String(r.p), lx, ly);
       if(editMode){
         ctx.fillStyle='#ffffff';
         const om=[cx+Math.cos(midA)*rOut,cy+Math.sin(midA)*rOut], im=[cx+Math.cos(midA)*rIn,cy+Math.sin(midA)*rIn];
@@ -393,6 +406,13 @@ function drawHitboxes(){
         ctx.fillStyle='#fff54a';
         const midRp=(rIn+rOut)/2;
         [a0,a1].forEach(function(a){ const hx=cx+Math.cos(a)*midRp, hy=cy+Math.sin(a)*midRp; ctx.beginPath(); ctx.arc(hx,hy,hs*0.6,0,7); ctx.fill(); });
+        // clipY: a draggable horizontal line, in magenta so it reads as its own kind of handle
+        if(r.clipY!==undefined){
+          const cyp=fy(r.clipY);
+          ctx.strokeStyle='#ff4ad1'; ctx.lineWidth=Math.max(2,CW*0.005); ctx.setLineDash([5,4]);
+          ctx.beginPath(); ctx.moveTo(cx-rOut,cyp); ctx.lineTo(cx+rOut,cyp); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillStyle='#ff4ad1'; ctx.fillRect(cx-hs/2,cyp-hs/2,hs,hs);
+        }
       }
     } else if(r.shape==='poly'){
       const pts=r.pts.map(function(v){ return [fx(v[0]),fy(v[1])]; });
@@ -447,7 +467,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='6';
+const RECTS_SCHEMA_VERSION='8';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
@@ -503,6 +523,10 @@ function hitTestRect(px,py){
       const dA0=Math.hypot(px-a0x,(py-a0y)*(PH/100)), dA1=Math.hypot(px-a1x,(py-a1y)*(PH/100));
       if(dA0<EDGE_TOL*1.6 && dA0<bestAngleDist){ bestAngleDist=dA0; bestAngle={ r:r, handle:'angle0' }; }
       if(dA1<EDGE_TOL*1.6 && dA1<bestAngleDist){ bestAngleDist=dA1; bestAngle={ r:r, handle:'angle1' }; }
+      if(r.clipY!==undefined){
+        const dClip=Math.abs(py-r.clipY);
+        if(dClip<EDGE_TOL*1.6 && px>r.cx-r.rOut && px<r.cx+r.rOut && dClip<bestAngleDist){ bestAngleDist=dClip; bestAngle={ r:r, handle:'clipY' }; }
+      }
       const dx=px-r.cx, dy=(py-r.cy)*(PH/100), dist=Math.hypot(dx,dy);
       if(dist<r.rIn-EDGE_TOL||dist>r.rOut+EDGE_TOL) continue;
       let ang=Math.atan2(dy,dx)*180/Math.PI; if(ang<0) ang+=360;
@@ -634,6 +658,7 @@ cv.addEventListener('pointermove',function(e){
       let ang=Math.atan2(ady,adx)*180/Math.PI; if(ang<0) ang+=360;
       if(h==='angle0') r.a0=ang; else r.a1=ang;
     }
+    else if(h==='clipY'){ r.clipY=p.y; }
   } else if(r.shape==='poly'){
     if(h==='move'){ r.pts.forEach(function(v){ v[0]+=ddx; v[1]+=ddy; }); }
     else if(h.indexOf('vertex:')===0){ const i=+h.split(':')[1]; r.pts[i][0]+=ddx; r.pts[i][1]+=ddy; }
@@ -692,7 +717,7 @@ document.getElementById('exportBtn').addEventListener('click',function(e){
     fl.rects.forEach(function(r){
       let parts;
       if(r.shape==='circle') parts=["shape:'circle'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'r:'+r.r.toFixed(3),'p:'+r.p];
-      else if(r.shape==='arc') parts=["shape:'arc'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'rIn:'+r.rIn.toFixed(3),'rOut:'+r.rOut.toFixed(3),'a0:'+Math.round(r.a0),'a1:'+Math.round(r.a1),'p:'+r.p];
+      else if(r.shape==='arc'){ parts=["shape:'arc'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'rIn:'+r.rIn.toFixed(3),'rOut:'+r.rOut.toFixed(3),'a0:'+Math.round(r.a0),'a1:'+Math.round(r.a1),'p:'+r.p]; if(r.clipY!==undefined) parts.splice(7,0,'clipY:'+r.clipY.toFixed(3)); }
       else if(r.shape==='poly') parts=["shape:'poly'",'pts:['+r.pts.map(function(v){return '['+v[0].toFixed(3)+','+v[1].toFixed(3)+']';}).join(',')+']','p:'+r.p];
       else parts=['x0:'+r.x0.toFixed(3),'x1:'+r.x1.toFixed(3),'y0:'+r.y0.toFixed(3),'y1:'+r.y1.toFixed(3),'p:'+r.p];
       if(r.chair) parts.push('chair:1');
@@ -766,11 +791,15 @@ function pointInShape(r,lx,ly,PH){
     return (dx*dx+dy*dy) <= r.r*r.r;
   }
   if(r.shape==='arc'){
+    if(r.clipY!==undefined && ly<r.clipY) return false;   // flat cutoff, regardless of angle
     const dx=lx-r.cx, dy=(ly-r.cy)*(PH/100);
     const dist=Math.hypot(dx,dy);
     if(dist<r.rIn||dist>r.rOut) return false;
     let ang=Math.atan2(dy,dx)*180/Math.PI; if(ang<0) ang+=360;
-    return r.a0<=r.a1 ? (ang>=r.a0&&ang<=r.a1) : (ang>=r.a0||ang<=r.a1);
+    // a0/a1 normalized to [0,360) — dragging or export rounding can otherwise
+    // land one exactly on 360, which silently breaks the wraparound check below
+    const a0=((r.a0%360)+360)%360, a1=((r.a1%360)+360)%360;
+    return a0<=a1 ? (ang>=a0&&ang<=a1) : (ang>=a0||ang<=a1);
   }
   if(r.shape==='poly'){
     // standard ray-casting point-in-polygon — freeform shapes drawn in the editor
