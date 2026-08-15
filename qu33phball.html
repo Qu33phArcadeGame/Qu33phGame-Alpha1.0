@@ -95,7 +95,7 @@ const FIELDS=[
  // Every coordinate below is a fraction of the WHOLE frame, and because the machine
  // sits off to one side in each shot, the board centre (cx) is not 0.5.
  { id:'classic', name:'CLASSIC', art:'skeefield.png?v=401', PH:178,
-   start:{x:0.490,y:0.800}, queueY:0.775, dur:46, shrink:0.55,
+   start:{x:0.490,y:0.775}, queueY:0.775, dur:46, shrink:0.55,
    hud:{x:[0.364,0.511,0.655], y:[0.197,0.196,0.196]}, topY:0.218,   // ceiling sits under the readouts
    pullDiv:0.46, aimDiv:0.28, cx:0.523, aimSpan:0.175, aimScat:0.95,
    baseY:0.505, powY:0.265, jitterX:0.059, jitterY:0.062,
@@ -112,7 +112,10 @@ const FIELDS=[
      {shape:'arc', cx:0.510, cy:0.290, rIn:0.165, rOut:0.239, a0:0, a1:176, p:10},
      // corner barrels — round
      {shape:'circle', cx:0.374, cy:0.263, r:0.036, p:100},
-     {shape:'circle', cx:0.651, cy:0.260, r:0.040, p:100}
+     {shape:'circle', cx:0.651, cy:0.260, r:0.047, p:100},
+     // hand-drawn fill beside each barrel
+     {shape:'poly', pts:[[0.312,0.290],[0.317,0.264],[0.340,0.269],[0.367,0.282],[0.383,0.289],[0.356,0.316],[0.352,0.295],[0.317,0.293]], p:10},
+     {shape:'poly', pts:[[0.701,0.271],[0.705,0.288],[0.677,0.291],[0.658,0.325],[0.630,0.288],[0.669,0.289],[0.688,0.279]], p:10}
    ],
    bestKey:'qu33phSkeeballBest' },
 
@@ -183,7 +186,13 @@ const FIELDS=[
      // hand-drawn fill tracing the connective gold band around the cluster —
      // cleaned up (duplicate/near-duplicate taps removed, jaggedness smoothed)
      // but the same coverage you drew
-     {shape:'poly', pts:[[0.393,0.370],[0.420,0.357],[0.443,0.357],[0.461,0.365],[0.479,0.388],[0.456,0.408],[0.437,0.415],[0.418,0.413],[0.395,0.401],[0.413,0.421],[0.462,0.439],[0.469,0.397],[0.491,0.387],[0.544,0.394],[0.556,0.412],[0.550,0.443],[0.599,0.425],[0.620,0.409],[0.568,0.405],[0.553,0.389],[0.551,0.370],[0.606,0.356],[0.620,0.366],[0.624,0.347],[0.595,0.327],[0.556,0.310],[0.493,0.304],[0.437,0.322],[0.394,0.356],[0.457,0.351],[0.481,0.313],[0.497,0.310],[0.541,0.317],[0.556,0.328],[0.566,0.340],[0.555,0.359]], p:500}
+     // Traced your hand-drawn pink line and converted it to field coordinates —
+     // its lowest point sits at y≈0.290, so that's the clipY here. Nothing in
+     // the current outline actually crossed above it when I measured each
+     // vertex, but a couple of the sharp points come close enough to visually
+     // read as "too much" right under the HUD — this clips it for real, and
+     // also guards against future drags pushing it back up there.
+     {shape:'poly', pts:[[0.393,0.370],[0.420,0.357],[0.443,0.357],[0.461,0.365],[0.479,0.388],[0.456,0.408],[0.437,0.415],[0.418,0.413],[0.395,0.401],[0.413,0.421],[0.462,0.439],[0.469,0.397],[0.491,0.387],[0.544,0.394],[0.556,0.412],[0.550,0.443],[0.599,0.425],[0.620,0.409],[0.568,0.405],[0.553,0.389],[0.551,0.370],[0.606,0.356],[0.620,0.366],[0.624,0.347],[0.595,0.327],[0.556,0.310],[0.493,0.304],[0.437,0.322],[0.394,0.356],[0.457,0.351],[0.481,0.313],[0.497,0.310],[0.541,0.317],[0.556,0.328],[0.566,0.340],[0.555,0.359]], clipY:0.290, p:500}
    ],
    bestKey:'qu33phSkeeballBest3' }
 ];
@@ -416,15 +425,28 @@ function drawHitboxes(){
       }
     } else if(r.shape==='poly'){
       const pts=r.pts.map(function(v){ return [fx(v[0]),fy(v[1])]; });
+      ctx.save();
+      if(r.clipY!==undefined){ const cyp0=fy(r.clipY); ctx.beginPath(); ctx.rect(0,cyp0,CW,CH-cyp0); ctx.clip(); }
       ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
       for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
       ctx.closePath();
       ctx.fillStyle=col+(isSel?'55':'22'); ctx.fill();
       ctx.strokeStyle=isSel?'#ffffff':col; ctx.lineWidth=lw; ctx.stroke();
+      ctx.restore();
       let cxp=0,cyp=0; pts.forEach(function(v){ cxp+=v[0]; cyp+=v[1]; }); cxp/=pts.length; cyp/=pts.length;
+      if(r.clipY!==undefined) cyp=Math.max(cyp,fy(r.clipY)+hs);
       ctx.fillStyle=col; ctx.font='bold '+Math.round(CW*0.034)+'px Helvetica,Arial,sans-serif';
       ctx.fillText(String(r.p), cxp, cyp);
-      if(editMode){ ctx.fillStyle='#ffffff'; pts.forEach(function(v){ ctx.fillRect(v[0]-hs/2,v[1]-hs/2,hs,hs); }); }
+      if(editMode){
+        ctx.fillStyle='#ffffff'; pts.forEach(function(v){ ctx.fillRect(v[0]-hs/2,v[1]-hs/2,hs,hs); });
+        if(r.clipY!==undefined){
+          let minx=CW,maxx=0; pts.forEach(function(v){ minx=Math.min(minx,v[0]); maxx=Math.max(maxx,v[0]); });
+          const cypLine=fy(r.clipY);
+          ctx.strokeStyle='#ff4ad1'; ctx.lineWidth=Math.max(2,CW*0.005); ctx.setLineDash([5,4]);
+          ctx.beginPath(); ctx.moveTo(minx,cypLine); ctx.lineTo(maxx,cypLine); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillStyle='#ff4ad1'; ctx.fillRect((minx+maxx)/2-hs/2,cypLine-hs/2,hs,hs);
+        }
+      }
     } else {
       const x=fx(r.x0), y=fy(r.y0), w=fx(r.x1)-fx(r.x0), h=fy(r.y1)-fy(r.y0);
       ctx.strokeStyle=isSel?'#ffffff':col; ctx.lineWidth=lw;
@@ -467,7 +489,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='8';
+const RECTS_SCHEMA_VERSION='9';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
@@ -547,6 +569,11 @@ function hitTestRect(px,py){
       for(let i=0;i<r.pts.length;i++){
         const d=Math.hypot(px-r.pts[i][0],(py-r.pts[i][1])*(PH/100));
         if(d<EDGE_TOL*1.6 && d<bestAngleDist){ bestAngleDist=d; bestAngle={ r:r, handle:'vertex:'+i }; }
+      }
+      if(r.clipY!==undefined){
+        let minx=1,maxx=0; r.pts.forEach(function(v){ minx=Math.min(minx,v[0]); maxx=Math.max(maxx,v[0]); });
+        const dClip=Math.abs(py-r.clipY);
+        if(dClip<EDGE_TOL*1.6 && px>minx && px<maxx && dClip<bestAngleDist){ bestAngleDist=dClip; bestAngle={ r:r, handle:'clipY' }; }
       }
       if(!pointInShape(r,px,py,PH)) continue;
       // rough bounding-box area, just to decide priority against overlapping shapes
@@ -662,6 +689,7 @@ cv.addEventListener('pointermove',function(e){
   } else if(r.shape==='poly'){
     if(h==='move'){ r.pts.forEach(function(v){ v[0]+=ddx; v[1]+=ddy; }); }
     else if(h.indexOf('vertex:')===0){ const i=+h.split(':')[1]; r.pts[i][0]+=ddx; r.pts[i][1]+=ddy; }
+    else if(h==='clipY'){ r.clipY=p.y; }
   } else if(h==='move'){ r.x0+=ddx; r.x1+=ddx; r.y0+=ddy; r.y1+=ddy; }
   else{
     if(h.indexOf('w')>=0) r.x0+=ddx; if(h.indexOf('e')>=0) r.x1+=ddx;
@@ -718,7 +746,7 @@ document.getElementById('exportBtn').addEventListener('click',function(e){
       let parts;
       if(r.shape==='circle') parts=["shape:'circle'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'r:'+r.r.toFixed(3),'p:'+r.p];
       else if(r.shape==='arc'){ parts=["shape:'arc'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'rIn:'+r.rIn.toFixed(3),'rOut:'+r.rOut.toFixed(3),'a0:'+Math.round(r.a0),'a1:'+Math.round(r.a1),'p:'+r.p]; if(r.clipY!==undefined) parts.splice(7,0,'clipY:'+r.clipY.toFixed(3)); }
-      else if(r.shape==='poly') parts=["shape:'poly'",'pts:['+r.pts.map(function(v){return '['+v[0].toFixed(3)+','+v[1].toFixed(3)+']';}).join(',')+']','p:'+r.p];
+      else if(r.shape==='poly'){ parts=["shape:'poly'",'pts:['+r.pts.map(function(v){return '['+v[0].toFixed(3)+','+v[1].toFixed(3)+']';}).join(',')+']','p:'+r.p]; if(r.clipY!==undefined) parts.push('clipY:'+r.clipY.toFixed(3)); }
       else parts=['x0:'+r.x0.toFixed(3),'x1:'+r.x1.toFixed(3),'y0:'+r.y0.toFixed(3),'y1:'+r.y1.toFixed(3),'p:'+r.p];
       if(r.chair) parts.push('chair:1');
       if(r.chainSide) parts.push("chainSide:'"+r.chainSide+"'");
@@ -802,6 +830,7 @@ function pointInShape(r,lx,ly,PH){
     return a0<=a1 ? (ang>=a0&&ang<=a1) : (ang>=a0||ang<=a1);
   }
   if(r.shape==='poly'){
+    if(r.clipY!==undefined && ly<r.clipY) return false;   // flat cutoff, same idea as an arc's
     // standard ray-casting point-in-polygon — freeform shapes drawn in the editor
     const pts=r.pts; let inside=false;
     for(let i=0,j=pts.length-1;i<pts.length;j=i++){
@@ -819,15 +848,13 @@ function scoreLanding(lx,ly){
     for(const r of f.rects) if(pointInShape(r,lx,ly,f.PH)){
       if(r.chair && r.chainSide){
         const left=r.chainSide==='left';
-        // Touching the bottom chair only earns the CHANCE to climb — no guaranteed
-        // points for the first kick. 75% reaches tier two (5,000); 45% of those
-        // reaches tier three; the final chair splits evenly between 20,000 and the
-        // mega. The mega is ONLY reachable through this chain, never a direct hit.
-        // These match the cabinet-art numbers exactly now (1K/5K/20K), same as
-        // the cups — no more mismatch between what the chair tag says and what
-        // climbing it actually pays.
-        hopQueue=[{x:left?0.220:0.780,y:0.585,p:0,label:'CHAIR'}];
-        let final=0;
+        // Reaching the bottom chair always pays 1,000 (matches the tag right there
+        // on the cabinet) — landing at "1,000" and scoring a miss read as broken,
+        // and it was. From there: 75% continues to 5,000; 45% of those continues
+        // to the top chair, which splits evenly between 20,000 and the mega. The
+        // mega is ONLY reachable through this chain, never a direct hit.
+        hopQueue=[{x:left?0.220:0.780,y:0.585,p:1000,label:'+1,000'}];
+        let final=1000;
         if(Math.random()<0.75){
           hopQueue.push({x:left?0.260:0.740,y:0.445,p:5000,label:'+5,000'}); final=5000;
           if(Math.random()<0.45){
