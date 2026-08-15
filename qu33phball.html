@@ -180,9 +180,14 @@ const FIELDS=[
      // land in and score nothing. 500's a near-complete wrap (just a notch at
      // the top for the cup cluster); 250 and 100 pick up right where it ends.
      // clipY flattens all three off right below the HUD, matching the art.
-     {shape:'arc', cx:0.513, cy:0.381, rIn:0.128, rOut:0.170, a0:5, a1:350, clipY:0.300, p:500},
-     {shape:'arc', cx:0.513, cy:0.381, rIn:0.170, rOut:0.220, a0:5, a1:350, clipY:0.300, p:250},
-     {shape:'arc', cx:0.513, cy:0.381, rIn:0.220, rOut:0.270, a0:5, a1:350, clipY:0.300, p:100},
+     // clipXMin/clipXMax trim the wide flanks that reached toward the chairs —
+     // "give me free range movement for the pink lines" — these are that: each
+     // one has its own draggable vertical magenta handle in edit mode now, same
+     // idea as clipY's horizontal one. Starting guess is roughly the cup
+     // cluster's own width; drag to fit exactly.
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.128, rOut:0.170, a0:5, a1:350, clipY:0.300, clipXMin:0.380, clipXMax:0.650, p:500},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.170, rOut:0.220, a0:5, a1:350, clipY:0.300, clipXMin:0.380, clipXMax:0.650, p:250},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.220, rOut:0.270, a0:5, a1:350, clipY:0.300, clipXMin:0.380, clipXMax:0.650, p:100},
      // hand-drawn fill tracing the connective gold band around the cluster —
      // cleaned up (duplicate/near-duplicate taps removed, jaggedness smoothed)
      // but the same coverage you drew
@@ -343,14 +348,14 @@ const TOTAL=9, LAND_HOLD=20, FEED_DUR=16;
 
 // curIdx = the marker in play; resolved = how many have finished.
 // The waiting queue is always (QSLOTS - curIdx) long, in every state, so nothing pops in or out.
-let curIdx, resolved, score, best, state, ball, popups, landT, feed;
+let curIdx, resolved, score, best, state, ball, popups, landT, feed, pendingScore;
 function loadBest(){ try{ best=parseInt(localStorage.getItem(F().bestKey)||'0',10)||0; }catch(e){ best=0; } }
 loadBest();   // each lane keeps its own record, since they don't score alike
 function qx(k){ return QX0 + ((k-1)/(QSLOTS-1))*QSPAN; }   // marker k (1..8) owns a fixed slot
 function colOf(i){ return COLORS[i%3]; }                    // 0 red, 1 green, 2 blue, 3 red ...
 
 let lastHitChair=null, hop=null, hopQueue=[];
-function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; hop=null; hopQueue=[]; }
+function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; hop=null; hopQueue=[]; pendingScore=0; }
 reset();
 
 // ── lane switch: only between rolls, and it restarts the game, since the two
@@ -397,7 +402,12 @@ function drawHitboxes(){
     } else if(r.shape==='arc'){
       const cx=fx(r.cx), cy=fy(r.cy), rIn=r.rIn*CW, rOut=r.rOut*CW, a0=r.a0*D2R, a1=r.a1*D2R;
       ctx.save();
-      if(r.clipY!==undefined){ const cyp=fy(r.clipY); ctx.beginPath(); ctx.rect(0,cyp,CW,CH-cyp); ctx.clip(); }
+      if(r.clipY!==undefined || r.clipXMin!==undefined || r.clipXMax!==undefined){
+        const cyp=r.clipY!==undefined?fy(r.clipY):0;
+        const cxMin=r.clipXMin!==undefined?fx(r.clipXMin):0;
+        const cxMax=r.clipXMax!==undefined?fx(r.clipXMax):CW;
+        ctx.beginPath(); ctx.rect(cxMin,cyp,cxMax-cxMin,CH-cyp); ctx.clip();
+      }
       ctx.beginPath(); ctx.arc(cx,cy,rOut,a0,a1); ctx.arc(cx,cy,rIn,a1,a0,true); ctx.closePath();
       ctx.fillStyle=col+(isSel?'55':'22'); ctx.fill();
       ctx.strokeStyle=isSel?'#ffffff':col; ctx.lineWidth=lw; ctx.stroke();
@@ -405,6 +415,8 @@ function drawHitboxes(){
       const midA=(r.a0+r.a1)/2*D2R, midR=(rIn+rOut)/2;
       let lx=cx+Math.cos(midA)*midR, ly=cy+Math.sin(midA)*midR;
       if(r.clipY!==undefined) ly=Math.max(ly,fy(r.clipY)+hs);   // keep the label from sitting above its own cutoff
+      if(r.clipXMin!==undefined) lx=Math.max(lx,fx(r.clipXMin)+hs);
+      if(r.clipXMax!==undefined) lx=Math.min(lx,fx(r.clipXMax)-hs);
       ctx.fillStyle=col; ctx.font='bold '+Math.round(Math.min((rOut-rIn)*0.55,CW*0.034))+'px Helvetica,Arial,sans-serif';
       ctx.fillText(String(r.p), lx, ly);
       if(editMode){
@@ -415,12 +427,22 @@ function drawHitboxes(){
         ctx.fillStyle='#fff54a';
         const midRp=(rIn+rOut)/2;
         [a0,a1].forEach(function(a){ const hx=cx+Math.cos(a)*midRp, hy=cy+Math.sin(a)*midRp; ctx.beginPath(); ctx.arc(hx,hy,hs*0.6,0,7); ctx.fill(); });
-        // clipY: a draggable horizontal line, in magenta so it reads as its own kind of handle
+        // clipY: a draggable horizontal line; clipXMin/clipXMax: draggable vertical lines — all magenta
+        ctx.strokeStyle='#ff4ad1'; ctx.lineWidth=Math.max(2,CW*0.005); ctx.fillStyle='#ff4ad1';
         if(r.clipY!==undefined){
           const cyp=fy(r.clipY);
-          ctx.strokeStyle='#ff4ad1'; ctx.lineWidth=Math.max(2,CW*0.005); ctx.setLineDash([5,4]);
-          ctx.beginPath(); ctx.moveTo(cx-rOut,cyp); ctx.lineTo(cx+rOut,cyp); ctx.stroke(); ctx.setLineDash([]);
-          ctx.fillStyle='#ff4ad1'; ctx.fillRect(cx-hs/2,cyp-hs/2,hs,hs);
+          ctx.setLineDash([5,4]); ctx.beginPath(); ctx.moveTo(cx-rOut,cyp); ctx.lineTo(cx+rOut,cyp); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillRect(cx-hs/2,cyp-hs/2,hs,hs);
+        }
+        if(r.clipXMin!==undefined){
+          const cxp=fx(r.clipXMin);
+          ctx.setLineDash([5,4]); ctx.beginPath(); ctx.moveTo(cxp,cy-rOut); ctx.lineTo(cxp,cy+rOut); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillRect(cxp-hs/2,cy-hs/2,hs,hs);
+        }
+        if(r.clipXMax!==undefined){
+          const cxp=fx(r.clipXMax);
+          ctx.setLineDash([5,4]); ctx.beginPath(); ctx.moveTo(cxp,cy-rOut); ctx.lineTo(cxp,cy+rOut); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillRect(cxp-hs/2,cy-hs/2,hs,hs);
         }
       }
     } else if(r.shape==='poly'){
@@ -489,7 +511,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='9';
+const RECTS_SCHEMA_VERSION='10';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
@@ -548,6 +570,14 @@ function hitTestRect(px,py){
       if(r.clipY!==undefined){
         const dClip=Math.abs(py-r.clipY);
         if(dClip<EDGE_TOL*1.6 && px>r.cx-r.rOut && px<r.cx+r.rOut && dClip<bestAngleDist){ bestAngleDist=dClip; bestAngle={ r:r, handle:'clipY' }; }
+      }
+      if(r.clipXMin!==undefined){
+        const dClip=Math.abs(px-r.clipXMin);
+        if(dClip<EDGE_TOL*1.6 && py>r.cy-r.rOut && py<r.cy+r.rOut && dClip<bestAngleDist){ bestAngleDist=dClip; bestAngle={ r:r, handle:'clipXMin' }; }
+      }
+      if(r.clipXMax!==undefined){
+        const dClip=Math.abs(px-r.clipXMax);
+        if(dClip<EDGE_TOL*1.6 && py>r.cy-r.rOut && py<r.cy+r.rOut && dClip<bestAngleDist){ bestAngleDist=dClip; bestAngle={ r:r, handle:'clipXMax' }; }
       }
       const dx=px-r.cx, dy=(py-r.cy)*(PH/100), dist=Math.hypot(dx,dy);
       if(dist<r.rIn-EDGE_TOL||dist>r.rOut+EDGE_TOL) continue;
@@ -686,6 +716,8 @@ cv.addEventListener('pointermove',function(e){
       if(h==='angle0') r.a0=ang; else r.a1=ang;
     }
     else if(h==='clipY'){ r.clipY=p.y; }
+    else if(h==='clipXMin'){ r.clipXMin=p.x; }
+    else if(h==='clipXMax'){ r.clipXMax=p.x; }
   } else if(r.shape==='poly'){
     if(h==='move'){ r.pts.forEach(function(v){ v[0]+=ddx; v[1]+=ddy; }); }
     else if(h.indexOf('vertex:')===0){ const i=+h.split(':')[1]; r.pts[i][0]+=ddx; r.pts[i][1]+=ddy; }
@@ -745,7 +777,7 @@ document.getElementById('exportBtn').addEventListener('click',function(e){
     fl.rects.forEach(function(r){
       let parts;
       if(r.shape==='circle') parts=["shape:'circle'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'r:'+r.r.toFixed(3),'p:'+r.p];
-      else if(r.shape==='arc'){ parts=["shape:'arc'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'rIn:'+r.rIn.toFixed(3),'rOut:'+r.rOut.toFixed(3),'a0:'+Math.round(r.a0),'a1:'+Math.round(r.a1),'p:'+r.p]; if(r.clipY!==undefined) parts.splice(7,0,'clipY:'+r.clipY.toFixed(3)); }
+      else if(r.shape==='arc'){ parts=["shape:'arc'",'cx:'+r.cx.toFixed(3),'cy:'+r.cy.toFixed(3),'rIn:'+r.rIn.toFixed(3),'rOut:'+r.rOut.toFixed(3),'a0:'+Math.round(r.a0),'a1:'+Math.round(r.a1),'p:'+r.p]; if(r.clipY!==undefined) parts.splice(7,0,'clipY:'+r.clipY.toFixed(3)); if(r.clipXMin!==undefined) parts.splice(7,0,'clipXMin:'+r.clipXMin.toFixed(3)); if(r.clipXMax!==undefined) parts.splice(7,0,'clipXMax:'+r.clipXMax.toFixed(3)); }
       else if(r.shape==='poly'){ parts=["shape:'poly'",'pts:['+r.pts.map(function(v){return '['+v[0].toFixed(3)+','+v[1].toFixed(3)+']';}).join(',')+']','p:'+r.p]; if(r.clipY!==undefined) parts.push('clipY:'+r.clipY.toFixed(3)); }
       else parts=['x0:'+r.x0.toFixed(3),'x1:'+r.x1.toFixed(3),'y0:'+r.y0.toFixed(3),'y1:'+r.y1.toFixed(3),'p:'+r.p];
       if(r.chair) parts.push('chair:1');
@@ -820,6 +852,8 @@ function pointInShape(r,lx,ly,PH){
   }
   if(r.shape==='arc'){
     if(r.clipY!==undefined && ly<r.clipY) return false;   // flat cutoff, regardless of angle
+    if(r.clipXMin!==undefined && lx<r.clipXMin) return false;
+    if(r.clipXMax!==undefined && lx>r.clipXMax) return false;
     const dx=lx-r.cx, dy=(ly-r.cy)*(PH/100);
     const dist=Math.hypot(dx,dy);
     if(dist<r.rIn||dist>r.rOut) return false;
@@ -899,9 +933,14 @@ function step(){
     }
     if(ball.t>=ball.dur){
       ball.t=ball.dur;                                  // marker stays put at the hole
-      const pts=scoreLanding(ball.x1,ball.y1); score+=pts; resolved++;
+      const pts=scoreLanding(ball.x1,ball.y1); resolved++;
       // a chair catch reads as its own thing, and the popup shows up at the pocket
       const chair=lastHitChair;
+      // The SCORE readout doesn't update yet for a chair catch — only once the
+      // marker actually finishes bouncing up to where it lands. Otherwise the
+      // number jumps the instant you land, before the hop even plays, and you
+      // can read the outcome off the score box before the suspense of the climb.
+      if(chair){ pendingScore=pts; } else { score+=pts; }
       // the popup waits for the hop to land, so it reads as cause and effect
       const hops=(chair?1:0)+hopQueue.length;
       popups.push({x:chair?(hopQueue.length?hopQueue[hopQueue.length-1].x:chair.x):ball.x1,
@@ -923,7 +962,7 @@ function step(){
         if(hopQueue.length){
           const n=hopQueue.shift();
           hop={x0:ball.x1,y0:ball.y1,x1:n.x,y1:n.y,t:0,dur:26};
-        } else { hop=null; landT=0; }    // settled — hold/fade timer starts fresh from here
+        } else { hop=null; landT=0; score+=pendingScore; pendingScore=0; }    // settled — the readout catches up right as it lands, hold/fade timer starts fresh
       }
     }
     if(landT>=LAND_HOLD && !hop){
