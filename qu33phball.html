@@ -185,9 +185,9 @@ const FIELDS=[
      // one has its own draggable vertical magenta handle in edit mode now, same
      // idea as clipY's horizontal one. Starting guess is roughly the cup
      // cluster's own width; drag to fit exactly.
-     {shape:'arc', cx:0.513, cy:0.381, rIn:0.128, rOut:0.170, a0:5, a1:350, clipY:0.300, clipXMin:0.380, clipXMax:0.650, p:500},
-     {shape:'arc', cx:0.513, cy:0.381, rIn:0.170, rOut:0.220, a0:5, a1:350, clipY:0.300, clipXMin:0.380, clipXMax:0.650, p:250},
-     {shape:'arc', cx:0.513, cy:0.381, rIn:0.220, rOut:0.270, a0:5, a1:350, clipY:0.300, clipXMin:0.380, clipXMax:0.650, p:100},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.128, rOut:0.152, a0:5, a1:350, clipY:0.300, clipXMin:0.297, clipXMax:0.689, p:500},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.170, rOut:0.220, a0:5, a1:350, clipY:0.300, clipXMin:0.341, clipXMax:0.695, p:250},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.220, rOut:0.270, a0:5, a1:350, clipY:0.300, clipXMin:0.339, clipXMax:0.691, p:100},
      // hand-drawn fill tracing the connective gold band around the cluster —
      // cleaned up (duplicate/near-duplicate taps removed, jaggedness smoothed)
      // but the same coverage you drew
@@ -511,7 +511,7 @@ function drawHitboxes(){
 // instead of silently masking the new baseline, which is what was happening
 // with your v394 update: your saved boxes predated the circles/arcs, so they
 // were overwriting them back to plain rectangles on every load.
-const RECTS_SCHEMA_VERSION='10';
+const RECTS_SCHEMA_VERSION='11';
 const DEFAULT_RECTS={};
 FIELDS.forEach(function(fl){ if(fl.rects) DEFAULT_RECTS[fl.id]=fl.rects.map(function(r){ return Object.assign({},r); }); });
 (function loadRectOverrides(){
