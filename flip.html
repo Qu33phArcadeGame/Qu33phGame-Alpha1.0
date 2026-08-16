@@ -62,8 +62,9 @@
   </div>
   <div id="tutOvl" class="ovl">
     <h1 style="font-size:22px;">LEVEL RULES</h1>
-    <div class="tut-row"><img src="green.png" alt=""><div><b style="color:#7bff9a;">GREEN MARKER</b><br>land on it &mdash; bonus points</div></div>
-    <div class="tut-row"><img src="red.png" alt=""><div><b style="color:#ff5a5a;">RED MARKER</b><br>blocked &mdash; flip straight over it</div></div>
+    <div class="tut-row"><img src="stackred.png" alt=""><div><b style="color:#ff5a5a;">RED MARKER</b><br>land on it &mdash; +1 point</div></div>
+    <div class="tut-row"><img src="stackgreen.png" alt=""><div><b style="color:#7bff9a;">GREEN MARKER</b><br>land on it &mdash; +2 points</div></div>
+    <div class="tut-row"><img src="stackblue.png" alt=""><div><b style="color:#4d9bff;">BLUE MARKER</b><br>land on it &mdash; +3 points</div></div>
     <div class="tut-row"><span class="jag"></span><div><b style="color:#ff4d4d;">RED JAGGED GROUND</b><br>uneven &mdash; it tips you over</div></div>
     <div class="tut-row"><img src="Chair.png" alt=""><div><b style="color:#ff5a5a;">RED CHAIR</b><br>launches you far ahead</div></div>
     <div class="sub" style="margin-top:14px;">reach the last platform to clear the level</div>
@@ -121,7 +122,7 @@ function thickenOutline(src, r){            // stamps a dark silhouette in a rin
 function keyAndThicken(im){ const k=keyWhite(im); return thickenOutline(k, Math.max(2, Math.min(k.width||k.naturalWidth, k.height||k.naturalHeight)*0.030)); }
 let MARKER=IMG(THEME==='cartoon'?'blueC.png':'blue.png');
 if(THEME==='cartoon'){ MARKER.addEventListener('load',function(){ MARKER=keyAndThicken(MARKER); try{ updOrient(); }catch(e){} }); }
-const MK_RED=IMG('red.png'), MK_GREEN=IMG('green.png');
+const MK_RED=IMG('stackred.png'), MK_GREEN=IMG('stackgreen.png'), MK_BLUE=IMG('stackblue.png');
 const CHAIR=IMG('Chair.png'), FIELD=IMG('originalfield.png');
 const WIN_R=IMG('window.png'), WIN_P=IMG('windowP.png');
 const TREES_R=['tree1.png','tree2.png','tree3.png','tree4.png','tree5.png','tree6.png'].map(IMG);
@@ -214,8 +215,14 @@ let plats, marker, camX, score, bestP, combo, state, charge, charging, popups,
     settle, lastFlat, stairLeft, stairStep, mode, levelIdx, timeLeft, timerOn, won;
 try{ bestP=parseInt(localStorage.getItem('qu33phFlipBestP')||'0',10)||0; }catch(e){ bestP=0; }
 
-function pad(o){ return Object.assign({x:0,y:0,w:CW*0.32,uneven:false,chair:false,chairHit:false,
-                  obs:null,got:false,seed:Math.random(),seed2:Math.random()}, o); }
+function pad(o){
+  const p=Object.assign({x:0,y:0,w:CW*0.32,uneven:false,chair:false,chairHit:false,
+                  obs:null,got:false,seed:Math.random(),seed2:Math.random()}, o);
+  // every platform is a marker now — red/green/blue, picked from its own seed so it's
+  // consistent for that pad (no separate RNG call needed at every build site)
+  if(!p.color) p.color = p.seed<0.3334 ? 'R' : p.seed<0.6667 ? 'G' : 'B';
+  return p;
+}
 function addPlatform(){
   const n=plats.length, last=plats[n-1];
   const hard=n>25, d=hard?Math.min(1,(n-25)/40):0;
@@ -253,34 +260,19 @@ function buildLevel(i){
         if(x-lf.x>lim) x=lf.x+lim;
         const minX=last.x+last.w+CW*0.05; if(x<minX) x=minX;
       }
-      plats.push(pad({x,y,w,uneven, chair:s.o==='C', obs:(s.o==='R'||s.o==='G')?s.o:null}));
+      plats.push(pad({x,y,w,uneven, chair:s.o==='C'}));
       if(!uneven) lastFlat=plats.length-1;
     }
   } else {                                             // levels past the hand-made ones
-    const len=10+i, bump=Math.min(1,(i-LEVELS.length)/12);
+    const len=10+i;
     stairLeft=0; stairStep=0;
-    for(let k=0;k<len;k++) addPlatform();
-    for(let k=2;k<plats.length-1;k++){                 // obstacles placed after the run exists
-      const p=plats[k];
-      if(p.uneven || p.chair) continue;
-      if(Math.random() >= 0.18+bump*0.12) continue;
-      const prev=plats[k-1], next=plats[k+1];
-      if(Math.random()<0.45 && standable(prev) && standable(next) && !next.chair){
-        // a red blocker only works if the pad after it is within one flip of the pad before it,
-        // so squeeze the trio together rather than dropping an unclearable wall
-        p.w=Math.min(p.w, CW*0.20);
-        p.x=Math.min(p.x, prev.x+prev.w+CW*0.10);
-        const lim=maxReach(next.y-prev.y)*0.86, minX=p.x+p.w+CW*0.05;
-        if(prev.x+lim >= minX){ next.x=Math.min(next.x, prev.x+lim); p.obs='R'; }
-        else p.obs='G';
-      } else p.obs='G';
-    }
+    for(let k=0;k<len;k++) addPlatform();               // every pad already got a marker colour in pad()
   }
   makeFlyable();
 }
-// A pad you can actually stand on. Red-jagged AND red-marker pads both tip you,
-// so neither counts as a foothold when checking that a level is flyable.
-function standable(p){ return !p.uneven && p.obs!=='R'; }
+// A pad you can actually stand on. Red-jagged ground still tips you — that's the
+// only hazard left now that every marker colour is just a different point value.
+function standable(p){ return !p.uneven; }
 function makeFlyable(){
   let last=0, i=1;
   while(i<plats.length){
@@ -291,7 +283,6 @@ function makeFlyable(){
       let cleared=false;                                   // open up whatever is blocking the run
       for(let k=last+1;k<i;k++){
         if(plats[k].uneven){ plats[k].uneven=false; cleared=true; }
-        if(plats[k].obs==='R'){ plats[k].obs=null; cleared=true; }
       }
       if(cleared){ i=last+1; continue; }                   // rescan: the nearer pad is a foothold now
       const prev=plats[i-1];                               // last resort, pull it into range
@@ -300,7 +291,7 @@ function makeFlyable(){
     last=i; i++;
   }
   const goal=plats[plats.length-1];                        // the finish must always be landable
-  goal.uneven=false; if(goal.obs==='R') goal.obs=null;
+  goal.uneven=false;
 }
 function buildEndless(){
   plats=[pad({x:CW*0.06,y:CH*0.70,w:CW*0.42})]; lastFlat=0; stairLeft=0; stairStep=0;
@@ -420,7 +411,7 @@ function chairLaunch(p){
   else while(plats.length<=target+10) addPlatform();
   const t=plats[target];
   if(t.uneven){ t.uneven=false; if(target>lastFlat) lastFlat=target; }
-  t.chair=false; if(t.obs==='R') t.obs=null;
+  t.chair=false;
   const g=G(), dy=t.y-marker.y;
   marker.vy=-0.044*CH;
   const T=(-marker.vy+Math.sqrt(Math.max(0.0001,marker.vy*marker.vy+2*g*dy)))/g;
@@ -430,16 +421,14 @@ function chairLaunch(p){
 }
 function land(p){
   marker.y=p.y; marker.vx=0; marker.vy=0; marker.rot=0; marker.skipTo=-1;
-  if(p.uneven || p.obs==='R'){ state='tip'; marker.tipT=0; return; }
+  if(p.uneven){ state='tip'; marker.tipT=0; return; }
   const idx=plats.indexOf(p);
-  const gained=Math.max(1, idx-marker.pIdx);
   marker.pIdx=idx; combo++;
-  let pts=gained;                              // one point per platform, nothing else
-  if(p.obs==='G' && !p.got){ p.got=true;
-    popups.push({x:marker.x,y:p.y-MH()*2.4,txt:'BONUS +25',life:52,col:'#7bff9a'}); }
+  // touch a marker, bank its colour's points — red=1, green=2, blue=3, same idea as the original game
+  const pts = p.color==='R'?1 : p.color==='B'?3 : 2;
+  const col = p.color==='R'?'#ff5a5a' : p.color==='B'?'#4d9bff' : '#7bff9a';
   score+=pts;
-  popups.push({x:marker.x,y:p.y-MH()*1.3,txt:'+'+gained,life:44,col:'#8fd0ff'});
-  if(gained>1) popups.push({x:marker.x,y:p.y-MH()*1.9,txt:'SKIPPED '+(gained-1),life:52,col:'#ffd24a'});
+  popups.push({x:marker.x,y:p.y-MH()*1.3,txt:'+'+pts,life:44,col:col});
   state='ready'; charge=0; settle=9;
   if(mode==='levels'){
     if(idx>=plats.length-1){ finishLevel(); return; }
@@ -632,14 +621,30 @@ function drawPlat(c,p){
   if(px>lim+80||px+p.w<-80) return;
   const h=CH*0.34;
   c.save(); c.beginPath(); c.rect(px,p.y,p.w,h); c.clip();
-  if(ready(FIELD)){
-    const nw=FIELD.naturalWidth, nh=FIELD.naturalHeight;
-    const cw2=nw*(0.20+p.seed*0.30), ch2=nh*(0.12+p.seed2*0.20);
-    c.drawImage(FIELD,p.seed2*(nw-cw2),p.seed*(nh-ch2),cw2,ch2,px,p.y,p.w,h);
-  } else { c.fillStyle='#1b1b2a'; c.fillRect(px,p.y,p.w,h); }
-  c.save(); c.translate(0,p.y);
-  c.fillStyle=platGrad(c,h); c.fillRect(px,0,p.w,h);
-  c.restore();
+  if(p.uneven){                                        // hazard ground keeps its own plain look
+    c.fillStyle='#1b1b2a'; c.fillRect(px,p.y,p.w,h);
+  } else {
+    // solid tinted base first, so there's never a transparent gap between tiles or
+    // below them — then a row of the actual marker art laid on its side on top
+    const base = p.color==='R'?'#3a1414':p.color==='B'?'#122036':'#0f2c18';
+    c.fillStyle=base; c.fillRect(px,p.y,p.w,h);
+    const img = p.color==='R'?MK_RED : p.color==='B'?MK_BLUE : MK_GREEN;
+    if(ready(img)){
+      const w0=img.naturalWidth, h0=img.naturalHeight;
+      const tileH=CW*0.032, tileW=tileH*(h0/w0);
+      const ty=p.y+h*0.5;
+      let tx=px-(((p.seed*tileW)%tileW)+tileW)%tileW;
+      while(tx<px+p.w){
+        c.save(); c.translate(tx+tileW/2, ty); c.rotate(Math.PI/2);
+        c.drawImage(img,-tileH/2,-tileW/2,tileH,tileW);
+        c.restore();
+        tx+=tileW;
+      }
+    } else {
+      c.fillStyle = p.color==='R'?'#ff3030':p.color==='B'?'#3a7bff':'#30d060';
+      c.fillRect(px,p.y,p.w,h);
+    }
+  }
   c.restore();
   if(p.uneven){
     c.save(); c.strokeStyle='#ff4d4d'; c.lineWidth=Math.max(2,CH*0.006);
@@ -684,13 +689,6 @@ function drawProps(){
       ctx.save(); glowOn();
       if(ready(CHAIR)) ctx.drawImage(CHAIR,cx-cw/2,p.y-chh,cw,chh);
       else { ctx.fillStyle='#d62424'; ctx.fillRect(cx-cw/2,p.y-chh,cw,chh); }
-      ctx.restore();
-    }
-    if(p.obs && !(p.obs==='G'&&p.got)){
-      const img=p.obs==='R'?MK_RED:MK_GREEN, oh=MH()*0.9;
-      ctx.save(); ctx.translate(cx,p.y-oh/2); ctx.rotate(-Math.PI/2); glowOn();
-      if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; ctx.drawImage(img,-oh/2,-(oh/ar)/2,oh,oh/ar); }
-      else { ctx.fillStyle=p.obs==='R'?'#ff3030':'#30d060'; ctx.fillRect(-oh/2,-oh*0.09,oh,oh*0.18); }
       ctx.restore();
     }
   }
