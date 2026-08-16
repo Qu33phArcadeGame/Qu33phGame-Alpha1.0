@@ -225,10 +225,18 @@
     #arcadeMenu.arc-galaxy #cabDozer img { filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 9px rgba(180,120,255,0.8)); }
     /* Flip cabinet: transparent card, marker standing upright, glow (never a box) */
     #cabFlip .flipbox { width:100%; aspect-ratio:150/230; max-height:168px; box-sizing:border-box;
-      background:transparent; display:flex; align-items:center; justify-content:center; overflow:visible; }
+      background:transparent; display:flex; align-items:center; justify-content:center; overflow:visible;
+      perspective:340px; }
     #cabFlip .flipbox img { width:118%; height:auto; max-height:none; object-fit:contain; display:block;
       border:0; border-radius:0; background:transparent; transform:rotate(-90deg); }
     #cabFlip .flipbox img.upv { width:auto; height:94%; transform:none; }   /* art already vertical (comic marker) */
+    #cabFlip .flipbox img.flip-anim { animation:qu33phFlipAnim 3.2s ease-in-out infinite; }
+    @keyframes qu33phFlipAnim {
+      0%   { transform:rotate(7deg)   rotateY(0deg); }
+      45%  { transform:rotate(97deg)  rotateY(180deg); }
+      55%  { transform:rotate(97deg)  rotateY(180deg); }
+      100% { transform:rotate(187deg) rotateY(360deg); }
+    }
     #arcadeMenu.arc-comic #cabSkee img { filter:grayscale(1) contrast(1.18) drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-sunset #cabSkee img { filter:sepia(0.7) saturate(2) brightness(1.12) hue-rotate(-12deg) drop-shadow(0 0 8px rgba(255,200,60,0.75)); }
     #arcadeMenu.arc-galaxy #cabSkee img { filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 9px rgba(180,120,255,0.8)); }
@@ -702,7 +710,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v410</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v412</div>
 
 <canvas id="game"></canvas>
 
@@ -759,7 +767,7 @@
     <div class="cab-card" id="cabBowling" onclick="launchBowling()"><img src="bowlingicon.png?v=362" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH BOWLING</div></div>
     <div class="cab-card" id="cabStack" onclick="launchStack()"><img src="stackicon.png?v=311" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH STACK</div></div>
     <div class="cab-card" id="cabFidget" onclick="launchFidget()"><img src="fidgetqu33phfield.png" onerror="this.style.opacity=0.2"><div class="cab-label">FIDGET QU33PH</div></div>
-    <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" style="width:110px;height:60px;object-fit:contain;transform:rotate(97deg);" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
+    <div class="cab-card" id="cabFlip" onclick="launchFlip()"><div class="flipbox"><img src="blue.png" class="flip-anim" style="width:110px;height:60px;object-fit:contain;transform:rotate(97deg);" onerror="this.style.opacity=0.2"></div><div class="cab-label">QU33PH FLIP</div></div>
     <div class="cab-card" id="cabSkee">
       <div style="position:relative;width:100%;">
         <img id="skeeIcon" src="qu33phball.png?v=382" onclick="launchSkee()"
@@ -776,7 +784,7 @@
 </div>
 
 <div id="pinballScreen" oncontextmenu="return false" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0818;z-index:110;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;">
-  <img id="pinballBg" src="pinball.jpg?v=377" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;" onerror="this.style.opacity=0.12">
+  <img id="pinballBg" src="pinball.jpg?v=378" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;" onerror="this.style.opacity=0.12">
   <div id="pbBenday"></div>
   <canvas id="pinballCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
   <button class="back-tl" id="pbPauseBtn" onclick="pbBack()" style="position:absolute;top:8px;left:10px;z-index:6;background:rgba(8,9,16,0.82);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:1px;padding:6px 12px;border-radius:8px;">← BACK</button>
@@ -1797,8 +1805,8 @@ function applyThemeFilters(){
   { var _ff=({ "default":"fidgetqu33phfield.png","cartoon":"fidgetcomicfield.png","neon":"fidgetneonfield.png","sunset":"fidgetgoldenfield.png","galaxy":"fidgetgalaxyfield.png" })[s]||"fidgetqu33phfield.png"; var _fi=document.querySelector("#cabFidget img"); if(_fi && _fi.getAttribute("src")!==_ff) _fi.setAttribute("src",_ff); }
   { var _ss=(s==="cartoon")?"stackicon_comic.png?v=311":"stackicon.png?v=311"; var _si=document.querySelector("#cabStack img"); if(_si) setIconSrc(_si,_ss,s==="cartoon"); }
   { var _bs=(s==="cartoon")?"blueC.png":"blue.png"; var _bi=document.querySelector("#cabFlip img"); if(_bi){ setIconSrc(_bi,_bs,s==="cartoon");
-      if(s==="cartoon"){ _bi.style.width=""; _bi.style.height=""; _bi.style.objectFit=""; _bi.style.transform=""; orientFlipIcon(_bi); }
-      else { _bi.style.width="110px"; _bi.style.height="60px"; _bi.style.objectFit="contain"; _bi.style.transform="rotate(97deg)"; }   // default blue marker: stood upright, angled a touch, capped so rotation doesn't blow out of the card
+      if(s==="cartoon"){ _bi.style.width=""; _bi.style.height=""; _bi.style.objectFit=""; _bi.style.transform=""; _bi.classList.remove("flip-anim"); orientFlipIcon(_bi); }
+      else { _bi.style.width="110px"; _bi.style.height="60px"; _bi.style.objectFit="contain"; _bi.style.transform="rotate(97deg)"; _bi.classList.add("flip-anim"); }   // default blue marker: stood upright, animates flipping between horizontal/vertical, capped so rotation doesn't blow out of the card
     } }
   var pbg=document.getElementById("pinballBg"); if(pbg) pbg.style.filter=(s==="cartoon")?"grayscale(1) contrast(1.18)":css;
   { var _cb=(s==="cartoon"); ["slotBtn","plinkoBtn","titleCoins"].forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.toggle("comic-benday-icon", _cb); }); }
