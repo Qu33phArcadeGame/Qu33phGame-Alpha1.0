@@ -182,25 +182,54 @@ function haptic(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){}
 // ─── sound ────────────────────────────────────────────────────────────────
 // every clip had the throw motion baked into the front of the recording —
 // trimmed them all down to start right on the transient so they fire instantly.
+// Split for real this round: every one of the impact-family clips (short/hit/long)
+// now starts right at the actual crash — measured against the waveform, not
+// guessed — with a smooth fade at the tail. The lead-in that used to sit in front
+// of those crashes (up to ~1.4s of it, in the longer takes) got pulled out into
+// its own dedicated throw pool below, same split bowling ended up with.
 const SND_NAMES=['mini1','mini_hit_1','mini_hit_2','mini_short_1','mini_short_2',
   'mini_long_2','mini_long_3','mini_long_hit_1',
   'mini_peef_short_1','mini_peef_middle_1','mini_peef_long'];
 const SND={};
 SND_NAMES.forEach(function(n){ SND[n]=[0,1,2].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
 const sndIdx={};
+function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
 function playSnd(name, vol){
+  if(!sfxOn()) return;
   const pool=SND[name]; if(!pool) return;
   sndIdx[name]=((sndIdx[name]||0)+1)%pool.length;
   const a=pool[sndIdx[name]];
   try{ a.currentTime=0; a.volume=Math.max(0,Math.min(1,vol===undefined?1:vol)); a.play().catch(function(){}); }catch(e){}
 }
 // marker-on-marker / marker-on-chair impact — picks a family by how hard it hit,
-// alternates between the two takes so it doesn't sound identical every time
+// alternates between the two takes so it doesn't sound identical every time.
+// This fires the same frame the physics detects contact — no waiting for the
+// slide to settle — and now the clip itself starts right on the crash too.
 function playImpact(hard){
   const vol=Math.max(0.35,Math.min(1,hard/3));
   if(hard<1.0) playSnd(Math.random()<0.5?'mini_short_1':'mini_short_2', vol);
   else if(hard<2.0) playSnd(Math.random()<0.5?'mini_hit_1':'mini_hit_2', vol);
   else playSnd(Math.random()<0.5?'mini_long_2':'mini_long_3', vol);
+}
+// the throw itself — a dedicated pool now, pulled from the lead-in that used to
+// sit in front of the crash sounds (the sound of the flick + slide, before
+// contact). Fires the instant you release, keyed off how hard you flicked.
+const THROW_NAMES=['mini_hit_2_throw','mini_long_2_throw','mini_long_3_throw'];
+const THROW={};
+THROW_NAMES.forEach(function(n){ THROW[n]=[0,1].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
+const throwIdx={};
+function playThrowSnd(name, vol){
+  if(!sfxOn()) return;
+  const pool=THROW[name]; if(!pool) return;
+  throwIdx[name]=((throwIdx[name]||0)+1)%pool.length;
+  const a=pool[throwIdx[name]];
+  try{ a.currentTime=0; a.volume=Math.max(0,Math.min(1,vol===undefined?1:vol)); a.play().catch(function(){}); }catch(e){}
+}
+function playThrow(p){
+  const vol=0.6+p*0.4;
+  if(p<0.4) playThrowSnd('mini_hit_2_throw', vol);
+  else if(p<0.75) playThrowSnd('mini_long_2_throw', vol);
+  else playThrowSnd('mini_long_3_throw', vol);
 }
 // a marker going off the table — short/middle/long picked by how far up the
 // table it had travelled before it went over the side
@@ -222,6 +251,7 @@ function launch(pw, aim){
             rot:(Math.random()-0.5)*0.5, spin:(Math.random()-0.5)*7*(0.4+p),
             off:false, cap:true, alive:true, sndCd:0 };
   markers.push(m); live=m; idx++; camTarget=1;
+  playThrow(p);
 }
 // how far along it got when it left the table decides what it costs you
 const V_WALL=1.0;            // the back wall of the far table
