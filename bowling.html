@@ -114,6 +114,13 @@ const MEGACARD=IMG('megacard.png?v=365');
 function ready(i){ return i && i.complete && (i.naturalWidth||i.width)>0; }
 
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+function mtext(c,txt,x,y,strokeFirst){
+  if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
+  c.save(); c.translate(x,y); c.scale(-1,1);
+  if(strokeFirst) c.strokeText(txt,0,0); c.fillText(txt,0,0);
+  c.restore();
+}
 let CW=0,CH=0,DPR=1;
 // the background is object-fit:contain, so work out the letterboxed art box
 let AX=0,AY=0,AW=0,AH=0;
@@ -690,9 +697,9 @@ function drawHUD(){
   // running total top-right, clear of the BACK button on the left
   const view=frameView();
   const scoreY=Math.max(CH*0.050, AY-AH*0.130);
-  ctx.textAlign='right'; ctx.fillText('SCORE '+finalScore(), ax(0.955), scoreY);
+  ctx.textAlign='right'; mtext(ctx,'SCORE '+finalScore(), ax(0.955), scoreY);
   if(megaWon){ ctx.fillStyle='#ff4d3d'; ctx.font='bold '+Math.round(f*0.72)+'px Helvetica,Arial,sans-serif';
-    ctx.fillText('+33 MEGA', ax(0.955), scoreY+f*1.18); ctx.fillStyle=T.ink;
+    mtext(ctx,'+33 MEGA', ax(0.955), scoreY+f*1.18); ctx.fillStyle=T.ink;
     ctx.font='bold '+f+'px Helvetica,Arial,sans-serif'; }
 
   // ── ten frame boxes: marks on top, running total underneath ──
@@ -711,15 +718,15 @@ function drawHUD(){
     ctx.strokeStyle='rgba(255,255,255,0.20)'; ctx.stroke();
     ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillStyle='rgba(255,255,255,0.34)';
     ctx.font='bold '+Math.round(bh*0.20)+'px Helvetica,Arial,sans-serif';
-    ctx.fillText(String(i+1), cx+bw*0.08, by0+bh*0.03);
+    mtext(ctx,String(i+1), cx+bw*0.08, by0+bh*0.03);
     const m=view[i].marks.filter(s=>s!=='');
     ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=T.ink;
     ctx.font='bold '+Math.round(mh*(m.length>2?0.46:0.58))+'px Helvetica,Arial,sans-serif';
-    if(m.length) ctx.fillText(m.join(' '), cx+bw*0.56, by0+mh*0.58);
+    if(m.length) mtext(ctx,m.join(' '), cx+bw*0.56, by0+mh*0.58);
     if(view[i].total!==null){
       ctx.fillStyle=T.accent;
       ctx.font='bold '+Math.round((bh-mh)*0.60)+'px Helvetica,Arial,sans-serif';
-      ctx.fillText(String(view[i].total), cx+bw*0.5, by0+mh+(bh-mh)*0.52);
+      mtext(ctx,String(view[i].total), cx+bw*0.5, by0+mh+(bh-mh)*0.52);
     }
   }
   ctx.font='bold '+f+'px Helvetica,Arial,sans-serif'; ctx.textBaseline='top'; ctx.fillStyle=T.ink;
@@ -727,7 +734,7 @@ function drawHUD(){
   ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle='#ff4d3d';
   ctx.font='bold '+Math.round(AH*0.021)+'px Helvetica,Arial,sans-serif';
   if(T.glow){ ctx.shadowColor=T.glow; ctx.shadowBlur=AH*0.014; }
-  ctx.fillText(String(high), ax(HS_X), ay(HS_Y));
+  mtext(ctx,String(high), ax(HS_X), ay(HS_Y));
   ctx.restore();
 }
 
@@ -739,8 +746,7 @@ function drawMsg(){
   ctx.font='bold '+Math.round(AH*0.070)+'px Helvetica,Arial,sans-serif';
   ctx.lineWidth=Math.max(3,AH*0.006); ctx.strokeStyle='rgba(0,0,0,0.75)';
   if(T.glow){ ctx.shadowColor=msg.c; ctx.shadowBlur=AH*0.05; }
-  ctx.strokeText(msg.t,ax(0.5),ay(0.50));
-  ctx.fillStyle=msg.c; ctx.fillText(msg.t,ax(0.5),ay(0.50));
+  ctx.fillStyle=msg.c; mtext(ctx,msg.t,ax(0.5),ay(0.50),true);
   ctx.restore();
 }
 
@@ -813,7 +819,7 @@ function drawPrompt(){
   ctx.save(); ctx.globalAlpha=a;
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=T.ink;
   ctx.font='bold '+Math.round(AH*0.024)+'px Helvetica,Arial,sans-serif';
-  ctx.fillText(roll===0?'SLIDE TO AIM \u00b7 FLICK TO ROLL':'SPARE ATTEMPT', ax(0.5), ay(0.725));
+  mtext(ctx,roll===0?'SLIDE TO AIM \u00b7 FLICK TO ROLL':'SPARE ATTEMPT', ax(0.5), ay(0.725));
   ctx.restore();
 }
 
@@ -824,11 +830,11 @@ function drawOver(){
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillStyle=T.accent;
   ctx.font='bold '+Math.round(AH*0.058)+'px Helvetica,Arial,sans-serif';
-  ctx.fillText('FINAL '+finalScore(), ax(0.5), ay(0.44));
+  mtext(ctx,'FINAL '+finalScore(), ax(0.5), ay(0.44));
   ctx.fillStyle=T.ink;
   ctx.font='bold '+Math.round(AH*0.028)+'px Helvetica,Arial,sans-serif';
-  ctx.fillText('HIGH '+high, ax(0.5), ay(0.50));
-  ctx.fillText('TAP TO PLAY AGAIN', ax(0.5), ay(0.56));
+  mtext(ctx,'HIGH '+high, ax(0.5), ay(0.50));
+  mtext(ctx,'TAP TO PLAY AGAIN', ax(0.5), ay(0.56));
   ctx.restore();
 }
 cv.addEventListener('click',function(){ if(gameOver) newGame(); });
@@ -853,6 +859,7 @@ let last=performance.now();
 function frameLoop(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;
   step(dt);
+  if(mirrorMode){ ctx.setTransform(-DPR,0,0,DPR,CW*DPR,0); } else { ctx.setTransform(DPR,0,0,DPR,0,0); }
   ctx.clearRect(0,0,CW,CH);
   overlay();                 // themed wash sits under the markers
   drawPins(); drawBall(); drawChair(); drawMegaFly(); drawAimMarker(); drawQueue(); drawMegaCard(); drawOriBtn();

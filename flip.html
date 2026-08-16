@@ -101,6 +101,13 @@
 </div></div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+function mtext(c,txt,x,y,strokeFirst){
+  if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
+  c.save(); c.translate(x,y); c.scale(-1,1);
+  if(strokeFirst) c.strokeText(txt,0,0); c.fillText(txt,0,0);
+  c.restore();
+}
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 
@@ -745,36 +752,36 @@ function drawHUD(){
   const pad=CH*0.016;
   ctx.textBaseline='top'; ctx.textAlign='center';
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.021)+'px Helvetica';
-  ctx.fillText('QU33PH FLIP',CW/2,pad);
+  mtext(ctx,'QU33PH FLIP',CW/2,pad);
   ctx.fillStyle=ACC; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-  ctx.fillText(TH.name,CW/2,pad+CH*0.027);
+  mtext(ctx,TH.name,CW/2,pad+CH*0.027);
   // score is the headline now — big, and right under the title where it's easy to see
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.058)+'px Helvetica';
-  ctx.fillText(score,CW/2,pad+CH*0.050);
+  mtext(ctx,score,CW/2,pad+CH*0.050);
   ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CH*0.014)+'px Helvetica';
-  ctx.fillText('SCORE',CW/2,pad+CH*0.106);
+  mtext(ctx,'SCORE',CW/2,pad+CH*0.106);
   ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-  ctx.fillText((mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestScore)+'   '+marker.pIdx+' PLATFORMS',CW/2,pad+CH*0.128);
+  mtext(ctx,(mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestScore)+'   '+marker.pIdx+' PLATFORMS',CW/2,pad+CH*0.128);
   if(mode==='timed'){
     const t=Math.max(0,timeLeft);
     ctx.fillStyle=t<=10?'#ff5a5a':'#fff'; ctx.font='bold '+Math.round(CH*0.032)+'px Helvetica';
-    ctx.fillText(t.toFixed(1),CW/2,pad+CH*0.154);
+    mtext(ctx,t.toFixed(1),CW/2,pad+CH*0.154);
   }
   if(combo>2){ ctx.fillStyle='#7bff9a'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-    ctx.fillText('COMBO x'+combo,CW/2,pad+CH*(mode==='timed'?0.180:0.152)); }
+    mtext(ctx,'COMBO x'+combo,CW/2,pad+CH*(mode==='timed'?0.180:0.152)); }
   if(state==='ready'){
     ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.018)+'px Helvetica';
-    ctx.fillText('swipe the marker to flip it',CW/2,CH*0.932);
+    mtext(ctx,'swipe the marker to flip it',CW/2,CH*0.932);
   }
   for(const q of popups){
     ctx.globalAlpha=Math.max(0,q.life/50); ctx.fillStyle=q.col; ctx.textAlign='center';
     ctx.font='bold '+Math.round(CH*(q.big?0.030:0.024))+'px Helvetica';
     ctx.strokeStyle='rgba(0,0,0,0.65)'; ctx.lineWidth=Math.max(2,CH*0.003);
-    ctx.strokeText(q.txt,SX(q.x),SY(q.y)); ctx.fillText(q.txt,SX(q.x),SY(q.y)); ctx.globalAlpha=1;
+    mtext(ctx,q.txt,SX(q.x),SY(q.y),true); ctx.globalAlpha=1;
   }
 }
 function draw(){
-  ctx.setTransform(1,0,0,1,0,0);
+  if(mirrorMode){ ctx.setTransform(-1,0,0,1,CW,0); } else { ctx.setTransform(1,0,0,1,0,0); }
   if(state==='menu'){ ctx.fillStyle='#05050a'; ctx.fillRect(0,0,CW,CH); return; }
   s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
   paintBG(s2);

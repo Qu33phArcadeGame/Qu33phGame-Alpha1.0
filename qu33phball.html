@@ -30,6 +30,17 @@
 <button id="laneBtn"></button>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+// Mirror mode (site-wide setting): the whole field flips left-to-right, but
+// text needs to stay readable — draw() mirrors the canvas transform, and this
+// wrapper locally cancels that mirror just long enough to draw each string
+// normally, at the now-mirrored position. Position moves, letters don't.
+let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+function mtext(c,txt,x,y,strokeFirst){
+  if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
+  c.save(); c.translate(x,y); c.scale(-1,1);
+  if(strokeFirst) c.strokeText(txt,0,0); c.fillText(txt,0,0);
+  c.restore();
+}
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 // Three connected Qu33ph-Ball machines. Each field uses the full room render so
@@ -562,7 +573,7 @@ function ensureFieldCache(){
 }
 function draw(){
   updLaneBtn();
-  ctx.setTransform(1,0,0,1,0,0);
+  if(mirrorMode){ ctx.setTransform(-1,0,0,1,CW,0); } else { ctx.setTransform(1,0,0,1,0,0); }
   ensureFieldCache();
   ctx.drawImage(FIELDC,0,0);                            // static cabinet: one blit per frame
   if(F().id==='pro'){
@@ -570,8 +581,7 @@ function draw(){
     ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.font='bold '+Math.round(CW*0.027)+'px Helvetica,Arial,sans-serif';
     ctx.lineWidth=Math.max(2,CW*0.006); ctx.strokeStyle='rgba(0,0,0,0.9)';
-    ctx.fillStyle='#ffd24a'; ctx.strokeText(fmtK(MEGA_VAL),fx(0.510),fy(0.218));
-    ctx.fillText(fmtK(MEGA_VAL),fx(0.510),fy(0.218)); ctx.restore();
+    ctx.fillStyle='#ffd24a'; mtext(ctx,fmtK(MEGA_VAL),fx(0.510),fy(0.218),true); ctx.restore();
   }
   drawThemeOverlay();
   // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes — shrunk and
@@ -580,9 +590,9 @@ function draw(){
   ctx.font='bold '+Math.round(CW*0.032)+'px Helvetica';
   const HD=F().hud||{x:[0.346,0.502,0.662],y:[0.1937,0.1937,0.1937]};
   const HY=Array.isArray(HD.y)?HD.y:[HD.y,HD.y,HD.y];
-  ctx.fillText(TOTAL-resolved, fx(HD.x[0]), fy(HY[0]));
-  ctx.fillText(fmtK(score),    fx(HD.x[1]), fy(HY[1]));
-  ctx.fillText(fmtK(best),     fx(HD.x[2]), fy(HY[2]));
+  mtext(ctx,TOTAL-resolved, fx(HD.x[0]), fy(HY[0]));
+  mtext(ctx,fmtK(score),    fx(HD.x[1]), fy(HY[1]));
+  mtext(ctx,fmtK(best),     fx(HD.x[2]), fy(HY[2]));
 
   // preview queue — each marker keeps its own slot, so the row never reshuffles
   ctx.globalAlpha=0.38;
@@ -634,18 +644,18 @@ function draw(){
   for(const p of popups){ if(p.delay>0) continue; ctx.globalAlpha=Math.max(0,p.life/40);
     ctx.fillStyle=p.pts>=100?'#ffd24a':p.pts>=30?'#7bff9a':p.pts>0?'#8fd0ff':'#ff7a7a';
     ctx.font='bold '+Math.round(CW*0.055)+'px Helvetica'; ctx.textAlign='center';
-    ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=X(0.8); ctx.strokeText(p.txt,fx(p.x),fy(p.y)); ctx.fillText(p.txt,fx(p.x),fy(p.y)); ctx.globalAlpha=1; }
+    ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=X(0.8); mtext(ctx,p.txt,fx(p.x),fy(p.y),true); ctx.globalAlpha=1; }
 
   // hint
   if(state==='ready' && !dragging){ ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font='bold '+Math.round(CW*0.035)+'px Helvetica'; ctx.textAlign='center';
-    ctx.fillText(F().rects?'flick UP to roll \u2014 soft and wide for the pockets':'flick UP to roll \u2014 aim for the rings', CW/2, fy(0.93)); }
+    mtext(ctx,F().rects?'flick UP to roll \u2014 soft and wide for the pockets':'flick UP to roll \u2014 aim for the rings', CW/2, fy(0.93)); }
 
   // game over
   if(state==='over'){ ctx.fillStyle='rgba(0,0,0,0.66)'; ctx.fillRect(0,0,CW,CH);
-    ctx.textAlign='center'; ctx.fillStyle='#e23b3b'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; ctx.fillText('GAME OVER',CW/2,CH*0.42);
-    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.08)+'px Helvetica'; ctx.fillText('SCORE '+score,CW/2,CH*0.50);
-    ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText('BEST '+best,CW/2,CH*0.555);
-    ctx.fillText('tap to play again',CW/2,CH*0.62); }
+    ctx.textAlign='center'; ctx.fillStyle='#e23b3b'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; mtext(ctx,'GAME OVER',CW/2,CH*0.42);
+    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.08)+'px Helvetica'; mtext(ctx,'SCORE '+score,CW/2,CH*0.50);
+    ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; mtext(ctx,'BEST '+best,CW/2,CH*0.555);
+    mtext(ctx,'tap to play again',CW/2,CH*0.62); }
 }
 
 function loop(){ step(); draw(); requestAnimationFrame(loop); }

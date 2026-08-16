@@ -53,6 +53,13 @@
 </div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+function mtext(c,txt,x,y,strokeFirst){
+  if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
+  c.save(); c.translate(x,y); c.scale(-1,1);
+  if(strokeFirst) c.strokeText(txt,0,0); c.fillText(txt,0,0);
+  c.restore();
+}
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // scene layer, takes the theme filter
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 const $=id=>document.getElementById(id);
@@ -214,7 +221,7 @@ function playImpact(hard){
 // the throw itself — a dedicated pool now, pulled from the lead-in that used to
 // sit in front of the crash sounds (the sound of the flick + slide, before
 // contact). Fires the instant you release, keyed off how hard you flicked.
-const THROW_NAMES=['mini_hit_2_throw','mini_long_2_throw','mini_long_3_throw'];
+const THROW_NAMES=['mini_hit_2_throw','mini_long_2_throw','mini_long_3_throw','mini_long_hit_1_throw'];
 const THROW={};
 THROW_NAMES.forEach(function(n){ THROW[n]=[0,1].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
 const throwIdx={};
@@ -227,9 +234,10 @@ function playThrowSnd(name, vol){
 }
 function playThrow(p){
   const vol=0.6+p*0.4;
-  if(p<0.4) playThrowSnd('mini_hit_2_throw', vol);
-  else if(p<0.75) playThrowSnd('mini_long_2_throw', vol);
-  else playThrowSnd('mini_long_3_throw', vol);
+  if(p<0.3) playThrowSnd('mini_hit_2_throw', vol);
+  else if(p<0.6) playThrowSnd('mini_long_2_throw', vol);
+  else if(p<0.85) playThrowSnd('mini_long_3_throw', vol);
+  else playThrowSnd('mini_long_hit_1_throw', vol);   // hardest flick — the take that used to precede the wall-slam
 }
 // a marker going off the table — short/middle/long picked by how far up the
 // table it had travelled before it went over the side
@@ -515,17 +523,17 @@ function drawHUD(){
   const cy0=CH*0.022;
   ctx.font='bold '+Math.round(F*1.5)+'px Helvetica,Arial,sans-serif';
   ctx.fillStyle=sudden?'#ff5a5a':'#ffd700';
-  ctx.fillText(tLeft.toFixed(1), CW/2, cy0);
+  mtext(ctx,tLeft.toFixed(1), CW/2, cy0);
   ctx.font='bold '+Math.round(F*1.35)+'px Helvetica,Arial,sans-serif';
   ctx.fillStyle= score<0 ? '#ff6b6b' : '#fff';
-  ctx.fillText(score+' PTS', CW/2, cy0+F*1.85);
+  mtext(ctx,score+' PTS', CW/2, cy0+F*1.85);
   ctx.font='bold '+F+'px Helvetica,Arial,sans-serif';
   ctx.fillStyle= sudden ? '#ff5a5a' : '#8fd0ff';
-  ctx.fillText(sudden?'SUDDEN DEATH':'TURN '+turn, CW/2, cy0+F*3.5);
+  mtext(ctx,sudden?'SUDDEN DEATH':'TURN '+turn, CW/2, cy0+F*3.5);
   ctx.textAlign='left';
-  ctx.fillStyle='#888'; ctx.fillText('BEST '+best, CW*0.04, cy0);
+  ctx.fillStyle='#888'; mtext(ctx,'BEST '+best, CW*0.04, cy0);
   ctx.textAlign='right';
-  ctx.fillStyle='#ffd700'; ctx.fillText(TH.name, CW*0.96, CH*0.022);
+  ctx.fillStyle='#ffd700'; mtext(ctx,TH.name, CW*0.96, CH*0.022);
   // still to throw — stacked above the near edge of the first table, same as the original game
   const rem=order.slice(idx+((state==='play'&&!live)?1:0));
   if(rem.length && camE<0.85){
@@ -541,11 +549,11 @@ function drawHUD(){
   if(state==='play' && !live && nextColor()){
     ctx.font='bold '+Math.round(F*0.95)+'px Helvetica,Arial,sans-serif';
     ctx.fillStyle= nextColor()==='blue' ? '#6fb6ff' : '#aaa';
-    ctx.fillText(nextColor()==='blue'?'BLUE — FLICK IT LAST':'FLICK UP TO THROW', CW/2, CH*0.90);
+    mtext(ctx,nextColor()==='blue'?'BLUE — FLICK IT LAST':'FLICK UP TO THROW', CW/2, CH*0.90);
   }
   if(msgT>0 && msg){
     ctx.textAlign='center'; ctx.font='bold '+Math.round(F*0.9)+'px Helvetica,Arial,sans-serif';
-    ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fillText(msg, CW/2, CH*0.83);
+    ctx.fillStyle='rgba(255,255,255,0.92)'; mtext(ctx,msg, CW/2, CH*0.83);
   }
   let py=CH*0.42;
   for(const p of popups){
@@ -553,15 +561,16 @@ function drawHUD(){
     ctx.font='bold '+Math.round(F*(p.big?(peef?2.3:1.7):1.15))+'px Helvetica,Arial,sans-serif';
     ctx.globalAlpha=Math.min(1,p.life/26); ctx.fillStyle=p.col;
     ctx.textAlign='center';
-    ctx.fillText(p.txt, CW/2+sh, py+sh*0.5);
+    mtext(ctx,p.txt, CW/2+sh, py+sh*0.5);
     ctx.globalAlpha=1;
     py+=F*2;
   }
 }
 function draw(){
-  ctx.setTransform(1,0,0,1,0,0);
+  const mx=mirrorMode?-1:1, mb=mirrorMode?CW:0;
+  ctx.setTransform(mx,0,0,1,mb,0);
   if(shakeT>0){ const k=shakeAmt*(shakeT/0.42);
-    ctx.setTransform(1,0,0,1,(Math.random()-0.5)*k,(Math.random()-0.5)*k); }
+    ctx.setTransform(mx,0,0,1,mb+(Math.random()-0.5)*k,(Math.random()-0.5)*k); }
   if(TH.filter && CANFILTER){
     drawScene(s2);
     ctx.clearRect(0,0,CW,CH); ctx.save(); ctx.filter=TH.filter; ctx.drawImage(sc,0,0); ctx.filter='none';

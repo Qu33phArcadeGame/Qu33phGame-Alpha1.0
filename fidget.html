@@ -18,6 +18,13 @@
 <button class="pill" id="resetBtn">↺ RESET</button>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+function mtext(c,txt,x,y,strokeFirst){
+  if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
+  c.save(); c.translate(x,y); c.scale(-1,1);
+  if(strokeFirst) c.strokeText(txt,0,0); c.fillText(txt,0,0);
+  c.restore();
+}
 
 // ---- theme field (passed from arcade via ?theme=) ----
 const FIELD_FILES={ 'default':'fidgetqu33phfield.png','cartoon':'fidgetcomicfield.png','neon':'fidgetneonfield.png','sunset':'fidgetgoldenfield.png','galaxy':'fidgetgalaxyfield.png' };
@@ -148,7 +155,7 @@ function drawSpinner(sp,color){
   ctx.restore();
 }
 function draw(){
-  ctx.setTransform(1,0,0,1,0,0);
+  if(mirrorMode){ ctx.setTransform(-1,0,0,1,CW,0); } else { ctx.setTransform(1,0,0,1,0,0); }
   if(ready(FIELD)){ let ar=FIELD.naturalWidth/FIELD.naturalHeight, car=CW/CH, sw,sh;
     if(ar>car){ sh=FIELD.naturalHeight; sw=sh*car; } else { sw=FIELD.naturalWidth; sh=sw/car; }
     ctx.drawImage(FIELD,(FIELD.naturalWidth-sw)/2,(FIELD.naturalHeight-sh)/2,sw,sh,0,0,CW,CH);
@@ -166,32 +173,32 @@ function draw(){
   ctx.restore();
   drawSpinner(s2,c2); drawSpinner(s1,c1);
   ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.07)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
-  ctx.fillText(score1+'  –  '+score2, CW/2, centerY-CW*0.03);
-  ctx.font='bold '+Math.round(CW*0.03)+'px Helvetica'; ctx.fillStyle='#cfe'; ctx.fillText(mode==='2p'?'P1':'YOU', CW/2-CW*0.14, centerY-CW*0.02);
-  ctx.fillStyle='#fcc'; ctx.fillText(mode==='2p'?'P2':'CPU', CW/2+CW*0.14, centerY-CW*0.02); ctx.shadowBlur=0;
-  if(state==='goal'){ ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.12)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=12; ctx.fillText(msg,CW/2,CH*0.5); ctx.shadowBlur=0; }
-  if(state==='win'){ ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,CW,CH); ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.11)+'px Helvetica'; ctx.fillText(winner,CW/2,CH*0.46); ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText(score1+' – '+score2,CW/2,CH*0.54); ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText('tap to play again',CW/2,CH*0.62); }
+  mtext(ctx,score1+'  –  '+score2, CW/2, centerY-CW*0.03);
+  ctx.font='bold '+Math.round(CW*0.03)+'px Helvetica'; ctx.fillStyle='#cfe'; mtext(ctx,mode==='2p'?'P1':'YOU', CW/2-CW*0.14, centerY-CW*0.02);
+  ctx.fillStyle='#fcc'; mtext(ctx,mode==='2p'?'P2':'CPU', CW/2+CW*0.14, centerY-CW*0.02); ctx.shadowBlur=0;
+  if(state==='goal'){ ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.12)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=12; mtext(ctx,msg,CW/2,CH*0.5); ctx.shadowBlur=0; }
+  if(state==='win'){ ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,CW,CH); ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.11)+'px Helvetica'; mtext(ctx,winner,CW/2,CH*0.46); ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; mtext(ctx,score1+' – '+score2,CW/2,CH*0.54); ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; mtext(ctx,'tap to play again',CW/2,CH*0.62); }
 }
 function drawPick(){
   ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,CW,CH); ctx.textAlign='center';
-  ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.08)+'px Helvetica'; ctx.fillText('FIDGET QU33PH',CW/2,CH*0.14);
+  ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.08)+'px Helvetica'; mtext(ctx,'FIDGET QU33PH',CW/2,CH*0.14);
   function tab(txt,x,on){ ctx.fillStyle=on?'#ffd54a':'rgba(255,255,255,0.12)'; ctx.strokeStyle=on?'#ffd54a':'#555'; ctx.lineWidth=2;
     let w=CW*0.32,h=CW*0.12,y=CH*0.24; ctx.beginPath(); ctx.roundRect(x-w/2,y-h/2,w,h,10); ctx.fill(); ctx.stroke();
-    ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText(txt,x,y+CW*0.016); }
+    ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; mtext(ctx,txt,x,y+CW*0.016); }
   tab('1 PLAYER',CW*0.3,mode==='1p'); tab('2 PLAYER',CW*0.7,mode==='2p');
-  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; ctx.fillText(mode==='2p'?'P1 — PICK YOUR SPINNER':'PICK YOUR SPINNER',CW/2,CH*0.4);
+  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; mtext(ctx,mode==='2p'?'P1 — PICK YOUR SPINNER':'PICK YOUR SPINNER',CW/2,CH*0.4);
   let r=CW*0.15, gy=CH*0.55;
   [['green',CW*0.3,1],['blue',CW*0.7,-1]].forEach(([c,x,dir])=>{ const im=SPIN[c]; ctx.save(); ctx.translate(x,gy); ctx.rotate(performance.now()*0.002*dir); if(ready(im)){ let w=r*2,h=w*(im.naturalHeight/im.naturalWidth); ctx.drawImage(im,-w/2,-h/2,w,h);} ctx.restore(); });
-  ctx.fillStyle='#9fe3b8'; ctx.font='bold '+Math.round(CW*0.038)+'px Helvetica'; ctx.fillText('GREEN',CW*0.3,gy+r+CW*0.08);
-  ctx.fillStyle='#9ec7ff'; ctx.fillText('BLUE',CW*0.7,gy+r+CW*0.08);
+  ctx.fillStyle='#9fe3b8'; ctx.font='bold '+Math.round(CW*0.038)+'px Helvetica'; mtext(ctx,'GREEN',CW*0.3,gy+r+CW*0.08);
+  ctx.fillStyle='#9ec7ff'; mtext(ctx,'BLUE',CW*0.7,gy+r+CW*0.08);
   // FIRST TO toggle
-  ctx.fillStyle='#ccc'; ctx.font='bold '+Math.round(CW*0.034)+'px Helvetica'; ctx.fillText('FIRST TO',CW/2,CH*0.80);
+  ctx.fillStyle='#ccc'; ctx.font='bold '+Math.round(CW*0.034)+'px Helvetica'; mtext(ctx,'FIRST TO',CW/2,CH*0.80);
   [3,5,7].forEach((n,i)=>{ let x=CW*(0.3+i*0.2), y=CH*0.85, on=(winGoals===n), rr=CW*0.075;
     ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.fillStyle=on?'#ffd54a':'rgba(255,255,255,0.1)'; ctx.fill();
     ctx.lineWidth=2; ctx.strokeStyle=on?'#ffd54a':'#666'; ctx.stroke();
-    ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; ctx.fillText(n,x,y+CW*0.018); });
+    ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; mtext(ctx,n,x,y+CW*0.018); });
   ctx.fillStyle='#999'; ctx.font='bold '+Math.round(CW*0.028)+'px Helvetica';
-  ctx.fillText(mode==='2p'?'P1 bottom · P2 top · tap a spinner to start':'tap a spinner to start',CW/2,CH*0.93);
+  mtext(ctx,mode==='2p'?'P1 bottom · P2 top · tap a spinner to start':'tap a spinner to start',CW/2,CH*0.93);
 }
 function loop(){ update(); if(state==='goal'){ goalTimer--; if(goalTimer<=0){ resetPositions(); state='play'; msg=''; } } draw(); requestAnimationFrame(loop); }
 document.getElementById('resetBtn').onclick=()=>{ state='pick'; document.getElementById('resetBtn').style.display='none'; };
