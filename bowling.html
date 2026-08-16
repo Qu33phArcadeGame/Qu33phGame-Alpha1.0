@@ -505,11 +505,12 @@ function saveHigh(){
 }
 
 // ─── sound hooks ────────────────────────────────────────────────────────
+function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
 const SFX={};
 ['quephe','mega','over'].forEach(function(n){
   const a=new Audio('sfx/bowl_'+n+'.mp3'); a.preload='auto'; SFX[n]=a;
 });
-function sfx(n){ const a=SFX[n]; if(!a) return; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function sfx(n){ if(!sfxOn()) return; const a=SFX[n]; if(!a) return; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 
 // ─── the throw itself — a pool of takes, picked at random each flick so it
 // doesn't sound identical every time. Fires the instant you release.
@@ -519,6 +520,7 @@ const THROW_NAMES=['bowlingthrow1','bowlingthrow2','bowlingthrow3','bowlingthrow
 const THROW_POOL=THROW_NAMES.map(function(n){ return [0,1].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
 let throwTake={};
 function sfxThrow(){
+  if(!sfxOn()) return;
   const i=(Math.random()*THROW_POOL.length)|0, pool=THROW_POOL[i];
   throwTake[i]=((throwTake[i]||0)+1)%pool.length;
   const a=pool[throwTake[i]];
@@ -535,6 +537,7 @@ const PIN_NAMES=['bowling1','bowling3','bowling5','bowling5-2','bowling8','bowli
 const PIN_POOL=PIN_NAMES.map(function(n){ return [0,1,2].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
 let pinTake={};
 function sfxPin(){
+  if(!sfxOn()) return;
   const i=(Math.random()*PIN_POOL.length)|0, pool=PIN_POOL[i];
   pinTake[i]=((pinTake[i]||0)+1)%pool.length;
   const a=pool[pinTake[i]];
@@ -548,8 +551,8 @@ function sfxPin(){
 const PEEF_POOL=[0,1,2].map(function(){ const a=new Audio('bowlingpeeflong.m4a'); a.preload='auto'; return a; });
 const WASHOUT_POOL=[0,1,2].map(function(){ const a=new Audio('bowling6washout.m4a'); a.preload='auto'; return a; });
 let peefIdx=0, washoutIdx=0;
-function sfxPeef(){ const a=PEEF_POOL[peefIdx=(peefIdx+1)%PEEF_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
-function sfxWashout(){ const a=WASHOUT_POOL[washoutIdx=(washoutIdx+1)%WASHOUT_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function sfxPeef(){ if(!sfxOn()) return; const a=PEEF_POOL[peefIdx=(peefIdx+1)%PEEF_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function sfxWashout(){ if(!sfxOn()) return; const a=WASHOUT_POOL[washoutIdx=(washoutIdx+1)%WASHOUT_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 
 // ─── galaxy starfield ─────────────────────────────────────────────────────
 let starCv=null;

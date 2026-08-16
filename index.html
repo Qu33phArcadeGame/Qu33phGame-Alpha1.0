@@ -211,6 +211,13 @@
       font-family:Helvetica,Arial,sans-serif; font-size:18px; line-height:1; cursor:pointer; z-index:3; }
     .skee-arrow:active { background:rgba(255,255,255,0.18); }
     .cab-card .cab-label { font-family:Helvetica,Arial,sans-serif; font-size:clamp(8px,1.8dvh,10px); font-weight:bold; letter-spacing:1px; color:#fff; text-align:center; line-height:1.15; max-width:96%; }
+    /* Mirror mode: flip the whole menu layout left-to-right (buttons, icons, labels
+       all swap sides), then flip every text-bearing element a second time so the
+       glyphs themselves read correctly — only the POSITION mirrors, not the letters. */
+    #arcadeMenu.qmirror{ transform:scaleX(-1); }
+    #arcadeMenu.qmirror .cab-label,
+    #arcadeMenu.qmirror #arcadeSeasonTag,
+    #arcadeMenu.qmirror .skee-arrow{ transform:translateY(-50%) scaleX(-1); }
     .cab-card img { position:relative; border-radius:18px; }
     /* ── theme skins for the cabinet icons ── */
     #arcadeMenu.arc-comic .cab-card img { filter:grayscale(1) contrast(1.12) drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
@@ -730,7 +737,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v418</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v419</div>
 
 <canvas id="game"></canvas>
 
@@ -7280,7 +7287,7 @@ var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  //
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
-var LW=1.0, LH=1.5, PB_G=0.00052, PB_PERSP=0.5;
+var LW=1.0, LH=1.5, PB_G=0.0006, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=false;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
@@ -7307,7 +7314,7 @@ function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
 function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.485,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbBallSeq=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true,color:(pbBallSeq%2===0?"red":"green"),spin:0}; pbBallSeq++; pbState="ready"; }
-function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.048;pbBall.vx=-0.013;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
+function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.055;pbBall.vx=-0.015;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
 function launchPinball(){ try{ var _st=(typeof styleOf==="function"?styleOf():currentTheme); pbBlueImg.src=(_st==="cartoon")?"bluepaddleC.png":"bluepaddle.png"; var _ps=document.getElementById("pinballScreen"); _ps.classList.toggle("pb-comic", _st==="cartoon"); }catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
 function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
 function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
@@ -8061,9 +8068,9 @@ function renderSettings(){
   h+=toggleRow("Haptic feedback","vibrate on taps &amp; events",hapticsOn,"toggleHaptics()");
   h+=toggleRow("Reduce motion","less shake &amp; jitter",reduceMotion,"toggleReduceMotion()");
   h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
-  h+=toggleRow("Qu33ph Jump music","soundtrack during Jump",!jumpMusicMuted,"toggleJumpMusic()");
-  h+=toggleRow("Throw sounds","marker sounds in-game",!sfxMuted,"toggleSfx()");
-  h+=toggleRow("Mirror mode","flip the field left-to-right",mirrorMode,"toggleMirror()");
+  h+=toggleRow("Music","background music, where a game has it",!jumpMusicMuted,"toggleJumpMusic()");
+  h+=toggleRow("Sound effects","every sound effect across the arcade",!sfxMuted,"toggleSfx()");
+  h+=toggleRow("Mirror mode","flip the layout left-to-right (arcade menu)",mirrorMode,"toggleMirror()");
   h+=toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()");
   h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(ROUND_TIME),"setTimer");
   h+=segRow("Default orientation","applies to every game with an orientation",[["vertical","VERT"],["angled","ANGLED"],["horizontal","FLAT"]],(localStorage.getItem("qu33phOrientation")||"vertical"),"setDefaultOrientation");
@@ -8090,7 +8097,9 @@ function setDefaultOrientation(v){
   try{ plinkoOrientIdx=plinkoIdxForDefault(); updatePlinkoOrientIcon(); }catch(e){}
   renderSettings();
 }
-function toggleMirror(){ mirrorMode=!mirrorMode; try{localStorage.setItem("qu33phMirror",mirrorMode?"on":"off");}catch(e){} renderSettings(); haptic(15); }
+function toggleMirror(){ mirrorMode=!mirrorMode; try{localStorage.setItem("qu33phMirror",mirrorMode?"on":"off");}catch(e){} applyMirrorClass(); renderSettings(); haptic(15); }
+function applyMirrorClass(){ try{ var am=document.getElementById("arcadeMenu"); if(am) am.classList.toggle("qmirror", mirrorMode); }catch(e){} }
+applyMirrorClass();
 function toggleColorblind(){ colorblind=!colorblind; try{localStorage.setItem("qu33phColorblind",colorblind?"on":"off");}catch(e){} renderSettings(); }
 function shopOwned(id){ return id==="doubler"?doublerOwned:id==="magnet"?magnetOwned:id==="glow"?markerGlowOwned:id==="trails"?trailsOwned:id==="confetti"?confettiOwned:id==="goldslot"?goldSlotOwned:id==="xtime"?xtimeOwned:id==="megaboost"?megaboostOwned:id==="peefguard"?peefguardOwned:false; }
 function shopEnabled(id){ return id==="doubler"?doublerOn:id==="magnet"?magnetOn:id==="glow"?markerGlowOn:id==="trails"?trailsOn:id==="confetti"?confettiOn:id==="xtime"?xtimeOn:id==="megaboost"?megaboostOn:id==="peefguard"?peefguardOn:true; }
