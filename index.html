@@ -730,7 +730,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v417</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v418</div>
 
 <canvas id="game"></canvas>
 
@@ -7280,7 +7280,7 @@ var PB_QUAD={TL:[0.25,0.43],TR:[0.77,0.42],BL:[0.23,0.805],BR:[0.82,0.805]};  //
 var pbBlueImg=new Image(); pbBlueImg.src="bluepaddle.png";   // transparent PNG paddle
 var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
-var LW=1.0, LH=1.5, PB_G=0.0006, PB_PERSP=0.5;
+var LW=1.0, LH=1.5, PB_G=0.00052, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=false;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
   var sw=window.innerWidth,sh=window.innerHeight;
@@ -7307,7 +7307,7 @@ function pbSizePx(logical,y){ return logical*pbImgRW*0.52*pbDepth(y); }
 function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.10,r:0.105,hit:0},{x:0.64,y:0.03,r:0.105,hit:0},{x:0.485,y:0.12,r:0.105,hit:0},{x:0.22,y:0.92,r:0.09,hit:0,sling:true},{x:0.71,y:0.92,r:0.09,hit:0,sling:true}]; pbChair={x:0.14,y:0.55,w:0.22,h:0.09}; pbMega={x:0.70,y:-0.17,w:0.275,h:0.16,flash:0}; }
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbBallSeq=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true,color:(pbBallSeq%2===0?"red":"green"),spin:0}; pbBallSeq++; pbState="ready"; }
-function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.055;pbBall.vx=-0.015;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
+function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.048;pbBall.vx=-0.013;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
 function launchPinball(){ try{ var _st=(typeof styleOf==="function"?styleOf():currentTheme); pbBlueImg.src=(_st==="cartoon")?"bluepaddleC.png":"bluepaddle.png"; var _ps=document.getElementById("pinballScreen"); _ps.classList.toggle("pb-comic", _st==="cartoon"); }catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
 function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
 function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;

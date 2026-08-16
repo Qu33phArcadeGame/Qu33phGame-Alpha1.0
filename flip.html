@@ -43,11 +43,15 @@
     repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
   .lvl-back{ background:none; border:0; color:#666; font-family:Helvetica,Arial,sans-serif; font-size:11px;
     letter-spacing:2px; padding:6px 10px; cursor:pointer; }
-  .legend-row{ display:flex; align-items:center; justify-content:center; gap:12px; margin:12px 0 2px; flex-wrap:wrap; max-width:280px; }
-  .leg-item{ display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:#ccc; letter-spacing:0.5px; font-weight:bold; }
-  .leg-item img{ width:22px; height:auto; transform:rotate(-90deg); display:block; }
-  .leg-item img.leg-chair{ width:24px; transform:none; }
-  .leg-jag{ display:block; width:24px; height:9px; background:
+  .legend-row{ display:flex; justify-content:space-between; align-items:flex-start; width:min(300px,86vw); margin:14px auto 4px; gap:18px; }
+  .leg-col{ display:flex; flex-direction:column; gap:11px; }
+  .leg-item{ display:flex; align-items:center; gap:8px; }
+  .leg-mk{ position:relative; width:44px; height:20px; flex:0 0 44px; }
+  .leg-mk img{ position:absolute; top:50%; left:50%; height:40px; width:auto;
+    transform:translate(-50%,-50%) rotate(-90deg); }
+  .leg-mk img.leg-chair{ height:24px; transform:translate(-50%,-50%); }
+  .leg-txt{ font-size:10px; color:#ccc; letter-spacing:0.5px; font-weight:bold; white-space:nowrap; }
+  .leg-jag{ display:block; width:36px; height:8px; background:
     repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
 </style>
 </head>
@@ -61,11 +65,15 @@
     <button class="mk-btn flip" id="bTimed">TIMED &middot; 45s</button>
     <button class="mk-btn" id="bLevels">LEVELS</button>
     <div class="legend-row">
-      <div class="leg-item"><img src="stackred.png" alt="">+1</div>
-      <div class="leg-item"><img src="stackgreen.png" alt="">+2</div>
-      <div class="leg-item"><img src="stackblue.png" alt="">+3</div>
-      <div class="leg-item"><img src="Chair.png" class="leg-chair" alt="">LAUNCH</div>
-      <div class="leg-item"><span class="leg-jag"></span>TIPS</div>
+      <div class="leg-col">
+        <div class="leg-item"><span class="leg-mk"><img src="stackred.png" alt=""></span><span class="leg-txt">+1</span></div>
+        <div class="leg-item"><span class="leg-mk"><img src="stackgreen.png" alt=""></span><span class="leg-txt">+2</span></div>
+        <div class="leg-item"><span class="leg-mk"><img src="stackblue.png" alt=""></span><span class="leg-txt">+3</span></div>
+      </div>
+      <div class="leg-col">
+        <div class="leg-item"><span class="leg-mk"><img src="Chair.png" class="leg-chair" alt=""></span><span class="leg-txt">LAUNCHES MARKER</span></div>
+        <div class="leg-item"><span class="leg-mk"><span class="leg-jag"></span></span><span class="leg-txt">TIPS MARKERS</span></div>
+      </div>
     </div>
   </div>
   <div id="levelSel" class="ovl">
@@ -646,7 +654,7 @@ function drawPlat(c,p){
     return;
   }
   // the platform IS the marker now — one full image laid on its side, stretched to
-  // span the whole pad, sitting right on a thin line. No block, no tiling.
+  // span the whole pad. Just the marker, no separate accent line on top of it.
   const th=CH*0.030;
   const img = p.color==='R'?MK_RED : p.color==='B'?MK_BLUE : MK_GREEN;
   c.save();
@@ -659,10 +667,6 @@ function drawPlat(c,p){
     c.fillStyle = p.color==='R'?'#ff3030':p.color==='B'?'#3a7bff':'#30d060';
     c.fillRect(px,p.y,p.w,th);
   }
-  c.restore();
-  c.save();
-  if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.016; }
-  c.fillStyle=ACC; c.fillRect(px,p.y-CH*0.004,p.w,CH*0.004);
   c.restore();
 }
 // full-colour props on top of the themed scene
@@ -739,25 +743,25 @@ function drawOverlayFx(){
 }
 function drawHUD(){
   const pad=CH*0.016;
-  ctx.textBaseline='top'; ctx.textAlign='left';
-  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.040)+'px Helvetica';
-  ctx.fillText(score,pad,pad);
-  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CH*0.013)+'px Helvetica';
-  ctx.fillText('SCORE',pad+CH*0.002,pad+CH*0.045);
-  ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-  ctx.fillText((mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestScore)+'   '+marker.pIdx+' PLATFORMS',pad+CH*0.002,pad+CH*0.064);
-  ctx.textAlign='center';
+  ctx.textBaseline='top'; ctx.textAlign='center';
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.021)+'px Helvetica';
   ctx.fillText('QU33PH FLIP',CW/2,pad);
   ctx.fillStyle=ACC; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
   ctx.fillText(TH.name,CW/2,pad+CH*0.027);
+  // score is the headline now — big, and right under the title where it's easy to see
+  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.058)+'px Helvetica';
+  ctx.fillText(score,CW/2,pad+CH*0.050);
+  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CH*0.014)+'px Helvetica';
+  ctx.fillText('SCORE',CW/2,pad+CH*0.106);
+  ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
+  ctx.fillText((mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestScore)+'   '+marker.pIdx+' PLATFORMS',CW/2,pad+CH*0.128);
   if(mode==='timed'){
     const t=Math.max(0,timeLeft);
-    ctx.fillStyle=t<=10?'#ff5a5a':'#fff'; ctx.font='bold '+Math.round(CH*0.038)+'px Helvetica';
-    ctx.fillText(t.toFixed(1),CW/2,pad+CH*0.050);
+    ctx.fillStyle=t<=10?'#ff5a5a':'#fff'; ctx.font='bold '+Math.round(CH*0.032)+'px Helvetica';
+    ctx.fillText(t.toFixed(1),CW/2,pad+CH*0.154);
   }
   if(combo>2){ ctx.fillStyle='#7bff9a'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-    ctx.fillText('COMBO x'+combo,CW/2,pad+CH*(mode==='timed'?0.094:0.048)); }
+    ctx.fillText('COMBO x'+combo,CW/2,pad+CH*(mode==='timed'?0.180:0.152)); }
   if(state==='ready'){
     ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(CH*0.018)+'px Helvetica';
     ctx.fillText('swipe the marker to flip it',CW/2,CH*0.932);
