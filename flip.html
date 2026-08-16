@@ -43,6 +43,12 @@
     repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
   .lvl-back{ background:none; border:0; color:#666; font-family:Helvetica,Arial,sans-serif; font-size:11px;
     letter-spacing:2px; padding:6px 10px; cursor:pointer; }
+  .legend-row{ display:flex; align-items:center; justify-content:center; gap:12px; margin:12px 0 2px; flex-wrap:wrap; max-width:280px; }
+  .leg-item{ display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:#ccc; letter-spacing:0.5px; font-weight:bold; }
+  .leg-item img{ width:22px; height:auto; transform:rotate(-90deg); display:block; }
+  .leg-item img.leg-chair{ width:24px; transform:none; }
+  .leg-jag{ display:block; width:24px; height:9px; background:
+    repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
 </style>
 </head>
 <body>
@@ -54,6 +60,13 @@
     <button class="mk-btn" id="bEndless">ENDLESS</button>
     <button class="mk-btn flip" id="bTimed">TIMED &middot; 45s</button>
     <button class="mk-btn" id="bLevels">LEVELS</button>
+    <div class="legend-row">
+      <div class="leg-item"><img src="stackred.png" alt="">+1</div>
+      <div class="leg-item"><img src="stackgreen.png" alt="">+2</div>
+      <div class="leg-item"><img src="stackblue.png" alt="">+3</div>
+      <div class="leg-item"><img src="Chair.png" class="leg-chair" alt="">LAUNCH</div>
+      <div class="leg-item"><span class="leg-jag"></span>TIPS</div>
+    </div>
   </div>
   <div id="levelSel" class="ovl">
     <h1 style="font-size:22px;">SELECT LEVEL</h1><div class="sub" id="lvlSub"></div>
@@ -211,9 +224,10 @@ function setLevelsDone(n){ try{ localStorage.setItem('qu33phFlipLvl', n); }catch
 function unlocked(i){ return i<=levelsDone(); }        // level index 0-based; 0 always open
 
 // ─── world state ──────────────────────────────────────────────────────────
-let plats, marker, camX, score, bestP, combo, state, charge, charging, popups,
+let plats, marker, camX, score, bestP, bestScore, combo, state, charge, charging, popups,
     settle, lastFlat, stairLeft, stairStep, mode, levelIdx, timeLeft, timerOn, won;
 try{ bestP=parseInt(localStorage.getItem('qu33phFlipBestP')||'0',10)||0; }catch(e){ bestP=0; }
+try{ bestScore=parseInt(localStorage.getItem('qu33phFlipBestScore')||'0',10)||0; }catch(e){ bestScore=0; }
 
 function pad(o){
   const p=Object.assign({x:0,y:0,w:CW*0.32,uneven:false,chair:false,chairHit:false,
@@ -437,17 +451,19 @@ function land(p){
 function finishLevel(){
   won=true; state='over'; timerOn=false;
   if(levelIdx+1>levelsDone()) setLevelsDone(levelIdx+1);
+  if(score>bestScore){ bestScore=score; try{ localStorage.setItem('qu33phFlipBestScore',bestScore); }catch(e){} }
   $('ovTitle').textContent='LEVEL CLEAR'; $('ovTitle').style.color='#7bff9a';
-  $('ovSub').textContent=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+marker.pIdx+' PLATFORMS';
+  $('ovSub').textContent=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+score+' PTS';
   showNextBtn(levelIdx < LEVEL_COUNT-1);        // straight into the next one
   show('overOvl',true);
 }
 function gameOver(reason){
   state='over'; timerOn=false; combo=0;
   if(marker.pIdx>bestP){ bestP=marker.pIdx; try{ localStorage.setItem('qu33phFlipBestP',bestP); }catch(e){} }
+  if(score>bestScore){ bestScore=score; try{ localStorage.setItem('qu33phFlipBestScore',bestScore); }catch(e){} }
   $('ovTitle').textContent = reason==='TIME UP' ? 'TIME UP' : 'TIPPED OVER';
   $('ovTitle').style.color = reason==='TIME UP' ? '#ffd700' : '#e23b3b';
-  $('ovSub').textContent = marker.pIdx+' PLATFORMS \u00b7 BEST '+bestP;
+  $('ovSub').textContent = score+' PTS \u00b7 '+marker.pIdx+' PLATFORMS \u00b7 BEST '+bestScore;
   showNextBtn(false);
   show('overOvl',true);
 }
@@ -619,34 +635,7 @@ function platGrad(c,h){
 function drawPlat(c,p){
   const px=p.x-camX, lim=CW/Z;
   if(px>lim+80||px+p.w<-80) return;
-  const h=CH*0.34;
-  c.save(); c.beginPath(); c.rect(px,p.y,p.w,h); c.clip();
-  if(p.uneven){                                        // hazard ground keeps its own plain look
-    c.fillStyle='#1b1b2a'; c.fillRect(px,p.y,p.w,h);
-  } else {
-    // solid tinted base first, so there's never a transparent gap between tiles or
-    // below them — then a row of the actual marker art laid on its side on top
-    const base = p.color==='R'?'#3a1414':p.color==='B'?'#122036':'#0f2c18';
-    c.fillStyle=base; c.fillRect(px,p.y,p.w,h);
-    const img = p.color==='R'?MK_RED : p.color==='B'?MK_BLUE : MK_GREEN;
-    if(ready(img)){
-      const w0=img.naturalWidth, h0=img.naturalHeight;
-      const tileH=CW*0.032, tileW=tileH*(h0/w0);
-      const ty=p.y+h*0.5;
-      let tx=px-(((p.seed*tileW)%tileW)+tileW)%tileW;
-      while(tx<px+p.w){
-        c.save(); c.translate(tx+tileW/2, ty); c.rotate(Math.PI/2);
-        c.drawImage(img,-tileH/2,-tileW/2,tileH,tileW);
-        c.restore();
-        tx+=tileW;
-      }
-    } else {
-      c.fillStyle = p.color==='R'?'#ff3030':p.color==='B'?'#3a7bff':'#30d060';
-      c.fillRect(px,p.y,p.w,h);
-    }
-  }
-  c.restore();
-  if(p.uneven){
+  if(p.uneven){                                        // hazard ground: just the jagged red line, same as before
     c.save(); c.strokeStyle='#ff4d4d'; c.lineWidth=Math.max(2,CH*0.006);
     if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.012; }
     c.beginPath();
@@ -654,13 +643,27 @@ function drawPlat(c,p){
     for(let i=0;i<=teeth;i++){ const tx=px+p.w*i/teeth, ty=p.y+((i%2)?-CH*0.016:0);
       if(i===0) c.moveTo(tx,ty); else c.lineTo(tx,ty); }
     c.stroke(); c.restore();
-  } else {
-    c.save();
-    if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.016; }   // platforms glow too
-    c.fillStyle=ACC; c.fillRect(px,p.y-CH*0.005,p.w,CH*0.005);
-    c.restore();
-    c.globalAlpha=0.3; c.fillStyle=ACC; c.fillRect(px,p.y-CH*0.013,p.w,CH*0.008); c.globalAlpha=1;
+    return;
   }
+  // the platform IS the marker now — one full image laid on its side, stretched to
+  // span the whole pad, sitting right on a thin line. No block, no tiling.
+  const th=CH*0.030;
+  const img = p.color==='R'?MK_RED : p.color==='B'?MK_BLUE : MK_GREEN;
+  c.save();
+  if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.014; }
+  if(ready(img)){
+    c.save(); c.translate(px+p.w/2, p.y+th/2); c.rotate(Math.PI/2);
+    c.drawImage(img,-th/2,-p.w/2,th,p.w);
+    c.restore();
+  } else {
+    c.fillStyle = p.color==='R'?'#ff3030':p.color==='B'?'#3a7bff':'#30d060';
+    c.fillRect(px,p.y,p.w,th);
+  }
+  c.restore();
+  c.save();
+  if(TH.glow){ c.shadowColor=TH.glow; c.shadowBlur=CH*0.016; }
+  c.fillStyle=ACC; c.fillRect(px,p.y-CH*0.004,p.w,CH*0.004);
+  c.restore();
 }
 // full-colour props on top of the themed scene
 let BEND=null, BENDkey=0;
@@ -738,11 +741,11 @@ function drawHUD(){
   const pad=CH*0.016;
   ctx.textBaseline='top'; ctx.textAlign='left';
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.040)+'px Helvetica';
-  ctx.fillText(marker.pIdx,pad,pad);
+  ctx.fillText(score,pad,pad);
   ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(CH*0.013)+'px Helvetica';
-  ctx.fillText('PLATFORMS',pad+CH*0.002,pad+CH*0.045);
+  ctx.fillText('SCORE',pad+CH*0.002,pad+CH*0.045);
   ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(CH*0.015)+'px Helvetica';
-  ctx.fillText((mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestP)+'   '+marker.pIdx+' PLATFORMS',pad+CH*0.002,pad+CH*0.064);
+  ctx.fillText((mode==='levels'?('LEVEL '+(levelIdx+1)):'BEST '+bestScore)+'   '+marker.pIdx+' PLATFORMS',pad+CH*0.002,pad+CH*0.064);
   ctx.textAlign='center';
   ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CH*0.021)+'px Helvetica';
   ctx.fillText('QU33PH FLIP',CW/2,pad);
