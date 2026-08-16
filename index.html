@@ -204,13 +204,13 @@
     .cab-card { width:100%; max-width:132px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .cab-card:active { transform:scale(0.96); }
     .cab-card img { width:100%; height:168px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
-    .cab-soon { width:100%; aspect-ratio:150/230; max-height:clamp(58px,14.5dvh,168px); border:2px dashed #26263a; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:36px; color:#33334a; background:rgba(255,255,255,0.015); box-sizing:border-box; }
+    .cab-soon { width:100%; aspect-ratio:150/230; max-height:clamp(52px,13.2dvh,168px); border:2px dashed #26263a; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:36px; color:#33334a; background:rgba(255,255,255,0.015); box-sizing:border-box; }
     .skee-arrow { position:absolute; top:50%; transform:translateY(-50%); width:22px; height:34px;
       display:flex; align-items:center; justify-content:center; border-radius:7px;
       background:rgba(8,9,16,0.72); border:1px solid rgba(255,255,255,0.32); color:#fff;
       font-family:Helvetica,Arial,sans-serif; font-size:18px; line-height:1; cursor:pointer; z-index:3; }
     .skee-arrow:active { background:rgba(255,255,255,0.18); }
-    .cab-card .cab-label { font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:bold; letter-spacing:1px; color:#fff; text-align:center; line-height:1.2; }
+    .cab-card .cab-label { font-family:Helvetica,Arial,sans-serif; font-size:clamp(8px,1.8dvh,10px); font-weight:bold; letter-spacing:1px; color:#fff; text-align:center; line-height:1.15; max-width:96%; }
     .cab-card img { position:relative; border-radius:18px; }
     /* ── theme skins for the cabinet icons ── */
     #arcadeMenu.arc-comic .cab-card img { filter:grayscale(1) contrast(1.12) drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
@@ -224,7 +224,7 @@
     #arcadeMenu.arc-sunset #cabDozer img { filter:sepia(0.6) saturate(2) brightness(1.12) drop-shadow(0 0 9px rgba(255,200,60,0.8)); }
     #arcadeMenu.arc-galaxy #cabDozer img { filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 9px rgba(180,120,255,0.8)); }
     /* Flip cabinet: transparent card, marker standing upright, glow (never a box) */
-    #cabFlip .flipbox { width:100%; aspect-ratio:150/230; max-height:clamp(58px,14.5dvh,168px); box-sizing:border-box;
+    #cabFlip .flipbox { width:100%; aspect-ratio:150/230; max-height:clamp(52px,13.2dvh,168px); box-sizing:border-box;
       background:transparent; display:flex; align-items:center; justify-content:center; overflow:visible; }
     #cabFlip .flipbox img { width:118%; height:auto; max-height:none; object-fit:contain; display:block;
       border:0; border-radius:0; background:transparent; transform:rotate(-90deg); }
@@ -245,8 +245,8 @@
     #arcadeMenu.arc-comic #cabSkee img { filter:grayscale(1) contrast(1.18) drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-sunset #cabSkee img { filter:sepia(0.7) saturate(2) brightness(1.12) hue-rotate(-12deg) drop-shadow(0 0 8px rgba(255,200,60,0.75)); }
     #arcadeMenu.arc-galaxy #cabSkee img { filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 9px rgba(180,120,255,0.8)); }
-    #cabFidget img { width:100%; aspect-ratio:150/230; max-height:clamp(58px,14.5dvh,168px); object-fit:cover; border-radius:14px; border:0; box-sizing:border-box; }
-    #cabStack .stackbox { width:100%; aspect-ratio:150/230; max-height:clamp(58px,14.5dvh,168px); box-sizing:border-box; position:relative; }
+    #cabFidget img { width:100%; aspect-ratio:150/230; max-height:clamp(52px,13.2dvh,168px); object-fit:cover; border-radius:14px; border:0; box-sizing:border-box; }
+    #cabStack .stackbox { width:100%; aspect-ratio:150/230; max-height:clamp(52px,13.2dvh,168px); box-sizing:border-box; position:relative; }
     #cabStack .stackbox img { position:absolute; left:50%; height:34%; width:auto; max-height:none; object-fit:contain;
       border-radius:0; border:0; background:transparent; }
     /* Stacked top to bottom, each piece falling and reassembling on its own — same 3.2s
@@ -478,7 +478,7 @@
                        radial-gradient(circle at 75% 75%, rgba(20,20,20,0.45) 1.5px, transparent 1.8px); }
     #pinballScreen.pb-comic #pinballBg { filter:grayscale(1) contrast(1.2); }
     #pinballScreen.pb-comic #pbBenday { display:block; }
-    #cabMini img { width:100%; aspect-ratio:150/230; max-height:clamp(58px,14.5dvh,168px); object-fit:contain; border:0; border-radius:0;
+    #cabMini img { width:100%; aspect-ratio:150/230; max-height:clamp(52px,13.2dvh,168px); object-fit:contain; border:0; border-radius:0;
       background:transparent; box-shadow:none; box-sizing:border-box; filter:drop-shadow(0 6px 16px rgba(0,0,0,0.6)); }
     #arcadeMenu.arc-comic  #cabMini img { filter:grayscale(1) contrast(1.18) drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
     #arcadeMenu.arc-neon   #cabMini img { filter:drop-shadow(0 0 4px #ff2d55) drop-shadow(0 0 10px #ff2d55) drop-shadow(0 0 18px rgba(255,45,85,0.6)); }
@@ -730,7 +730,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v414</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v415</div>
 
 <canvas id="game"></canvas>
 
@@ -795,13 +795,13 @@
     <div class="cab-card" id="cabSkee">
       <div style="position:relative;width:100%;">
         <img id="skeeIcon" src="qu33phball.png?v=382" onclick="launchSkee()"
-             style="width:100%;height:168px;object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2">
+             style="width:100%;height:clamp(52px,13.2dvh,168px);object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2">
         <div id="skeePrev" onclick="cycleSkee(-1)" class="skee-arrow" style="left:-4px;">&#8249;</div>
         <div id="skeeNext" onclick="cycleSkee(1)"  class="skee-arrow" style="right:-4px;">&#8250;</div>
       </div>
       <div class="cab-label" id="skeeLabel">QU33PH-BALL</div>
     </div>
-    <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:clamp(58px,14.5dvh,168px);object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
+    <div class="cab-card" id="cabDozer" onclick="launchDozer()"><img src="dozerfield.png?v=317" style="width:100%;aspect-ratio:150/230;max-height:clamp(52px,13.2dvh,168px);object-fit:contain;border-radius:14px;box-sizing:border-box;" onerror="this.style.opacity=0.2"><div class="cab-label">QU33PH DOZER</div></div>
     <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=354" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
