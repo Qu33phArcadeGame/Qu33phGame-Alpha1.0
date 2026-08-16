@@ -370,7 +370,7 @@ function step(dt){
         } else {
           // no jump — the chair just gets driven into the rack
           chair.shoved=true; chair.vy=Math.max(2.2,ball.vy*0.95); chair.vx=ball.vx*0.7;
-          ball.vy*=0.55; sfx('pin');
+          ball.vy*=0.55; sfxPin();
         }
       }
     }
@@ -383,7 +383,7 @@ function step(dt){
         p.vx+=nx*hit; p.vy+=ny*hit;
         p.down=true; p.rot=(Math.random()-0.5)*0.5; p.vrot=(Math.random()-0.5)*9-Math.sign(nx)*3;
         ball.vx+= -nx*hit*0.09; ball.vy=Math.max(0.55,ball.vy-0.16);   // ploughs on through
-        sfx('pin');
+        sfxPin();
       }
     }
     if(ball.Y>LANE_LEN+0.6 || ball.vy<0.22){ ball.live=false; settleT=0; }
@@ -399,7 +399,7 @@ function step(dt){
         const f=Math.max(1.2,chair.vy*0.8);
         p.vx+=nx/d*f; p.vy+=ny/d*f;
         p.down=true; p.rot=(Math.random()-0.5)*0.5; p.vrot=(Math.random()-0.5)*9;
-        sfx('pin');
+        sfxPin();
       }
     }
     if(chair.Y>LANE_LEN+1.2) chair=null;
@@ -430,7 +430,7 @@ function step(dt){
           q.X+=nx*push; p.X-=nx*push; q.Y+=ny*push; p.Y-=ny*push;
           const t=Math.hypot(p.vx,p.vy)*0.92;                          // stronger chain reaction
           if(t>0.10){ q.vx+=nx*t; q.vy+=ny*t;
-            if(!q.down){ q.down=true; q.rot=(Math.random()-0.5)*0.5; q.vrot=(Math.random()-0.5)*8; sfx('pin'); } }
+            if(!q.down){ q.down=true; q.rot=(Math.random()-0.5)*0.5; q.vrot=(Math.random()-0.5)*8; sfxPin(); } }
         }
       }
       if(Math.abs(p.X)>1.25||p.Y>LANE_LEN+1.1) p.gone=true;
@@ -440,11 +440,10 @@ function step(dt){
     settleT+=dt;
     let moving=false;
     // 0.14 stays safely above 0.109 — the velocity a pin needs to still knock a
-    // neighbour over (see the chain-reaction check above) — so this only calls
-    // it "stopped" once nothing can legitimately topple anything else, just
-    // sooner than waiting for pins to fully stop sliding/spinning to a crawl.
-    // The cap's down from 2.6s to 1.3s too, for the rare wobble that never
-    // quite settles.
+    // neighbour over — so this calls it "stopped" once nothing can legitimately
+    // topple anything else, rather than waiting for pins to fully stop sliding.
+    // Matters less for sound now (crashes already played live as pins fell),
+    // but still governs when the roll's final result/text appears.
     for(const p of pins) if(!p.gone && Math.hypot(p.vx,p.vy)>0.14) moving=true;
     if(!moving||settleT>1.3) endRoll();
   }
@@ -477,7 +476,6 @@ function endRoll(fromMega){
     else if(roll>0 && cleared){ say('SPARE','#3fd07a'); sfx('mega'); }
     else if(felled===0 && ball && ball.gutter){ say('PEEF','#ff5a5a'); sfxPeef(); }
     else if(felled===6 && isWashout()){ say('WASHOUT','#ff8a2b'); sfxWashout(); }
-    else { sfxRollCount(felled); }
   }
   if(frame<9){
     if(roll===0 && !strike){ roll=1; sweepAndStand(); setChair(); readyNext(); }
@@ -506,16 +504,15 @@ function saveHigh(){
   if(s>high){ high=s; try{ localStorage.setItem('qu33phBowlingHigh',String(high)); }catch(e){} }
 }
 
-// ─── sound hooks (files land later; silent until then) ────────────────────
+// ─── sound hooks ────────────────────────────────────────────────────────
 const SFX={};
-['pin','quephe','mega','over'].forEach(function(n){
+['quephe','mega','over'].forEach(function(n){
   const a=new Audio('sfx/bowl_'+n+'.mp3'); a.preload='auto'; SFX[n]=a;
 });
 function sfx(n){ const a=SFX[n]; if(!a) return; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 
 // ─── the throw itself — a pool of takes, picked at random each flick so it
-// doesn't sound identical every time. Fires the instant you release; doesn't
-// need to know the outcome, unlike the per-roll result sounds below.
+// doesn't sound identical every time. Fires the instant you release.
 const THROW_NAMES=['bowlingthrow1','bowlingthrow2','bowlingthrow3','bowlingthrow4','bowlingthrow5',
   'bowlingthrow6','bowlingthrow7','bowlingthrow8weak','bowlingthrow9','bowlingthrow10','bowlingthrow11',
   'bowlingpeef1','bowlingpeef2','bowlingpeef3','bowlingpeef4','bowlingpeef5','bowlingpeef6','bowlingpeefmedium'];
@@ -528,36 +525,31 @@ function sfxThrow(){
   try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){}
 }
 
-// ─── per-roll result sounds — filename number = how many markers that throw
-// knocked down. This is the TRAILING half of each recording (cut right at the
-// hit), so it plays the moment the roll actually resolves — which in practice
-// is very shortly after real contact, since the pins settle fast. No need to
-// predict the count ahead of time: this only fires once the physics already
-// knows the answer. Not every count has a clip yet — silently skips if one's
-// missing (2, 4, 7, and 10 — 10 on the first ball is the QU33PH strike sound
-// instead, see endRoll()).
-const ROLL_SND={
-  1:['bowling1'], 3:['bowling3'], 5:['bowling5','bowling5-2'],
-  8:['bowling8'], 9:['bowling9']
-};
-const ROLL_POOL={};
-Object.keys(ROLL_SND).forEach(function(k){
-  ROLL_POOL[k]=ROLL_SND[k].map(function(n){ return [0,1].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
-});
-const PEEF_POOL=[0,1,2].map(function(){ const a=new Audio('bowlingpeeflong.m4a'); a.preload='auto'; return a; });
-const WASHOUT_POOL=[0,1,2].map(function(){ const a=new Audio('bowling6washout.m4a'); a.preload='auto'; return a; });
-let peefIdx=0, washoutIdx=0, rollTake={};
-function sfxPeef(){ const a=PEEF_POOL[peefIdx=(peefIdx+1)%PEEF_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
-// only for the real washout leave (headpin down, pins standing on both sides) —
-// an ordinary 6 that isn't a washout has no clip yet, so it stays silent
-function sfxWashout(){ const a=WASHOUT_POOL[washoutIdx=(washoutIdx+1)%WASHOUT_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
-function sfxRollCount(n){
-  const takes=ROLL_POOL[n]; if(!takes) return;                 // no clip for this count yet
-  const t=(Math.random()*takes.length)|0, pool=takes[t];
-  rollTake[n]=((rollTake[n]||0)+1)%pool.length;
-  const a=pool[rollTake[n]];
+// ─── pin-crash sounds — NOT tied to a final count anymore. Instead, this pool
+// fires live, once per individual pin the instant it actually goes down (see
+// the sfxPin() call sites in the physics loop). Knock over 1 pin, you hear
+// one crash. Knock over 7, you hear seven, roughly as fast as they actually
+// fall. No waiting for the roll to resolve, no guessing which numbered file
+// matches which outcome — it scales itself, for any count from 1 to 10.
+const PIN_NAMES=['bowling1','bowling3','bowling5','bowling5-2','bowling8','bowling9'];
+const PIN_POOL=PIN_NAMES.map(function(n){ return [0,1,2].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
+let pinTake={};
+function sfxPin(){
+  const i=(Math.random()*PIN_POOL.length)|0, pool=PIN_POOL[i];
+  pinTake[i]=((pinTake[i]||0)+1)%pool.length;
+  const a=pool[pinTake[i]];
   try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){}
 }
+
+// ─── two dedicated moments that aren't just "a pin fell": a gutter (no pins
+// touched at all) and a real washout leave. These stay as their own single
+// sounds since they're a distinct callout, layered on top of — not instead
+// of — whatever pin-crash sounds already played live during the roll.
+const PEEF_POOL=[0,1,2].map(function(){ const a=new Audio('bowlingpeeflong.m4a'); a.preload='auto'; return a; });
+const WASHOUT_POOL=[0,1,2].map(function(){ const a=new Audio('bowling6washout.m4a'); a.preload='auto'; return a; });
+let peefIdx=0, washoutIdx=0;
+function sfxPeef(){ const a=PEEF_POOL[peefIdx=(peefIdx+1)%PEEF_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function sfxWashout(){ const a=WASHOUT_POOL[washoutIdx=(washoutIdx+1)%WASHOUT_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 
 // ─── galaxy starfield ─────────────────────────────────────────────────────
 let starCv=null;
