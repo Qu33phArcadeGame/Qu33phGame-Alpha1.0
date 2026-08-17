@@ -11,11 +11,9 @@
   #game{ display:block; background:#0b0d12; }
   .pill{ position:fixed; z-index:10; background:linear-gradient(#2a2a2a,#101010); color:#ffd54a; border:1.5px solid #ffcf3a; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:bold; letter-spacing:1px; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.5); }
   #resetBtn{ top:10px; right:12px; display:none; }
-  /* Mirror mode: flip the whole page with one CSS transform. The reset button
-     gets counter-mirrored so its label stays readable — canvas text already
-     draws pre-mirrored via mtext() in the script. */
+  /* Mirror mode: flip the whole page with one CSS transform — canvas, menu,
+     spinners, and the reset button all mirror together. Nothing is counter-mirrored. */
   body.qmirror{ transform:scaleX(-1); }
-  body.qmirror .pill{ transform:scaleX(-1); }
 </style>
 </head>
 <body>

@@ -26,11 +26,9 @@
   .ovl .sub{ font-size:12px; letter-spacing:2px; color:#888; margin-bottom:16px; text-align:center; line-height:1.7; }
   .rules{ font-size:11px; line-height:1.7; color:#bbb; letter-spacing:0.5px; max-width:320px; margin-bottom:14px; }
   .rules b{ color:#fff; }
-  /* Mirror mode: flip the whole page — canvas, menus, buttons, everything — with a
-     single CSS transform, then flip every text-bearing element a second time so
-     the words themselves stay readable. Position mirrors, letters don't. */
+  /* Mirror mode: flip the whole page — canvas (including the box), menus,
+     buttons, everything — with a single CSS transform. Nothing is counter-mirrored. */
   body.qmirror{ transform:scaleX(-1); }
-  body.qmirror .ovl h1, body.qmirror .ovl .sub, body.qmirror .rules, body.qmirror .mk-btn{ transform:scaleX(-1); }
 </style>
 </head>
 <body>

@@ -53,13 +53,9 @@
   .leg-txt{ font-size:10px; color:#ccc; letter-spacing:0.5px; font-weight:bold; white-space:nowrap; }
   .leg-jag{ display:block; width:36px; height:8px; background:
     repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
-  /* Mirror mode: flip the whole page with one CSS transform, then flip every
-     text-bearing element a second time so the words stay readable. Images
-     (markers, chair icon) are left alone — they're meant to mirror too. */
+  /* Mirror mode: flip the whole page with one CSS transform — menu, gameplay
+     canvas, buttons, and every label all mirror together. Nothing is counter-mirrored. */
   body.qmirror{ transform:scaleX(-1); }
-  body.qmirror .ovl h1, body.qmirror .ovl .sub, body.qmirror .mk-btn,
-  body.qmirror .lvl-back, body.qmirror .leg-txt,
-  body.qmirror .tut-row>div, body.qmirror .lvl span{ transform:scaleX(-1); }
 </style>
 </head>
 <body>
