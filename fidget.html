@@ -21,7 +21,12 @@
 <button class="pill" id="resetBtn">↺ RESET</button>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
-let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+let mirrorMode=false;
+try{
+  var _qsp=new URLSearchParams(location.search);
+  if(_qsp.has('mirror')) mirrorMode=(_qsp.get('mirror')==='on');
+  else mirrorMode=(localStorage.getItem('qu33phMirror')==='on');
+}catch(e){}
 if(mirrorMode) document.body.classList.add('qmirror');
 // text now mirrors along with everything else (the outer CSS flip handles it) —
 // this just calls the plain native methods so every existing mtext() call site

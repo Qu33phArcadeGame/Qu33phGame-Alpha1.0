@@ -38,7 +38,12 @@ const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 // text needs to stay readable — draw() mirrors the canvas transform, and this
 // wrapper locally cancels that mirror just long enough to draw each string
 // normally, at the now-mirrored position. Position moves, letters don't.
-let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+let mirrorMode=false;
+try{
+  var _qsp=new URLSearchParams(location.search);
+  if(_qsp.has('mirror')) mirrorMode=(_qsp.get('mirror')==='on');
+  else mirrorMode=(localStorage.getItem('qu33phMirror')==='on');
+}catch(e){}
 if(mirrorMode) document.body.classList.add('qmirror');
 // text now mirrors along with everything else (the outer CSS flip handles it) —
 // this just calls the plain native methods so every existing mtext() call site
