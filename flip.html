@@ -59,7 +59,16 @@
 </style>
 </head>
 <body>
-<a id="gameBackBtn" href="index.html?openArcade=1" style="position:fixed;top:9px;left:14px;z-index:99999;background:#000;color:#fff;border:2px solid #fff;border-radius:10px;padding:7px 16px;font:bold 12px Helvetica,Arial,sans-serif;letter-spacing:1px;text-decoration:none;-webkit-tap-highlight-color:transparent;">&larr; BACK</a>
+<style>
+  .game-back-tl{ position:fixed; top:9px; left:22px; z-index:99999;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:#000; color:#fff; border:2.5px solid #fff; border-radius:4px 9px 9px 4px;
+    font-family:Helvetica,Arial,sans-serif; font-size:9.5px; font-weight:bold; letter-spacing:1px;
+    padding:5px 10px; text-decoration:none; -webkit-tap-highlight-color:transparent; }
+  .game-back-tl::before{ content:""; display:block; position:absolute; left:-15px; top:2px; bottom:2px;
+    width:15px; background:#000; border:2.5px solid #fff; border-radius:8px 2px 2px 8px; }
+</style>
+<a id="gameBackBtn" class="game-back-tl" href="index.html?openArcade=1">&larr; BACK</a>
 <div id="wrap"><div id="stage">
   <canvas id="game"></canvas>
   <button id="orientBtn"><span id="orientIcon"></span></button>
