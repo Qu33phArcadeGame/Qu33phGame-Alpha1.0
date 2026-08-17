@@ -51,7 +51,6 @@ const FIELD_FILES={ 'default':'fidgetqu33phfield.png','cartoon':'fidgetcomicfiel
 const THEME=(new URLSearchParams(location.search).get('theme')||'default');
 // each theme's field art has its drawn divider at a different height — match the dashed line to it per theme
 const LINE_FRAC={ 'default':0.75, 'cartoon':0.511, 'neon':0.47, 'sunset':0.515, 'galaxy':0.51 };
- ctx.fillStyle='#0f0'; ctx.font='bold 40px monospace'; ctx.fillText('FRAC='+LINE_FRAC[THEME], 20, 100);
 const FIELD=new Image();
 let fieldTries=[ FIELD_FILES[THEME]||'fidgetqu33phfield.png', 'fidgetneonfield.png', 'fidgetqu33phfield.png', 'fidgetfield.png' ];
 FIELD.onerror=()=>{ fieldTries.shift(); if(fieldTries.length) FIELD.src=fieldTries[0]; };
@@ -186,6 +185,7 @@ function draw(){
   ctx.strokeStyle=lineColor(c1); ctx.beginPath(); ctx.moveTo(0,CH-CW*0.01); ctx.lineTo(CW,CH-CW*0.01); ctx.stroke();    // bottom end = bottom spinner's color
   ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=CW*0.006; ctx.setLineDash([CW*0.03,CW*0.02]);
   ctx.beginPath(); ctx.moveTo(0,centerY); ctx.lineTo(CW,centerY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#0f0'; ctx.font='bold 40px monospace'; ctx.fillText('FRAC='+LINE_FRAC[THEME], 20, 100);
   ctx.beginPath(); ctx.arc(CW/2,centerY,CW*0.12,0,7); ctx.stroke();
 
   if(state==='pick'){ drawPick(); return; }
