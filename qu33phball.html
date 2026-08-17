@@ -9,6 +9,11 @@
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#000; }
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #stage{ position:relative; }
+  /* Mirror mode: flip the whole page with one CSS transform. The one HTML
+     control (laneBtn) gets counter-mirrored so its label stays readable —
+     canvas text already draws pre-mirrored via mtext() in the script. */
+  body.qmirror{ transform:scaleX(-1); }
+  body.qmirror #laneBtn{ transform:scaleX(-1); }
   #laneBtn{ position:fixed; left:26px; bottom:14px; z-index:6;
     display:inline-flex; align-items:center; justify-content:center;
     background:#000; color:#fff; border:2.5px solid #fff;
@@ -35,6 +40,7 @@ const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 // wrapper locally cancels that mirror just long enough to draw each string
 // normally, at the now-mirrored position. Position moves, letters don't.
 let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+if(mirrorMode) document.body.classList.add('qmirror');
 function mtext(c,txt,x,y,strokeFirst){
   if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
   c.save(); c.translate(x,y); c.scale(-1,1);
@@ -573,7 +579,7 @@ function ensureFieldCache(){
 }
 function draw(){
   updLaneBtn();
-  if(mirrorMode){ ctx.setTransform(-1,0,0,1,CW,0); } else { ctx.setTransform(1,0,0,1,0,0); }
+  ctx.setTransform(1,0,0,1,0,0);
   ensureFieldCache();
   ctx.drawImage(FIELDC,0,0);                            // static cabinet: one blit per frame
   if(F().id==='pro'){

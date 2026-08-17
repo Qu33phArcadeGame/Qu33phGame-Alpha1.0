@@ -214,10 +214,19 @@
     /* Mirror mode: flip the whole menu layout left-to-right (buttons, icons, labels
        all swap sides), then flip every text-bearing element a second time so the
        glyphs themselves read correctly — only the POSITION mirrors, not the letters. */
-    #arcadeMenu.qmirror{ transform:scaleX(-1); }
-    #arcadeMenu.qmirror .cab-label,
-    #arcadeMenu.qmirror #arcadeSeasonTag,
-    #arcadeMenu.qmirror .skee-arrow{ transform:translateY(-50%) scaleX(-1); }
+    body.qmirror{ transform:scaleX(-1); }
+    body.qmirror .cab-label,
+    body.qmirror #arcadeSeasonTag,
+    body.qmirror .skee-arrow{ transform:translateY(-50%) scaleX(-1); }
+    /* every "← BACK" button site-wide, plus the settings/shop panels' text */
+    body.qmirror .back-tl,
+    body.qmirror #settingsBody,
+    body.qmirror #shopBody,
+    body.qmirror #shopCoins{ transform:scaleX(-1); }
+    body.qmirror #settingsScreen>div:first-child,
+    body.qmirror #shopScreen>div:first-child,
+    body.qmirror #medalShowcaseScreen>div:first-child,
+    body.qmirror #medalShowcaseBody{ transform:scaleX(-1); }
     .cab-card img { position:relative; border-radius:18px; }
     /* ── theme skins for the cabinet icons ── */
     #arcadeMenu.arc-comic .cab-card img { filter:grayscale(1) contrast(1.12) drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
@@ -737,7 +746,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v420</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v422</div>
 
 <canvas id="game"></canvas>
 
@@ -1308,6 +1317,10 @@ let hapticsOn = localStorage.getItem("qu33phHaptics") !== "off";
 let hapticStrength = localStorage.getItem("qu33phHapticStrength") || "medium"; // light|medium|strong
 let reduceMotion = localStorage.getItem("qu33phReduceMotion") === "on";
 let mirrorMode = localStorage.getItem("qu33phMirror") === "on";
+if(mirrorMode) document.body.classList.add("qmirror");
+// Canvas text under mirror mode is already handled globally below (the
+// CanvasRenderingContext2D.fillText/strokeText patch, driven by _mirDraw) —
+// every canvas on the page gets it for free, no per-call-site changes needed.
 let _mirDraw = false;
 function setBase(){ if(mirrorMode){ ctx.setTransform(-1,0,0,1,canvas.width,0); } else { ctx.setTransform(1,0,0,1,0,0); } }
 if(typeof CanvasRenderingContext2D!=="undefined"){
@@ -2612,6 +2625,7 @@ function renderBracket(){
   const bh = window.innerHeight * 0.76;
   bc.width = bw; bc.height = bh;
   const bx = bc.getContext("2d");
+  _mirDraw=mirrorMode; bx.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?bw:0,0);
   bx.fillStyle="#08080a"; bx.fillRect(0,0,bw,bh);
 
   bx.textAlign="center"; bx.textBaseline="top";
@@ -2850,6 +2864,7 @@ function showMedalScreen(){
   const mh = window.innerHeight * 0.82;
   mc.width=mw; mc.height=mh;
   const mx2 = mc.getContext("2d");
+  _mirDraw=mirrorMode; mx2.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?mw:0,0);
 
   let particles = [];
   for(let i=0;i<28;i++){
@@ -4681,6 +4696,7 @@ function drawPlinko(){
   if(!pctx) return;
   var W=plinkoCanvas.width, H=plinkoCanvas.height, floorY=H*0.92;
   var margin=W*0.08, binW=(W-2*margin)/7, binTop=floorY-H*0.13;
+  _mirDraw=mirrorMode; pctx.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?W:0,0);
   pctx.clearRect(0,0,W,H);
   drawPlinkoThemeBg(W,H);
   // bins
@@ -5532,6 +5548,10 @@ function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   if(_now<pfNextStep){ pfRAF=requestAnimationFrame(pfLoop); return; }
   // if the tab was backgrounded or a frame ran long, resync instead of sprinting to catch up
   pfNextStep = (_now-pfNextStep>PF_STEP_MS*4) ? _now+PF_STEP_MS : pfNextStep+PF_STEP_MS;
+  // one mirror setup here covers every sub-screen below (menu, char select, level
+  // select, binder, fuse-pick, dream, and the platformer itself) — they all share
+  // this same canvas/context, so there's no need to repeat this in each of them
+  if(pfctx){ _mirDraw=mirrorMode; pfctx.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?pfCanvas.width:0,0); }
   if(arcadeGame==="dream"){ updateDeep(); drawDeep(); }
   else if(arcadeGame==="charselect"){ updateCharSelect(); drawCharSelect(); }
   else if(arcadeGame==="jumpmenu"){ updateJumpMenu(); drawJumpMenu(); }
@@ -7453,7 +7473,7 @@ function pbDrawFlipper(px,py,ang,len,mirror){ var c=pbctx,tx=px+Math.cos(ang)*le
   else { c.fillStyle="#3a7bff"; c.beginPath(); c.roundRect?c.roundRect(-L/2,-th/2,L,th,th/2):c.rect(-L/2,-th/2,L,th); c.fill(); }
   c.restore(); }
 function pbDrawQuad(x,y,w,hh){ var c=pbctx,a=pbProject(x,y),b2=pbProject(x+w,y),d2=pbProject(x+w,y+hh),e2=pbProject(x,y+hh); c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b2[0],b2[1]);c.lineTo(d2[0],d2[1]);c.lineTo(e2[0],e2[1]);c.closePath(); }
-function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
+function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; _mirDraw=mirrorMode; c.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?pbW:0,0); c.clearRect(0,0,pbW,pbH);
   var _cm=false; try{ _cm=document.getElementById("pinballScreen").classList.contains("pb-comic"); }catch(e){}
   var _gs=function(on){ try{ c.filter = (_cm&&on) ? "grayscale(1) contrast(1.15)" : "none"; }catch(e){} };
   _gs(true);                                   // comic: the table greys out...
@@ -8098,7 +8118,7 @@ function setDefaultOrientation(v){
   renderSettings();
 }
 function toggleMirror(){ mirrorMode=!mirrorMode; try{localStorage.setItem("qu33phMirror",mirrorMode?"on":"off");}catch(e){} applyMirrorClass(); renderSettings(); haptic(15); }
-function applyMirrorClass(){ try{ var am=document.getElementById("arcadeMenu"); if(am) am.classList.toggle("qmirror", mirrorMode); }catch(e){} }
+function applyMirrorClass(){ try{ document.body.classList.toggle("qmirror", mirrorMode); }catch(e){} }
 applyMirrorClass();
 function toggleColorblind(){ colorblind=!colorblind; try{localStorage.setItem("qu33phColorblind",colorblind?"on":"off");}catch(e){} renderSettings(); }
 function shopOwned(id){ return id==="doubler"?doublerOwned:id==="magnet"?magnetOwned:id==="glow"?markerGlowOwned:id==="trails"?trailsOwned:id==="confetti"?confettiOwned:id==="goldslot"?goldSlotOwned:id==="xtime"?xtimeOwned:id==="megaboost"?megaboostOwned:id==="peefguard"?peefguardOwned:false; }

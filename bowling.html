@@ -10,6 +10,11 @@
   #wrap{position:absolute;inset:0;overflow:hidden;}
   #bg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;}
   #cv{position:absolute;top:0;left:0;display:block;}
+  /* Mirror mode: flip the whole page with one CSS transform. Bowling has no HTML
+     menu — everything (including all text) draws on the canvas, and mtext() in
+     the script already draws each string pre-mirrored so it comes out readable
+     once this outer flip is applied. */
+  body.qmirror{ transform:scaleX(-1); }
 </style>
 </head>
 <body>
@@ -115,6 +120,7 @@ function ready(i){ return i && i.complete && (i.naturalWidth||i.width)>0; }
 
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
 let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+if(mirrorMode) document.body.classList.add('qmirror');
 function mtext(c,txt,x,y,strokeFirst){
   if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
   c.save(); c.translate(x,y); c.scale(-1,1);
@@ -859,7 +865,7 @@ let last=performance.now();
 function frameLoop(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;
   step(dt);
-  if(mirrorMode){ ctx.setTransform(-DPR,0,0,DPR,CW*DPR,0); } else { ctx.setTransform(DPR,0,0,DPR,0,0); }
+  ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,CW,CH);
   overlay();                 // themed wash sits under the markers
   drawPins(); drawBall(); drawChair(); drawMegaFly(); drawAimMarker(); drawQueue(); drawMegaCard(); drawOriBtn();

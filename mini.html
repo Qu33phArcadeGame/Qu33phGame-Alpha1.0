@@ -26,6 +26,11 @@
   .ovl .sub{ font-size:12px; letter-spacing:2px; color:#888; margin-bottom:16px; text-align:center; line-height:1.7; }
   .rules{ font-size:11px; line-height:1.7; color:#bbb; letter-spacing:0.5px; max-width:320px; margin-bottom:14px; }
   .rules b{ color:#fff; }
+  /* Mirror mode: flip the whole page — canvas, menus, buttons, everything — with a
+     single CSS transform, then flip every text-bearing element a second time so
+     the words themselves stay readable. Position mirrors, letters don't. */
+  body.qmirror{ transform:scaleX(-1); }
+  body.qmirror .ovl h1, body.qmirror .ovl .sub, body.qmirror .rules, body.qmirror .mk-btn{ transform:scaleX(-1); }
 </style>
 </head>
 <body>
@@ -54,6 +59,7 @@
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+if(mirrorMode) document.body.classList.add('qmirror');
 function mtext(c,txt,x,y,strokeFirst){
   if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
   c.save(); c.translate(x,y); c.scale(-1,1);
@@ -567,10 +573,9 @@ function drawHUD(){
   }
 }
 function draw(){
-  const mx=mirrorMode?-1:1, mb=mirrorMode?CW:0;
-  ctx.setTransform(mx,0,0,1,mb,0);
+  ctx.setTransform(1,0,0,1,0,0);
   if(shakeT>0){ const k=shakeAmt*(shakeT/0.42);
-    ctx.setTransform(mx,0,0,1,mb+(Math.random()-0.5)*k,(Math.random()-0.5)*k); }
+    ctx.setTransform(1,0,0,1,(Math.random()-0.5)*k,(Math.random()-0.5)*k); }
   if(TH.filter && CANFILTER){
     drawScene(s2);
     ctx.clearRect(0,0,CW,CH); ctx.save(); ctx.filter=TH.filter; ctx.drawImage(sc,0,0); ctx.filter='none';

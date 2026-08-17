@@ -53,6 +53,13 @@
   .leg-txt{ font-size:10px; color:#ccc; letter-spacing:0.5px; font-weight:bold; white-space:nowrap; }
   .leg-jag{ display:block; width:36px; height:8px; background:
     repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
+  /* Mirror mode: flip the whole page with one CSS transform, then flip every
+     text-bearing element a second time so the words stay readable. Images
+     (markers, chair icon) are left alone — they're meant to mirror too. */
+  body.qmirror{ transform:scaleX(-1); }
+  body.qmirror .ovl h1, body.qmirror .ovl .sub, body.qmirror .mk-btn,
+  body.qmirror .lvl-back, body.qmirror .leg-txt,
+  body.qmirror .tut-row>div, body.qmirror .lvl span{ transform:scaleX(-1); }
 </style>
 </head>
 <body>
@@ -102,6 +109,7 @@
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
+if(mirrorMode) document.body.classList.add('qmirror');
 function mtext(c,txt,x,y,strokeFirst){
   if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
   c.save(); c.translate(x,y); c.scale(-1,1);
@@ -781,7 +789,7 @@ function drawHUD(){
   }
 }
 function draw(){
-  if(mirrorMode){ ctx.setTransform(-1,0,0,1,CW,0); } else { ctx.setTransform(1,0,0,1,0,0); }
+  ctx.setTransform(1,0,0,1,0,0);
   if(state==='menu'){ ctx.fillStyle='#05050a'; ctx.fillRect(0,0,CW,CH); return; }
   s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
   paintBG(s2);
