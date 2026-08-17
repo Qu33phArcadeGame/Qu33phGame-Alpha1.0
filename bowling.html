@@ -121,11 +121,12 @@ function ready(i){ return i && i.complete && (i.naturalWidth||i.width)>0; }
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
 let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
 if(mirrorMode) document.body.classList.add('qmirror');
+// text now mirrors along with everything else (the outer CSS flip handles it) —
+// this just calls the plain native methods so every existing mtext() call site
+// keeps working unchanged
 function mtext(c,txt,x,y,strokeFirst){
-  if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
-  c.save(); c.translate(x,y); c.scale(-1,1);
-  if(strokeFirst) c.strokeText(txt,0,0); c.fillText(txt,0,0);
-  c.restore();
+  if(strokeFirst) c.strokeText(txt,x,y);
+  c.fillText(txt,x,y);
 }
 let CW=0,CH=0,DPR=1;
 // the background is object-fit:contain, so work out the letterboxed art box
@@ -313,14 +314,18 @@ function onDown(e){
 function onMove(e){
   if(!touchStart) return;
   e.preventDefault(); touchLast=localPt(e);
-  // drag sideways to walk the marker along the foul line
-  aimX=Math.max(-0.72,Math.min(0.72, aimAtDown+(touchLast.x-touchStart.x)/AW*2.1));
+  // drag sideways to walk the marker along the foul line — the raw touch delta
+  // needs flipping under mirror mode, since a physical rightward drag should
+  // still walk the marker toward what's now visually the right side
+  let dxRaw=touchLast.x-touchStart.x; if(mirrorMode) dxRaw=-dxRaw;
+  aimX=Math.max(-0.72,Math.min(0.72, aimAtDown+dxRaw/AW*2.1));
 }
 function onUp(e){
   if(!touchStart||phase!=='aim'||gameOver){ touchStart=null; return; }
   e.preventDefault();
   const dt=Math.max(40,performance.now()-touchT);
-  const dx=(touchLast.x-touchStart.x)/AW, dy=(touchStart.y-touchLast.y)/AH;
+  let dx=(touchLast.x-touchStart.x)/AW; if(mirrorMode) dx=-dx;
+  const dy=(touchStart.y-touchLast.y)/AH;
   touchStart=null;
   if(dy<0.03) return;                    // only an upward flick rolls it; sideways just re-spots
   const power=Math.max(0.35,Math.min(1.35, dy*2.6*(260/dt)+0.35 ));

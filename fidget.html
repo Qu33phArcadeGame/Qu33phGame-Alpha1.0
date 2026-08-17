@@ -25,11 +25,12 @@
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
 if(mirrorMode) document.body.classList.add('qmirror');
+// text now mirrors along with everything else (the outer CSS flip handles it) —
+// this just calls the plain native methods so every existing mtext() call site
+// keeps working unchanged
 function mtext(c,txt,x,y,strokeFirst){
-  if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
-  c.save(); c.translate(x,y); c.scale(-1,1);
-  if(strokeFirst) c.strokeText(txt,0,0); c.fillText(txt,0,0);
-  c.restore();
+  if(strokeFirst) c.strokeText(txt,x,y);
+  c.fillText(txt,x,y);
 }
 
 // ---- theme field (passed from arcade via ?theme=) ----

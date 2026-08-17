@@ -746,7 +746,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v422</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v423</div>
 
 <canvas id="game"></canvas>
 
@@ -1318,16 +1318,12 @@ let hapticStrength = localStorage.getItem("qu33phHapticStrength") || "medium"; /
 let reduceMotion = localStorage.getItem("qu33phReduceMotion") === "on";
 let mirrorMode = localStorage.getItem("qu33phMirror") === "on";
 if(mirrorMode) document.body.classList.add("qmirror");
-// Canvas text under mirror mode is already handled globally below (the
-// CanvasRenderingContext2D.fillText/strokeText patch, driven by _mirDraw) —
-// every canvas on the page gets it for free, no per-call-site changes needed.
-let _mirDraw = false;
-function setBase(){ if(mirrorMode){ ctx.setTransform(-1,0,0,1,canvas.width,0); } else { ctx.setTransform(1,0,0,1,0,0); } }
-if(typeof CanvasRenderingContext2D!=="undefined"){
-  const _P=CanvasRenderingContext2D.prototype, _of=_P.fillText, _os=_P.strokeText;
-  _P.fillText=function(t,x,y,mw){ if(_mirDraw){ let a=this.textAlign,s=(a==="left"||a==="start")?"right":(a==="right"||a==="end")?"left":a; this.save(); this.translate(x,0); this.scale(-1,1); this.textAlign=s; (mw===undefined?_of.call(this,t,0,y):_of.call(this,t,0,y,mw)); this.restore(); } else { (mw===undefined?_of.call(this,t,x,y):_of.call(this,t,x,y,mw)); } };
-  _P.strokeText=function(t,x,y,mw){ if(_mirDraw){ let a=this.textAlign,s=(a==="left"||a==="start")?"right":(a==="right"||a==="end")?"left":a; this.save(); this.translate(x,0); this.scale(-1,1); this.textAlign=s; (mw===undefined?_os.call(this,t,0,y):_os.call(this,t,0,y,mw)); this.restore(); } else { (mw===undefined?_os.call(this,t,x,y):_os.call(this,t,x,y,mw)); } };
-}
+// Canvas text mirrors along with everything else now, via the outer CSS flip —
+// no per-canvas setup needed any more (see the note further up).
+// Mirror mode now works the simple way — one CSS transform on <body> flips
+// the whole page, canvases included, text included. No per-canvas transform
+// or text-unmirroring needed any more; setBase() just resets to identity.
+function setBase(){ ctx.setTransform(1,0,0,1,0,0); }
 let colorblind = localStorage.getItem("qu33phColorblind") === "on";
 let doublerOwned    = localStorage.getItem("qu33phDoubler") === "1";
 let markerGlowOwned = localStorage.getItem("qu33phMarkerGlow") === "1";
@@ -2625,7 +2621,6 @@ function renderBracket(){
   const bh = window.innerHeight * 0.76;
   bc.width = bw; bc.height = bh;
   const bx = bc.getContext("2d");
-  _mirDraw=mirrorMode; bx.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?bw:0,0);
   bx.fillStyle="#08080a"; bx.fillRect(0,0,bw,bh);
 
   bx.textAlign="center"; bx.textBaseline="top";
@@ -2864,7 +2859,6 @@ function showMedalScreen(){
   const mh = window.innerHeight * 0.82;
   mc.width=mw; mc.height=mh;
   const mx2 = mc.getContext("2d");
-  _mirDraw=mirrorMode; mx2.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?mw:0,0);
 
   let particles = [];
   for(let i=0;i<28;i++){
@@ -3979,7 +3973,6 @@ function draw(){
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
   let elapsed=gameElapsed();
-  _mirDraw = mirrorMode;
   setBase();
   let shakeX=(Math.random()-0.5)*shake;
   let shakeY=(Math.random()-0.5)*shake;
@@ -4696,7 +4689,6 @@ function drawPlinko(){
   if(!pctx) return;
   var W=plinkoCanvas.width, H=plinkoCanvas.height, floorY=H*0.92;
   var margin=W*0.08, binW=(W-2*margin)/7, binTop=floorY-H*0.13;
-  _mirDraw=mirrorMode; pctx.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?W:0,0);
   pctx.clearRect(0,0,W,H);
   drawPlinkoThemeBg(W,H);
   // bins
@@ -5551,7 +5543,6 @@ function pfLoop(){ if(!pfActive){ pfRAF=null; return; }
   // one mirror setup here covers every sub-screen below (menu, char select, level
   // select, binder, fuse-pick, dream, and the platformer itself) — they all share
   // this same canvas/context, so there's no need to repeat this in each of them
-  if(pfctx){ _mirDraw=mirrorMode; pfctx.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?pfCanvas.width:0,0); }
   if(arcadeGame==="dream"){ updateDeep(); drawDeep(); }
   else if(arcadeGame==="charselect"){ updateCharSelect(); drawCharSelect(); }
   else if(arcadeGame==="jumpmenu"){ updateJumpMenu(); drawJumpMenu(); }
@@ -7473,7 +7464,7 @@ function pbDrawFlipper(px,py,ang,len,mirror){ var c=pbctx,tx=px+Math.cos(ang)*le
   else { c.fillStyle="#3a7bff"; c.beginPath(); c.roundRect?c.roundRect(-L/2,-th/2,L,th,th/2):c.rect(-L/2,-th/2,L,th); c.fill(); }
   c.restore(); }
 function pbDrawQuad(x,y,w,hh){ var c=pbctx,a=pbProject(x,y),b2=pbProject(x+w,y),d2=pbProject(x+w,y+hh),e2=pbProject(x,y+hh); c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b2[0],b2[1]);c.lineTo(d2[0],d2[1]);c.lineTo(e2[0],e2[1]);c.closePath(); }
-function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; _mirDraw=mirrorMode; c.setTransform(mirrorMode?-1:1,0,0,1,mirrorMode?pbW:0,0); c.clearRect(0,0,pbW,pbH);
+function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   var _cm=false; try{ _cm=document.getElementById("pinballScreen").classList.contains("pb-comic"); }catch(e){}
   var _gs=function(on){ try{ c.filter = (_cm&&on) ? "grayscale(1) contrast(1.15)" : "none"; }catch(e){} };
   _gs(true);                                   // comic: the table greys out...
@@ -7766,7 +7757,6 @@ function loop(){
     }
     if(currentTheme!=="default") drawPopups();
     if(currentTheme!=="default") drawHudReadable();
-    _mirDraw=false;
   }
   requestAnimationFrame(loop);
 }
@@ -8059,11 +8049,13 @@ function renderSettings(){
   let unlocked=["default"];
   try { unlocked = JSON.parse(localStorage.getItem("qu33phThemes")||'["default"]'); } catch(e){}
 
-  function toggleRow(lbl,sub,on,fn){
+  function toggleRow(lbl,sub,on,fn,warnColor){
+    var onCol = warnColor ? "#e0433a" : "#3fa34d";
+    var offCol = warnColor ? "#3fa34d" : "#333";
     return '<div style="grid-column:span 1;display:flex;align-items:center;justify-content:space-between;padding:var(--sPad) calc(var(--sPad) + 2px);background:#0e0e0e;border:1px solid #1a1a1a;border-radius:8px;">'
       +'<div style="display:flex;flex-direction:column;gap:2px;padding-right:6px;min-width:0;"><span style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#fff;letter-spacing:0.3px;line-height:1.15;">'+lbl+'</span>'
       +'<span style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sSub);color:#555;letter-spacing:0.2px;line-height:1.2;">'+sub+'</span></div>'
-      +'<div onclick="'+fn+'" style="width:38px;height:21px;border-radius:11px;background:'+(on?"#3fa34d":"#333")+';position:relative;cursor:pointer;flex-shrink:0;transition:background 0.15s;">'
+      +'<div onclick="'+fn+'" style="width:38px;height:21px;border-radius:11px;background:'+(on?onCol:offCol)+';position:relative;cursor:pointer;flex-shrink:0;transition:background 0.15s;">'
       +'<div style="width:15px;height:15px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(on?"20px":"3px")+';transition:left 0.15s;"></div></div></div>';
   }
   function segRow(lbl,sub,opts,cur,fn){
@@ -8090,7 +8082,7 @@ function renderSettings(){
   h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
   h+=toggleRow("Music","background music, where a game has it",!jumpMusicMuted,"toggleJumpMusic()");
   h+=toggleRow("Sound effects","every sound effect across the arcade",!sfxMuted,"toggleSfx()");
-  h+=toggleRow("Mirror mode","flip the layout left-to-right (arcade menu)",mirrorMode,"toggleMirror()");
+  h+=toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true);
   h+=toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()");
   h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(ROUND_TIME),"setTimer");
   h+=segRow("Default orientation","applies to every game with an orientation",[["vertical","VERT"],["angled","ANGLED"],["horizontal","FLAT"]],(localStorage.getItem("qu33phOrientation")||"vertical"),"setDefaultOrientation");

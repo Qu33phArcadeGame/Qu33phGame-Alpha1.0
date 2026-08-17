@@ -41,11 +41,12 @@ const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 // normally, at the now-mirrored position. Position moves, letters don't.
 let mirrorMode=false; try{ mirrorMode=localStorage.getItem('qu33phMirror')==='on'; }catch(e){}
 if(mirrorMode) document.body.classList.add('qmirror');
+// text now mirrors along with everything else (the outer CSS flip handles it) —
+// this just calls the plain native methods so every existing mtext() call site
+// keeps working unchanged
 function mtext(c,txt,x,y,strokeFirst){
-  if(!mirrorMode){ if(strokeFirst) c.strokeText(txt,x,y); c.fillText(txt,x,y); return; }
-  c.save(); c.translate(x,y); c.scale(-1,1);
-  if(strokeFirst) c.strokeText(txt,0,0); c.fillText(txt,0,0);
-  c.restore();
+  if(strokeFirst) c.strokeText(txt,x,y);
+  c.fillText(txt,x,y);
 }
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
@@ -358,7 +359,7 @@ updLaneBtn();
 
 // ---- flick input ----
 let dragging=false, dStart=null, dNow=null;
-function pt(e){ const r=cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height }; }
+function pt(e){ const r=cv.getBoundingClientRect(); let x=(e.clientX-r.left)/r.width; if(mirrorMode) x=1-x; return { x:x, y:(e.clientY-r.top)/r.height }; }
 cv.addEventListener('pointerdown',e=>{ if(state==='over'){ reset(); return; } if(state!=='ready') return; dragging=true; dStart=pt(e); dNow=dStart; });
 cv.addEventListener('pointermove',e=>{ if(dragging) dNow=pt(e); });
 window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
