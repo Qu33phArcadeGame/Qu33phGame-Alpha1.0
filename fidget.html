@@ -55,7 +55,7 @@ const THEME_RAW=(new URLSearchParams(location.search).get('theme')||'default');
 const THEME = THEME_RAW==='realistic' ? 'default'
   : (THEME_RAW.indexOf('r_')===0 ? THEME_RAW.slice(2) : THEME_RAW);
 // each theme's field art has its drawn divider at a different height — match the dashed line to it per theme
-const LINE_FRAC={ 'default':0.585, 'cartoon':0.511, 'neon':0.47, 'sunset':0.515, 'galaxy':0.51 };
+const LINE_FRAC={ 'default':0.509, 'cartoon':0.511, 'neon':0.47, 'sunset':0.515, 'galaxy':0.51 };
 const FIELD=new Image();
 let fieldTries=[ FIELD_FILES[THEME]||'fidgetqu33phfield.png', 'fidgetneonfield.png', 'fidgetqu33phfield.png', 'fidgetfield.png' ];
 FIELD.onerror=()=>{ fieldTries.shift(); if(fieldTries.length) FIELD.src=fieldTries[0]; };
