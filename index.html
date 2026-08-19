@@ -777,7 +777,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v442</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v443</div>
 
 <canvas id="game"></canvas>
 
@@ -855,7 +855,7 @@
 </div>
 
 <div id="pinballScreen" oncontextmenu="return false" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0818;z-index:110;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;">
-  <img id="pinballBg" src="pinball.jpg?v=378" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;" onerror="this.style.opacity=0.12">
+  <img id="pinballBg" src="pinball.jpg?v=378" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.opacity=0.12">
   <div id="pbBenday"></div>
   <canvas id="pinballCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
   <button class="corner-back" id="pbPauseBtn" onclick="pbBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
@@ -4961,11 +4961,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=442&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=443&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=442&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=443&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=442&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=443&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -4993,7 +4993,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=442&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=443&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5004,7 +5004,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=442&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=443&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
@@ -7362,17 +7362,14 @@ function layoutPinball(){
   pbCanvas.width=Math.round(sw);pbCanvas.height=Math.round(sh);
   pbctx=pbCanvas.getContext("2d");pbW=pbCanvas.width;pbH=pbCanvas.height;
   var bg=document.getElementById("pinballBg"),iw=(bg&&bg.naturalWidth)||1183,ih=(bg&&bg.naturalHeight)||2560;
-  // fill the screen exactly on both axes instead of preserving the image's native
-  // aspect ratio — every table element (bumpers, chair, launch, ball physics, the
-  // art itself) is positioned off pbImgRW/RH, so this removes the side letterbox
-  // bars completely with no risk of pushing anything off-screen, at the cost of a
-  // very slight, generally unnoticeable stretch since the two ratios are already close.
-  // fill the screen and then some — a plain 1:1 fill still left dark margins because
-  // the photo itself has empty room/floor around the machine, not just aspect-ratio
-  // padding. Scaling up further and centering crops that surrounding darkness off
-  // the edges of the screen instead. Bump ZOOM up/down to crop more/less.
-  var ZOOM=1.18;
-  pbImgRW=sw*ZOOM; pbImgRH=sh*ZOOM; pbImgOX=(sw-pbImgRW)/2; pbImgOY=(sh-pbImgRH)/2;
+  // The visible background is the raw <img> above, not drawn on canvas — it uses
+  // object-fit:cover in its own CSS, so this math has to mirror "cover" exactly
+  // (scale to the LARGER ratio, not the smaller one) or the neon table outline
+  // and bumpers drift out of alignment with the photo underneath them. Since the
+  // photo's native ratio is already almost identical to a typical phone screen,
+  // this crops only a sliver — nowhere near the deliberate zoom from before.
+  var scale=Math.max(sw/iw,sh/ih);
+  pbImgRW=iw*scale; pbImgRH=ih*scale; pbImgOX=(sw-pbImgRW)/2; pbImgOY=(sh-pbImgRH)/2;
   PB_R=0.040; PB_RX=PB_R*0.62; PB_RY=PB_R*1.35; pbBuildTable();
   var fl=document.getElementById("pbFlipLeft"),fr=document.getElementById("pbFlipRight"),lb=document.getElementById("pbLaunchBtn");
   fl.style.left="0px";fl.style.right="";fl.style.bottom="0px";fl.style.width="50%";fl.style.height="40%";
