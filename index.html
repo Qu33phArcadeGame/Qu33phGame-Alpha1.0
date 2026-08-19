@@ -756,10 +756,28 @@
       background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%) !important; border:2.5px solid #fff !important; border-radius:8px 2px 2px 8px !important;
       box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.45) !important; }
     .back-tl:active::before{ background:linear-gradient(180deg,#161616 0%,#000 100%) !important; box-shadow:inset 0 2px 5px rgba(0,0,0,0.6) !important; }
+    /* compact corner back button for the standalone-canvas games in this file
+       (Pinball, Dozer, Stack, and the legacy iframe screens) — same look as
+       .back-tl but without the fixed position, so each screen can place it
+       left or right as needed. */
+    .corner-back{ position:relative; display:inline-flex; align-items:center; justify-content:center;
+      background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%); color:#fff;
+      border:2.5px solid #fff; border-radius:4px 9px 9px 4px;
+      font-family:Helvetica,Arial,sans-serif; font-size:9.5px; font-weight:bold; letter-spacing:1px;
+      padding:5px 10px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+      box-shadow:0 3px 0 rgba(0,0,0,0.55), 0 6px 10px rgba(0,0,0,0.4), inset 0 1.5px 0 rgba(255,255,255,0.4), inset 0 -4px 7px rgba(0,0,0,0.45);
+      transform:translateY(0); transition:transform 0.08s ease, box-shadow 0.08s ease; }
+    .corner-back::before{ content:""; position:absolute; left:-15px; top:2px; bottom:2px; width:15px;
+      background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%); border:2.5px solid #fff; border-radius:8px 2px 2px 8px;
+      box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.45); }
+    .corner-back.flip::before{ left:auto; right:-15px; border-radius:2px 8px 8px 2px; }
+    .corner-back:active{ background:linear-gradient(180deg,#161616 0%,#000 100%); transform:translateY(3px);
+      box-shadow:0 0 0 rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.6); }
+    .corner-back:active::before{ background:linear-gradient(180deg,#161616 0%,#000 100%); box-shadow:inset 0 2px 5px rgba(0,0,0,0.6); }
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v434</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v439</div>
 
 <canvas id="game"></canvas>
 
@@ -840,7 +858,7 @@
   <img id="pinballBg" src="pinball.jpg?v=378" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;" onerror="this.style.opacity=0.12">
   <div id="pbBenday"></div>
   <canvas id="pinballCanvas" style="position:absolute;top:0;left:0;display:block;"></canvas>
-  <button class="mk-btn" id="pbPauseBtn" onclick="pbBack()" style="position:absolute;top:8px;left:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" id="pbPauseBtn" onclick="pbBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
   <div id="pbFlipLeft" style="position:absolute;left:0;bottom:0;width:50%;height:34%;z-index:5;"></div>
   <div id="pbFlipRight" style="position:absolute;right:0;bottom:0;width:50%;height:34%;z-index:5;"></div>
   <button id="pbLaunchBtn" style="position:absolute;right:14px;bottom:14px;z-index:6;background:radial-gradient(circle at 40% 30%,#ff9a9a,#d62424 65%,#8a1010);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;border:2px solid rgba(0,0,0,0.4);border-radius:12px;padding:12px 18px;box-shadow:0 4px 10px rgba(0,0,0,0.6),inset 0 2px 6px rgba(255,255,255,0.4);">LAUNCH</button>
@@ -848,35 +866,35 @@
 
 <div id="miniScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="miniFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="mk-btn" onclick="miniBack()" style="position:absolute;top:8px;right:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" onclick="miniBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
 </div>
 <div id="stackScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="stackFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="mk-btn" onclick="stackBack()" style="position:absolute;top:8px;right:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" onclick="stackBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
 </div>
 <div id="skeeScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="skeeFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="mk-btn" onclick="skeeBack()" style="position:absolute;top:8px;right:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" onclick="skeeBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
 </div>
 <div id="flipScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="flipFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="mk-btn" onclick="flipBack()" style="position:absolute;top:8px;right:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" onclick="flipBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
 </div>
 <div id="dozerScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="dozerFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="mk-btn" onclick="dozerBack()" style="position:absolute;top:8px;right:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" onclick="dozerBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
 </div>
 <div id="pinball2dScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:116;overflow:hidden;">
   <iframe id="pinball2dFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="mk-btn" onclick="pinball2dBack()" style="position:absolute;top:8px;right:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" onclick="pinball2dBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
 </div>
 <div id="fidgetScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="fidgetFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="mk-btn" onclick="fidgetBack()" style="position:absolute;top:8px;right:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" onclick="fidgetBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
 </div>
 <div id="bowlingScreen" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:115;overflow:hidden;">
   <iframe id="bowlingFrame" allow="fullscreen" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;"></iframe>
-  <button class="mk-btn" onclick="bowlingBack()" style="position:absolute;top:8px;right:10px;z-index:6;margin:0;font-size:12px;padding:6px 12px;">&larr; BACK</button>
+  <button class="corner-back" onclick="bowlingBack()" style="position:absolute;top:8px;left:22px;z-index:6;">&larr; BACK</button>
 </div>
 
 <div id="dreamonScreen" style="display:none; position:absolute;top:0;left:0;width:100%;height:100%;background:#04050a;z-index:120;">
@@ -4939,11 +4957,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=434&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=439&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=434&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=439&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=434&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=439&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -4971,7 +4989,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=434&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=439&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -4982,7 +5000,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=434&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=439&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
