@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Qu33ph Stack</title>
 <style>
+  body.th-inverted{ filter:invert(1); }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; }
   #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#0b0d14; }
@@ -21,6 +22,7 @@
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default');
+if(THEME==='inverted') document.body.classList.add('th-inverted');
 const MPREF=(THEME==='cartoon')?'comic':'stack';
 // comic art sometimes ships with a white matte behind the linework — key it out so only the outline survives
 function keyWhite(im){

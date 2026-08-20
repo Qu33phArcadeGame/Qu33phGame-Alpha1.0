@@ -14,6 +14,7 @@
   /* Mirror mode: flip the whole page with one CSS transform — canvas, menu,
      spinners, and the reset button all mirror together. Nothing is counter-mirrored. */
   body.qmirror{ transform:scaleX(-1); }
+  body.th-inverted{ filter:invert(1); }
 </style>
 </head>
 <body>
@@ -62,6 +63,7 @@ const THEME_RAW=(new URLSearchParams(location.search).get('theme')||'default');
 // so it actually matches the keys below instead of silently falling through.
 const THEME = THEME_RAW==='realistic' ? 'default'
   : (THEME_RAW.indexOf('r_')===0 ? THEME_RAW.slice(2) : THEME_RAW);
+if(THEME==='inverted') document.body.classList.add('th-inverted');
 // each theme's field art has its drawn divider at a different height — match the dashed line to it per theme
 const LINE_FRAC={ 'default':0.509, 'cartoon':0.511, 'neon':0.47, 'sunset':0.515, 'galaxy':0.51 };
 const FIELD=new Image();

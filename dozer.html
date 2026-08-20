@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Qu33ph Dozer</title>
 <style>
+  body.th-inverted{ filter:invert(1); }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff;
     touch-action:none; user-select:none; background:#000; }
@@ -60,6 +61,7 @@
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+if(THEME==='inverted') document.body.classList.add('th-inverted');
 const $=id=>document.getElementById(id);
 
 // ─── assets ───────────────────────────────────────────────────────────────

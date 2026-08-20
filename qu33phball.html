@@ -13,6 +13,7 @@
      score readout, and the laneBtn control all mirror together. Nothing is
      counter-mirrored. */
   body.qmirror{ transform:scaleX(-1); }
+  body.th-inverted{ filter:invert(1); }
   #laneBtn{ position:fixed; left:26px; bottom:14px; z-index:6;
     display:inline-flex; align-items:center; justify-content:center;
     background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%); color:#fff; border:2.5px solid #fff;
@@ -78,6 +79,7 @@ function mtext(c,txt,x,y,strokeFirst){
 }
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+if(THEME==='inverted') document.body.classList.add('th-inverted');
 // Three connected Qu33ph-Ball machines. Each field uses the full room render so
 // changing lanes feels like sliding to the next cabinet.
 // The mega jackpot — only reachable by climbing the chair chain (see the pro

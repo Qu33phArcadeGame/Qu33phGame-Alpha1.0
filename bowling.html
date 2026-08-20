@@ -15,6 +15,7 @@
      the script already draws each string pre-mirrored so it comes out readable
      once this outer flip is applied. */
   body.qmirror{ transform:scaleX(-1); }
+  body.th-inverted{ filter:invert(1); }
 </style>
 </head>
 <body>
@@ -144,6 +145,7 @@ try{
   else mirrorMode=(localStorage.getItem('qu33phMirror')==='on');
 }catch(e){}
 if(mirrorMode) document.body.classList.add('qmirror');
+if(THEME==='inverted') document.body.classList.add('th-inverted');
 // text now mirrors along with everything else (the outer CSS flip handles it) —
 // this just calls the plain native methods so every existing mtext() call site
 // keeps working unchanged

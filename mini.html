@@ -35,6 +35,7 @@
   /* Mirror mode: flip the whole page — canvas (including the box), menus,
      buttons, everything — with a single CSS transform. Nothing is counter-mirrored. */
   body.qmirror{ transform:scaleX(-1); }
+  body.th-inverted{ filter:invert(1); }
 </style>
 </head>
 <body>
@@ -96,6 +97,7 @@ function mtext(c,txt,x,y,strokeFirst){
 }
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // scene layer, takes the theme filter
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+if(THEME==='inverted') document.body.classList.add('th-inverted');
 const $=id=>document.getElementById(id);
 
 // ─── art ──────────────────────────────────────────────────────────────────
