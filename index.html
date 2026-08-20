@@ -784,7 +784,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v446</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v447</div>
 
 <canvas id="game"></canvas>
 
@@ -4970,11 +4970,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -5002,7 +5002,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5013,7 +5013,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
@@ -7350,6 +7350,14 @@ function returnToArcade(){
 var pbCanvas=null,pbctx=null,pbRAF=null,pbActive=false,pbW=0,pbH=0,PB_R=0;
 var pbBall=null,pbScore=0,pbBalls=3,pbState="ready",pbT=0,pbHigh=0,pbChairCD=0,pbBallSeq=0; try{pbHigh=+(localStorage.getItem("qu33phPinballHigh")||0);}catch(e){}
 var pbFL=0,pbFR=0,pbFLtarget=0,pbFRtarget=0,pbMsg="",pbMsgT=0;
+// ── pinball sound: paddle.m4a fires when a flipper is actually pressed,
+// Plop.m4a fires when the ball actually connects with one ──────────────────
+const PB_PADDLE_POOL=[0,1,2].map(function(){ const a=new Audio('paddle.m4a'); a.preload='auto'; return a; });
+const PB_PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; return a; });
+let pbPaddleIdx=0, pbPlopIdx=0;
+function pbSfxOn(){ try{ return localStorage.getItem("qu33phSfx")!=="0"; }catch(e){ return true; } }
+function pbSfxPaddle(){ if(!pbSfxOn()) return; const a=PB_PADDLE_POOL[pbPaddleIdx=(pbPaddleIdx+1)%PB_PADDLE_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function pbSfxPlop(){ if(!pbSfxOn()) return; const a=PB_PLOP_POOL[pbPlopIdx=(pbPlopIdx+1)%PB_PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 var pbBumpers=[],pbChair=null,pbMega=null,pbListenersSet=false;
 var PB_GRAV=0.3,PB_DAMP=0.62;
 // the ball is now a Qu33ph marker — red/green alternate each life, and the
@@ -7402,8 +7410,8 @@ function launchPinball(){ try{ var _st=(typeof styleOf==="function"?styleOf():cu
 function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
 function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
   var L=document.getElementById("pbFlipLeft"),R=document.getElementById("pbFlipRight"),LB=document.getElementById("pbLaunchBtn");
-  L.addEventListener("touchstart",function(e){e.preventDefault();pbFLtarget=1;},{passive:false}); L.addEventListener("touchend",function(e){e.preventDefault();pbFLtarget=0;},{passive:false}); L.addEventListener("mousedown",function(){pbFLtarget=1;}); L.addEventListener("mouseup",function(){pbFLtarget=0;});
-  R.addEventListener("touchstart",function(e){e.preventDefault();pbFRtarget=1;},{passive:false}); R.addEventListener("touchend",function(e){e.preventDefault();pbFRtarget=0;},{passive:false}); R.addEventListener("mousedown",function(){pbFRtarget=1;}); R.addEventListener("mouseup",function(){pbFRtarget=0;});
+  L.addEventListener("touchstart",function(e){e.preventDefault();pbFLtarget=1;pbSfxPaddle();},{passive:false}); L.addEventListener("touchend",function(e){e.preventDefault();pbFLtarget=0;},{passive:false}); L.addEventListener("mousedown",function(){pbFLtarget=1;pbSfxPaddle();}); L.addEventListener("mouseup",function(){pbFLtarget=0;});
+  R.addEventListener("touchstart",function(e){e.preventDefault();pbFRtarget=1;pbSfxPaddle();},{passive:false}); R.addEventListener("touchend",function(e){e.preventDefault();pbFRtarget=0;},{passive:false}); R.addEventListener("mousedown",function(){pbFRtarget=1;pbSfxPaddle();}); R.addEventListener("mouseup",function(){pbFRtarget=0;});
   LB.addEventListener("touchstart",function(e){e.preventDefault();e.stopPropagation();pbDoLaunch();},{passive:false}); LB.addEventListener("click",function(e){e.stopPropagation();pbDoLaunch();});
 }
 function pbLoop(){ if(!pbActive)return; pbT++; pbUpdate(); pbDraw(); pbRAF=requestAnimationFrame(pbLoop); }
@@ -7421,7 +7429,7 @@ function pbFlipperCollide(px,py,ang,len,b,active){
     var dot=b.vx*nx+b.vy*ny;
     if(dot<0){ var _mult=active>0.35?1.8:0.5; b.vx-=_mult*dot*nx; b.vy-=_mult*dot*ny; }
     b.vy-=active*0.05;
-    try{ if(active>0.4)haptic(6); }catch(e){}
+    try{ if(active>0.4){ haptic(6); pbSfxPlop(); } }catch(e){}
   }
 }
 // ── the two solid triangles beside the flippers ──────────────────────────

@@ -84,6 +84,17 @@ function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); 
 sz();
 
 let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, best=0, state='loading', overT=0;
+// ── sound: Plop.m4a is the one generic sound — a marker settling into place
+// plays a single plop; a collapse plays one per marker that was on the tower,
+// staggered so it reads as a cascade instead of one simultaneous thud ──────
+function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
+const PLOP_POOL=[0,1,2,3].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; return a; });
+let plopIdx=0;
+function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function sfxCollapse(n){
+  if(!sfxOn()) return;
+  for(let i=0;i<n;i++){ setTimeout(sfxPlop, i*(70+Math.random()*60)); }
+}
 function _defOri(){ var d='vertical'; try{ d=localStorage.getItem('qu33phOrientation')||'vertical'; }catch(e){} return d==='horizontal'?'horizontal':'vertical'; }   // no 'angled' here, so it reads as upright
 let SORIENT=null; try{ SORIENT=localStorage.getItem('qu33phStackOrient')||null; }catch(e){}
 let INK=null;
@@ -187,7 +198,7 @@ function update(){
     else {
       const sp=Math.hypot(cur.velocity.x,cur.velocity.y)+Math.abs(cur.angularVelocity)*30;
       if(sp<0.4) cur.settle++; else cur.settle=0;
-      if(cur.settle>16){ placed.push(cur); score=placed.length; if(score>best){best=score; try{localStorage.setItem('qu33phStackBest',best);}catch(e){}} cur=null; spawn(); }
+      if(cur.settle>16){ placed.push(cur); score=placed.length; sfxPlop(); if(score>best){best=score; try{localStorage.setItem('qu33phStackBest',best);}catch(e){}} cur=null; spawn(); }
     }
   }
   // any previously-placed marker fell off -> topple
@@ -208,7 +219,7 @@ function update(){
   }
   if(state==='over' && overT>0) overT--;
 }
-function gameOver(){ if(state==='over')return; state='over'; overT=80; }
+function gameOver(){ if(state==='over')return; state='over'; overT=80; sfxCollapse(placed.length + (cur?1:0)); }
 
 function drawBody(b){
   const im=IMG[b.color];

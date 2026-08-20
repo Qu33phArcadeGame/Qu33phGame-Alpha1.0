@@ -147,6 +147,12 @@ const sc=document.createElement('canvas'), s2=sc.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 if(THEME==='inverted') document.body.classList.add('th-inverted');
 
+// ─── sound: the same generic plop everything else uses, played on each flip ─
+function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
+const PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; return a; });
+let plopIdx=0;
+function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+
 // ─── assets ───────────────────────────────────────────────────────────────
 function IMG(s){ const i=new Image(); i.src=s; return i; }
 function ready(im){ return im && im.complete && (im.naturalWidth||im.width)>0; }
@@ -464,6 +470,7 @@ window.addEventListener('pointerup',()=>{
   flip(p, aim, lift);
 });
 function flip(p, aim, lift){
+  sfxPlop();
   aim=(aim===undefined)?0.45:aim; lift=(lift===undefined)?1:lift;
   marker.vx=(0.008+p*0.014)*CW*(0.55+0.75*Math.max(0,aim+0.5));
   marker.vy=-(0.026+p*0.012)*CH*lift;

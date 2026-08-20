@@ -78,6 +78,14 @@ function mtext(c,txt,x,y,strokeFirst){
   c.fillText(txt,x,y);
 }
 const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
+
+// ─── sound ──────────────────────────────────────────────────────────────
+function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
+const THROW_POOL=[0,1,2].map(function(){ const a=new Audio('bowling1.m4a'); a.preload='auto'; return a; });
+const PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; return a; });
+let throwIdx=0, plopIdx=0;
+function sfxThrow(){ if(!sfxOn()) return; const a=THROW_POOL[throwIdx=(throwIdx+1)%THROW_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 if(THEME==='inverted') document.body.classList.add('th-inverted');
 // Three connected Qu33ph-Ball machines. Each field uses the full room render so
@@ -401,6 +409,7 @@ window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
 });
 
 function roll(up, dx){
+  sfxThrow();
   const f=F();
   const power=Math.min(1, up/f.pullDiv);
   const aim=Math.max(-1,Math.min(1, dx/f.aimDiv));
@@ -514,6 +523,7 @@ function step(){
     if(ball.t>=ball.dur){
       ball.t=ball.dur;                                  // marker stays put at the hole
       const pts=scoreLanding(ball.x1,ball.y1); resolved++;
+      if(pts>0) sfxPlop();
       // a chair catch reads as its own thing, and the popup shows up at the pocket
       const chair=lastHitChair;
       // The SCORE readout doesn't update yet for a chair catch — only once the
