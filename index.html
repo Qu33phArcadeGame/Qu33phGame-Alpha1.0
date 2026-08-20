@@ -784,7 +784,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v445</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v446</div>
 
 <canvas id="game"></canvas>
 
@@ -3616,6 +3616,7 @@ function endGame(){
   if(totalScore>highScore){
     highScore=totalScore;
     localStorage.setItem("qu33phHigh",highScore);
+    if(gameMode==="single"){ addCoins(25); try{ haptic([15,25,45]); }catch(e){} }
   }
   document.getElementById("rotateBtn").style.display="none";
   document.getElementById("timeline").style.display="none";
@@ -4385,13 +4386,13 @@ function draw(){
 
   if(coinImg.complete && coinImg.naturalWidth){
     let coinSize = Math.round(LEFT_EDGE * 0.5);
-    let coinX = hud0 + (LEFT_EDGE - coinSize) / 2;
+    let coinX = hud0 + 12;
     let coinY = 94;
     ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
     ctx.fillStyle="#ffd700";
     ctx.font=`bold ${Math.round(LEFT_EDGE*0.26)}px Helvetica, Arial, sans-serif`;
     ctx.textAlign="center";
-    ctx.fillText(coins, hud0+LEFT_EDGE/2, coinY + coinSize + 4);
+    ctx.fillText(coins, coinX+coinSize/2, coinY + coinSize + 4);
     ctx.textAlign="left";
   }
 
@@ -4440,10 +4441,10 @@ function drawHudReadable(){
     ctx.font="11px Helvetica, Arial, sans-serif"; ctx.fillStyle="#e6e6e6"; ot("Score",hud0+12,52);
     ctx.font="bold 18px Helvetica, Arial, sans-serif"; ctx.fillStyle="#fff"; ot(String(totalScore),hud0+12,66);
     if(coinImg.complete && coinImg.naturalWidth){
-      let coinSize=Math.round(LEFT_EDGE*0.5), coinX=hud0+(LEFT_EDGE-coinSize)/2, coinY=94;
+      let coinSize=Math.round(LEFT_EDGE*0.5), coinX=hud0+12, coinY=94;
       ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
       ctx.font="bold "+Math.round(LEFT_EDGE*0.26)+"px Helvetica, Arial, sans-serif";
-      ctx.fillStyle="#ffd700"; ctx.textAlign="center"; ot(String(coins), hud0+LEFT_EDGE/2, coinY+coinSize+4); ctx.textAlign="left";
+      ctx.fillStyle="#ffd700"; ctx.textAlign="center"; ot(String(coins), coinX+coinSize/2, coinY+coinSize+4); ctx.textAlign="left";
     }
     if((gameMode==="olympics"||gameMode==="specialolympics")&&olympicsState){
       let os=olympicsState, opp=null;
@@ -4969,11 +4970,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=445&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=445&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=445&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -5001,7 +5002,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=445&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5012,7 +5013,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=445&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=446&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
