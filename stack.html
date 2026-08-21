@@ -88,7 +88,7 @@ let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, b
 // plays a single plop; a collapse plays one per marker that was on the tower,
 // staggered so it reads as a cascade instead of one simultaneous thud ──────
 function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
-const PLOP_POOL=[0,1,2,3].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; return a; });
+const PLOP_POOL=[0,1,2,3].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.5; return a; });
 let plopIdx=0;
 function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 function sfxCollapse(n){

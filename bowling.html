@@ -252,12 +252,12 @@ function newGame(){
 }
 
 function standing(){ let n=0; for(const p of pins) if(!p.gone && !p.down) n++; return n; }
-// A washout: the headpin's down, but pins are still standing on BOTH sides of the
-// lane centre — the classic hard-to-convert leave, distinct from an ordinary 6.
+// A washout: the headpin (blue) is still standing, but pins have also fallen on
+// BOTH sides of it, leaving standing pins split across the lane centre.
 function isWashout(){
-  if(!pins[0].down) return false;
+  if(pins[0].down) return false;
   let left=false, right=false;
-  for(const p of pins){ if(p.gone||p.down) continue; if(p.X<-0.001) left=true; else if(p.X>0.001) right=true; }
+  for(const p of pins){ if(p.gone||p.down) continue; if(p===pins[0]) continue; if(p.X<-0.001) left=true; else if(p.X>0.001) right=true; }
   return left&&right;
 }
 
@@ -518,7 +518,7 @@ function endRoll(fromMega){
     if(roll===0 && strike){ say('QU33PH\u2122','#ffd54a'); sfx('quephe'); }
     else if(roll>0 && cleared){ say('SPARE','#3fd07a'); sfx('mega'); }
     else if(felled===0 && ball && ball.gutter){ say('PEEF','#ff5a5a'); sfxPeef(); }
-    else if(felled===6 && isWashout()){ say('WASHOUT','#ff8a2b'); sfxWashout(); }
+    else if(isWashout()){ say('WASHOUT','#ff8a2b'); sfxWashout(); }
   }
   if(frame<9){
     if(roll===0 && !strike){ roll=1; sweepAndStand(); setChair(); readyNext(); }
@@ -551,7 +551,7 @@ function saveHigh(){
 function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
 const SFX={};
 ['quephe','mega','over'].forEach(function(n){
-  const a=new Audio('sfx/bowl_'+n+'.mp3'); a.preload='auto'; SFX[n]=a;
+  const a=new Audio('sfx/bowl_'+n+'.mp3'); a.preload='auto'; a.volume=0.5; SFX[n]=a;
 });
 function sfx(n){ if(!sfxOn()) return; const a=SFX[n]; if(!a) return; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 
@@ -560,7 +560,7 @@ function sfx(n){ if(!sfxOn()) return; const a=SFX[n]; if(!a) return; try{ a.curr
 const THROW_NAMES=['bowlingthrow1','bowlingthrow2','bowlingthrow3','bowlingthrow4','bowlingthrow5',
   'bowlingthrow6','bowlingthrow7','bowlingthrow8weak','bowlingthrow9','bowlingthrow10','bowlingthrow11',
   'bowlingpeef1','bowlingpeef2','bowlingpeef3','bowlingpeef4','bowlingpeef5','bowlingpeef6','bowlingpeefmedium'];
-const THROW_POOL=THROW_NAMES.map(function(n){ return [0,1].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
+const THROW_POOL=THROW_NAMES.map(function(n){ return [0,1].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; a.volume=0.5; return a; }); });
 let throwTake={};
 function sfxThrow(){
   if(!sfxOn()) return;
@@ -577,7 +577,7 @@ function sfxThrow(){
 // fall. No waiting for the roll to resolve, no guessing which numbered file
 // matches which outcome — it scales itself, for any count from 1 to 10.
 const PIN_NAMES=['bowling1','bowling3','bowling5','bowling5-2','bowling8','bowling9'];
-const PIN_POOL=PIN_NAMES.map(function(n){ return [0,1,2].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; return a; }); });
+const PIN_POOL=PIN_NAMES.map(function(n){ return [0,1,2].map(function(){ const a=new Audio(n+'.m4a'); a.preload='auto'; a.volume=0.5; return a; }); });
 let pinTake={};
 function sfxPin(){
   if(!sfxOn()) return;
@@ -591,8 +591,8 @@ function sfxPin(){
 // touched at all) and a real washout leave. These stay as their own single
 // sounds since they're a distinct callout, layered on top of — not instead
 // of — whatever pin-crash sounds already played live during the roll.
-const PEEF_POOL=[0,1,2].map(function(){ const a=new Audio('bowlingpeeflong.m4a'); a.preload='auto'; return a; });
-const WASHOUT_POOL=[0,1,2].map(function(){ const a=new Audio('bowling6washout.m4a'); a.preload='auto'; return a; });
+const PEEF_POOL=[0,1,2].map(function(){ const a=new Audio('bowlingpeeflong.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+const WASHOUT_POOL=[0,1,2].map(function(){ const a=new Audio('bowling6washout.m4a'); a.preload='auto'; a.volume=0.5; return a; });
 let peefIdx=0, washoutIdx=0;
 function sfxPeef(){ if(!sfxOn()) return; const a=PEEF_POOL[peefIdx=(peefIdx+1)%PEEF_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 function sfxWashout(){ if(!sfxOn()) return; const a=WASHOUT_POOL[washoutIdx=(washoutIdx+1)%WASHOUT_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }

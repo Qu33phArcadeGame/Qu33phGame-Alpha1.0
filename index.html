@@ -784,7 +784,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v448</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v449</div>
 
 <canvas id="game"></canvas>
 
@@ -3170,7 +3170,7 @@ function sfxPlay(kind){
   sfxLast[kind]=i;
   try{
     var a=pool[i].cloneNode();
-    a.volume=0.9;
+    a.volume=0.5;
     // Safety net for future recordings: if a file still has dead air at the front,
     // skip past it rather than playing a second of nothing after the swipe.
     var st=sfxStart[kind+i];
@@ -4976,11 +4976,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=449&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=449&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=449&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -5008,7 +5008,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=449&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5019,7 +5019,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=449&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
@@ -5645,13 +5645,13 @@ function updatePlatformer(){
   if(pfFlappyFreeze){
     // launched off the flappy chair and held mid-air until the first tap
     p.vx=0; p.vy=0;
-    if(pfJumpQ || pfActionQ){ pfFlappyFreeze=false; pfFlappy=true; pfFlappyHint=150; p.vy=PF_FLAP*pfFH(); p.vx=pfFlappySpeed*pfFW(); try{haptic(12);}catch(e){} }
+    if(pfJumpQ || pfActionQ){ pfFlappyFreeze=false; pfFlappy=true; pfFlappyHint=150; p.vy=PF_FLAP*pfFH(); p.vx=pfFlappySpeed*pfFW(); try{haptic(12);}catch(e){} pfSfxJump(); }
     pfJumpQ=false; pfActionQ=false;
   } else if(pfFlappy){
     // flappy bird: constant forward glide, tap to flap up, gravity down; flapping cuts out past the last pipe so you fall to the landing
     p.vx = pfFlappySpeed*pfFW(); p.face=1;
     var canFlap = p.x < pfFlappyEndX;
-    if((pfJumpQ || pfActionQ) && canFlap){ p.vy=PF_FLAP*pfFH(); try{haptic(9);}catch(e){} }
+    if((pfJumpQ || pfActionQ) && canFlap){ p.vy=PF_FLAP*pfFH(); try{haptic(9);}catch(e){} pfSfxJump(); }
     pfJumpQ=false; pfActionQ=false;
     p.vy += 0.62*pfFH(); if(p.vy>12.5*pfFH()) p.vy=12.5*pfFH();
   } else if(pfFlight){
@@ -5672,8 +5672,8 @@ function updatePlatformer(){
     if(pfMove!==0) p.face = pfMove>0?1:-1;
     if(p.onGround) pfAirJumps=0;
     var _tryJump=function(){
-      if(p.onGround){ p.vy=JUMP*_ch.jump; p.onGround=false; try{haptic(10);}catch(e){} return; }
-      if((_ch.airJumps||0) > pfAirJumps){ pfAirJumps++; p.vy=JUMP*_ch.jump*0.94; try{haptic(8);}catch(e){} }
+      if(p.onGround){ p.vy=JUMP*_ch.jump; p.onGround=false; try{haptic(10);}catch(e){} pfSfxJump(); return; }
+      if((_ch.airJumps||0) > pfAirJumps){ pfAirJumps++; p.vy=JUMP*_ch.jump*0.94; try{haptic(8);}catch(e){} pfSfxJump(); }
     };
     if(pfJumpQ){ _tryJump(); } pfJumpQ=false;
     if(pfActionQ){ _tryJump(); pfActionQ=false; }          // action also jumps
@@ -5813,6 +5813,23 @@ var PF_CHARS=[
 var pfCharIdx=0;
 try{ var _sc=parseInt(localStorage.getItem("qu33phJumpChar")||"0",10); if(_sc>=0&&_sc<PF_CHARS.length) pfCharIdx=_sc; }catch(e){}
 function pfChar(){ return PF_CHARS[pfCharIdx]||PF_CHARS[0]; }
+// ── jump sound: pitched plops, one step higher per class — cats get a single
+// higher chirp, birds ("chickens") get three even-higher chirps fired in quick
+// succession so it reads as a "ca-caw" instead of one plop ─────────────────
+function pfSfxOn(){ try{ return localStorage.getItem("qu33phSfx")!=="0"; }catch(e){ return true; } }
+const PF_JUMP_POOL=[0,1,2].map(function(){ const a=new Audio('plopjump.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+const PF_CATJUMP_POOL=[0,1,2].map(function(){ const a=new Audio('plopjumpcat.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+const PF_CHIRP_POOL=[0,1,2,3].map(function(){ const a=new Audio('plopchirp.m4a'); a.preload='auto'; a.volume=0.45; return a; });
+let pfJumpIdx=0, pfCatJumpIdx=0, pfChirpIdx=0;
+function pfSfxJump(){
+  if(!pfSfxOn()) return;
+  var cls=pfClass();
+  if(cls==="cat"){ const a=PF_CATJUMP_POOL[pfCatJumpIdx=(pfCatJumpIdx+1)%PF_CATJUMP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+  else if(cls==="bird"){
+    for(let i=0;i<3;i++){ setTimeout(function(){ const a=PF_CHIRP_POOL[pfChirpIdx=(pfChirpIdx+1)%PF_CHIRP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }, i*70); }
+  }
+  else { const a=PF_JUMP_POOL[pfJumpIdx=(pfJumpIdx+1)%PF_JUMP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+}
 var PF_GUY_H=54;          // on-screen height of the guy (tweakable)
 var PF_GUY_FEET=15;       // how far below player-center the feet sit
 // How much of a sprite image the character actually occupies, as fractions of the image.
@@ -6097,18 +6114,21 @@ function pfDrawPipes(){
     var pipe=pfPipes[i], hg=pipe.gapH*0.5, img=stackImages[pipe.color];
     var glow=(pipe.color==="red"?"#ff3040":pipe.color==="green"?"#30ff70":"#3a7bff");
     var topB=pipe.gapY-hg, botT=pipe.gapY+hg;
-    pfPillar(img, glow, topB, Math.max(visT, pfFlappyCeilY-160), pipe.x, pipe.w);   // top pipe (gap at bottom)
-    pfPillar(img, glow, botT, Math.min(visB, pfFlappyFloorY+160), pipe.x, pipe.w);   // bottom pipe (gap at top)
+    pfPillar(img, glow, topB, Math.max(visT, pfFlappyCeilY-160), pipe.x, pipe.w, true);    // top pipe (gap at bottom) — flipped so it mirrors the bottom one
+    pfPillar(img, glow, botT, Math.min(visB, pfFlappyFloorY+160), pipe.x, pipe.w, false);  // bottom pipe (gap at top)
     // bright neon caps framing the gap
     c.save(); c.fillStyle=glow; c.shadowColor=glow; c.shadowBlur=10;
     c.fillRect(pipe.x-3, topB-6, pipe.w+6, 6); c.fillRect(pipe.x-3, botT, pipe.w+6, 6);
     c.restore();
   }
 }
-function pfPillar(img, glow, gapY, farY, x, w){
+function pfPillar(img, glow, gapY, farY, x, w, flipV){
   var top=Math.min(gapY,farY), len=Math.abs(farY-gapY); if(len<=0) return;
   var c=pfctx; c.save(); c.shadowColor=glow; c.shadowBlur=8;
-  if(img&&img.complete&&img.naturalWidth){ c.drawImage(img, x, top, w, len); }   // ONE marker, enlarged to fill the pipe (fat pipes keep it from looking skinny)
+  if(img&&img.complete&&img.naturalWidth){
+    if(flipV){ c.translate(x, top+len); c.scale(1,-1); c.drawImage(img, 0, 0, w, len); }   // mirrored vertically to match the bottom pipe
+    else { c.drawImage(img, x, top, w, len); }   // ONE marker, enlarged to fill the pipe (fat pipes keep it from looking skinny)
+  }
   else { c.fillStyle=glow; c.fillRect(x, top, w, len); }
   c.restore();
 }
@@ -7371,8 +7391,8 @@ var pbBall=null,pbScore=0,pbBalls=3,pbState="ready",pbT=0,pbHigh=0,pbChairCD=0,p
 var pbFL=0,pbFR=0,pbFLtarget=0,pbFRtarget=0,pbMsg="",pbMsgT=0;
 // ── pinball sound: paddle.m4a fires when a flipper is actually pressed,
 // Plop.m4a fires when the ball actually connects with one ──────────────────
-const PB_PADDLE_POOL=[0,1,2].map(function(){ const a=new Audio('paddle.m4a'); a.preload='auto'; return a; });
-const PB_PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; return a; });
+const PB_PADDLE_POOL=[0,1,2].map(function(){ const a=new Audio('paddle.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+const PB_PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.5; return a; });
 let pbPaddleIdx=0, pbPlopIdx=0;
 function pbSfxOn(){ try{ return localStorage.getItem("qu33phSfx")!=="0"; }catch(e){ return true; } }
 function pbSfxPaddle(){ if(!pbSfxOn()) return; const a=PB_PADDLE_POOL[pbPaddleIdx=(pbPaddleIdx+1)%PB_PADDLE_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
