@@ -784,7 +784,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v447</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v448</div>
 
 <canvas id="game"></canvas>
 
@@ -1191,6 +1191,12 @@ const markerImages = { red:new Image(), green:new Image(), blue:new Image() };
 markerImages.red.src="red.png";
 markerImages.green.src="green.png";
 markerImages.blue.src="blue.png";
+// dedicated "stack" marker art — used by Flip's platforms and, as of this change,
+// Qu33ph Jump's pipes (Flap mode) and platforms too, instead of the generic markers above.
+const stackImages = { red:new Image(), green:new Image(), blue:new Image() };
+stackImages.red.src="stackred.png";
+stackImages.green.src="stackgreen.png";
+stackImages.blue.src="stackblue.png";
 
 const cartoonImages = { red:new Image(), green:new Image(), blue:new Image() };
 cartoonImages.red.src="redC.png";
@@ -4970,11 +4976,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -5002,7 +5008,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5013,7 +5019,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=447&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=448&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
@@ -6063,19 +6069,32 @@ function drawPfBg(W,H){
 }
 function pfSlab(x,y,w){
   var th=pfTheme();
-  if(th==="neon"){ pfctx.save(); pfctx.shadowColor="#28ff96"; pfctx.shadowBlur=8; pfctx.fillStyle="#0a2418"; rrPf(pfctx,x,y,w,9,3); pfctx.fill(); pfctx.fillStyle="#28ff96"; pfctx.fillRect(x,y,w,2.6); pfctx.restore(); return; }
-  if(th==="galaxy"){ pfctx.save(); pfctx.shadowColor="#b478ff"; pfctx.shadowBlur=10; pfctx.fillStyle="#241246"; rrPf(pfctx,x,y,w,9,3); pfctx.fill(); pfctx.fillStyle="#c9a0ff"; pfctx.fillRect(x,y,w,2.6); pfctx.restore(); return; }
-  if(th==="sunset"){ pfctx.save(); pfctx.shadowColor="rgba(255,200,60,0.6)"; pfctx.shadowBlur=6; pfctx.fillStyle="#4a3510"; rrPf(pfctx,x,y,w,9,3); pfctx.fill(); pfctx.fillStyle="#ffd24a"; pfctx.fillRect(x,y,w,2.6); pfctx.restore(); return; }
-  if(th==="cartoon"){ pfctx.fillStyle="#eee"; rrPf(pfctx,x,y,w,9,3); pfctx.fill(); pfctx.lineWidth=2.6; pfctx.strokeStyle="#111"; rrPf(pfctx,x,y,w,9,3); pfctx.stroke(); return; }
-  pfctx.fillStyle="#2a2150"; rrPf(pfctx,x,y,w,9,3); pfctx.fill();
-  pfctx.fillStyle="#6a3fff"; pfctx.fillRect(x,y,w,2.6);
-  pfctx.fillStyle="rgba(138,255,234,0.35)"; pfctx.fillRect(x,y+2.6,w,1);
+  var glow = th==="neon"?"#28ff96" : th==="galaxy"?"#b478ff" : th==="sunset"?"rgba(255,200,60,0.6)" : th==="cartoon"?"#111" : null;
+  var thick=9;
+  // deterministic pick from position so the same platform always renders the same
+  // colour (no per-frame flicker), cycling red/green/blue across the level like Flip does.
+  var idx=Math.abs(Math.round(x/37+y/53))%3;
+  var img = idx===0?stackImages.red:idx===1?stackImages.green:stackImages.blue;
+  pfctx.save();
+  if(glow){ pfctx.shadowColor=glow; pfctx.shadowBlur=th==="cartoon"?0:8; }
+  if(img&&img.complete&&img.naturalWidth){
+    pfctx.save();
+    pfctx.translate(x+w/2, y+thick/2);
+    pfctx.rotate(Math.PI/2);
+    pfctx.drawImage(img, -thick/2, -w/2, thick, w);
+    pfctx.restore();
+    if(th==="cartoon"){ pfctx.lineWidth=1.6; pfctx.strokeStyle="#111"; rrPf(pfctx,x,y,w,thick,3); pfctx.stroke(); }
+  } else {
+    var fallback = idx===0?"#ff3030":idx===1?"#30d060":"#3a7bff";
+    pfctx.fillStyle=fallback; rrPf(pfctx,x,y,w,thick,3); pfctx.fill();
+  }
+  pfctx.restore();
 }
 function pfDrawPipes(){
   if(!pfPipes.length) return;
   var c=pfctx, H=pfCanvas.height, _vh=(H*0.5)/pfEZ(), visT=pfCamY+H*0.5-_vh-60, visB=pfCamY+H*0.5+_vh+60;
   for(var i=0;i<pfPipes.length;i++){
-    var pipe=pfPipes[i], hg=pipe.gapH*0.5, img=markerImages[pipe.color];
+    var pipe=pfPipes[i], hg=pipe.gapH*0.5, img=stackImages[pipe.color];
     var glow=(pipe.color==="red"?"#ff3040":pipe.color==="green"?"#30ff70":"#3a7bff");
     var topB=pipe.gapY-hg, botT=pipe.gapY+hg;
     pfPillar(img, glow, topB, Math.max(visT, pfFlappyCeilY-160), pipe.x, pipe.w);   // top pipe (gap at bottom)
