@@ -94,6 +94,23 @@ let state='pick', mode='1p';
 let s1, s2, ball, score1=0, score2=0, goalTimer=0, msg='', winner='';
 let c1='green', c2='blue';
 let winGoals=3;
+
+// ── sound: hitc = "hit close" (your spinner, s1, bottom), hitf = "hit far"
+// (opponent/CPU spinner, s2, top), oob = ball leaving the field via a goal.
+// Each fires a random pick from its pool so it doesn't repeat identically. ──
+function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
+const HITC_POOL=['hitc1.m4a','hitc2.m4a','hitc3.m4a'].map(function(n){ const a=new Audio(n); a.preload='auto'; a.volume=0.5; return a; });
+const HITF_POOL=['hitf1.m4a','hitf2.m4a','hitf3.m4a'].map(function(n){ const a=new Audio(n); a.preload='auto'; a.volume=0.5; return a; });
+const OOB_POOL=['oob1.m4a','oob2.m4a'].map(function(n){ const a=new Audio(n); a.preload='auto'; a.volume=0.5; return a; });
+function sfxPickPlay(pool){
+  if(!sfxOn()) return;
+  const i=(Math.random()*pool.length)|0;
+  const a=pool[i];
+  try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){}
+}
+function sfxHitClose(){ sfxPickPlay(HITC_POOL); }
+function sfxHitFar(){ sfxPickPlay(HITF_POOL); }
+function sfxOOB(){ sfxPickPlay(OOB_POOL); }
 let R_BALL, R_SPIN, GOAL_HALF;
 
 function layout(){
@@ -103,8 +120,8 @@ function layout(){
 }
 function resetPositions(){
   ball.x=CW/2; ball.y=centerY; ball.vx=0; ball.vy=0;
-  s1={x:CW/2, y:CH*0.80, px:CW/2, py:CH*0.80, vx:0, vy:0, spin:0, drag:null};
-  s2={x:CW/2, y:CH*0.20, px:CW/2, py:CH*0.20, vx:0, vy:0, spin:0, drag:null};
+  s1={x:CW/2, y:CH*0.80, px:CW/2, py:CH*0.80, vx:0, vy:0, spin:0, drag:null, touching:false};
+  s2={x:CW/2, y:CH*0.20, px:CW/2, py:CH*0.20, vx:0, vy:0, spin:0, drag:null, touching:false};
 }
 
 // ---- input (multitouch) ----
@@ -142,14 +159,15 @@ function pickTap(p){
   document.getElementById('resetBtn').style.display='block';
 }
 
-function collide(sp){
+function collide(sp, isClose){
   let dx=ball.x-sp.x, dy=ball.y-sp.y, d=Math.hypot(dx,dy), rr=R_BALL+R_SPIN*0.82;
   if(d<rr && d>0.001){
+    if(!sp.touching){ sp.touching=true; if(isClose) sfxHitClose(); else sfxHitFar(); }
     let nx=dx/d, ny=dy/d; ball.x=sp.x+nx*rr; ball.y=sp.y+ny*rr;
     let relv=Math.max(0, sp.vx*nx+sp.vy*ny), kick=relv+CW*0.010;
     ball.vx=nx*kick+sp.vx*0.6; ball.vy=ny*kick+sp.vy*0.6;
     let s=Math.hypot(ball.vx,ball.vy), MX=CW*0.075; if(s>MX){ ball.vx*=MX/s; ball.vy*=MX/s; }
-  }
+  } else { sp.touching=false; }
 }
 function update(){
   s1.spin += 0.25 + Math.hypot(s1.vx,s1.vy)*0.02;
@@ -170,9 +188,9 @@ function update(){
   if(Math.abs(ball.vx)<0.03)ball.vx=0; if(Math.abs(ball.vy)<0.03)ball.vy=0;
   if(ball.x<R_BALL){ ball.x=R_BALL; ball.vx=Math.abs(ball.vx)*0.9; }
   if(ball.x>CW-R_BALL){ ball.x=CW-R_BALL; ball.vx=-Math.abs(ball.vx)*0.9; }
-  if(ball.y<R_BALL){ score(1); return; }          // ball reaches the TOP end = you score
-  if(ball.y>CH-R_BALL){ score(2); return; }        // ball reaches the BOTTOM end = they score
-  collide(s1); collide(s2);
+  if(ball.y<R_BALL){ sfxOOB(); score(1); return; }          // ball reaches the TOP end = you score
+  if(ball.y>CH-R_BALL){ sfxOOB(); score(2); return; }        // ball reaches the BOTTOM end = they score
+  collide(s1, true); collide(s2, false);
 }
 function score(who){
   if(who===1){ score1++; msg='GOAL!'; } else { score2++; msg=(mode==='2p'?'P2 SCORES':'CPU SCORES'); }

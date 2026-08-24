@@ -523,9 +523,14 @@ function step(){
     if(ball.t>=ball.dur){
       ball.t=ball.dur;                                  // marker stays put at the hole
       const pts=scoreLanding(ball.x1,ball.y1); resolved++;
-      if(pts>0) sfxPlop();
-      // a chair catch reads as its own thing, and the popup shows up at the pocket
       const chair=lastHitChair;
+      // direct hit (no chair chain): the plop plays right away, same as before.
+      // chair hits get their "catch" plop here instead — the suspense of the
+      // climb should build in silence, not have the payout spoiled by an early
+      // success sound before the hops even start.
+      if(pts>0 && !chair) sfxPlop();
+      else if(chair) sfxPlop();
+      // a chair catch reads as its own thing, and the popup shows up at the pocket
       // The SCORE readout doesn't update yet for a chair catch — only once the
       // marker actually finishes bouncing up to where it lands. Otherwise the
       // number jumps the instant you land, before the hop even plays, and you
@@ -549,6 +554,7 @@ function step(){
       hop.t++;
       if(hop.t>=hop.dur){
         ball.x1=hop.x1; ball.y1=hop.y1;
+        sfxPlop();   // each hop lands with its own plop — the last one plays exactly when it settles
         if(hopQueue.length){
           const n=hopQueue.shift();
           hop={x0:ball.x1,y0:ball.y1,x1:n.x,y1:n.y,t:0,dur:26};
