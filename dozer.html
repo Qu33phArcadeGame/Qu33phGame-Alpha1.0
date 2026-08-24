@@ -64,6 +64,33 @@ const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLow
 if(THEME==='inverted') document.body.classList.add('th-inverted');
 const $=id=>document.getElementById(id);
 
+// ── sound: coins falling off the ledge get a random coin1-5 pick each, and
+// stack (play staggered, not silently on top of each other) if several tip
+// over the same tick or pour in from a refill. Markers falling reuse the
+// existing pin-hit / peef clips from Bowling rather than needing new audio. ─
+function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
+const COIN_POOL=['coin1.m4a','coin2.m4a','coin3.m4a','coin4.m4a','coin5.m4a'].map(function(n){ const a=new Audio(n); a.preload='auto'; a.volume=0.5; return a; });
+const MARKER_FALL_NAMES=['bowling1','bowling3','bowling5','bowling5-2','bowling8','bowling9',
+  'bowlingpeef1','bowlingpeef2','bowlingpeef3','bowlingpeef4','bowlingpeef5','bowlingpeef6','bowlingpeefmedium'];
+const MARKER_FALL_POOL=MARKER_FALL_NAMES.map(function(n){ const a=new Audio(n+'.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+function sfxCoin(){
+  if(!sfxOn()) return;
+  const a=COIN_POOL[(Math.random()*COIN_POOL.length)|0];
+  try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){}
+}
+function sfxMarkerFall(){
+  if(!sfxOn()) return;
+  const a=MARKER_FALL_POOL[(Math.random()*MARKER_FALL_POOL.length)|0];
+  try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){}
+}
+// used for the refill pour — plenty of coins land at once, so this staggers a
+// capped number of hits instead of firing 50+ overlapping clips at once.
+function sfxCoinBurst(n){
+  if(!sfxOn()) return;
+  const plays=Math.min(n,10);
+  for(let i=0;i<plays;i++){ setTimeout(sfxCoin, i*(55+Math.random()*45)); }
+}
+
 // ─── assets ───────────────────────────────────────────────────────────────
 function IMG(s){ const i=new Image(); i.src=s; return i; }
 function ready(i){ return i && i.complete && i.naturalWidth>0; }
@@ -276,9 +303,9 @@ function step(dt){
       items.splice(i,1);
       fallers.push({ x:bedX(a.u,1), y:bedY(1), vy:cabH*0.10, vx:(a.u-0.5)*cabW*0.04, rot:a.rot, spin:(Math.random()-0.5)*3.0,
                      kind:a.kind, col:a.col, sz:bedScale(1) });   // watch it drop over the front
-      if(a.kind==='coin'){ coins++; popups.push({txt:'+1',life:44,col:'#ffd700',u:a.u}); }
+      if(a.kind==='coin'){ coins++; popups.push({txt:'+1',life:44,col:'#ffd700',u:a.u}); sfxCoin(); }
       else { queue.push(a.col); markers=queue.length;             // you get that exact marker back
-             popups.push({txt:'MARKER BACK',life:58,col:'#8fd0ff',u:a.u}); updateBuy(); }
+             popups.push({txt:'MARKER BACK',life:58,col:'#8fd0ff',u:a.u}); updateBuy(); sfxMarkerFall(); }
     }
   }
   for(let i=fallers.length-1;i>=0;i--){        // tumble down the front of the machine, then retire
@@ -303,6 +330,7 @@ function doRefill(){
   }
   refillT=2.2;                                          // nothing tips over the ledge mid-drop
   popups.push({txt:'COIN DROP!',life:90,col:'#ffd700',big:true});
+  sfxCoinBurst(n);
 }
 function payout(){
   if(paid || coins<=0) return;
