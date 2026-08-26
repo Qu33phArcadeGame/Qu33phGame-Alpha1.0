@@ -72,13 +72,14 @@
     background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);
     color:#fff; border:2.5px solid #fff; border-radius:4px 9px 9px 4px;
     font-family:Helvetica,Arial,sans-serif; font-size:9.5px; font-weight:bold; letter-spacing:1px;
-    padding:5px 10px; text-decoration:none; -webkit-tap-highlight-color:transparent;
+    padding:5px 10px; text-decoration:none; -webkit-tap-highlight-color:transparent; outline:none;
     box-shadow:0 3px 0 rgba(0,0,0,0.55), 0 6px 10px rgba(0,0,0,0.4), inset 0 1.5px 0 rgba(255,255,255,0.4), inset 0 -4px 7px rgba(0,0,0,0.45);
     transform:translateY(0); transition:transform 0.08s ease, box-shadow 0.08s ease; }
   .game-back-tl::before{ content:""; display:block; position:absolute; left:-15px; top:2px; bottom:2px;
     width:15px; background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);
     border:2.5px solid #fff; border-radius:8px 2px 2px 8px;
     box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.45); }
+  .game-back-tl:focus{ outline:none; }
   .game-back-tl:active{ background:linear-gradient(180deg,#161616 0%,#000 100%); transform:translateY(3px);
     box-shadow:0 0 0 rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.6); }
   .game-back-tl:active::before{ background:linear-gradient(180deg,#161616 0%,#000 100%); box-shadow:inset 0 2px 5px rgba(0,0,0,0.6); }

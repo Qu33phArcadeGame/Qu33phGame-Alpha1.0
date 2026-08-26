@@ -784,7 +784,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v452</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v453</div>
 
 <canvas id="game"></canvas>
 
@@ -2588,6 +2588,7 @@ function startSlotWinStars(winAmt){
 }
 
 function showTitle(){
+  stopMusic();
   if(xtimeApplied){ ROUND_TIME-=5; TOTAL_TIME=Math.round(ROUND_TIME*1.5); xtimeApplied=false; }
   paused=false;
   { var _pb=document.getElementById("pauseBtn"); if(_pb) _pb.style.display="none"; var _po=document.getElementById("pauseOverlay"); if(_po) _po.style.display="none"; }
@@ -4879,13 +4880,45 @@ function pfFH(){ return (pfCanvas?pfCanvas.height:PF_REF_H)/PF_REF_H; }
 function pfFW(){ return (pfCanvas?pfCanvas.width :PF_REF_W)/PF_REF_W; }
 const pfFlappySpeed=5.2, PF_FLAP=-9.3;
 const pfMegaImg=new Image(); pfMegaImg.src="slotmega.jpg";
-// ── Qu33ph Jump soundtrack (starts on first tap; mute toggle lives in Settings) ──
-const jumpMusic=new Audio("jumpmusic.mp3"); jumpMusic.loop=true; jumpMusic.volume=0.45; jumpMusic.preload="auto";
-let jumpMusicMuted=false; try{ jumpMusicMuted=(localStorage.getItem("qu33phJumpMute")==="1"); }catch(e){}
-function pfMusicStart(){ if(jumpMusicMuted || arcadeGame!=="jump" || arcadePaused) return; try{ if(jumpMusic.paused){ var pr=jumpMusic.play(); if(pr&&pr.catch) pr.catch(function(){}); } }catch(e){} }
-function pfMusicPause(){ try{ jumpMusic.pause(); }catch(e){} }
-function pfMusicStop(){ try{ jumpMusic.pause(); jumpMusic.currentTime=0; }catch(e){} }
-function setJumpMute(m){ jumpMusicMuted=!!m; try{ localStorage.setItem("qu33phJumpMute", m?"1":"0"); }catch(e){} if(m){ pfMusicStop(); } else { pfMusicStart(); } }
+// ── background music: one master on/off (Settings), but which TRACK plays
+// always matches whichever screen you're actually looking at right now —
+// never the leftover screen from before you navigated away. musicScreen is
+// the single source of truth for "what's on screen that has music"; every
+// place that leaves a musical screen (Settings, the title, the arcade menu,
+// launching a different game) explicitly clears or reassigns it. ──────────
+const MUSIC_TRACKS = {
+  jump: (function(){ var a=new Audio("jumpmusic.mp3"); a.loop=true; a.volume=0.45; a.preload="auto"; return a; })(),
+  pinball: (function(){ var a=new Audio("pinballmusic.mp3"); a.loop=true; a.volume=0.45; a.preload="auto"; return a; })()
+};
+let musicOn=true;
+try{
+  var _mset=localStorage.getItem("qu33phMusicOn");
+  if(_mset!==null) musicOn = _mset!=="0";
+  else if(localStorage.getItem("qu33phJumpMute")==="1") musicOn=false;   // honor the old per-jump key if that's all that ever existed
+}catch(e){}
+let jumpMusicMuted=!musicOn;   // kept in sync for any old code path still reading this name
+let musicScreen=null;          // which track SHOULD be playing right now; null = none
+function _musicPlay(key){ var a=MUSIC_TRACKS[key]; if(!a) return; try{ if(a.paused){ var pr=a.play(); if(pr&&pr.catch) pr.catch(function(){}); } }catch(e){} }
+function setMusicScreen(key){
+  if(musicScreen && musicScreen!==key && MUSIC_TRACKS[musicScreen]){ try{ MUSIC_TRACKS[musicScreen].pause(); MUSIC_TRACKS[musicScreen].currentTime=0; }catch(e){} }
+  musicScreen=key;
+  if(musicOn && key && !arcadePaused) _musicPlay(key);
+}
+function stopMusic(){ if(musicScreen && MUSIC_TRACKS[musicScreen]){ try{ MUSIC_TRACKS[musicScreen].pause(); MUSIC_TRACKS[musicScreen].currentTime=0; }catch(e){} } musicScreen=null; }
+function pauseMusic(){ if(musicScreen && MUSIC_TRACKS[musicScreen]){ try{ MUSIC_TRACKS[musicScreen].pause(); }catch(e){} } }
+function resumeMusic(){ if(musicOn && musicScreen) _musicPlay(musicScreen); }
+function setMusicOn(on){
+  musicOn=!!on; jumpMusicMuted=!musicOn;
+  try{ localStorage.setItem("qu33phMusicOn", on?"1":"0"); }catch(e){}
+  if(!on){ pauseMusic(); } else { resumeMusic(); }
+}
+// old Jump-specific names kept as thin wrappers so every existing call site
+// (there are many) keeps working exactly as before, just routed through the
+// screen-aware system above instead of unconditionally touching Jump's track.
+function pfMusicStart(){ if(arcadeGame==="jump") setMusicScreen("jump"); }
+function pfMusicPause(){ pauseMusic(); }
+function pfMusicStop(){ stopMusic(); }
+function setJumpMute(m){ setMusicOn(!m); }
 // in-cabinet level select + binder state
 let lsSel=0, lsGlow=0;
 let bcTab="dex", bcSel=0, bcScroll=0, bcT=0, bcView="grid", bcGridScroll=0;
@@ -4940,6 +4973,7 @@ function centreAllCabIcons(){
   for(var i=0;i<l.length;i++) centreCabIcon(l[i]);
 }
 function showArcadeMenu(){
+  stopMusic();
   arcadeFullscreen=false; var _pe=document.getElementById("pfExpandBtn"); if(_pe)_pe.style.display="none"; try{fsClearBtns();}catch(e){}
   document.getElementById("titleScreen").style.display="none";
   var tc=document.getElementById("titleCoins"); if(tc) tc.style.display="none";
@@ -4976,11 +5010,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=452&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=453&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=452&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=453&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=452&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=453&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -5008,7 +5042,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=452&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=453&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5019,7 +5053,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=452&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=453&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
@@ -7371,8 +7405,8 @@ function doFuse(){
   closeFuse();
   try{ startFuseAnim(comp[0],comp[1],caught,bnum,ent2); }catch(e){}
 }
-function openArcadePause(){ arcadePaused=true; document.getElementById("arcadePause").style.display="flex"; pfMusicPause(); }
-function resumeArcade(){ arcadePaused=false; document.getElementById("arcadePause").style.display="none"; pfMusicStart(); }
+function openArcadePause(){ arcadePaused=true; document.getElementById("arcadePause").style.display="flex"; pauseMusic(); }
+function resumeArcade(){ arcadePaused=false; document.getElementById("arcadePause").style.display="none"; resumeMusic(); }
 function returnToArcade(){
   arcadePaused=false; var pv=document.getElementById("arcadePause"); if(pv) pv.style.display="none";
   if(arcadeGame==="jump"){ pfMusicStop(); showJumpMenu(); return; }        // back to the mode menu, not the cabinet
@@ -7445,8 +7479,8 @@ function pbBuildTable(){ pbBumpers=[{x:0.325,y:0.0,r:0.105,hit:0},{x:0.475,y:-0.
 function pbResetGame(){ pbScore=0;pbBalls=3;pbMsg="";pbMsgT=0;pbBallSeq=0;pbNewBall(); }
 function pbNewBall(){ pbBall={x:1.10,y:1.14,vx:0,vy:0,launched:false,toMega:false,inChute:true,color:(pbBallSeq%2===0?"red":"green"),spin:0}; pbBallSeq++; pbState="ready"; }
 function pbDoLaunch(){ if(pbState==="over"){ pbResetGame(); return; } if(pbState==="ready"&&pbBall&&!pbBall.launched){ pbBall.vy=-0.055;pbBall.vx=-0.015;pbBall.launched=true;pbState="play"; try{haptic(20);}catch(e){} } }
-function launchPinball(){ try{ var _st=(typeof styleOf==="function"?styleOf():currentTheme); pbBlueImg.src=(_st==="cartoon")?"bluepaddleC.png":"bluepaddle.png"; var _ps=document.getElementById("pinballScreen"); _ps.classList.toggle("pb-comic", _st==="cartoon"); }catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
-function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; showArcadeMenu(); }
+function launchPinball(){ try{ var _st=(typeof styleOf==="function"?styleOf():currentTheme); pbBlueImg.src=(_st==="cartoon")?"bluepaddleC.png":"bluepaddle.png"; var _ps=document.getElementById("pinballScreen"); _ps.classList.toggle("pb-comic", _st==="cartoon"); }catch(e){} document.getElementById("arcadeMenu").style.display="none"; document.getElementById("pinballScreen").style.display="block"; pbCanvas=document.getElementById("pinballCanvas"); arcadeGame="pinball"; setMusicScreen("pinball"); layoutPinball(); pbResetGame(); pbSetupControls(); pbActive=true; if(pbRAF)cancelAnimationFrame(pbRAF); pbLoop(); }
+function pbBack(){ pbActive=false; if(pbRAF){cancelAnimationFrame(pbRAF);pbRAF=null;} document.getElementById("pinballScreen").style.display="none"; stopMusic(); showArcadeMenu(); }
 function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
   var L=document.getElementById("pbFlipLeft"),R=document.getElementById("pbFlipRight"),LB=document.getElementById("pbLaunchBtn");
   L.addEventListener("touchstart",function(e){e.preventDefault();pbFLtarget=1;pbSfxPaddle();},{passive:false}); L.addEventListener("touchend",function(e){e.preventDefault();pbFLtarget=0;},{passive:false}); L.addEventListener("mousedown",function(){pbFLtarget=1;pbSfxPaddle();}); L.addEventListener("mouseup",function(){pbFLtarget=0;});
@@ -8326,6 +8360,7 @@ function showShop(){
   } catch(e){}
 }
 function showSettings(){
+  stopMusic();
   try {
     document.getElementById("titleScreen").style.display="none";
     document.getElementById("titleCoins").style.display="none";

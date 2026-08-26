@@ -25,20 +25,21 @@
     background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);
     color:#fff; border:2.5px solid #fff; border-radius:4px 9px 9px 4px;
     font-family:Helvetica,Arial,sans-serif; font-size:9.5px; font-weight:bold; letter-spacing:1px;
-    padding:5px 10px; text-decoration:none; -webkit-tap-highlight-color:transparent;
+    padding:5px 10px; text-decoration:none; -webkit-tap-highlight-color:transparent; outline:none;
     box-shadow:0 3px 0 rgba(0,0,0,0.55), 0 6px 10px rgba(0,0,0,0.4), inset 0 1.5px 0 rgba(255,255,255,0.4), inset 0 -4px 7px rgba(0,0,0,0.45);
     transform:translateY(0); transition:transform 0.08s ease, box-shadow 0.08s ease; }
   .game-back-tl::before{ content:""; display:block; position:absolute; left:-15px; top:2px; bottom:2px;
     width:15px; background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);
     border:2.5px solid #fff; border-radius:8px 2px 2px 8px;
     box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.45); }
+  .game-back-tl:focus{ outline:none; }
   .game-back-tl:active{ background:linear-gradient(180deg,#161616 0%,#000 100%); transform:translateY(3px);
     box-shadow:0 0 0 rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.6); }
   .game-back-tl:active::before{ background:linear-gradient(180deg,#161616 0%,#000 100%); box-shadow:inset 0 2px 5px rgba(0,0,0,0.6); }
 </style>
 <a id="gameBackBtn" class="game-back-tl" href="index.html?openArcade=1">&larr; BACK</a>
 <div id="wrap">
-  <img id="bg" src="bowling.jpg?v=378" draggable="false" onerror="this.style.opacity=0.12">
+  <img id="bg" src="bowling.jpg?v=379" draggable="false" onerror="this.style.opacity=0.12">
   <canvas id="cv"></canvas>
 </div>
 <script>
@@ -692,7 +693,16 @@ function drawPins(){
 function markerShadow(q,h,rot){
   ctx.save(); ctx.globalAlpha=0.38; ctx.fillStyle='#000';
   ctx.translate(q.x,q.y+h*0.09); ctx.rotate(-rot); ctx.scale(1,0.34);
-  ctx.beginPath(); ctx.ellipse(0,0,h*0.14,h*0.46,0,0,7); ctx.fill();
+  // a real stadium/capsule shape (straight sides + rounded ends), not an ellipse —
+  // same half-width/half-length proportions the old ellipse used, so it's the
+  // same footprint size, just the true marker shape instead of an oval guess
+  var hw=h*0.14, hl=h*0.46, straight=Math.max(0,hl-hw);
+  ctx.beginPath();
+  ctx.arc(0,-straight,hw,Math.PI,0);
+  ctx.lineTo(hw,straight);
+  ctx.arc(0,straight,hw,0,Math.PI);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 }
 function drawBall(){

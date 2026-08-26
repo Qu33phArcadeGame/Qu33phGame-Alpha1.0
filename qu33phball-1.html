@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Qu33ph Skee-Ball</title>
+<style>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; overflow:hidden; font-family:Helvetica,Arial,sans-serif; color:#fff; touch-action:none; user-select:none; background:#000; }
+  #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #stage{ position:relative; }
+  /* Mirror mode: flip the whole page with one CSS transform — the field, the
+     score readout, and the laneBtn control all mirror together. Nothing is
+     counter-mirrored. */
+  body.qmirror{ transform:scaleX(-1); }
+  body.th-inverted{ filter:invert(1); }
+  #laneBtn{ position:fixed; left:26px; bottom:14px; z-index:6;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%); color:#fff; border:2.5px solid #fff;
+    font-family:Helvetica,Arial,sans-serif; font-size:10.5px; font-weight:bold; letter-spacing:1px;
+    padding:8px 12px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    box-shadow:0 3px 0 rgba(0,0,0,0.55), 0 6px 10px rgba(0,0,0,0.4), inset 0 1.5px 0 rgba(255,255,255,0.4), inset 0 -4px 7px rgba(0,0,0,0.45);
+    transform:translateY(0); transition:transform 0.08s ease, box-shadow 0.08s ease; }
+  #laneBtn.cap-right{ margin-right:18px; border-radius:9px 4px 4px 9px; }
+  #laneBtn.cap-right::before{ content:""; position:absolute; right:-15px; top:2px; bottom:2px; width:15px;
+    background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%); border:2.5px solid #fff; border-radius:2px 8px 8px 2px;
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.45); }
+  #laneBtn.cap-left{ margin-left:18px; border-radius:4px 9px 9px 4px; }
+  #laneBtn.cap-left::before{ content:""; position:absolute; left:-15px; top:2px; bottom:2px; width:15px;
+    background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%); border:2.5px solid #fff; border-radius:8px 2px 2px 8px;
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.45); }
+  #laneBtn:active{ background:linear-gradient(180deg,#161616 0%,#000 100%); transform:translateY(3px);
+    box-shadow:0 0 0 rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.6); }
+  #laneBtn:disabled{ opacity:0.35; }
+  #game{ display:block; }
+
+</style>
+</head>
+<body>
+<style>
+  .game-back-tl{ position:fixed; top:9px; left:22px; z-index:99999;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);
+    color:#fff; border:2.5px solid #fff; border-radius:4px 9px 9px 4px;
+    font-family:Helvetica,Arial,sans-serif; font-size:9.5px; font-weight:bold; letter-spacing:1px;
+    padding:5px 10px; text-decoration:none; -webkit-tap-highlight-color:transparent; outline:none;
+    box-shadow:0 3px 0 rgba(0,0,0,0.55), 0 6px 10px rgba(0,0,0,0.4), inset 0 1.5px 0 rgba(255,255,255,0.4), inset 0 -4px 7px rgba(0,0,0,0.45);
+    transform:translateY(0); transition:transform 0.08s ease, box-shadow 0.08s ease; }
+  .game-back-tl::before{ content:""; display:block; position:absolute; left:-15px; top:2px; bottom:2px;
+    width:15px; background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);
+    border:2.5px solid #fff; border-radius:8px 2px 2px 8px;
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.45); }
+  .game-back-tl:focus{ outline:none; }
+  .game-back-tl:active{ background:linear-gradient(180deg,#161616 0%,#000 100%); transform:translateY(3px);
+    box-shadow:0 0 0 rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.6); }
+  .game-back-tl:active::before{ background:linear-gradient(180deg,#161616 0%,#000 100%); box-shadow:inset 0 2px 5px rgba(0,0,0,0.6); }
+</style>
+<a id="gameBackBtn" class="game-back-tl" href="index.html?openArcade=1">&larr; BACK</a>
+<div id="wrap"><div id="stage"><canvas id="game"></canvas></div></div>
+<button id="laneBtn"></button>
+<script>
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+// Mirror mode (site-wide setting): the whole field flips left-to-right, but
+// text needs to stay readable — draw() mirrors the canvas transform, and this
+// wrapper locally cancels that mirror just long enough to draw each string
+// normally, at the now-mirrored position. Position moves, letters don't.
+let mirrorMode=false;
+try{
+  var _qsp=new URLSearchParams(location.search);
+  if(_qsp.has('mirror')) mirrorMode=(_qsp.get('mirror')==='on');
+  else mirrorMode=(localStorage.getItem('qu33phMirror')==='on');
+}catch(e){}
+if(mirrorMode) document.body.classList.add('qmirror');
+// text now mirrors along with everything else (the outer CSS flip handles it) —
+// this just calls the plain native methods so every existing mtext() call site
+// keeps working unchanged
+function mtext(c,txt,x,y,strokeFirst){
+  if(strokeFirst) c.strokeText(txt,x,y);
+  c.fillText(txt,x,y);
+}
+const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet layer, takes the theme filter
+
+// ─── sound ──────────────────────────────────────────────────────────────
+function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
+const THROW_POOL=[0,1,2].map(function(){ const a=new Audio('bowling1.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+const PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+let throwIdx=0, plopIdx=0;
+function sfxThrow(){ if(!sfxOn()) return; const a=THROW_POOL[throwIdx=(throwIdx+1)%THROW_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+if(THEME==='inverted') document.body.classList.add('th-inverted');
+// Three connected Qu33ph-Ball machines. Each field uses the full room render so
+// changing lanes feels like sliding to the next cabinet.
+// The mega jackpot — only reachable by climbing the chair chain (see the pro
+// field's chainSide rects below), never by aiming for it directly.
+const MEGA_VAL=33000;
+const FIELDS=[
+ // Full uncropped renders, so the neighbouring cabinet stays in frame — switching
+ // machines reads as sliding one lane over. Both are 0.5625 aspect, so PH is 178.
+ // Every coordinate below is a fraction of the WHOLE frame, and because the machine
+ // sits off to one side in each shot, the board centre (cx) is not 0.5.
+ { id:'classic', name:'CLASSIC', art:'skeefield.png?v=401', PH:178,
+   start:{x:0.490,y:0.775}, queueY:0.735, dur:46, shrink:0.55,
+   hud:{x:[0.364,0.511,0.655], y:[0.197,0.196,0.196]}, topY:0.218,   // ceiling sits under the readouts
+   pullDiv:0.46, aimDiv:0.28, cx:0.523, aimSpan:0.175, aimScat:0.95,
+   baseY:0.505, powY:0.265, jitterX:0.059, jitterY:0.062,
+   scat:function(p){ return 0.55+Math.abs(p-0.70)*1.5; }, overFrom:2, overK:0,
+   rects:[
+     // centre column, contiguous bands so nothing drops through a crack
+     {x0:0.473,x1:0.554,y0:0.243,y1:0.270,p:50 },
+     {x0:0.469,x1:0.550,y0:0.270,y1:0.301,p:40 },
+     {x0:0.458,x1:0.564,y0:0.303,y1:0.344,p:30 },
+     // 20 and 10 are the wide outer rings — one continuous U-shaped washer each,
+     // with a little radius overlap between the two so there's no gap where a
+     // landing scores 0
+     {shape:'arc', cx:0.515, cy:0.127, rIn:0.257, rOut:0.433, a0:69, a1:114, p:20},
+     {shape:'arc', cx:0.510, cy:0.290, rIn:0.165, rOut:0.239, a0:0, a1:176, p:10},
+     // corner barrels — round
+     {shape:'circle', cx:0.374, cy:0.263, r:0.036, p:100},
+     {shape:'circle', cx:0.651, cy:0.260, r:0.047, p:100},
+     // hand-drawn fill beside each barrel
+     {shape:'poly', pts:[[0.312,0.290],[0.317,0.264],[0.340,0.269],[0.367,0.282],[0.383,0.289],[0.356,0.316],[0.352,0.295],[0.317,0.293]], p:10},
+     {shape:'poly', pts:[[0.701,0.271],[0.705,0.288],[0.677,0.291],[0.658,0.325],[0.630,0.288],[0.669,0.289],[0.688,0.279]], p:10}
+   ],
+   bestKey:'qu33phSkeeballBest' },
+
+ { id:'advanced', name:'ADVANCED', art:'skeefield2.png?v=401', PH:178,
+   start:{x:0.490,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
+   hud:{x:[0.319,0.455,0.585], y:[0.231,0.231,0.230]}, topY:0.232,   // ceiling sits under the readouts
+   pullDiv:0.46, aimDiv:0.28, cx:0.443, aimSpan:0.256, aimScat:1.15,
+   baseY:0.560, powY:0.320, jitterX:0.043, jitterY:0.048,
+   scat:function(p){ return 0.55+Math.abs(p-0.74)*1.2+Math.max(0,p-0.80)*4.5; },
+   overFrom:0.84, overK:7,
+   rects:[
+     // chairs first — they catch it before anything else and lob it into the 75
+     {x0:0.247,x1:0.338,y0:0.462,y1:0.575,p:75,chair:1,tox:0.2245,toy:0.399},
+     {x0:0.564,x1:0.658,y0:0.462,y1:0.575,p:75,chair:1,tox:0.6715,toy:0.399},
+     // back row
+     {x0:0.249,x1:0.318,y0:0.295,y1:0.342,p:50 },
+     {x0:0.318,x1:0.409,y0:0.276,y1:0.332,p:100},
+     {x0:0.426,x1:0.480,y0:0.282,y1:0.312,p:333},
+     {x0:0.502,x1:0.588,y0:0.275,y1:0.336,p:100},
+     {x0:0.593,x1:0.660,y0:0.294,y1:0.343,p:50 },
+     // mid row
+     {x0:0.276,x1:0.369,y0:0.354,y1:0.415,p:30 },
+     {x0:0.404,x1:0.502,y0:0.353,y1:0.416,p:40 },
+     {x0:0.543,x1:0.631,y0:0.357,y1:0.412,p:30 },
+     // side pockets
+     {x0:0.192,x1:0.253,y0:0.367,y1:0.473,p:75 },
+     {x0:0.655,x1:0.720,y0:0.368,y1:0.465,p:75 }
+   ],
+   bestKey:'qu33phSkeeballBest2' },
+
+ { id:'pro', name:'CHAIR TOWER', art:'skeefield3.png?v=401', PH:178,
+   start:{x:0.500,y:0.820}, queueY:0.790, dur:48, shrink:0.58,
+   hud:{x:[0.408,0.513,0.617], y:[0.281,0.279,0.281]}, topY:0.340,
+   pullDiv:0.46, aimDiv:0.28, cx:0.500, aimSpan:0.285, aimScat:1.08,
+   // Weakest flick lands right at the bottom chairs (0.765); full power now
+   // stops right around the 5,000 cup (~0.30) instead of flying up past the
+   // whole cluster into the empty space under the HUD — a hard dead-centre
+   // throw has nothing to reach for up there anyway, so there's no reason to
+   // let the marker sail past it. Mega is still chain-only either way.
+   baseY:0.765, powY:0.589, jitterX:0.040, jitterY:0.045,
+   scat:function(p){ return 0.52+Math.abs(p-0.73)*1.25+Math.max(0,p-0.84)*3.6; },
+   overFrom:0.92, overK:5,
+   // Chairs give no guaranteed points — only the chance to climb (see the chain
+   // in scoreLanding()). Cups are round (shape:'circle'), and the bands
+   // wrapping under them are true U-shaped washers (shape:'arc'). Each band has
+   // a clipY — a flat cutoff so the ring can't be hit above where the actual
+   // cabinet art ends, regardless of what its angle span would otherwise allow.
+   // Only the bottom chairs and the centre cups/rings are landable zones — the
+   // chair tags higher up the side rails, and the mega dot, are NOT separate
+   // targets. The only way to them is up the chair chain (see scoreLanding()).
+   rects:[
+     // Bottom tier: both chairs — no points, just the shot at climbing.
+     {x0:0.180,x1:0.370,y0:0.635,y1:0.765,p:0,chair:1,chainSide:'left'},
+     {x0:0.630,x1:0.820,y0:0.635,y1:0.765,p:0,chair:1,chainSide:'right'},
+     // Cup cluster — round, full value, direct hit. Checked before the corner
+     // miss-zones below, so a legitimate cup hit always wins even where the
+     // two overlap slightly.
+     {shape:'circle', cx:0.514, cy:0.352, r:0.038, p:5000},
+     {shape:'circle', cx:0.429, cy:0.385, r:0.039, p:2000},
+     {shape:'circle', cx:0.598, cy:0.386, r:0.036, p:2000},
+     {shape:'circle', cx:0.511, cy:0.418, r:0.036, p:1000},
+     // Explicit miss-zones for the two corners under the coins — the 250/100
+     // rings' clipXMin/clipXMax/clipY box was wider than the ring itself, so
+     // those corners were still inside the ring's actual radius and scoring.
+     // Checked before the rings, so this wins there regardless of what a ring
+     // underneath would otherwise say.
+     {x0:0.305,x1:0.445,y0:0.290,y1:0.380,p:0},
+     {x0:0.581,x1:0.721,y0:0.290,y1:0.380,p:0},
+     // U-shaped bands wrapping under the cup cluster — one continuous ring each,
+     // sharing a centre and touching radii so there's no seam between them to
+     // land in and score nothing. 500's a near-complete wrap (just a notch at
+     // the top for the cup cluster); 250 and 100 pick up right where it ends.
+     // clipY flattens all three off right below the HUD, matching the art.
+     // clipXMin/clipXMax trim the wide flanks that reached toward the chairs —
+     // "give me free range movement for the pink lines" — these are that: each
+     // one has its own draggable vertical magenta handle in edit mode now, same
+     // idea as clipY's horizontal one. Starting guess is roughly the cup
+     // cluster's own width; drag to fit exactly.
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.128, rOut:0.152, a0:5, a1:350, clipY:0.300, clipXMin:0.297, clipXMax:0.689, p:500},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.170, rOut:0.220, a0:5, a1:350, clipY:0.300, clipXMin:0.341, clipXMax:0.695, p:250},
+     {shape:'arc', cx:0.513, cy:0.381, rIn:0.220, rOut:0.270, a0:5, a1:350, clipY:0.300, clipXMin:0.339, clipXMax:0.691, p:100},
+     // hand-drawn fill tracing the connective gold band around the cluster —
+     // cleaned up (duplicate/near-duplicate taps removed, jaggedness smoothed)
+     // but the same coverage you drew
+     // Traced your hand-drawn pink line and converted it to field coordinates —
+     // its lowest point sits at y≈0.290, so that's the clipY here. Nothing in
+     // the current outline actually crossed above it when I measured each
+     // vertex, but a couple of the sharp points come close enough to visually
+     // read as "too much" right under the HUD — this clips it for real, and
+     // also guards against future drags pushing it back up there.
+     {shape:'poly', pts:[[0.393,0.370],[0.420,0.357],[0.443,0.357],[0.461,0.365],[0.479,0.388],[0.456,0.408],[0.437,0.415],[0.418,0.413],[0.395,0.401],[0.413,0.421],[0.462,0.439],[0.469,0.397],[0.491,0.387],[0.544,0.394],[0.556,0.412],[0.550,0.443],[0.599,0.425],[0.620,0.409],[0.568,0.405],[0.553,0.389],[0.551,0.370],[0.606,0.356],[0.620,0.366],[0.624,0.347],[0.595,0.327],[0.556,0.310],[0.493,0.304],[0.437,0.322],[0.394,0.356],[0.457,0.351],[0.481,0.313],[0.497,0.310],[0.541,0.317],[0.556,0.328],[0.566,0.340],[0.555,0.359]], clipY:0.290, p:500}
+   ],
+   bestKey:'qu33phSkeeballBest3' }
+];
+let fieldIdx=0;
+try{ const k=localStorage.getItem('qu33phSkeeField'); const i=FIELDS.findIndex(f=>f.id===k); if(i>=0) fieldIdx=i; }catch(e){}
+// the arcade menu can hand us the lane directly
+{ const q=(new URLSearchParams(location.search).get('lane')||'').toLowerCase();
+  const i=FIELDS.findIndex(f=>f.id===q); if(i>=0) fieldIdx=i; }
+function F(){ return FIELDS[fieldIdx]; }
+const FIELD_IMGS={};
+FIELDS.forEach(function(f){ const im=new Image(); im.src=f.art; FIELD_IMGS[f.id]=im; });
+function FIELD_IMG(){ return FIELD_IMGS[F().id]; }
+function loadField(){ /* no-op — every lane's art is already preloading from page load */ }
+loadField();
+const MK={ red:new Image(), green:new Image(), blue:new Image() };
+const CMC=(THEME==='cartoon');
+MK.red.src=CMC?'redC.png':'red.png'; MK.green.src=CMC?'greenC.png':'green.png'; MK.blue.src=CMC?'blueC.png':'blue.png';
+function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
+
+const PW=100;
+function PH(){ return F().PH; }    // each lane has its own length
+let CW=0,CH=0,DPR=1,SC=1;
+function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
+  const ar=PW/PH(); let cw=r.width,ch=r.width/ar; if(ch>r.height){ch=r.height;cw=r.height*ar;}
+  cv.style.width=cw+'px'; cv.style.height=ch+'px';
+  const st=document.getElementById('stage'); if(st){ st.style.width=cw+'px'; st.style.height=ch+'px'; }
+  CW=Math.round(cw*DPR); CH=Math.round(ch*DPR); cv.width=CW; cv.height=CH; sc.width=CW; sc.height=CH; SC=CW/PW; }
+sz();
+window.addEventListener('resize',()=>{ try{ sz(); FIELDC=null; }catch(e){} });
+// ---- themes: the cabinet gets the filter, the markers keep their colour ----
+const TH={
+  'default':{name:'DEFAULT',     filter:'',                                          glow:null},
+  'cartoon':{name:'COMIC',       filter:'grayscale(1) contrast(1.2)',                glow:null, benday:true},
+  'neon':   {name:'NEON',        filter:'saturate(1.6) brightness(1.08)',            glow:'#28ff82'},
+  'sunset': {name:'GOLDEN HOUR', filter:'sepia(0.5) saturate(1.7) brightness(1.12)', glow:'#ffb020'},
+  'galaxy': {name:'GALAXY',      filter:'hue-rotate(215deg) saturate(1.4)',          glow:'#9a6bff', galaxies:true}
+}[THEME] || {name:'DEFAULT', filter:'', glow:null};
+const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getContext('2d'); t.filter='grayscale(1)'; return t.filter==='grayscale(1)'; }catch(e){ return false; } })();
+let BEND=null, BENDkey=0;
+function bendayPattern(c, ds){
+  ds=Math.max(6, Math.round(ds));
+  if(BEND && BENDkey===ds) return BEND;
+  const t=document.createElement('canvas');
+  t.width=ds; t.height=ds*2;
+  const g=t.getContext('2d');
+  g.fillStyle='rgba(20,20,20,0.45)';
+  const r=Math.max(1, ds*0.16);
+  // staggered rows, drawn once into a tile instead of thousands of arcs every frame
+  const pts=[[0,0],[ds,0],[0,ds*2],[ds,ds*2],[ds*0.5,ds]];
+  for(const p of pts){ g.beginPath(); g.arc(p[0],p[1],r,0,6.283); g.fill(); }
+  BEND=c.createPattern(t,'repeat'); BENDkey=ds;
+  return BEND;
+}
+const MK_GLOW={red:'#ff3b3b',green:'#39ff6a',blue:'#4f9dff'};
+function glowFor(kind){
+  if(!TH.glow) return null;
+  if(THEME==='neon'){ if(kind==='coin') return '#ffd700'; if(MK_GLOW[kind]) return MK_GLOW[kind]; }
+  return TH.glow;
+}
+function glowOn(c,kind){
+  const g=glowFor(kind);
+  if(g){ c.shadowColor=g; c.shadowBlur=CH*(THEME==='neon'?0.020:0.016); }
+}
+function glowOff(c){ c.shadowBlur=0; c.shadowColor='transparent'; }
+// sporadic stars, constellations and slow spirals — no grid, nothing that reads like ben-day
+let STARS=null, CONSTEL=null;
+function buildSky(){
+  STARS=[]; CONSTEL=[];
+  for(let i=0;i<70;i++) STARS.push({x:Math.random(),y:Math.random(),r:0.4+Math.random()*1.5,p:Math.random()*6.283});
+  for(let k=0;k<3;k++){
+    const cx=0.15+Math.random()*0.7, cy=0.10+Math.random()*0.7, pts=[];
+    for(let i=0;i<3+((Math.random()*3)|0);i++)
+      pts.push({x:cx+(Math.random()-0.5)*0.22, y:cy+(Math.random()-0.5)*0.20});
+    CONSTEL.push(pts);
+  }
+}
+function drawSky(c){
+  if(!STARS) buildSky();
+  const t=Date.now()/1000;
+  c.save();
+  for(const st of STARS){
+    c.globalAlpha=0.35+0.5*Math.abs(Math.sin(t*0.9+st.p));
+    c.fillStyle='#fff'; c.beginPath(); c.arc(st.x*CW, st.y*CH, st.r*(CH/900), 0, 6.283); c.fill();
+  }
+  c.globalAlpha=0.35; c.strokeStyle='rgba(190,165,255,0.75)'; c.lineWidth=Math.max(1,CH*0.0013);
+  for(const pts of CONSTEL){
+    c.beginPath();
+    pts.forEach((p,i)=> i? c.lineTo(p.x*CW,p.y*CH) : c.moveTo(p.x*CW,p.y*CH));
+    c.stroke();
+    c.fillStyle='rgba(220,205,255,0.9)';
+    for(const p of pts){ c.beginPath(); c.arc(p.x*CW,p.y*CH,CH*0.0022,0,6.283); c.fill(); }
+  }
+  c.globalAlpha=1;
+  for(let i=0;i<3;i++){                                  // slow spiral galaxies
+    const R=CH*(0.06+0.03*(i%2));
+    const gx=CW*(0.16+0.34*i), gy=CH*(0.08+0.10*i);
+    c.save(); c.translate(gx,gy); c.rotate(t*(0.09+0.04*i)*(i%2?-1:1));
+    const g=c.createRadialGradient(0,0,0,0,0,R);
+    g.addColorStop(0,'rgba(235,215,255,0.5)'); g.addColorStop(0.4,'rgba(150,90,255,0.20)'); g.addColorStop(1,'rgba(90,40,160,0)');
+    c.fillStyle=g; c.beginPath(); c.arc(0,0,R,0,6.283); c.fill();
+    c.strokeStyle='rgba(200,170,255,0.28)'; c.lineWidth=Math.max(1,R*0.05);
+    for(let arm=0;arm<2;arm++){
+      c.beginPath();
+      for(let q=0;q<=24;q++){ const th=arm*Math.PI+q*0.14, rr=R*0.12+(q/24)*R*0.9;
+        const px=Math.cos(th)*rr, py=Math.sin(th)*rr*0.42;
+        q? c.lineTo(px,py) : c.moveTo(px,py); }
+      c.stroke();
+    }
+    c.restore();
+  }
+  c.restore();
+}
+function drawThemeOverlay(){
+  if(TH.benday) return;                                 // dots are baked into the cached cabinet
+  if(TH.galaxies){ ctx.save(); ctx.globalCompositeOperation='screen'; drawSky(ctx); ctx.restore(); }
+  if(TH.glow){
+    const g=ctx.createRadialGradient(CW/2,CH*0.5,CH*0.18,CW/2,CH*0.5,CH*0.78);
+    const c=TH.glow==='#28ff82'?'40,255,130':TH.glow==='#ffb020'?'255,176,32':'150,90,255';
+    g.addColorStop(0,'rgba('+c+',0)'); g.addColorStop(1,'rgba('+c+',0.26)');
+    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH); ctx.restore();
+  }
+}
+
+// If the field art hasn't been made yet, paint the scoring regions straight from
+// the table. Same numbers the scorer uses, so it doubles as a live layout guide —
+// drop the PNG in and this never renders again.
+const FB_COL={333:'#ffd246',100:'#dc9628',75:'#3cbe78',50:'#be3c3c',40:'#c83c3c',30:'#3c78dc',10:'#1e2028'};
+function drawBoardFallback(g){
+  const f=F();
+  if(!f.rects) return;
+  g.textAlign='center'; g.textBaseline='middle';
+  for(let i=f.rects.length-1;i>=0;i--){          // apron is last in the list, so paint it first
+    const r=f.rects[i];
+    const x=r.x0*CW, y=r.y0*CH, w=(r.x1-r.x0)*CW, h=(r.y1-r.y0)*CH;
+    g.fillStyle=FB_COL[r.p]||'#444'; g.fillRect(x,y,w,h);
+    g.lineWidth=Math.max(1,CW*0.004); g.strokeStyle='rgba(255,255,255,0.85)'; g.strokeRect(x,y,w,h);
+    g.fillStyle='#fff'; g.font='bold '+Math.round(Math.min(h*0.5,CW*0.055))+'px Helvetica,Arial,sans-serif';
+    g.fillText(String(r.p), x+w/2, y+h/2);
+  }
+}
+function X(u){ return u*SC; }                 // field-units -> px
+function fx(f){ return f*CW; }                 // field-fraction x -> px
+function fy(f){ return f*CH; }                 // field-fraction y -> px
+
+const QSLOTS=8, QX0=0.325, QSPAN=0.35;         // fixed slots so the row never shuffles
+const COLORS=['red','green','blue'];          // cycle order
+const TOTAL=9, LAND_HOLD=20, FEED_DUR=16;
+
+// curIdx = the marker in play; resolved = how many have finished.
+// The waiting queue is always (QSLOTS - curIdx) long, in every state, so nothing pops in or out.
+let curIdx, resolved, score, best, state, ball, popups, landT, feed, pendingScore;
+function loadBest(){ try{ best=parseInt(localStorage.getItem(F().bestKey)||'0',10)||0; }catch(e){ best=0; } }
+loadBest();   // each lane keeps its own record, since they don't score alike
+function qx(k){ return QX0 + ((k-1)/(QSLOTS-1))*QSPAN; }   // marker k (1..8) owns a fixed slot
+function colOf(i){ return COLORS[i%3]; }                    // 0 red, 1 green, 2 blue, 3 red ...
+
+let lastHitChair=null, hop=null, hopQueue=[];
+function reset(){ curIdx=0; resolved=0; score=0; state='ready'; ball=null; popups=[]; landT=0; feed=null; hop=null; hopQueue=[]; pendingScore=0; }
+reset();
+
+// ── lane switch: only between rolls, and it restarts the game, since the two
+//    boards don't score alike and a mixed card would be meaningless ──────────
+const laneBtn=document.getElementById('laneBtn');
+function canSwitchLane(){ return (state==='ready'&&resolved===0) || state==='over'; }
+function updLaneBtn(){
+  laneBtn.textContent='LANE \u00b7 '+F().name;
+  laneBtn.disabled=!canSwitchLane();
+  // the cap points the direction the NEXT tap will move — wrapping from the
+  // last lane back to the first reads as "left", same as paging backward
+  const nextIdx=(fieldIdx+1)%FIELDS.length;
+  const goingRight=nextIdx>fieldIdx;
+  laneBtn.classList.toggle('cap-right', goingRight);
+  laneBtn.classList.toggle('cap-left', !goingRight);
+}
+// draws every scoring rect over the art, labelled, so alignment can be eyeballed
+laneBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  if(!canSwitchLane()) return;
+  fieldIdx=(fieldIdx+1)%FIELDS.length;
+  try{ localStorage.setItem('qu33phSkeeField',F().id); }catch(e2){}
+  loadField(); loadBest(); reset(); sz(); updLaneBtn();
+});
+updLaneBtn();
+
+// ---- flick input ----
+let dragging=false, dStart=null, dNow=null;
+function pt(e){ const r=cv.getBoundingClientRect(); let x=(e.clientX-r.left)/r.width; if(mirrorMode) x=1-x; return { x:x, y:(e.clientY-r.top)/r.height }; }
+cv.addEventListener('pointerdown',e=>{ if(state==='over'){ reset(); return; } if(state!=='ready') return; dragging=true; dStart=pt(e); dNow=dStart; });
+cv.addEventListener('pointermove',e=>{ if(dragging) dNow=pt(e); });
+window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
+  const dx=dNow.x-dStart.x, dy=dNow.y-dStart.y;                 // flick UP = negative dy
+  const up=Math.max(0,-dy);                                     // upward pull
+  if(up<0.04){ dStart=dNow=null; return; }                     // too small, ignore
+  roll(up, dx);
+  dStart=dNow=null;
+});
+
+function roll(up, dx){
+  sfxThrow();
+  const f=F();
+  const power=Math.min(1, up/f.pullDiv);
+  const aim=Math.max(-1,Math.min(1, dx/f.aimDiv));
+  // On the long lane scatter is a U on power AND grows with angle, so a hard cross-lane
+  // roll is the least controllable shot there is. The classic lane keeps its old curve.
+  const scat=f.scat(power)+Math.abs(aim)*f.aimScat;
+  const landX=(f.cx!==undefined?f.cx:0.50) + aim*f.aimSpan + (Math.random()-0.5)*f.jitterX*scat;
+  let   landY=f.baseY - power*f.powY + (Math.random()-0.5)*f.jitterY*scat;
+  // long lane only: bury it and the marker climbs the backboard and comes back empty
+  // clamped, so even a full-power mash still gets through occasionally
+  // bury it and the marker climbs the backboard — but it stops at the top border rather
+  // than sailing off into the marquee
+  const over=(power>f.overFrom && Math.random() < Math.min(0.85,(power-f.overFrom)*(f.overK||7)));
+  const top=(f.topY!==undefined?f.topY:0.20);
+  if(over) landY=top+0.006;
+  landY=Math.max(top, landY);                    // nothing ever lands above the board
+  ball={ x0:f.start.x, y0:f.start.y, x1:landX, y1:landY, t:0, dur:f.dur,
+         color:colOf(curIdx), spin:0, scored:false, over:over, caught:false };
+  state='rolling';
+}
+
+// true for a point (fractional coords) inside a rect OR a circle/arc shape —
+// arcs use canvas angle convention (0=east,90=south,180=west), and the y-delta
+// is aspect-corrected so a "circle" actually looks round on the non-square field
+function pointInShape(r,lx,ly,PH){
+  if(r.shape==='circle'){
+    const dx=lx-r.cx, dy=(ly-r.cy)*(PH/100);
+    return (dx*dx+dy*dy) <= r.r*r.r;
+  }
+  if(r.shape==='arc'){
+    if(r.clipY!==undefined && ly<r.clipY) return false;   // flat cutoff, regardless of angle
+    if(r.clipXMin!==undefined && lx<r.clipXMin) return false;
+    if(r.clipXMax!==undefined && lx>r.clipXMax) return false;
+    const dx=lx-r.cx, dy=(ly-r.cy)*(PH/100);
+    const dist=Math.hypot(dx,dy);
+    if(dist<r.rIn||dist>r.rOut) return false;
+    let ang=Math.atan2(dy,dx)*180/Math.PI; if(ang<0) ang+=360;
+    // a0/a1 normalized to [0,360) — dragging or export rounding can otherwise
+    // land one exactly on 360, which silently breaks the wraparound check below
+    const a0=((r.a0%360)+360)%360, a1=((r.a1%360)+360)%360;
+    return a0<=a1 ? (ang>=a0&&ang<=a1) : (ang>=a0||ang<=a1);
+  }
+  if(r.shape==='poly'){
+    if(r.clipY!==undefined && ly<r.clipY) return false;   // flat cutoff, same idea as an arc's
+    // standard ray-casting point-in-polygon — freeform shapes drawn in the editor
+    const pts=r.pts; let inside=false;
+    for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+      const xi=pts[i][0],yi=pts[i][1], xj=pts[j][0],yj=pts[j][1];
+      if(((yi>ly)!==(yj>ly)) && (lx < (xj-xi)*(ly-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+  return lx>=r.x0&&lx<=r.x1&&ly>=r.y0&&ly<=r.y1;
+}
+function scoreLanding(lx,ly){
+  const f=F();
+  // GAUNTLET scores by rectangle, in listed order — holes first, apron last
+  if(f.rects){
+    for(const r of f.rects) if(pointInShape(r,lx,ly,f.PH)){
+      if(r.chair && r.chainSide){
+        const left=r.chainSide==='left';
+        // Reaching the bottom chair always pays 1,000 (matches the tag right there
+        // on the cabinet) — landing at "1,000" and scoring a miss read as broken,
+        // and it was. From there: 75% continues to 5,000; 45% of those continues
+        // to the top chair, which splits evenly between 20,000 and the mega. The
+        // mega is ONLY reachable through this chain, never a direct hit.
+        hopQueue=[{x:left?0.220:0.780,y:0.585,p:1000,label:'+1,000'}];
+        let final=1000;
+        if(Math.random()<0.75){
+          hopQueue.push({x:left?0.260:0.740,y:0.445,p:5000,label:'+5,000'}); final=5000;
+          if(Math.random()<0.45){
+            hopQueue.push({x:left?0.255:0.745,y:0.250,p:0,label:'TOP CHAIR'});
+            if(Math.random()<0.50){ hopQueue.push({x:left?0.245:0.755,y:0.175,p:20000,label:'+20,000'}); final=20000; }
+            else { hopQueue.push({x:0.510,y:0.174,p:MEGA_VAL,label:'MEGA +'+fmtK(MEGA_VAL)}); final=MEGA_VAL; }
+          }
+        }
+        lastHitChair=hopQueue.shift();
+        return final;
+      }
+      lastHitChair=r.chair?{x:r.tox,y:r.toy,p:r.p,label:'CHAIR +'+r.p}:null;
+      return r.p;
+    }
+    lastHitChair=null;
+    return 0;
+  }
+  // CLASSIC keeps its cups-and-rings model
+  const R=f.ring;
+  let b2=null,bd=1e9;
+  for(const z of f.zones){ const d=Math.hypot(lx-z.x,ly-z.y); if(d<bd){ bd=d; b2=z; } }
+  if(b2 && bd < b2.r*f.cupTol) return b2.p;
+  const dx=(lx-R.cx)/R.w10, dy=(ly-R.cy)/R.h10;
+  if(dx*dx+dy*dy <= 1) return 10;
+  return 0;
+}
+
+function step(){
+  if(state==='rolling' && ball){
+    ball.t++; ball.spin+=0.4;
+    // Chairs react the instant the marker's flight path touches them — it
+    // doesn't need to have been aimed at the exact resting pixel.
+    if(!ball.caught){
+      const f=F();
+      if(f.rects){
+        const kk=ease(Math.min(1, ball.t/ball.dur));
+        const curX=ball.x0+(ball.x1-ball.x0)*kk, curY=ball.y0+(ball.y1-ball.y0)*kk;
+        for(const r of f.rects) if(r.chair && pointInShape(r,curX,curY,f.PH)){
+          ball.x1=curX; ball.y1=curY; ball.t=ball.dur; ball.caught=true; break;
+        }
+      }
+    }
+    if(ball.t>=ball.dur){
+      ball.t=ball.dur;                                  // marker stays put at the hole
+      const pts=scoreLanding(ball.x1,ball.y1); resolved++;
+      const chair=lastHitChair;
+      // direct hit (no chair chain): the plop plays right away, same as before.
+      // chair hits get their "catch" plop here instead — the suspense of the
+      // climb should build in silence, not have the payout spoiled by an early
+      // success sound before the hops even start.
+      if(pts>0 && !chair) sfxPlop();
+      else if(chair) sfxPlop();
+      // a chair catch reads as its own thing, and the popup shows up at the pocket
+      // The SCORE readout doesn't update yet for a chair catch — only once the
+      // marker actually finishes bouncing up to where it lands. Otherwise the
+      // number jumps the instant you land, before the hop even plays, and you
+      // can read the outcome off the score box before the suspense of the climb.
+      if(chair){ pendingScore=pts; } else { score+=pts; }
+      // the popup waits for the hop to land, so it reads as cause and effect
+      const hops=(chair?1:0)+hopQueue.length;
+      popups.push({x:chair?(hopQueue.length?hopQueue[hopQueue.length-1].x:chair.x):ball.x1,
+                   y:chair?(hopQueue.length?hopQueue[hopQueue.length-1].y:chair.y):ball.y1,
+                   delay:chair?26*hops:0,
+                   txt:chair?(hopQueue.length?('+'+pts):(pts>0?(chair.label||('+'+pts)):'MISS')):(pts>0?('+'+pts):'MISS'),
+                   life:chair?80:52, pts:pts});
+      if(lastHitChair){                                  // launch it, don't teleport it
+        hop={ x0:ball.x1, y0:ball.y1, x1:lastHitChair.x, y1:lastHitChair.y, t:0, dur:26 };
+      }
+      state='landed'; landT=0;                          // score/miss shows now, marker still visible
+    }
+  } else if(state==='landed'){
+    landT++;
+    if(hop){                                            // the chair kick, mid-flight
+      hop.t++;
+      if(hop.t>=hop.dur){
+        ball.x1=hop.x1; ball.y1=hop.y1;
+        sfxPlop();   // each hop lands with its own plop — the last one plays exactly when it settles
+        if(hopQueue.length){
+          const n=hopQueue.shift();
+          hop={x0:ball.x1,y0:ball.y1,x1:n.x,y1:n.y,t:0,dur:26};
+        } else { hop=null; landT=0; score+=pendingScore; pendingScore=0; }    // settled — the readout catches up right as it lands, hold/fade timer starts fresh
+      }
+    }
+    if(landT>=LAND_HOLD && !hop){
+      ball=null;
+      if(resolved>=TOTAL){
+        state='over';
+        if(score>best){ best=score; try{ localStorage.setItem(F().bestKey,best); }catch(e){} }
+      } else {
+        curIdx++;                                       // next marker leaves the queue...
+        feed={ t:0, dur:FEED_DUR, fromX:qx(curIdx), color:colOf(curIdx) };
+        state='feed';                                   // ...and travels down to the roll spot
+      }
+    }
+  } else if(state==='feed' && feed){
+    feed.t++;
+    if(feed.t>=feed.dur){ feed=null; state='ready'; }
+  }
+  for(let i=popups.length-1;i>=0;i--){
+    const p=popups[i];
+    if(p.delay>0){ p.delay--; continue; }        // don't age it while it's still waiting to appear
+    p.life--; p.y-=0.0015;
+    if(p.life<=0) popups.splice(i,1);
+  }
+}
+
+function ease(t){ return 1-Math.pow(1-t,2); }   // ease-out
+
+// 12,400 -> "12.4K", 5,000 -> "5K", 340 -> "340" — keeps the readout inside its box
+function fmtK(n){
+  n=Math.round(n);
+  if(n<1000) return String(n);
+  const k=n/1000, r=Math.round(k*10)/10;
+  return (Number.isInteger(r)?r.toFixed(0):r.toFixed(1))+'K';
+}
+
+function drawMarker(color, cx, cy, scale, rot){
+  const img=MK[color], w=X(11)*scale, h=X(11)*scale;
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); glowOn(ctx,color);
+  if(ready(img)){ const ar=img.naturalWidth/img.naturalHeight; ctx.drawImage(img,-w/2,-w/(2*ar),w,w/ar); }
+  else { ctx.fillStyle=(color==='red'?'#ff3030':color==='green'?'#30d060':'#3a7bff'); ctx.beginPath(); ctx.arc(0,0,w*0.45,0,7); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=X(0.5); ctx.stroke(); }
+  glowOff(ctx); ctx.restore();
+}
+
+let FIELDC=null, fieldcKey='';
+function ensureFieldCache(){
+  const key=CW+'x'+CH+'|'+THEME+'|'+F().id+'|'+(ready(FIELD_IMG())?1:0);
+  if(FIELDC && fieldcKey===key) return;
+  FIELDC=document.createElement('canvas'); FIELDC.width=CW; FIELDC.height=CH;
+  const g=FIELDC.getContext('2d');
+  s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
+  if(ready(FIELD_IMG())) s2.drawImage(FIELD_IMG(),0,0,CW,CH);
+  else { s2.fillStyle='#111'; s2.fillRect(0,0,CW,CH); drawBoardFallback(s2); }
+  if(CANFILTER && TH.filter) g.filter=TH.filter;
+  g.drawImage(sc,0,0);
+  g.filter='none';
+  if(THEME==='neon'){                                   // bloom baked in so the machine glows
+    g.save(); g.globalCompositeOperation='screen'; g.globalAlpha=0.30; g.drawImage(sc,0,0);
+    g.globalAlpha=0.16; g.filter='blur(6px)'; g.drawImage(sc,0,0); g.filter='none'; g.restore();
+  }
+  if(TH.benday){
+    g.save(); g.globalCompositeOperation='multiply';
+    g.fillStyle=bendayPattern(g, CH*0.015); g.fillRect(0,0,CW,CH); g.restore();
+  }
+  fieldcKey=key;
+}
+function draw(){
+  updLaneBtn();
+  ctx.setTransform(1,0,0,1,0,0);
+  ensureFieldCache();
+  ctx.drawImage(FIELDC,0,0);                            // static cabinet: one blit per frame
+  if(F().id==='pro'){
+    // The supplied cabinet art left this jackpot unlabeled.
+    ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='bold '+Math.round(CW*0.027)+'px Helvetica,Arial,sans-serif';
+    ctx.lineWidth=Math.max(2,CW*0.006); ctx.strokeStyle='rgba(0,0,0,0.9)';
+    ctx.fillStyle='#ffd24a'; mtext(ctx,fmtK(MEGA_VAL),fx(0.510),fy(0.218),true); ctx.restore();
+  }
+  drawThemeOverlay();
+  // HUD numbers in the field's BALLS / SCORE / HIGH SCORE boxes — shrunk and
+  // K-abbreviated so five/six-figure chair-tower scores don't overrun the box.
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
+  ctx.font='bold '+Math.round(CW*0.032)+'px Helvetica';
+  const HD=F().hud||{x:[0.346,0.502,0.662],y:[0.1937,0.1937,0.1937]};
+  const HY=Array.isArray(HD.y)?HD.y:[HD.y,HD.y,HD.y];
+  mtext(ctx,TOTAL-resolved, fx(HD.x[0]), fy(HY[0]));
+  mtext(ctx,fmtK(score),    fx(HD.x[1]), fy(HY[1]));
+  mtext(ctx,fmtK(best),     fx(HD.x[2]), fy(HY[2]));
+
+  // preview queue — each marker keeps its own slot, so the row never reshuffles
+  ctx.globalAlpha=0.38;
+  for(let k=curIdx+1; k<TOTAL; k++) drawMarker(colOf(k), fx(qx(k)), fy(F().queueY), 0.5, 0);
+  ctx.globalAlpha=1;
+
+  // the next marker travelling down from the queue to the roll spot
+  if(state==='feed' && feed){
+    const t=ease(feed.t/feed.dur);
+    const cx=fx(feed.fromX+(F().start.x-feed.fromX)*t);
+    const cy=fy(F().queueY+(F().start.y-F().queueY)*t);
+    ctx.globalAlpha=0.38+0.62*t;
+    drawMarker(feed.color, cx, cy, 0.5+0.5*t, 0);
+    ctx.globalAlpha=1;
+  }
+
+  // current marker on the roll spot
+  if(state==='ready') drawMarker(colOf(curIdx), fx(F().start.x), fy(F().start.y), 1.0, 0);
+
+  // rolling marker — stays on screen the whole way up the lane and rests at the hole
+  if((state==='rolling'||state==='landed') && ball){
+    let t=ease(Math.min(1, ball.t/ball.dur));
+    let cx=fx(ball.x0+(ball.x1-ball.x0)*t);
+    let cy=fy(ball.y0+(ball.y1-ball.y0)*t);
+    let sc=1.0 - t*(F().shrink||0.45);              // shrinks with distance up the lane
+    let al=1;
+    if(hop){
+      // the chair launches it: a real arc up into the pocket, bigger and fully
+      // opaque the whole way so the climb up the chair tower actually reads
+      const k=Math.min(1, hop.t/hop.dur), e=k*k*(3-2*k);
+      cx=fx(hop.x0+(hop.x1-hop.x0)*e);
+      cy=fy(hop.y0+(hop.y1-hop.y0)*e) - Math.sin(k*Math.PI)*CH*0.10;
+      sc=(1.0-(F().shrink||0.45))*(1.15+Math.sin(k*Math.PI)*0.55);   // pops bigger at the apex
+      ball.spin+=0.55;
+    } else if(state==='landed'){
+      // settled for good — sink into the hole and fade, instead of just vanishing
+      const k=Math.min(1, landT/LAND_HOLD);
+      al = k<0.55 ? 1 : Math.max(0, 1-(k-0.55)/0.45);
+      sc = sc*(1-0.45*k);
+      cy = cy + X(1.7)*k;
+    }
+    ctx.globalAlpha=Math.max(0,al);
+    ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(cx,cy+X(2)*sc,X(5)*sc,X(2)*sc,0,0,7); ctx.fill();
+    drawMarker(ball.color, cx, cy, sc, ball.spin);
+    ctx.globalAlpha=1;
+  }
+
+  // score popups — delay/life are both advanced in step(), draw() just reads them
+  for(const p of popups){ if(p.delay>0) continue; ctx.globalAlpha=Math.max(0,p.life/40);
+    ctx.fillStyle=p.pts>=100?'#ffd24a':p.pts>=30?'#7bff9a':p.pts>0?'#8fd0ff':'#ff7a7a';
+    ctx.font='bold '+Math.round(CW*0.055)+'px Helvetica'; ctx.textAlign='center';
+    ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=X(0.8); mtext(ctx,p.txt,fx(p.x),fy(p.y),true); ctx.globalAlpha=1; }
+
+  // hint
+  if(state==='ready' && !dragging){ ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font='bold '+Math.round(CW*0.035)+'px Helvetica'; ctx.textAlign='center';
+    mtext(ctx,F().rects?'flick UP to roll \u2014 soft and wide for the pockets':'flick UP to roll \u2014 aim for the rings', CW/2, fy(0.93)); }
+
+  // game over
+  if(state==='over'){ ctx.fillStyle='rgba(0,0,0,0.66)'; ctx.fillRect(0,0,CW,CH);
+    ctx.textAlign='center'; ctx.fillStyle='#e23b3b'; ctx.font='bold '+Math.round(CW*0.1)+'px Helvetica'; mtext(ctx,'GAME OVER',CW/2,CH*0.42);
+    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.08)+'px Helvetica'; mtext(ctx,'SCORE '+score,CW/2,CH*0.50);
+    ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; mtext(ctx,'BEST '+best,CW/2,CH*0.555);
+    mtext(ctx,'tap to play again',CW/2,CH*0.62); }
+}
+
+function loop(){ step(); draw(); requestAnimationFrame(loop); }
+window.addEventListener('resize',()=>{ sz(); });
+loop();
+</script>
+</body>
+</html>
