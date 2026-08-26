@@ -150,11 +150,10 @@ if(THEME==='inverted') document.body.classList.add('th-inverted');
 // ─── sound: the same generic plop everything else uses, played on each flip ─
 function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
 const PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.5; return a; });
-// reuses Bowling's existing peef clips — plays when you actually miss (tip over
-// or fall off the edge), not on a plain time-up
-const PEEF_NAMES=['bowlingpeef1','bowlingpeef2','bowlingpeef3','bowlingpeef4','bowlingpeef5','bowlingpeef6','bowlingpeeflong'];
-const PEEF_POOL=PEEF_NAMES.map(function(n){ const a=new Audio(n+'.m4a'); a.preload='auto'; a.volume=0.5; return a; });
-function sfxPeef(){ if(!sfxOn()) return; const a=PEEF_POOL[(Math.random()*PEEF_POOL.length)|0]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
+// on a miss: the same landing plop, but stretched with a decaying echo tail
+// and faded out — a longer, lingering version instead of the sharp instant one
+const MISS_POOL=[0,1].map(function(){ const a=new Audio('flipmiss.m4a'); a.preload='auto'; a.volume=0.55; return a; });
+function sfxMiss(){ if(!sfxOn()) return; const a=MISS_POOL[(Math.random()*MISS_POOL.length)|0]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 let plopIdx=0;
 function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 
@@ -524,7 +523,7 @@ function finishLevel(){
 }
 function gameOver(reason){
   state='over'; timerOn=false; combo=0;
-  if(reason!=='TIME UP') sfxPeef();
+  if(reason!=='TIME UP') sfxMiss();
   if(marker.pIdx>bestP){ bestP=marker.pIdx; try{ localStorage.setItem('qu33phFlipBestP',bestP); }catch(e){} }
   if(score>bestScore){ bestScore=score; try{ localStorage.setItem('qu33phFlipBestScore',bestScore); }catch(e){} }
   $('ovTitle').textContent = reason==='TIME UP' ? 'TIME UP' : 'TIPPED OVER';
