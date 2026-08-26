@@ -90,6 +90,14 @@ function sfxCoinBurst(n){
   const plays=Math.min(n,10);
   for(let i=0;i<plays;i++){ setTimeout(sfxCoin, i*(55+Math.random()*45)); }
 }
+// the marker-drop itself reuses Bowling's pin-hit sound — the "something just
+// made contact" clip, not the throw/release one
+const DROP_POOL=['bowling1','bowling3','bowling5','bowling5-2','bowling8','bowling9'].map(function(n){ const a=new Audio(n+'.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+function sfxDrop(){
+  if(!sfxOn()) return;
+  const a=DROP_POOL[(Math.random()*DROP_POOL.length)|0];
+  try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){}
+}
 
 // ─── assets ───────────────────────────────────────────────────────────────
 function IMG(s){ const i=new Image(); i.src=s; return i; }
@@ -391,6 +399,7 @@ window.addEventListener('pointerup',()=>{
   if(state!=='play'||queue.length<=0||dropping) return;
   const col=queue.shift(); markers=queue.length;
   dropping={u:dragU,t:0,col:col,rot:dropRot()};
+  sfxDrop();
   updateBuy();
 });
 function wallet(){ try{ return parseInt(localStorage.getItem('qu33phCoins')||'0',10)||0; }catch(e){ return 0; } }
