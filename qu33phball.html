@@ -82,8 +82,8 @@ const sc=document.createElement('canvas'), s2=sc.getContext('2d');   // cabinet 
 
 // ─── sound ──────────────────────────────────────────────────────────────
 function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
-const THROW_POOL=[0,1,2].map(function(){ const a=new Audio('bowling1.m4a'); a.preload='auto'; a.volume=0.5; return a; });
-const PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+const THROW_POOL=[0,1,2].map(function(){ const a=new Audio('bowling1.m4a'); a.preload='auto'; a.volume=0.32; return a; });
+const PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.32; return a; });
 let throwIdx=0, plopIdx=0;
 function sfxThrow(){ if(!sfxOn()) return; const a=THROW_POOL[throwIdx=(throwIdx+1)%THROW_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
@@ -94,7 +94,7 @@ if(THEME==='inverted') document.body.classList.add('th-inverted');
 // (Settings writes qu33phMusicOn), started on the very first tap since mobile
 // browsers won't allow audio to autoplay before a user gesture ─────────────
 function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
-const bgMusic=new Audio('qu33phballmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.45; bgMusic.preload='auto';
+const bgMusic=new Audio('qu33phballmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55; bgMusic.preload='auto';
 let musicStarted=false;
 function startMusicOnce(){
   if(musicStarted) return; musicStarted=true;
@@ -102,6 +102,8 @@ function startMusicOnce(){
   try{ var pr=bgMusic.play(); if(pr&&pr.catch) pr.catch(function(){}); }catch(e){}
 }
 window.addEventListener('pointerdown', startMusicOnce, {once:true});
+window.addEventListener('touchstart', startMusicOnce, {once:true});
+window.addEventListener('mousedown', startMusicOnce, {once:true});
 // Three connected Qu33ph-Ball machines. Each field uses the full room render so
 // changing lanes feels like sliding to the next cabinet.
 // The mega jackpot — only reachable by climbing the chair chain (see the pro
@@ -402,6 +404,7 @@ function updLaneBtn(){
 // draws every scoring rect over the art, labelled, so alignment can be eyeballed
 laneBtn.addEventListener('click',function(e){
   e.stopPropagation();
+  startMusicOnce();
   if(!canSwitchLane()) return;
   fieldIdx=(fieldIdx+1)%FIELDS.length;
   try{ localStorage.setItem('qu33phSkeeField',F().id); }catch(e2){}
@@ -412,7 +415,7 @@ updLaneBtn();
 // ---- flick input ----
 let dragging=false, dStart=null, dNow=null;
 function pt(e){ const r=cv.getBoundingClientRect(); let x=(e.clientX-r.left)/r.width; if(mirrorMode) x=1-x; return { x:x, y:(e.clientY-r.top)/r.height }; }
-cv.addEventListener('pointerdown',e=>{ if(state==='over'){ reset(); return; } if(state!=='ready') return; dragging=true; dStart=pt(e); dNow=dStart; });
+cv.addEventListener('pointerdown',e=>{ startMusicOnce(); if(state==='over'){ reset(); return; } if(state!=='ready') return; dragging=true; dStart=pt(e); dNow=dStart; });
 cv.addEventListener('pointermove',e=>{ if(dragging) dNow=pt(e); });
 window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false;
   const dx=dNow.x-dStart.x, dy=dNow.y-dStart.y;                 // flick UP = negative dy
