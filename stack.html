@@ -23,6 +23,27 @@
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default');
 if(THEME==='inverted') document.body.classList.add('th-inverted');
+
+// ── background music: same master "Music" switch as the rest of the app.
+// musicStarted only latches true once play() genuinely succeeds — the first
+// automatic attempt on page load is usually blocked by autoplay policy on a
+// real phone, so listeners stay active (not {once:true}) until a real tap
+// actually gets through. ────────────────────────────────────────────────
+function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
+const bgMusic=new Audio('stackmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55; bgMusic.preload='auto';
+let musicStarted=false;
+function startMusicOnce(){
+  if(musicStarted || !musicOn()) return;
+  try{
+    var pr=bgMusic.play();
+    if(pr && pr.then){ pr.then(function(){ musicStarted=true; }).catch(function(){}); }
+    else { musicStarted=true; }
+  }catch(e){}
+}
+window.addEventListener('pointerdown', startMusicOnce);
+window.addEventListener('touchstart', startMusicOnce);
+window.addEventListener('mousedown', startMusicOnce);
+startMusicOnce();
 const MPREF=(THEME==='cartoon')?'comic':'stack';
 // comic art sometimes ships with a white matte behind the linework — key it out so only the outline survives
 function keyWhite(im){
@@ -88,7 +109,7 @@ let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, b
 // plays a single plop; a collapse plays one per marker that was on the tower,
 // staggered so it reads as a cascade instead of one simultaneous thud ──────
 function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
-const PLOP_POOL=[0,1,2,3].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.5; return a; });
+const PLOP_POOL=[0,1,2,3].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.32; return a; });
 let plopIdx=0;
 function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 function sfxCollapse(n){
@@ -175,6 +196,7 @@ function spawn(){
 function pt(e){ const r=cv.getBoundingClientRect(); const sx=(e.clientX-r.left)/r.width*CW, sy=(e.clientY-r.top)/r.height*CH; return { x:CW/2+(sx-CW/2)/camScale, y:(sy-camY)/camScale }; }
 let dragTarget=null;
 cv.addEventListener('pointerdown',e=>{
+  startMusicOnce();
   if(state==='title'){ startGame(); return; }
   if(state==='over'){ if(overT<=0){ state='title'; } return; }
   if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); dragTarget={x:Math.max(halfSpan(),Math.min(CW-halfSpan(),p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; }

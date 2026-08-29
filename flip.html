@@ -156,14 +156,23 @@ if(THEME==='inverted') document.body.classList.add('th-inverted');
 function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
 const bgMusic=new Audio('flipmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55; bgMusic.preload='auto';
 let musicStarted=false;
+// only latch musicStarted once play() genuinely succeeds — the very first
+// automatic attempt on page load almost always gets silently blocked by the
+// browser's autoplay policy on a real phone, and marking it "started"
+// regardless meant every real tap afterward saw the flag and did nothing.
+// Listeners are NOT {once:true} for the same reason: if one tap's attempt
+// still fails, the next tap needs to be able to try again.
 function startMusicOnce(){
-  if(musicStarted) return; musicStarted=true;
-  if(!musicOn()) return;
-  try{ var pr=bgMusic.play(); if(pr&&pr.catch) pr.catch(function(){}); }catch(e){}
+  if(musicStarted || !musicOn()) return;
+  try{
+    var pr=bgMusic.play();
+    if(pr && pr.then){ pr.then(function(){ musicStarted=true; }).catch(function(){}); }
+    else { musicStarted=true; }
+  }catch(e){}
 }
-window.addEventListener('pointerdown', startMusicOnce, {once:true});
-window.addEventListener('touchstart', startMusicOnce, {once:true});
-window.addEventListener('mousedown', startMusicOnce, {once:true});
+window.addEventListener('pointerdown', startMusicOnce);
+window.addEventListener('touchstart', startMusicOnce);
+window.addEventListener('mousedown', startMusicOnce);
 startMusicOnce();
 
 // ─── sound: the same generic plop everything else uses, played on each flip ─
