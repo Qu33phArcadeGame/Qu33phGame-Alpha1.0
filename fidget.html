@@ -48,6 +48,27 @@ function _volPct(key,dflt){ try{ var v=localStorage.getItem(key); return v===nul
 const MUSIC_VOL_MULT = _volPct('qu33phMusicVolPct',100)/100;
 const SFX_VOL_MULT = _volPct('qu33phSfxVolPct',100)/100;
 
+// ── background music: same master "Music" switch as the rest of the app.
+// musicStarted only latches true once play() genuinely succeeds — the first
+// automatic attempt on page load is usually blocked by autoplay policy on a
+// real phone, so listeners stay active (not {once:true}) until a real tap
+// actually gets through. ────────────────────────────────────────────────
+function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
+const bgMusic=new Audio('fidgetmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55*MUSIC_VOL_MULT; bgMusic.preload='auto';
+let musicStarted=false;
+function startMusicOnce(){
+  if(musicStarted || !musicOn()) return;
+  try{
+    var pr=bgMusic.play();
+    if(pr && pr.then){ pr.then(function(){ musicStarted=true; }).catch(function(){}); }
+    else { musicStarted=true; }
+  }catch(e){}
+}
+window.addEventListener('pointerdown', startMusicOnce);
+window.addEventListener('touchstart', startMusicOnce);
+window.addEventListener('mousedown', startMusicOnce);
+startMusicOnce();
+
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 let mirrorMode=false;
 try{
@@ -137,6 +158,7 @@ function resetPositions(){
 // ---- input (multitouch) ----
 function pt(e){ const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)/r.width*CW, y:(e.clientY-r.top)/r.height*CH}; }
 cv.addEventListener('pointerdown',e=>{
+  startMusicOnce();
   const p=pt(e);
   if(state==='pick'){ pickTap(p); return; }
   if(state==='win'){ state='pick'; document.getElementById('resetBtn').style.display='none'; return; }
