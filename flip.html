@@ -49,6 +49,8 @@
     repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
   .lvl-back{ background:none; border:0; color:#666; font-family:Helvetica,Arial,sans-serif; font-size:11px;
     letter-spacing:2px; padding:6px 10px; cursor:pointer; }
+  .legend-header{ font-family:Helvetica,Arial,sans-serif; font-size:12px; font-weight:bold; color:#888;
+    letter-spacing:2px; text-align:center; margin:22px auto 0; width:min(266px,73vw); }
   .legend-row{ display:flex; justify-content:space-between; align-items:flex-start; width:min(266px,73vw); margin:14px auto 4px; gap:18px; }
   .leg-col{ display:flex; flex-direction:column; gap:11px; }
   .leg-item{ display:flex; align-items:center; gap:8px; }
@@ -93,6 +95,7 @@
     <button class="mk-btn" id="bEndless">ENDLESS</button>
     <button class="mk-btn flip" id="bTimed">TIMED &middot; 45s</button>
     <button class="mk-btn" id="bLevels">LEVELS</button>
+    <div class="legend-header">HOW TO EARN POINTS</div>
     <div class="legend-row">
       <div class="leg-col">
         <div class="leg-item"><span class="leg-mk"><img src="stackred.png" alt=""></span><span class="leg-txt">+1</span></div>
@@ -101,7 +104,7 @@
       </div>
       <div class="leg-col">
         <div class="leg-item"><span class="leg-mk"><img src="Chair.png" class="leg-chair" alt=""></span><span class="leg-txt">LAUNCHES MARKER</span></div>
-        <div class="leg-item"><span class="leg-mk"><span class="leg-jag"></span></span><span class="leg-txt">TIPS MARKER</span></div>
+        <div class="leg-item"><span class="leg-mk"><svg viewBox="0 0 100 30" width="36" height="14"><polyline points="0,26 12.5,4 25,26 37.5,4 50,26 62.5,4 75,26 87.5,4 100,26" fill="none" stroke="#ff4d4d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="leg-txt">TIPS MARKER</span></div>
       </div>
     </div>
   </div>
@@ -115,7 +118,7 @@
     <div class="tut-row"><img src="stackred.png" alt=""><div><b style="color:#ff5a5a;">RED MARKER</b><br>land on it &mdash; +1 point</div></div>
     <div class="tut-row"><img src="stackgreen.png" alt=""><div><b style="color:#7bff9a;">GREEN MARKER</b><br>land on it &mdash; +2 points</div></div>
     <div class="tut-row"><img src="stackblue.png" alt=""><div><b style="color:#4d9bff;">BLUE MARKER</b><br>land on it &mdash; +3 points</div></div>
-    <div class="tut-row"><span class="jag"></span><div><b style="color:#ff4d4d;">RED JAGGED GROUND</b><br>uneven &mdash; it tips you over</div></div>
+    <div class="tut-row"><svg viewBox="0 0 100 30" width="42" height="14" style="flex:0 0 42px;"><polyline points="0,26 12.5,4 25,26 37.5,4 50,26 62.5,4 75,26 87.5,4 100,26" fill="none" stroke="#ff4d4d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b style="color:#ff4d4d;">RED JAGGED GROUND</b><br>uneven &mdash; it tips you over</div></div>
     <div class="tut-row"><img src="Chair.png" alt=""><div><b style="color:#ff5a5a;">RED CHAIR</b><br>launches you far ahead</div></div>
     <div class="sub" style="margin-top:14px;">reach the last platform to clear the level</div>
     <button class="mk-btn" id="bTut">GOT IT</button>
