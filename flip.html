@@ -129,6 +129,14 @@
   </div>
 </div></div>
 <script>
+// ── shared volume multipliers, driven by the sliders in Settings (index.html).
+// Read once here since Settings isn't reachable from inside a standalone game
+// page — every existing .volume=X below gets multiplied by the matching one,
+// preserving whatever relative balance was already tuned between sounds. ──
+function _volPct(key,dflt){ try{ var v=localStorage.getItem(key); return v===null?dflt:parseInt(v,10); }catch(e){ return dflt; } }
+const MUSIC_VOL_MULT = _volPct('qu33phMusicVolPct',100)/100;
+const SFX_VOL_MULT = _volPct('qu33phSfxVolPct',100)/100;
+
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 let mirrorMode=false;
 try{
@@ -148,13 +156,14 @@ const sc=document.createElement('canvas'), s2=sc.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
 if(THEME==='inverted') document.body.classList.add('th-inverted');
 
+
 // ── background music: same master "Music" switch as the rest of the app.
 // Tries to play immediately — this page is only ever reached by tapping the
 // cabinet on the arcade menu, and that click-triggered navigation is normally
 // enough "user activation" for the browser to allow autoplay here too — with
 // a tap-anywhere fallback in case a particular browser still blocks it. ────
 function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
-const bgMusic=new Audio('flipmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55; bgMusic.preload='auto';
+const bgMusic=new Audio('flipmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55*MUSIC_VOL_MULT; bgMusic.preload='auto';
 let musicStarted=false;
 // only latch musicStarted once play() genuinely succeeds — the very first
 // automatic attempt on page load almost always gets silently blocked by the
@@ -177,10 +186,10 @@ startMusicOnce();
 
 // ─── sound: the same generic plop everything else uses, played on each flip ─
 function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
-const PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.32; return a; });
+const PLOP_POOL=[0,1,2].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.32*SFX_VOL_MULT; return a; });
 // on a miss: the same landing plop, but stretched with a decaying echo tail
 // and faded out — a longer, lingering version instead of the sharp instant one
-const MISS_POOL=[0,1].map(function(){ const a=new Audio('flipmiss.m4a'); a.preload='auto'; a.volume=0.38; return a; });
+const MISS_POOL=[0,1].map(function(){ const a=new Audio('flipmiss.m4a'); a.preload='auto'; a.volume=0.38*SFX_VOL_MULT; return a; });
 function sfxMiss(){ if(!sfxOn()) return; const a=MISS_POOL[(Math.random()*MISS_POOL.length)|0]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 let plopIdx=0;
 function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }

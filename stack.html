@@ -20,9 +20,18 @@
 <div id="wrap"><canvas id="game"></canvas></div>
 <button id="orientBtn"><span id="orientIcon"></span></button>
 <script>
+// ── shared volume multipliers, driven by the sliders in Settings (index.html).
+// Read once here since Settings isn't reachable from inside a standalone game
+// page — every existing .volume=X below gets multiplied by the matching one,
+// preserving whatever relative balance was already tuned between sounds. ──
+function _volPct(key,dflt){ try{ var v=localStorage.getItem(key); return v===null?dflt:parseInt(v,10); }catch(e){ return dflt; } }
+const MUSIC_VOL_MULT = _volPct('qu33phMusicVolPct',100)/100;
+const SFX_VOL_MULT = _volPct('qu33phSfxVolPct',100)/100;
+
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const THEME=(new URLSearchParams(location.search).get('theme')||'default');
 if(THEME==='inverted') document.body.classList.add('th-inverted');
+
 
 // ── background music: same master "Music" switch as the rest of the app.
 // musicStarted only latches true once play() genuinely succeeds — the first
@@ -30,7 +39,7 @@ if(THEME==='inverted') document.body.classList.add('th-inverted');
 // real phone, so listeners stay active (not {once:true}) until a real tap
 // actually gets through. ────────────────────────────────────────────────
 function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
-const bgMusic=new Audio('stackmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55; bgMusic.preload='auto';
+const bgMusic=new Audio('stackmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55*MUSIC_VOL_MULT; bgMusic.preload='auto';
 let musicStarted=false;
 function startMusicOnce(){
   if(musicStarted || !musicOn()) return;
@@ -109,7 +118,7 @@ let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, b
 // plays a single plop; a collapse plays one per marker that was on the tower,
 // staggered so it reads as a cascade instead of one simultaneous thud ──────
 function sfxOn(){ try{ return localStorage.getItem('qu33phSfx')!=='0'; }catch(e){ return true; } }
-const PLOP_POOL=[0,1,2,3].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.32; return a; });
+const PLOP_POOL=[0,1,2,3].map(function(){ const a=new Audio('Plop.m4a'); a.preload='auto'; a.volume=0.32*SFX_VOL_MULT; return a; });
 let plopIdx=0;
 function sfxPlop(){ if(!sfxOn()) return; const a=PLOP_POOL[plopIdx=(plopIdx+1)%PLOP_POOL.length]; try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){} }
 function sfxCollapse(n){

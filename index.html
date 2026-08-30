@@ -784,7 +784,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v455</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v456</div>
 
 <canvas id="game"></canvas>
 
@@ -3171,7 +3171,7 @@ function sfxPlay(kind){
   sfxLast[kind]=i;
   try{
     var a=pool[i].cloneNode();
-    a.volume=0.5;
+    a.volume=VOL_BASE.throwSfx*(typeof sfxVolPct!=='undefined'?sfxVolPct:100)/100;
     // Safety net for future recordings: if a file still has dead air at the front,
     // skip past it rather than playing a second of nothing after the swipe.
     var st=sfxStart[kind+i];
@@ -4890,14 +4890,24 @@ const MUSIC_TRACKS = {
   jump: (function(){ var a=new Audio("jumpmusic.mp3"); a.loop=true; a.volume=0.45; a.preload="auto"; return a; })(),
   pinball: (function(){ var a=new Audio("pinballmusic.mp3"); a.loop=true; a.volume=0.45; a.preload="auto"; return a; })()
 };
-let musicOn=true;
+let musicVolPct=100, musicVolPrevPct=100;
 try{
-  var _mset=localStorage.getItem("qu33phMusicOn");
-  if(_mset!==null) musicOn = _mset!=="0";
-  else if(localStorage.getItem("qu33phJumpMute")==="1") musicOn=false;   // honor the old per-jump key if that's all that ever existed
+  var _mp=localStorage.getItem("qu33phMusicVolPct");
+  if(_mp!==null) musicVolPct=parseInt(_mp,10);
+  else{
+    // migrate from the old boolean key so nobody's existing on/off choice gets lost
+    var _mset=localStorage.getItem("qu33phMusicOn");
+    if(_mset!==null) musicVolPct = _mset==="0" ? 0 : 100;
+    else if(localStorage.getItem("qu33phJumpMute")==="1") musicVolPct=0;
+  }
+  var _mpp=localStorage.getItem("qu33phMusicVolPrevPct");
+  if(_mpp!==null) musicVolPrevPct=parseInt(_mpp,10);
 }catch(e){}
+let musicOn=musicVolPct>0;
 let jumpMusicMuted=!musicOn;   // kept in sync for any old code path still reading this name
 let musicScreen=null;          // which track SHOULD be playing right now; null = none
+// base (100%) volumes for each track/pool — actual .volume is always base * pct/100
+const VOL_BASE = { jump:0.45, pinball:0.45, pfJump:0.5, pfCat:0.5, pfChirp:0.45, pbPaddle:0.5, pbPlop:0.5, throwSfx:0.5 };
 function _musicPlay(key){ var a=MUSIC_TRACKS[key]; if(!a) return; try{ if(a.paused){ var pr=a.play(); if(pr&&pr.catch) pr.catch(function(){}); } }catch(e){} }
 function setMusicScreen(key){
   if(musicScreen && musicScreen!==key && MUSIC_TRACKS[musicScreen]){ try{ MUSIC_TRACKS[musicScreen].pause(); MUSIC_TRACKS[musicScreen].currentTime=0; }catch(e){} }
@@ -4907,17 +4917,53 @@ function setMusicScreen(key){
 function stopMusic(){ if(musicScreen && MUSIC_TRACKS[musicScreen]){ try{ MUSIC_TRACKS[musicScreen].pause(); MUSIC_TRACKS[musicScreen].currentTime=0; }catch(e){} } musicScreen=null; }
 function pauseMusic(){ if(musicScreen && MUSIC_TRACKS[musicScreen]){ try{ MUSIC_TRACKS[musicScreen].pause(); }catch(e){} } }
 function resumeMusic(){ if(musicOn && musicScreen) _musicPlay(musicScreen); }
-function setMusicOn(on){
-  musicOn=!!on; jumpMusicMuted=!musicOn;
-  try{ localStorage.setItem("qu33phMusicOn", on?"1":"0"); }catch(e){}
-  if(!on){ pauseMusic(); } else { resumeMusic(); }
+function setMusicOn(on){ setMusicVolPct(on?(musicVolPrevPct||100):0); }
+// applies the current percentage to every music track and every sound-effect
+// pool that's already been declared by the time this runs (it's only ever
+// called after page init, so later-declared consts like PF_JUMP_POOL are safe)
+function applyVolumeSettings(){
+  try{ MUSIC_TRACKS.jump.volume = VOL_BASE.jump * musicVolPct/100; MUSIC_TRACKS.pinball.volume = VOL_BASE.pinball * musicVolPct/100; }catch(e){}
+  try{ PF_JUMP_POOL.forEach(function(a){ a.volume=VOL_BASE.pfJump*sfxVolPct/100; }); }catch(e){}
+  try{ PF_CATJUMP_POOL.forEach(function(a){ a.volume=VOL_BASE.pfCat*sfxVolPct/100; }); }catch(e){}
+  try{ PF_CHIRP_POOL.forEach(function(a){ a.volume=VOL_BASE.pfChirp*sfxVolPct/100; }); }catch(e){}
+  try{ PB_PADDLE_POOL.forEach(function(a){ a.volume=VOL_BASE.pbPaddle*sfxVolPct/100; }); }catch(e){}
+  try{ PB_PLOP_POOL.forEach(function(a){ a.volume=VOL_BASE.pbPlop*sfxVolPct/100; }); }catch(e){}
 }
+function setMusicVolPct(v){
+  v=Math.max(0,Math.min(100,v));
+  if(musicVolPct>0) musicVolPrevPct=musicVolPct;
+  musicVolPct=v; musicOn=v>0; jumpMusicMuted=!musicOn;
+  try{ localStorage.setItem("qu33phMusicVolPct", String(v)); localStorage.setItem("qu33phMusicVolPrevPct", String(musicVolPrevPct)); }catch(e){}
+  applyVolumeSettings();
+  if(musicOn){ resumeMusic(); } else { pauseMusic(); }
+}
+let sfxVolPct=100, sfxVolPrevPct=100;
+try{
+  var _sp=localStorage.getItem("qu33phSfxVolPct");
+  if(_sp!==null) sfxVolPct=parseInt(_sp,10);
+  else if(localStorage.getItem("qu33phSfx")==="0") sfxVolPct=0;   // migrate old boolean key
+  var _spp=localStorage.getItem("qu33phSfxVolPrevPct");
+  if(_spp!==null) sfxVolPrevPct=parseInt(_spp,10);
+}catch(e){}
+function setSfxVolPct(v){
+  v=Math.max(0,Math.min(100,v));
+  if(sfxVolPct>0) sfxVolPrevPct=sfxVolPct;
+  sfxVolPct=v; sfxMuted=(v===0);
+  try{
+    localStorage.setItem("qu33phSfxVolPct", String(v));
+    localStorage.setItem("qu33phSfxVolPrevPct", String(sfxVolPrevPct));
+    localStorage.setItem("qu33phSfx", sfxMuted?"0":"1");   // keep the old boolean key in sync — pfSfxOn()/pbSfxOn()/sfxOn() across every file still read this
+  }catch(e){}
+  applyVolumeSettings();
+}
+function toggleSfxVol(){ setSfxVolPct(sfxVolPct>0?0:(sfxVolPrevPct||100)); renderSettings(); }
 // old Jump-specific names kept as thin wrappers so every existing call site
 // (there are many) keeps working exactly as before, just routed through the
 // screen-aware system above instead of unconditionally touching Jump's track.
 function pfMusicStart(){ if(arcadeGame==="jump") setMusicScreen("jump"); }
 function pfMusicPause(){ pauseMusic(); }
 function pfMusicStop(){ stopMusic(); }
+sfxMuted = sfxVolPct===0;   // keep in sync with whichever key actually decided the initial value above
 function setJumpMute(m){ setMusicOn(!m); }
 // in-cabinet level select + binder state
 let lsSel=0, lsGlow=0;
@@ -5010,11 +5056,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=455&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=455&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=455&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -5042,7 +5088,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=455&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5053,7 +5099,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=455&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
@@ -8224,6 +8270,24 @@ function renderSettings(){
       +'<div onclick="'+fn+'" style="width:38px;height:21px;border-radius:11px;background:'+(on?onCol:offCol)+';position:relative;cursor:pointer;flex-shrink:0;transition:background 0.15s;">'
       +'<div style="width:15px;height:15px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(on?"20px":"3px")+';transition:left 0.15s;"></div></div></div>';
   }
+  // same header row as toggleRow (label + toggle switch), plus a 0-100-by-10s
+  // slider underneath. The toggle and slider drive each other: dragging the
+  // slider to 0 turns the toggle off; dragging above 0 turns it on; clicking
+  // the toggle off snaps the slider to 0, and back on restores its last spot.
+  function volRow(lbl,sub,pct,toggleFn,sliderFn){
+    var on = pct>0;
+    var onCol="#3fa34d", offCol="#333";
+    return '<div style="grid-column:span 2;padding:var(--sPad) calc(var(--sPad) + 2px);background:#0e0e0e;border:1px solid #1a1a1a;border-radius:8px;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;">'
+      +'<div style="display:flex;flex-direction:column;gap:2px;padding-right:6px;min-width:0;"><span style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#fff;letter-spacing:0.3px;line-height:1.15;">'+lbl+'</span>'
+      +'<span style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sSub);color:#555;letter-spacing:0.2px;line-height:1.2;">'+sub+'</span></div>'
+      +'<div onclick="'+toggleFn+'()" style="width:38px;height:21px;border-radius:11px;background:'+(on?onCol:offCol)+';position:relative;cursor:pointer;flex-shrink:0;transition:background 0.15s;">'
+      +'<div style="width:15px;height:15px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(on?"20px":"3px")+';transition:left 0.15s;"></div></div></div>'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-top:9px;">'
+      +'<input type="range" min="0" max="100" step="10" value="'+pct+'" oninput="'+sliderFn+'(this.value)" style="flex:1;accent-color:#3fa34d;height:20px;">'
+      +'<span style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#aaa;min-width:30px;text-align:right;">'+pct+'</span>'
+      +'</div></div>';
+  }
   function segRow(lbl,sub,opts,cur,fn){
     let btns=opts.map(function(o){ let sel=o[0]===cur;
       return '<button onclick="'+fn+'(\''+o[0]+'\')" style="flex:1;padding:clamp(5px,0.85vh,8px) 2px;border:none;background:'+(sel?"#3fa34d":"#1c1c1c")+';color:'+(sel?"#fff":"#999")+';font-family:Helvetica,Arial,sans-serif;font-size:clamp(9px,1.3vh,11px);font-weight:bold;letter-spacing:0.5px;cursor:pointer;">'+o[1]+'</button>';
@@ -8246,8 +8310,8 @@ function renderSettings(){
   h+=toggleRow("Haptic feedback","vibrate on taps &amp; events",hapticsOn,"toggleHaptics()");
   h+=toggleRow("Reduce motion","less shake &amp; jitter",reduceMotion,"toggleReduceMotion()");
   h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
-  h+=toggleRow("Music","background music, where a game has it",!jumpMusicMuted,"toggleJumpMusic()");
-  h+=toggleRow("Sound effects","every sound effect across the arcade",!sfxMuted,"toggleSfx()");
+  h+=volRow("Music","background music, where a game has it",musicVolPct,"toggleMusicVol","slideMusicVol");
+  h+=volRow("Sound effects","every sound effect across the arcade",sfxVolPct,"toggleSfxVol","slideSfxVol");
   h+=toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true);
   h+=toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()");
   h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(ROUND_TIME),"setTimer");
@@ -8260,6 +8324,9 @@ function toggleHaptics(){ hapticsOn=!hapticsOn; try{localStorage.setItem("qu33ph
 function setHapticStrength(v){ hapticStrength=v; try{localStorage.setItem("qu33phHapticStrength",v);}catch(e){} renderSettings(); haptic(hapticStrength==="light"?12:hapticStrength==="strong"?45:25); }
 function toggleReduceMotion(){ reduceMotion=!reduceMotion; try{localStorage.setItem("qu33phReduceMotion",reduceMotion?"on":"off");}catch(e){} renderSettings(); }
 function toggleJumpMusic(){ setJumpMute(!jumpMusicMuted); renderSettings(); }
+function toggleMusicVol(){ setMusicVolPct(musicVolPct>0?0:(musicVolPrevPct||100)); renderSettings(); }
+function slideMusicVol(v){ setMusicVolPct(parseInt(v,10)); renderSettings(); }
+function slideSfxVol(v){ setSfxVolPct(parseInt(v,10)); renderSettings(); }
 function setTimer(v){ ROUND_TIME=parseInt(v); TOTAL_TIME=Math.round(ROUND_TIME*1.5); try{localStorage.setItem("qu33phTimer",String(ROUND_TIME));}catch(e){} renderSettings(); }
 function setDefaultTheme(v){ currentTheme=v; try{localStorage.setItem("qu33phDefaultTheme",v);}catch(e){} try{updateLogo();}catch(e){} try{computeLayout();}catch(e){} renderSettings(); }
 function setDefaultOrientation(v){
@@ -8385,6 +8452,7 @@ try {
 
 // ─── END ACHIEVEMENTS ──────────────────────────────────────────────────────
 
+try{ applyVolumeSettings(); }catch(e){}
 loop();
       </script>
 
