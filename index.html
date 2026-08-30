@@ -784,7 +784,7 @@
   </style>
 </head>
 <body>
-<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v456</div>
+<div id="verBadge" style="position:fixed;bottom:6px;right:8px;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#444;z-index:99999;letter-spacing:1px;pointer-events:none;">v457</div>
 
 <canvas id="game"></canvas>
 
@@ -5056,11 +5056,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=457&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=457&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=457&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -5088,7 +5088,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=457&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5099,7 +5099,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=456&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=457&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
@@ -8274,20 +8274,71 @@ function renderSettings(){
   // slider underneath. The toggle and slider drive each other: dragging the
   // slider to 0 turns the toggle off; dragging above 0 turns it on; clicking
   // the toggle off snaps the slider to 0, and back on restores its last spot.
-  function volRow(lbl,sub,pct,toggleFn,sliderFn){
+  function volRow(lbl,sub,pct,toggleFn,sliderFn,id){
     var on = pct>0;
     var onCol="#3fa34d", offCol="#333";
+    var dots='';
+    for(var v=0; v<=100; v+=10){
+      var active = v<=pct;
+      var sz = active?10:7;
+      dots += '<div style="position:absolute;top:50%;left:'+v+'%;transform:translate(-50%,-50%);width:26px;height:26px;">'
+        +'<div id="volDot_'+id+'_'+v+'" style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+(active?onCol:'#444')+';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transition:width 0.08s,height 0.08s,background 0.08s;"></div>'
+        +'</div>';
+    }
     return '<div style="grid-column:span 2;padding:var(--sPad) calc(var(--sPad) + 2px);background:#0e0e0e;border:1px solid #1a1a1a;border-radius:8px;">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;">'
       +'<div style="display:flex;flex-direction:column;gap:2px;padding-right:6px;min-width:0;"><span style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#fff;letter-spacing:0.3px;line-height:1.15;">'+lbl+'</span>'
       +'<span style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sSub);color:#555;letter-spacing:0.2px;line-height:1.2;">'+sub+'</span></div>'
-      +'<div onclick="'+toggleFn+'()" style="width:38px;height:21px;border-radius:11px;background:'+(on?onCol:offCol)+';position:relative;cursor:pointer;flex-shrink:0;transition:background 0.15s;">'
-      +'<div style="width:15px;height:15px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(on?"20px":"3px")+';transition:left 0.15s;"></div></div></div>'
-      +'<div style="display:flex;align-items:center;gap:10px;margin-top:9px;">'
-      +'<input type="range" min="0" max="100" step="10" value="'+pct+'" oninput="'+sliderFn+'(this.value)" style="flex:1;accent-color:#3fa34d;height:20px;">'
-      +'<span style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#aaa;min-width:30px;text-align:right;">'+pct+'</span>'
+      +'<div id="volToggle_'+id+'" onclick="'+toggleFn+'()" style="width:38px;height:21px;border-radius:11px;background:'+(on?onCol:offCol)+';position:relative;cursor:pointer;flex-shrink:0;transition:background 0.15s;">'
+      +'<div id="volKnob_'+id+'" style="width:15px;height:15px;border-radius:50%;background:#fff;position:absolute;top:3px;left:'+(on?"20px":"3px")+';transition:left 0.15s;"></div></div></div>'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-top:14px;">'
+      +'<div id="volSlider_'+id+'" onpointerdown="volPointerDown(event,\''+id+'\')" onpointermove="volPointerMove(event,\''+id+'\')" onpointerup="volPointerUp(event,\''+id+'\')" onpointercancel="volPointerUp(event,\''+id+'\')" style="position:relative;flex:1;height:26px;touch-action:none;cursor:pointer;">'
+      +'<div style="position:absolute;top:50%;left:0;right:0;height:4px;background:#2a2a2a;border-radius:2px;transform:translateY(-50%);"></div>'
+      +'<div id="volFill_'+id+'" style="position:absolute;top:50%;left:0;height:4px;width:'+pct+'%;background:'+onCol+';border-radius:2px;transform:translateY(-50%);"></div>'
+      +dots
+      +'</div>'
+      +'<span id="volNum_'+id+'" style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#aaa;min-width:30px;text-align:right;">'+pct+'</span>'
       +'</div></div>';
   }
+  window.VOL_ROW_FNS = { music:{ set:function(v){ setMusicVolPct(v); } }, sfx:{ set:function(v){ setSfxVolPct(v); } } };
+  window.volPctFromEvent = function(el, clientX){
+    var r = el.getBoundingClientRect();
+    var x = Math.max(0, Math.min(r.width, clientX - r.left));
+    var raw = (x/r.width)*100;
+    return Math.max(0, Math.min(100, Math.round(raw/10)*10));
+  };
+  window.volApplyVisual = function(id, pct){
+    var onCol="#3fa34d";
+    var fill=document.getElementById('volFill_'+id); if(fill) fill.style.width=pct+'%';
+    var num=document.getElementById('volNum_'+id); if(num) num.textContent=pct;
+    var toggle=document.getElementById('volToggle_'+id), knob=document.getElementById('volKnob_'+id);
+    var on = pct>0;
+    if(toggle) toggle.style.background = on?onCol:'#333';
+    if(knob) knob.style.left = on?'20px':'3px';
+    for(var v=0; v<=100; v+=10){
+      var d=document.getElementById('volDot_'+id+'_'+v);
+      if(d){ var active=v<=pct, sz=active?10:7; d.style.width=sz+'px'; d.style.height=sz+'px'; d.style.background=active?onCol:'#444'; }
+    }
+  };
+  // pointer capture lets the drag keep tracking even once the finger moves
+  // outside the slider's own bounds — and updates are applied straight to
+  // the DOM (no renderSettings() call) so a fast drag doesn't fight against
+  // the whole panel being rebuilt on every pixel of movement
+  window.volPointerDown = function(e, id){
+    try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(err){}
+    var pct = volPctFromEvent(e.currentTarget, e.clientX);
+    VOL_ROW_FNS[id].set(pct);
+    volApplyVisual(id, pct);
+  };
+  window.volPointerMove = function(e, id){
+    if(!e.currentTarget.hasPointerCapture || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    var pct = volPctFromEvent(e.currentTarget, e.clientX);
+    VOL_ROW_FNS[id].set(pct);
+    volApplyVisual(id, pct);
+  };
+  window.volPointerUp = function(e, id){
+    try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(err){}
+  };
   function segRow(lbl,sub,opts,cur,fn){
     let btns=opts.map(function(o){ let sel=o[0]===cur;
       return '<button onclick="'+fn+'(\''+o[0]+'\')" style="flex:1;padding:clamp(5px,0.85vh,8px) 2px;border:none;background:'+(sel?"#3fa34d":"#1c1c1c")+';color:'+(sel?"#fff":"#999")+';font-family:Helvetica,Arial,sans-serif;font-size:clamp(9px,1.3vh,11px);font-weight:bold;letter-spacing:0.5px;cursor:pointer;">'+o[1]+'</button>';
@@ -8310,8 +8361,8 @@ function renderSettings(){
   h+=toggleRow("Haptic feedback","vibrate on taps &amp; events",hapticsOn,"toggleHaptics()");
   h+=toggleRow("Reduce motion","less shake &amp; jitter",reduceMotion,"toggleReduceMotion()");
   h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
-  h+=volRow("Music","background music, where a game has it",musicVolPct,"toggleMusicVol","slideMusicVol");
-  h+=volRow("Sound effects","every sound effect across the arcade",sfxVolPct,"toggleSfxVol","slideSfxVol");
+  h+=volRow("Music","background music, where a game has it",musicVolPct,"toggleMusicVol","slideMusicVol","music");
+  h+=volRow("Sound effects","every sound effect across the arcade",sfxVolPct,"toggleSfxVol","slideSfxVol","sfx");
   h+=toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true);
   h+=toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()");
   h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(ROUND_TIME),"setTimer");
