@@ -103,7 +103,7 @@ if(THEME==='inverted') document.body.classList.add('th-inverted');
 // (Settings writes qu33phMusicOn), started on the very first tap since mobile
 // browsers won't allow audio to autoplay before a user gesture ─────────────
 function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
-const bgMusic=new Audio('qu33phballmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55*MUSIC_VOL_MULT; bgMusic.preload='auto';
+const bgMusic=new Audio('qu33phballmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.45*MUSIC_VOL_MULT; bgMusic.preload='auto';
 let musicStarted=false;
 // only latch musicStarted once play() genuinely succeeds — the very first
 // automatic attempt on page load almost always gets silently blocked by the

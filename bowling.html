@@ -84,7 +84,7 @@ const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLow
 // enough "user activation" for the browser to allow autoplay here too — with
 // a tap-anywhere fallback in case a particular browser still blocks it. ────
 function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
-const bgMusic=new Audio('bowlingmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55*MUSIC_VOL_MULT; bgMusic.preload='auto';
+const bgMusic=new Audio('bowlingmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.45*MUSIC_VOL_MULT; bgMusic.preload='auto';
 let musicStarted=false;
 // only latch musicStarted once play() genuinely succeeds — the very first
 // automatic attempt on page load almost always gets silently blocked by the

@@ -39,7 +39,7 @@ if(THEME==='inverted') document.body.classList.add('th-inverted');
 // real phone, so listeners stay active (not {once:true}) until a real tap
 // actually gets through. ────────────────────────────────────────────────
 function musicOn(){ try{ return localStorage.getItem('qu33phMusicOn')!=='0'; }catch(e){ return true; } }
-const bgMusic=new Audio('stackmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.55*MUSIC_VOL_MULT; bgMusic.preload='auto';
+const bgMusic=new Audio('stackmusic.mp3'); bgMusic.loop=true; bgMusic.volume=0.45*MUSIC_VOL_MULT; bgMusic.preload='auto';
 let musicStarted=false;
 function startMusicOnce(){
   if(musicStarted || !musicOn()) return;
