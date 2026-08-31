@@ -49,9 +49,10 @@
     repeating-linear-gradient(135deg,#ff4d4d 0 4px,transparent 4px 8px); border-top:2px solid #ff4d4d; }
   .lvl-back{ background:none; border:0; color:#666; font-family:Helvetica,Arial,sans-serif; font-size:11px;
     letter-spacing:2px; padding:6px 10px; cursor:pointer; }
-  .legend-header{ font-family:Helvetica,Arial,sans-serif; font-size:12px; font-weight:bold; color:#888;
-    letter-spacing:2px; text-align:center; margin:22px auto 0; width:min(266px,73vw); }
-  .legend-row{ display:flex; justify-content:space-between; align-items:flex-start; width:min(266px,73vw); margin:14px auto 4px; gap:18px; }
+  .legend-header{ font-family:Helvetica,Arial,sans-serif; font-size:10.5px; font-weight:bold; color:#888;
+    letter-spacing:1.2px; text-align:center; margin:0 0 5px; white-space:nowrap;
+    position:relative; left:50%; transform:translateX(-50%); width:max-content; }
+  .legend-row{ display:flex; justify-content:space-between; align-items:flex-start; width:min(266px,73vw); margin:22px auto 4px; gap:18px; }
   .leg-col{ display:flex; flex-direction:column; gap:11px; }
   .leg-item{ display:flex; align-items:center; gap:8px; }
   .leg-mk{ position:relative; width:44px; height:20px; flex:0 0 44px; }
@@ -95,14 +96,15 @@
     <button class="mk-btn" id="bEndless">ENDLESS</button>
     <button class="mk-btn flip" id="bTimed">TIMED &middot; 45s</button>
     <button class="mk-btn" id="bLevels">LEVELS</button>
-    <div class="legend-header">HOW TO EARN POINTS</div>
     <div class="legend-row">
       <div class="leg-col">
+        <div class="legend-header">HOW TO EARN POINTS</div>
         <div class="leg-item"><span class="leg-mk"><img src="stackred.png" alt=""></span><span class="leg-txt">+1</span></div>
         <div class="leg-item"><span class="leg-mk"><img src="stackgreen.png" alt=""></span><span class="leg-txt">+2</span></div>
         <div class="leg-item"><span class="leg-mk"><img src="stackblue.png" alt=""></span><span class="leg-txt">+3</span></div>
       </div>
       <div class="leg-col">
+        <div class="legend-header">OBSTACLES</div>
         <div class="leg-item"><span class="leg-mk"><img src="Chair.png" class="leg-chair" alt=""></span><span class="leg-txt">LAUNCHES MARKER</span></div>
         <div class="leg-item"><span class="leg-mk"><svg viewBox="0 0 100 30" width="36" height="14"><polyline points="0,26 12.5,4 25,26 37.5,4 50,26 62.5,4 75,26 87.5,4 100,26" fill="none" stroke="#ff4d4d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="leg-txt">TIPS MARKER</span></div>
       </div>

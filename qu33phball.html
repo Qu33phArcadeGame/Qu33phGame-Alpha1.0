@@ -650,7 +650,7 @@ function ensureFieldCache(){
   const g=FIELDC.getContext('2d');
   s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
   if(ready(FIELD_IMG())) s2.drawImage(FIELD_IMG(),0,0,CW,CH);
-  else { s2.fillStyle='#111'; s2.fillRect(0,0,CW,CH); drawBoardFallback(s2); }
+  else { s2.fillStyle='#111'; s2.fillRect(0,0,CW,CH); }   // plain placeholder while the real art loads — never the hitbox/pocket debug view
   if(CANFILTER && TH.filter) g.filter=TH.filter;
   g.drawImage(sc,0,0);
   g.filter='none';
