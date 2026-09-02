@@ -683,7 +683,11 @@ cv.addEventListener('pointerdown',e=>{
   dragging=true; dStart=pt(e); dNow=dStart;
   aimU=Math.max(0.06,Math.min(0.94,(dStart.x-0.5)/0.92+0.5));   // you throw from where you put your finger
 });
-cv.addEventListener('pointermove',e=>{ if(dragging) dNow=pt(e); });
+cv.addEventListener('pointermove',e=>{
+  if(!dragging) return;
+  dNow=pt(e);
+  aimU=Math.max(0.06,Math.min(0.94,(dNow.x-0.5)/0.92+0.5));   // the marker follows your finger the whole drag, not just where you first touched down
+});
 window.addEventListener('pointerup',()=>{
   if(!dragging) return; dragging=false;
   const dx=dNow.x-dStart.x, dy=dNow.y-dStart.y;
