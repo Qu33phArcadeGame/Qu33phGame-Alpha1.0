@@ -10,17 +10,32 @@
 .marker-btn{position:absolute;top:9px;z-index:20;background:#050505;color:#fff;border:2.5px solid #fff;padding:7px 11px 6px;font:bold 10px Helvetica,Arial,sans-serif;letter-spacing:.7px;line-height:1;border-radius:4px 9px 9px 4px;box-shadow:0 2px 0 #000;cursor:pointer}.marker-btn:before{content:"";position:absolute;left:-7px;top:3px;bottom:3px;width:6px;background:#fff;border-radius:3px 0 0 3px}.marker-btn.right{right:9px;border-radius:9px 4px 4px 9px}.marker-btn.right:before{left:auto;right:-7px;border-radius:0 3px 3px 0}
 .menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:42px 14px 16px}.title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(27px,7vw,50px);letter-spacing:5px;margin:0}.sub{font-family:'Brush Script MT','Segoe Script',cursive;color:#ffd24a;font-size:20px;margin:0 0 12px}.grid{width:min(940px,96vw);display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1;min-height:0}.slot{position:relative;border:2px dashed #303038;background:#07070b;min-height:0;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}.slot:hover{border-color:#888}.slot.soon{cursor:default}.slot .num{position:absolute;top:7px;left:9px;color:#555;font:bold 11px monospace}.slot .slottext{color:#444;letter-spacing:2px;font-size:10px;font-weight:bold}.slot.playable{border-color:#555;background:radial-gradient(circle at 50% 45%,#111 0,#050505 65%)}.cab-label{position:absolute;bottom:8px;left:8px;right:8px;color:#fff;font-size:12px;font-weight:bold;letter-spacing:2px;text-shadow:0 2px 4px #000}.slot.playable:after{content:'PLAY';position:absolute;top:8px;right:8px;border:1px solid #777;padding:3px 5px;font-size:8px;letter-spacing:1px;color:#ddd}
 #selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.choice{background:#06060a;border:2px solid #29292f;border-radius:12px;padding:10px;cursor:pointer;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center}.choice:hover{border-color:#777}.choice img{width:min(190px,70%);height:250px;object-fit:contain}.choice span{font-size:11px;letter-spacing:2px;color:#aaa;margin-top:5px}.hint{margin-top:14px;color:#555;font-size:10px;letter-spacing:1.5px}
-#gameScreen{touch-action:none;user-select:none;-webkit-user-select:none}.track{position:absolute;inset:0;background:#000;overflow:hidden}.lane{position:absolute;left:50%;top:-10%;width:54%;height:125%;transform:translateX(-50%);background:linear-gradient(90deg,#050505,#101015 50%,#050505);clip-path:polygon(34% 0,66% 0,100% 100%,0 100%);opacity:.9}.laneLine{position:absolute;top:0;bottom:0;width:4px;background:repeating-linear-gradient(to bottom,#444 0 55px,transparent 55px 100px);opacity:.55}.line1{left:28%}.line2{left:50%;transform:translateX(-50%)}.line3{right:28%}.game-hud{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:10;display:flex;gap:12px;align-items:center;background:rgba(0,0,0,.7);border:1px solid #444;border-radius:8px;padding:7px 10px;font:bold 10px monospace;letter-spacing:1px}.hud-speed{color:#ffd24a}.board{position:absolute;z-index:8;width:min(125px,25vw);height:auto;left:50%;top:64%;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 8px 8px rgba(0,0,0,.8))}.touch-zone{position:absolute;z-index:9;top:0;bottom:0;width:50%;}.steer-zone{left:0;width:100%;}.push-left{left:0}.push-right{right:0}.instruction{position:absolute;z-index:11;left:50%;top:22%;transform:translateX(-50%);text-align:center;color:#aaa;font-size:10px;letter-spacing:2px;line-height:1.6;pointer-events:none;opacity:.85}.game-over{position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center}.game-over h2{letter-spacing:4px;margin:0 0 8px}.restart{margin-top:14px;background:#111;color:#fff;border:2px solid #fff;padding:10px 14px;border-radius:5px;font-weight:bold;letter-spacing:2px}
-@media(max-width:650px){.grid{grid-template-columns:repeat(2,1fr);gap:8px}.choices{gap:6px}.choice{min-height:240px;padding:5px}.choice img{height:200px;width:90%}.cab-label{font-size:9px}.board{width:min(110px,29vw)}}
+#gameScreen{touch-action:none;user-select:none;-webkit-user-select:none}
+/* the world is one big tiled, zoomed-in field image — much larger than the
+   viewport so panning around never visibly runs out of room. It's the thing
+   that moves; the board itself never actually changes screen position. */
+.world{position:absolute;top:-100%;left:-100%;width:300%;height:300%;
+  background-image:url('originalfield.png');background-repeat:repeat;background-size:640px 640px;
+  filter:brightness(0.85);}
+.game-hud{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:10;display:flex;gap:12px;align-items:center;background:rgba(0,0,0,.7);border:1px solid #444;border-radius:8px;padding:7px 10px;font:bold 10px monospace;letter-spacing:1px}
+.hud-speed{color:#ffd24a}
+.board{position:absolute;z-index:8;width:min(80px,17vw);height:auto;left:50%;top:50%;
+  transform:translate(-50%,-50%) rotate(0deg);pointer-events:none;filter:drop-shadow(0 6px 6px rgba(0,0,0,.8));
+  transition:filter .15s;}
+.board.grabbed{filter:drop-shadow(0 2px 10px rgba(255,210,74,.85));}
+.instruction{position:absolute;z-index:11;left:50%;top:16%;transform:translateX(-50%);text-align:center;color:#aaa;font-size:10px;letter-spacing:2px;line-height:1.6;pointer-events:none;opacity:.85;transition:opacity .3s;}
+.game-over{position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center}
+.game-over h2{letter-spacing:4px;margin:0 0 8px}.restart{margin-top:14px;background:#111;color:#fff;border:2px solid #fff;padding:10px 14px;border-radius:5px;font-weight:bold;letter-spacing:2px}
+@media(max-width:650px){.grid{grid-template-columns:repeat(2,1fr);gap:8px}.choices{gap:6px}.choice{min-height:240px;padding:5px}.choice img{height:200px;width:90%}.cab-label{font-size:9px}}
 </style>
 </head>
 <body>
 <div id="menuScreen" class="screen">
-  <button class="marker-btn" onclick="location.href='/'">← ARCADE</button>
+  <button class="marker-btn" onclick="location.href='/'">&larr; ARCADE</button>
   <div class="menu">
     <div class="title">SEASON 2</div><div class="sub">NEW MACHINES COMING SOON</div>
     <div class="grid">
-      <div class="slot playable" onclick="openSelect()"><span class="num">01</span><img src="season2-blue.png" alt="Qu33ph Skateboarding" style="width:42%;height:76%;object-fit:contain"><div class="cab-label">QU33PH SKATEBOARDING</div></div>
+      <div class="slot playable" onclick="openSelect()"><span class="num">01</span><img src="season2-green.png" alt="Qu33ph Skateboarding" style="width:42%;height:76%;object-fit:contain"><div class="cab-label">QU33PH SKATEBOARDING</div></div>
       <div class="slot soon"><span class="num">02</span><span class="slottext">EMPTY MACHINE SLOT</span></div>
       <div class="slot soon"><span class="num">03</span><span class="slottext">EMPTY MACHINE SLOT</span></div>
       <div class="slot soon"><span class="num">04</span><span class="slottext">EMPTY MACHINE SLOT</span></div>
@@ -34,43 +49,125 @@
 </div>
 
 <div id="selectScreen" class="screen hidden">
-  <button class="marker-btn" onclick="showMenu()">← BACK</button>
+  <button class="marker-btn" onclick="showMenu()">&larr; BACK</button>
   <div class="select-wrap">
     <div class="select-title">CHOOSE YOUR MARKER</div>
     <div class="select-sub">PICK THE BOARD YOU WANT TO RIDE</div>
     <div class="choices">
-      <button class="choice" onclick="startGame('blue')"><img src="season2-blue.png"><span>BLUE / QU33PH</span></button>
-      <button class="choice" onclick="startGame('green')"><img src="season2-green.png"><span>GREEN</span></button>
+      <button class="choice" onclick="startGame('blue')"><img src="season2-green.png"><span>BLUE / QU33PH</span></button>
+      <button class="choice" onclick="startGame('green')"><img src="season2-blue.png"><span>GREEN</span></button>
       <button class="choice" onclick="startGame('red')"><img src="season2-red.png"><span>RED</span></button>
     </div>
-    <div class="hint">ONE FINGER = STEER &nbsp; • &nbsp; SECOND FINGER = PUSH LEFT OR RIGHT</div>
+    <div class="hint">TWO FINGERS = GRAB &amp; MOVE THE BOARD &nbsp;&bull;&nbsp; DROP TO ONE FINGER AND SWIPE TO FLICK IT ROLLING</div>
   </div>
 </div>
 
 <div id="gameScreen" class="screen hidden">
-  <button class="marker-btn" onclick="quitGame()">← BACK</button>
-  <div class="game-hud"><span>QU33PH SKATEBOARDING</span><span class="hud-speed" id="speedHud">SPEED 0</span><span id="scoreHud">0000</span></div>
-  <div class="track"><div class="lane"></div><div class="laneLine line1"></div><div class="laneLine line2"></div><div class="laneLine line3"></div></div>
-  <div class="instruction" id="instruction">ONE FINGER TO STEER<br>SECOND FINGER ON LEFT OR RIGHT TO PUSH</div>
-  <img id="playerBoard" class="board" src="season2-blue.png">
-  <div id="steerZone" class="touch-zone steer-zone"></div>
-  <div id="pushLeft" class="touch-zone push-left"></div><div id="pushRight" class="touch-zone push-right"></div>
-  <div id="gameOver" class="game-over hidden"><h2>WIPEOUT</h2><div>YOU HIT AN OBSTACLE</div><button class="restart" onclick="restartGame()">RIDE AGAIN</button></div>
+  <button class="marker-btn" onclick="quitGame()">&larr; BACK</button>
+  <div class="game-hud"><span>QU33PH SKATEBOARDING</span><span class="hud-speed" id="speedHud">SPEED 0</span></div>
+  <div class="world" id="world"></div>
+  <div class="instruction" id="instruction">TWO FINGERS: GRAB &amp; MOVE THE BOARD<br>DROP TO ONE FINGER + SWIPE: FLICK IT ROLLING<br>LET GO: IT COASTS TO A STOP</div>
+  <img id="playerBoard" class="board" src="season2-green.png">
+  <div id="gameOver" class="game-over hidden"><h2>NICE RIDE</h2><button class="restart" onclick="restartGame()">RIDE AGAIN</button></div>
 </div>
+
 <script>
-const boards={blue:'season2-blue.png',green:'season2-green.png',red:'season2-red.png'};
-let selected='blue', speed=0, score=0, x=50, running=false, raf=0, last=0, steerId=null, pushIds=new Set(), obstacles=[];
+const boards={blue:'season2-green.png',green:'season2-blue.png',red:'season2-red.png'};
 const $=id=>document.getElementById(id);
+const worldEl=$('world'), boardEl=$('playerBoard'), gameEl=$('gameScreen');
+
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');}
-function startGame(color){selected=color; $('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); $('playerBoard').src=boards[color]; restartGame();}
-function quitGame(){running=false;cancelAnimationFrame(raf);$('gameScreen').classList.add('hidden');openSelect();}
-function restartGame(){obstacles=[];speed=0;score=0;x=50;running=true;last=performance.now();$('gameOver').classList.add('hidden');$('instruction').style.opacity='.85';frame(last);}
-function frame(t){if(!running)return;const dt=Math.min(.035,(t-last)/1000);last=t; const pushing=pushIds.size>0; speed += pushing ? 38*dt : -12*dt; speed=Math.max(0,Math.min(100,speed)); if(steerId!==null){const tx=steerTarget; x += (tx-x)*Math.min(1,dt*8)} score += speed*dt*.9; if(Math.random()<dt*(.55+speed/90)) obstacles.push({x:10+Math.random()*80,y:-10,size:7+Math.random()*4}); obstacles.forEach(o=>o.y += (22+speed*.65)*dt); obstacles=obstacles.filter(o=>o.y<110); for(const o of obstacles){if(o.y>73&&o.y<88&&Math.abs(o.x-x)<9){running=false;$('gameOver').classList.remove('hidden');break;}} $('playerBoard').style.left=x+'%';$('speedHud').textContent='SPEED '+Math.round(speed);$('scoreHud').textContent=String(Math.floor(score)).padStart(4,'0'); drawObstacles(); raf=requestAnimationFrame(frame);}
-let steerTarget=50;function steer(e){const r=$('steerZone').getBoundingClientRect();steerTarget=Math.max(8,Math.min(92,(e.clientX-r.left)/r.width*100));}
-function drawObstacles(){document.querySelectorAll('.obstacle').forEach(n=>n.remove());const track=document.querySelector('.track');obstacles.forEach(o=>{const n=document.createElement('div');n.className='obstacle';n.style.cssText=`position:absolute;z-index:6;left:${o.x}%;top:${o.y}%;width:${o.size}%;height:${o.size}%;transform:translate(-50%,-50%);border:2px solid #777;background:#111;clip-path:polygon(50% 0,100% 100%,0 100%);`;track.appendChild(n);});}
-$('steerZone').addEventListener('pointerdown',e=>{if(steerId===null){steerId=e.pointerId;steer(e);$('instruction').style.opacity='.2';}e.preventDefault();});$('steerZone').addEventListener('pointermove',e=>{if(e.pointerId===steerId)steer(e);});
-function push(e){pushIds.add(e.pointerId);e.preventDefault();}function release(e){pushIds.delete(e.pointerId);if(e.pointerId===steerId)steerId=null;}
-$('pushLeft').addEventListener('pointerdown',push);$('pushRight').addEventListener('pointerdown',push);window.addEventListener('pointerup',release);window.addEventListener('pointercancel',release);
+function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); $('playerBoard').src=boards[color]; restartGame();}
+function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();$('gameScreen').classList.add('hidden');openSelect();}
+
+// ── camera / movement state ────────────────────────────────────────────
+// camX/camY is how far the WORLD has scrolled — the board sprite itself
+// never moves on screen, it's always pinned dead centre. Moving the world
+// the opposite way the board "should" move is what makes it feel like the
+// board itself is what's actually travelling.
+let camX=0, camY=0;
+let vx=0, vy=0;            // current rolling speed (world px/sec), from the last flick
+let boardAngle=0;
+let pointers=new Map();     // active touches: id -> {x,y}
+let dragAnchor=null;        // midpoint of the 2-finger grab, updated every move
+let wasGrabbed=false;       // true once 2 fingers have touched down this "hold" — gates the flick so a random single tap can't launch it
+let lastSingle=null;        // {x,y,t} of the remaining finger right after dropping from 2 to 1, for measuring flick velocity
+let running=false, raf=0, last=0;
+const FRICTION=0.90;        // per-frame decay once no fingers are down, so it rolls to a natural stop
+
+function avgPoint(){ let sx=0,sy=0,n=0; pointers.forEach(p=>{sx+=p.x;sy+=p.y;n++;}); return n?{x:sx/n,y:sy/n}:null; }
+
+function onDown(e){
+  try{ gameEl.setPointerCapture(e.pointerId); }catch(err){}
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  e.preventDefault();
+  if(pointers.size>=2){
+    vx=0; vy=0;                       // grabbing it cancels whatever momentum it had
+    dragAnchor=avgPoint();
+    wasGrabbed=true;
+    boardEl.classList.add('grabbed');
+    $('instruction').style.opacity='0';
+  }
+}
+function onMove(e){
+  if(!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size>=2 && dragAnchor){
+    const now=avgPoint();
+    // dragging your fingers right should feel like pushing the board right,
+    // so the world underneath has to shift the opposite way
+    camX -= (now.x-dragAnchor.x);
+    camY -= (now.y-dragAnchor.y);
+    dragAnchor=now;
+  } else if(pointers.size===1 && wasGrabbed){
+    const p=pointers.values().next().value;
+    const t=performance.now();
+    if(lastSingle){
+      const dt=(t-lastSingle.t)/1000;
+      if(dt>0.001){
+        vx=(p.x-lastSingle.x)/dt;
+        vy=(p.y-lastSingle.y)/dt;
+        boardAngle=Math.atan2(vy,vx)*180/Math.PI+90;
+      }
+    }
+    lastSingle={x:p.x,y:p.y,t};
+  }
+}
+function onUp(e){
+  pointers.delete(e.pointerId);
+  if(pointers.size<2) dragAnchor=null;
+  if(pointers.size===0){
+    wasGrabbed=false; lastSingle=null;
+    boardEl.classList.remove('grabbed');
+    $('instruction').style.opacity='.85';
+  }
+}
+gameEl.addEventListener('pointerdown',onDown);
+gameEl.addEventListener('pointermove',onMove);
+gameEl.addEventListener('pointerup',onUp);
+gameEl.addEventListener('pointercancel',onUp);
+
+function restartGame(){
+  camX=0; camY=0; vx=0; vy=0; boardAngle=0; pointers.clear(); dragAnchor=null; wasGrabbed=false; lastSingle=null;
+  running=true; last=performance.now();
+  $('gameOver').classList.add('hidden');
+  $('instruction').style.opacity='.85';
+  frame(last);
+}
+function frame(t){
+  if(!running) return;
+  const dt=Math.min(0.05,(t-last)/1000); last=t;
+  if(pointers.size===0 && (vx||vy)){
+    // no fingers down: it rolls to a natural stop instead of coasting forever
+    camX -= vx*dt; camY -= vy*dt;
+    vx*=FRICTION; vy*=FRICTION;
+    if(Math.hypot(vx,vy)<4){ vx=0; vy=0; }
+  }
+  worldEl.style.transform=`translate(${camX}px,${camY}px)`;
+  boardEl.style.transform=`translate(-50%,-50%) rotate(${boardAngle}deg)`;
+  $('speedHud').textContent='SPEED '+Math.round(Math.hypot(vx,vy));
+  raf=requestAnimationFrame(frame);
+}
 </script>
 </body></html>
