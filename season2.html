@@ -7,7 +7,19 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:Arial,Helvetica,sans-serif}button{font:inherit}
 .screen{position:absolute;inset:0;background:#000;overflow:hidden}.hidden{display:none!important}
-.marker-btn{position:absolute;top:9px;left:9px;z-index:20;background:#050505;color:#fff;border:2.5px solid #fff;padding:7px 11px 6px;font:bold 10px Helvetica,Arial,sans-serif;letter-spacing:.7px;line-height:1;border-radius:4px 9px 9px 4px;box-shadow:0 2px 0 #000;cursor:pointer}.marker-btn:before{content:"";position:absolute;left:-7px;top:3px;bottom:3px;width:6px;background:#fff;border-radius:3px 0 0 3px}.marker-btn.right{left:auto;right:9px;border-radius:9px 4px 4px 9px}.marker-btn.right:before{left:auto;right:-7px;border-radius:0 3px 3px 0}
+.marker-btn{position:absolute;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;
+  border:2.5px solid #fff;border-radius:4px 9px 9px 4px;
+  font-family:Helvetica,Arial,sans-serif;font-size:9.5px;font-weight:bold;letter-spacing:1px;
+  padding:5px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 3px 0 rgba(0,0,0,0.55),0 6px 10px rgba(0,0,0,0.4),inset 0 1.5px 0 rgba(255,255,255,0.4),inset 0 -4px 7px rgba(0,0,0,0.45);
+  transform:translateY(0);transition:transform 0.08s ease,box-shadow 0.08s ease;}
+.marker-btn::before{content:"";position:absolute;left:-15px;top:2px;bottom:2px;width:15px;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35),inset 0 -3px 5px rgba(0,0,0,0.45);}
+.marker-btn:active{background:linear-gradient(180deg,#161616 0%,#000 100%);transform:translateY(3px);
+  box-shadow:0 0 0 rgba(0,0,0,0.55),0 1px 3px rgba(0,0,0,0.4),inset 0 2px 6px rgba(0,0,0,0.6);}
+.marker-btn:active::before{background:linear-gradient(180deg,#161616 0%,#000 100%);box-shadow:inset 0 2px 5px rgba(0,0,0,0.6);}
 .menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:44px 20px 16px;overflow-y:auto;box-sizing:border-box;}
 .title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(27px,7vw,50px);letter-spacing:5px;margin:0}
 .sub{font-family:'Brush Script MT','Segoe Script',cursive;color:#ffd24a;font-size:20px;margin:0 0 14px}
@@ -21,15 +33,23 @@
 .cab-card .empty-box{ width:100%; height:168px; border:2px dashed #2c2c32; border-radius:14px; background:#08080c; display:flex; align-items:center; justify-content:center; }
 .cab-card .empty-box span{ color:#444; font-size:9px; letter-spacing:1.5px; font-weight:bold; text-align:center; padding:0 8px; }
 .cab-card .empty-label{ color:#3a3a3a; }
-#selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.choice{background:#06060a;border:2px solid #29292f;border-radius:12px;padding:10px;cursor:pointer;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center}.choice:hover{border-color:#777}.choice img{width:min(190px,70%);height:250px;object-fit:contain}.choice span{font-size:11px;letter-spacing:2px;color:#aaa;margin-top:5px}.hint{margin-top:14px;color:#555;font-size:10px;letter-spacing:1.5px;line-height:1.8;}
+#selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.choice{background:#06060a;border:2px solid #29292f;border-radius:12px;padding:10px;cursor:pointer;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center}.choice:hover{border-color:#777}.choice img{width:min(190px,70%);height:250px;object-fit:contain}.choice span{font-size:11px;letter-spacing:2px;color:#aaa;margin-top:5px}.hint{margin-top:14px;color:#555;font-size:9.5px;letter-spacing:1.3px;line-height:1.9;}
 #gameScreen{touch-action:none;user-select:none;-webkit-user-select:none}
 .field{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.9);pointer-events:none;}
 .board-stage{position:absolute;left:0;top:0;width:100%;height:100%;perspective:500px;pointer-events:none;}
-.board{position:absolute;z-index:8;width:min(64px,14vw);height:auto;pointer-events:none;
+.board{position:absolute;z-index:8;width:min(60px,13vw);height:auto;pointer-events:none;
   filter:drop-shadow(0 6px 6px rgba(0,0,0,.8));transform-style:preserve-3d;}
-.instruction{position:absolute;z-index:11;left:50%;top:14%;transform:translateX(-50%);text-align:center;color:#aaa;font-size:9.5px;letter-spacing:1.6px;line-height:1.7;pointer-events:none;opacity:.85;transition:opacity .3s;width:88%;}
-.trick-label{position:absolute;z-index:12;left:50%;top:38%;transform:translate(-50%,-50%) scale(0.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(20px,6vw,34px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s, transform .15s;}
+.chairSpot{position:absolute;z-index:7;width:min(58px,12.5vw);height:auto;pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.7));}
+.trick-label{position:absolute;z-index:12;left:50%;top:34%;transform:translate(-50%,-50%) scale(0.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s, transform .15s;text-align:center;}
 .trick-label.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.hud{position:absolute;z-index:10;top:9px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;
+  background:rgba(0,0,0,.65);border:1px solid #333;border-radius:8px;padding:6px 12px;font:bold 11px monospace;letter-spacing:1px;}
+.hud .score{color:#ffd24a;}
+.hud .area{color:#7bd88f;}
+.peef-label{position:absolute;z-index:13;left:50%;top:34%;transform:translate(-50%,-50%) scale(0.6);color:#ff5a5a;
+  font-family:'Arial Black',Arial,sans-serif;font-size:clamp(22px,7vw,40px);letter-spacing:3px;text-shadow:0 3px 10px #000;
+  pointer-events:none;opacity:0;transition:opacity .15s, transform .15s;}
+.peef-label.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
 </style>
 </head>
 <body>
@@ -61,56 +81,95 @@
       <button class="choice" onclick="startGame('green')"><img src="season2-blue.png"><span>GREEN</span></button>
       <button class="choice" onclick="startGame('red')"><img src="season2-red.png"><span>RED</span></button>
     </div>
-    <div class="hint">FLICK THE BOARD TO ROLL — KEEP FLICKING TO BUILD SPEED<br>FLICK UP-RIGHT: KICKFLIP &nbsp;&bull;&nbsp; BIG FLICK UP-RIGHT: TRE FLIP<br>FLICK UP-LEFT: SHOVE-IT &nbsp;&bull;&nbsp; BIG FLICK UP-LEFT: POP SHOVE-IT</div>
+    <div class="hint">FLICK TO ROLL &nbsp;&bull;&nbsp; TAP TO OLLIE &nbsp;&bull;&nbsp; TAP THEN FLICK FOR A TRICK<br>
+    TRICK UP-RIGHT: KICKFLIP (+50) &nbsp;&bull;&nbsp; BIG: TRE FLIP (+150)<br>
+    TRICK UP-LEFT: SHOVE-IT (+50) &nbsp;&bull;&nbsp; BIG: POP SHOVE-IT (+150)<br>
+    OLLIE ONTO THE CHAIR AT THE EDGE TO CROSS TO THE NEXT AREA (+100)<br>
+    FALL OFF THE START EDGE = PEEF (&minus;100)</div>
   </div>
 </div>
 
 <div id="gameScreen" class="screen hidden">
   <button class="marker-btn" onclick="quitGame()">&larr; BACK</button>
-  <img class="field" src="originalfield.png">
-  <div class="instruction" id="instruction">FLICK THE BOARD TO ROLL<br>KEEP FLICKING TO BUILD SPEED<br><br>FLICK UP-RIGHT: KICKFLIP &nbsp;(BIGGER FLICK: TRE FLIP)<br>FLICK UP-LEFT: SHOVE-IT &nbsp;(BIGGER FLICK: POP SHOVE-IT)</div>
+  <div class="hud"><span class="area" id="areaHud">AREA 1/3</span><span class="score" id="scoreHud">0</span></div>
+  <img class="field" id="fieldImg" src="originalfield.png">
+  <img class="chairSpot hidden" id="chairImg" src="Chair.png">
   <div class="trick-label" id="trickLabel"></div>
+  <div class="peef-label" id="peefLabel">PEEF</div>
   <div class="board-stage"><img id="playerBoard" class="board" src="season2-green.png"></div>
 </div>
 
 <script>
 const boards={blue:'season2-green.png',green:'season2-blue.png',red:'season2-red.png'};
 const $=id=>document.getElementById(id);
-const boardEl=$('playerBoard'), gameEl=$('gameScreen'), fieldEl=document.querySelector('.field');
+const boardEl=$('playerBoard'), gameEl=$('gameScreen'), chairEl=$('chairImg');
 
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');}
 function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); boardEl.src=boards[color]; restartGame();}
 function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();$('gameScreen').classList.add('hidden');openSelect();}
 
+// ── play area boundaries, imported straight from the original core game's
+// own countertop dimensions (LEFT_EDGE = 20% / RIGHT_WALL = 75% of width) ──
+const AREA_COUNT=3;
+let areaIdx=0, score=0;
 let bx=0, by=0, vx=0, vy=0, boardAngle=0;
 let pointers=new Map();
 let dragId=null, dragStart=null, dragNow=null;
+let lastTapTime=-9999, lastTapPos=null;   // for the tap-then-flick trick combo
 let running=false, raf=0, last=0;
 const FRICTION=0.985;
-const FLICK_POWER=3.4;
-const MAX_SPEED=900;
+const FLICK_POWER=3.0;
+const MAX_SPEED=820;
 const MIN_FLICK=28;
 const HARD_FLICK=190;
+const TAP_MAX_MOVE=14;       // a "tap" is a press+release with less than this much drift
+const TAP_MAX_TIME=280;      // ...and released within this many ms
+const COMBO_WINDOW=550;      // a flick counts as a trick-flick if it starts this soon after a tap
 
 let trick=null;
 const TRICKS={
-  kickflip:{dur:450,label:'KICKFLIP'},
-  treflip:{dur:650,label:'TRE FLIP'},
-  shoveit:{dur:380,label:'SHOVE-IT'},
-  popshoveit:{dur:520,label:'POP SHOVE-IT'}
+  kickflip:{dur:450,label:'KICKFLIP',pts:50},
+  treflip:{dur:650,label:'TRE FLIP',pts:150},
+  shoveit:{dur:380,label:'SHOVE-IT',pts:50},
+  popshoveit:{dur:520,label:'POP SHOVE-IT',pts:150}
 };
+let ollieHop=0;      // simple in-place Ollie bounce (visual only, doesn't move the board)
+let crossing=null;   // {startT,dur,fromX,fromY,toX,toY} — the animated hop between areas
 
 function fieldRect(){ return gameEl.getBoundingClientRect(); }
+function bounds(){
+  const r=fieldRect();
+  return { left:r.width*0.20, right:r.width*0.75, top:r.height*0.16, bottom:r.height*0.86 };
+}
+
+function addScore(n){ score=Math.max(0,score+n); $('scoreHud').textContent=score; }
+
+function placeChair(){
+  const b=bounds();
+  if(areaIdx<AREA_COUNT-1){
+    chairEl.classList.remove('hidden');
+    chairEl.style.left=(b.right-6)+'px';
+    chairEl.style.top=((b.top+b.bottom)/2)+'px';
+    chairEl.style.transform='translate(-50%,-50%) rotate(90deg)';
+  } else {
+    chairEl.classList.add('hidden');
+  }
+}
 
 function restartGame(){
-  const r=fieldRect();
-  bx=r.width*0.16; by=r.height*0.82;
-  vx=0; vy=0; boardAngle=0; trick=null;
+  areaIdx=0; score=0;
+  const b=bounds();
+  bx=b.left+18; by=(b.top+b.bottom)/2;
+  vx=0; vy=0; boardAngle=90; trick=null; crossing=null; ollieHop=0;
   pointers.clear(); dragId=null; dragStart=null; dragNow=null;
+  lastTapTime=-9999; lastTapPos=null;
   running=true; last=performance.now();
-  $('instruction').style.opacity='.85';
   $('trickLabel').classList.remove('show');
+  $('peefLabel').classList.remove('show');
+  $('scoreHud').textContent='0';
+  $('areaHud').textContent='AREA '+(areaIdx+1)+'/'+AREA_COUNT;
+  placeChair();
   render();
   frame(last);
 }
@@ -120,29 +179,57 @@ function onDown(e){
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(dragId===null){
     dragId=e.pointerId;
-    dragStart={x:e.clientX,y:e.clientY};
+    dragStart={x:e.clientX,y:e.clientY,t:performance.now()};
     dragNow=dragStart;
-    $('instruction').style.opacity='0';
   }
   e.preventDefault();
 }
 function onMove(e){
   if(!pointers.has(e.pointerId)) return;
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(e.pointerId===dragId){ dragNow={x:e.clientX,y:e.clientY}; }
+  if(e.pointerId===dragId){ dragNow={x:e.clientX,y:e.clientY,t:performance.now()}; }
 }
 function onUp(e){
   pointers.delete(e.pointerId);
   if(e.pointerId===dragId){
-    if(dragStart && dragNow) applyFlick(dragNow.x-dragStart.x, dragNow.y-dragStart.y);
+    if(dragStart && dragNow){
+      const dx=dragNow.x-dragStart.x, dy=dragNow.y-dragStart.y;
+      const dist=Math.hypot(dx,dy), dt=dragNow.t-dragStart.t;
+      if(dist<=TAP_MAX_MOVE && dt<=TAP_MAX_TIME){
+        doTap(dragStart.x,dragStart.y);
+      } else {
+        applyFlick(dx,dy);
+      }
+    }
     dragId=null; dragStart=null; dragNow=null;
-    if(pointers.size===0) $('instruction').style.opacity='.85';
   }
 }
 gameEl.addEventListener('pointerdown',onDown);
 gameEl.addEventListener('pointermove',onMove);
 gameEl.addEventListener('pointerup',onUp);
 gameEl.addEventListener('pointercancel',onUp);
+
+function doTap(x,y){
+  lastTapTime=performance.now();
+  lastTapPos={x,y};
+  ollieHop=1;   // triggers the little in-place hop in render()
+
+  // Ollie while near the chair at the area's edge = cross to the next area
+  if(!chairEl.classList.contains('hidden')){
+    const cr=chairEl.getBoundingClientRect(), gr=fieldRect();
+    const cx=cr.left-gr.left+cr.width/2, cy=cr.top-gr.top+cr.height/2;
+    if(Math.hypot(bx-cx, by-cy) < 60){
+      crossToNextArea();
+    }
+  }
+}
+
+function crossToNextArea(){
+  if(areaIdx>=AREA_COUNT-1) return;
+  const b=bounds();
+  crossing={startT:performance.now(), dur:520, fromX:bx, fromY:by, toX:b.left+18, toY:by};
+  addScore(100);
+}
 
 function applyFlick(dx,dy){
   const dist=Math.hypot(dx,dy);
@@ -151,6 +238,11 @@ function applyFlick(dx,dy){
   const sp=Math.hypot(vx,vy);
   if(sp>MAX_SPEED){ vx*=MAX_SPEED/sp; vy*=MAX_SPEED/sp; }
   boardAngle=Math.atan2(dy,dx)*180/Math.PI+90;
+
+  // only counts as a trick if a tap (Ollie) happened just before this flick —
+  // a plain flick with no preceding tap is pure movement, no trick, any angle
+  const sinceTap=performance.now()-lastTapTime;
+  if(sinceTap>COMBO_WINDOW) return;
 
   const ang=Math.atan2(dy,dx)*180/Math.PI;
   const upRight = ang>-80 && ang<-10;
@@ -161,26 +253,42 @@ function applyFlick(dx,dy){
 
 function startTrick(type){
   trick={type, startT:performance.now(), dur:TRICKS[type].dur};
+  addScore(TRICKS[type].pts);
   const lbl=$('trickLabel');
-  lbl.textContent=TRICKS[type].label;
+  lbl.textContent=TRICKS[type].label+' +'+TRICKS[type].pts;
   lbl.classList.add('show');
   setTimeout(()=>lbl.classList.remove('show'), TRICKS[type].dur+250);
   try{ if(navigator.vibrate) navigator.vibrate(type==='treflip'||type==='popshoveit'?[20,30,20]:15); }catch(e){}
+}
+
+function doPeef(){
+  addScore(-100);
+  const b=bounds();
+  bx=b.left+18; by=(b.top+b.bottom)/2; vx=0; vy=0;
+  const lbl=$('peefLabel');
+  lbl.classList.add('show');
+  setTimeout(()=>lbl.classList.remove('show'), 700);
+  try{ if(navigator.vibrate) navigator.vibrate([10,40,10,40,30]); }catch(e){}
 }
 
 function frame(t){
   if(!running) return;
   const dt=Math.min(0.033,(t-last)/1000); last=t;
 
-  bx+=vx*dt; by+=vy*dt;
-  vx*=FRICTION; vy*=FRICTION;
-  if(Math.hypot(vx,vy)<2){ vx=0; vy=0; }
+  if(!crossing){
+    bx+=vx*dt; by+=vy*dt;
+    vx*=FRICTION; vy*=FRICTION;
+    if(Math.hypot(vx,vy)<2){ vx=0; vy=0; }
 
-  const r=fieldRect(), pad=28;
-  if(bx<pad){ bx=pad; vx=Math.abs(vx)*0.5; }
-  if(bx>r.width-pad){ bx=r.width-pad; vx=-Math.abs(vx)*0.5; }
-  if(by<pad){ by=pad; vy=Math.abs(vy)*0.5; }
-  if(by>r.height-pad){ by=r.height-pad; vy=-Math.abs(vy)*0.5; }
+    const b=bounds();
+    if(bx<b.left){
+      if(areaIdx===0){ doPeef(); }
+      else { bx=b.left; vx=Math.abs(vx)*0.5; }
+    }
+    if(bx>b.right){ bx=b.right; vx=-Math.abs(vx)*0.5; }
+    if(by<b.top){ by=b.top; vy=Math.abs(vy)*0.5; }
+    if(by>b.bottom){ by=b.bottom; vy=-Math.abs(vy)*0.5; }
+  }
 
   render();
   raf=requestAnimationFrame(frame);
@@ -188,7 +296,20 @@ function frame(t){
 
 function render(){
   let extraSpin=0, flipY=0, hop=0;
-  if(trick){
+
+  if(crossing){
+    const el=performance.now()-crossing.startT, k=Math.min(1,el/crossing.dur);
+    const ease=1-Math.pow(1-k,3);
+    bx=crossing.fromX+(crossing.toX-crossing.fromX)*ease;
+    hop=Math.sin(k*Math.PI)*46;
+    extraSpin=ease*360;
+    if(k>=1){
+      areaIdx++;
+      $('areaHud').textContent='AREA '+(areaIdx+1)+'/'+AREA_COUNT;
+      placeChair();
+      crossing=null;
+    }
+  } else if(trick){
     const el=performance.now()-trick.startT, k=Math.min(1,el/trick.dur);
     if(k>=1){ trick=null; }
     else{
@@ -199,6 +320,13 @@ function render(){
       else if(trick.type==='popshoveit'){ extraSpin=ease*360; hop=Math.sin(k*Math.PI)*26; }
     }
   }
+
+  if(ollieHop>0){
+    hop+=Math.sin(Math.min(1,ollieHop)*Math.PI)*16;
+    ollieHop-=0.09;
+    if(ollieHop<0) ollieHop=0;
+  }
+
   boardEl.style.left=bx+'px';
   boardEl.style.top=(by-hop)+'px';
   boardEl.style.transform=`translate(-50%,-50%) rotate(${boardAngle+extraSpin}deg) rotateY(${flipY}deg)`;
