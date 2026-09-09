@@ -858,7 +858,9 @@
     <div class="cab-card" id="cabMini" onclick="launchMini()"><img src="minicabinet.png?v=354" onerror="this.style.opacity=0.2"><div class="cab-label">MINI QU33PH</div></div>
   </div>
   <button class="mk-btn back-tl" onclick="arcadeBack()" style="margin-top:16px;">← BACK</button>
+  <button id="season2Btn" type="button" onclick="openSeason2()">SEASON 2 →</button>
 </div>
+
 
 <div id="pinballScreen" oncontextmenu="return false" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0818;z-index:110;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;">
   <img id="pinballBg" src="pinball.jpg?v=378" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.opacity=0.12">
@@ -5039,6 +5041,7 @@ function showArcadeMenu(){
   try{ applyThemeFilters(); }catch(e){}
 }
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
+function openSeason2(){ window.location.href="season2.html"; }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
 function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showCharSelect(); }
 function forceIframeMirror(f){
