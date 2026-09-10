@@ -147,12 +147,12 @@
        cap (facing left, unchanged single-player button), right gets a
        mirrored cap facing right via ::after instead of ::before, so the two
        halves read as a matched pair pointing away from each other */
-    .mode-btn-split{ display:flex; width:min(344px, calc(100vw - 70px)); margin:8px 0 8px 36px; gap:5px; }
+    .mode-btn-split{ display:flex; width:min(300px, calc(100vw - 70px)); margin:8px 0 8px 36px; gap:5px; }
     .mode-btn-half{ margin:0 !important; width:auto; flex:1 1 0; min-width:0; padding-left:14px; padding-right:14px; }
     .mode-btn-half .mode-name{ font-size:13px; }
     .mode-btn-half .mode-desc{ font-size:9.5px; line-height:1.25; }
-    .mode-btn-half-left{ border-radius:4px 2px 2px 4px; }
-    .mode-btn-half-right{ border-radius:2px 4px 4px 2px; }
+    .mode-btn-half-left{ border-radius:4px 8px 8px 4px; }
+    .mode-btn-half-right{ border-radius:8px 4px 4px 8px; }
     .mode-btn-half-right::before{ display:none; }
     .mode-btn-half-right::after{ content:""; position:absolute; right:-34px; top:2px; bottom:2px; width:36px;
       background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%); border:3px solid #fff; border-radius:2px 6px 6px 2px;
@@ -1116,13 +1116,13 @@
 <div id="twoPPicker" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:2000;align-items:center;justify-content:center;">
   <div style="width:min(320px,86vw);background:#0e0e0e;border:2px solid #333;border-radius:14px;padding:22px 20px;text-align:center;">
     <div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;color:#fff;letter-spacing:2px;">2 PLAYER</div>
-    <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;color:#999;margin:6px 0 18px;line-height:1.5;">pass the phone between 2 people after each throw &mdash; whoever wins the most rounds wins the match</div>
+    <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;color:#999;margin:6px 0 18px;line-height:1.5;">pass the phone between 2 people after each throw &mdash; scores add up across every round, whoever has the most points when the match ends wins</div>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button class="mk-btn" style="margin:0;width:100%;justify-content:center;" onclick="start2pMatch(3)">3 ROUNDS</button>
-      <button class="mk-btn" style="margin:0;width:100%;justify-content:center;" onclick="start2pMatch(5)">5 ROUNDS</button>
-      <button class="mk-btn" style="margin:0;width:100%;justify-content:center;" onclick="start2pMatch(10)">10 ROUNDS</button>
+      <button class="mk-btn" style="margin:0 0 0 26px;width:calc(100% - 26px);justify-content:center;" onclick="start2pMatch(3)">3 ROUNDS</button>
+      <button class="mk-btn" style="margin:0 0 0 26px;width:calc(100% - 26px);justify-content:center;" onclick="start2pMatch(5)">5 ROUNDS</button>
+      <button class="mk-btn" style="margin:0 0 0 26px;width:calc(100% - 26px);justify-content:center;" onclick="start2pMatch(10)">10 ROUNDS</button>
     </div>
-    <button style="margin-top:16px;background:none;border:none;color:#666;font-size:11px;letter-spacing:1px;cursor:pointer;" onclick="hide2pPicker()">CANCEL</button>
+    <button class="mk-btn" style="margin:16px 0 0 26px;width:calc(100% - 26px);justify-content:center;" onclick="hide2pPicker()">&larr; BACK</button>
   </div>
 </div>
 
@@ -1224,6 +1224,7 @@
   </div>
   <div class="nation-grid" id="nationGrid"></div>
   <button class="nation-confirm" id="nationConfirm" onclick="confirmNation()">ENTER TOURNAMENT →</button>
+  <button class="mk-btn" style="width:min(374px, calc(92vw - 26px));margin:16px 0 20px 26px;justify-content:center;" onclick="showTitle()">&larr; BACK</button>
 </div>
 
 <!-- MEDAL SCREEN -->
@@ -2708,18 +2709,22 @@ function startMode(mode){
   }
 }
 
-// ── 2 PLAYER: pass-the-phone match, best-of-N rounds ──────────────────────
-let twoP=null;  // {rounds, round, turn, p1Wins, p2Wins, p1RoundScore}
+// ── 2 PLAYER: pass-the-phone match, total points across all rounds wins ───
+let twoP=null;  // {rounds, round, turn, p1Wins, p2Wins, p1RoundScore, p1Total, p2Total}
 function show2pPicker(){ if(Date.now() < titleUnlockedAt) return; document.getElementById("twoPPicker").style.display="flex"; }
 function hide2pPicker(){ document.getElementById("twoPPicker").style.display="none"; }
+// how many of the final rounds are forced sudden-death (chair active, whole round)
+function twoPSDRoundCount(rounds){ return rounds===3?1:rounds===5?2:rounds===10?3:0; }
+function twoPIsForcedSD(){ return !!twoP && twoP.round > (twoP.rounds - twoPSDRoundCount(twoP.rounds)); }
+function twoPSDNote(){ return twoPIsForcedSD() ? "<br><span style=\"color:#ff5555;\">&#9888; SUDDEN DEATH ROUND</span>" : ""; }
 function start2pMatch(rounds){
   hide2pPicker();
-  twoP={ rounds:rounds, round:1, turn:1, p1Wins:0, p2Wins:0, p1RoundScore:0 };
+  twoP={ rounds:rounds, round:1, turn:1, p1Wins:0, p2Wins:0, p1RoundScore:0, p1Total:0, p2Total:0 };
   gameMode="twoplayer";
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("titleCoins").style.display="none";
   document.getElementById("sideTabs").style.display="none";
-  showPassScreen("PLAYER 1's TURN","ROUND 1 of "+twoP.rounds,"START ROUND 1");
+  showPassScreen("PLAYER 1's TURN","ROUND 1 of "+twoP.rounds+twoPSDNote(),"START ROUND 1");
 }
 function showPassScreen(title,sub,btnText){
   document.getElementById("twoPPassTitle").textContent=title;
@@ -2736,22 +2741,24 @@ function hide2pFinal(){ document.getElementById("twoPFinal").style.display="none
 function handle2pRoundEnd(){
   if(twoP.turn===1){
     twoP.p1RoundScore=totalScore;
+    twoP.p1Total+=totalScore;
     twoP.turn=2;
-    showPassScreen("PLAYER 2's TURN","ROUND "+twoP.round+" of "+twoP.rounds+"<br>beat Player 1's score of "+twoP.p1RoundScore,"START ROUND "+twoP.round);
+    showPassScreen("PLAYER 2's TURN","ROUND "+twoP.round+" of "+twoP.rounds+"<br>beat Player 1's score of "+twoP.p1RoundScore+twoPSDNote(),"START ROUND "+twoP.round);
     return;
   }
-  // turn 2 just finished — compare this round's scores
+  // turn 2 just finished — compare this round's scores (for flavor text) and add both to the running totals
   const p2Score=totalScore;
+  twoP.p2Total+=p2Score;
   let roundResult;
   if(twoP.p1RoundScore>p2Score){ twoP.p1Wins++; roundResult="PLAYER 1 WON ROUND "+twoP.round+" &middot; "+twoP.p1RoundScore+"&ndash;"+p2Score; }
   else if(p2Score>twoP.p1RoundScore){ twoP.p2Wins++; roundResult="PLAYER 2 WON ROUND "+twoP.round+" &middot; "+p2Score+"&ndash;"+twoP.p1RoundScore; }
   else { roundResult="ROUND "+twoP.round+" TIED &middot; "+twoP.p1RoundScore+"&ndash;"+p2Score; }
 
   if(twoP.round>=twoP.rounds){
-    // match over
-    let winnerText, subText="FINAL SCORE: PLAYER 1 won "+twoP.p1Wins+" &middot; PLAYER 2 won "+twoP.p2Wins+(twoP.rounds>twoP.p1Wins+twoP.p2Wins?" &middot; "+(twoP.rounds-twoP.p1Wins-twoP.p2Wins)+" tied":"");
-    if(twoP.p1Wins>twoP.p2Wins) winnerText="PLAYER 1 WINS!";
-    else if(twoP.p2Wins>twoP.p1Wins) winnerText="PLAYER 2 WINS!";
+    // match over — total points across every round decide the winner
+    let winnerText, subText="FINAL SCORE: PLAYER 1 "+twoP.p1Total+" &middot; PLAYER 2 "+twoP.p2Total;
+    if(twoP.p1Total>twoP.p2Total) winnerText="PLAYER 1 WINS!";
+    else if(twoP.p2Total>twoP.p1Total) winnerText="PLAYER 2 WINS!";
     else winnerText="IT'S A TIE!";
     document.getElementById("twoPFinalTitle").textContent=winnerText;
     document.getElementById("twoPFinalSub").innerHTML=roundResult+"<br><br>"+subText;
@@ -2760,7 +2767,7 @@ function handle2pRoundEnd(){
   }
 
   twoP.round++; twoP.turn=1;
-  showPassScreen("PLAYER 1's TURN",roundResult+"<br>ROUND "+twoP.round+" of "+twoP.rounds,"START ROUND "+twoP.round);
+  showPassScreen("PLAYER 1's TURN",roundResult+"<br>ROUND "+twoP.round+" of "+twoP.rounds+twoPSDNote(),"START ROUND "+twoP.round);
 }
 
 // ─── BRACKET SCREEN ────────────────────────────────────────────────────────
@@ -3235,6 +3242,13 @@ function startGame(){
   startTime=Date.now();
   suddenDeath=false;
   chairLocked=false;
+  if(gameMode==="twoplayer" && twoPIsForcedSD()){
+    // final rounds of a 2-player match are sudden death from the first whistle —
+    // the chair is live the instant the round starts, not just after time runs out
+    suddenDeath=true;
+    chairLocked=true;
+    chair.x=(LEFT_EDGE+RIGHT_WALL)/2; chair.y=END_LINE_Y+90;
+  }
   explosions=[];
   scorePopups=[];
   previewMarkers=[
