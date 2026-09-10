@@ -3854,6 +3854,13 @@ function endGame(){
     return;
   }
 
+  if(gameMode==="twoplayer"){
+    // 2-player: skip the "tap anywhere to return to menu" branding screen entirely —
+    // go straight to the pass-the-phone screen for the next turn/round
+    handle2pRoundEnd();
+    return;
+  }
+
   gameState="end";
 }
 
