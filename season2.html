@@ -25,6 +25,11 @@
    side, so flicking back and forth between the two feels symmetric. */
 .marker-btn.right{left:auto;right:22px;border-radius:9px 4px 4px 9px;}
 .marker-btn.right::before{left:auto;right:-15px;border-radius:2px 8px 8px 2px;}
+/* positioned on the right side like the button above, but keeps the cap on
+   the LEFT (facing back toward the content) instead of mirroring it — this
+   is the "SEASON 1" button specifically, which reads as pointing back rather
+   than forward, even though it lives in the same top-right spot. */
+.marker-btn.pos-right{left:auto;right:22px;}
 
 /* laid out to match index.html's #arcadeMenu exactly: same top padding, same
    logo image/size/margin, same tagline position — so the cab-row grid below
@@ -66,7 +71,7 @@
 </head>
 <body>
 <div id="menuScreen" class="screen">
-  <button class="marker-btn right" onclick="location.href='/'">SEASON 1 &rarr;</button>
+  <button class="marker-btn pos-right" onclick="location.href='/'">&larr; SEASON 1</button>
   <div class="menu">
     <img class="s2logo" src="arcadelogo.png?v=377" alt="Qu33ph Arcade" onerror="this.style.display='none'">
     <div class="s2tag">SEASON 2</div>

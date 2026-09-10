@@ -143,6 +143,24 @@
       box-shadow: 0 0 0 rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.6); }
     .mode-btn:active::before { background:linear-gradient(180deg,#161616 0%,#000 100%); box-shadow: inset 0 2px 5px rgba(0,0,0,0.6); }
 
+    /* the QUICK GAME button splits into two halves — left keeps the normal
+       cap (facing left, unchanged single-player button), right gets a
+       mirrored cap facing right via ::after instead of ::before, so the two
+       halves read as a matched pair pointing away from each other */
+    .mode-btn-split{ display:flex; width:min(344px,86vw); margin:8px 0 8px 36px; gap:5px; }
+    .mode-btn-half{ margin:0 !important; width:auto; flex:1 1 0; min-width:0; padding-left:14px; padding-right:14px; }
+    .mode-btn-half .mode-name{ font-size:13px; }
+    .mode-btn-half .mode-desc{ font-size:9.5px; line-height:1.25; }
+    .mode-btn-half-left{ border-radius:4px 2px 2px 4px; }
+    .mode-btn-half-right{ border-radius:2px 4px 4px 2px; }
+    .mode-btn-half-right::before{ display:none; }
+    .mode-btn-half-right::after{ content:""; position:absolute; right:-34px; top:2px; bottom:2px; width:36px;
+      background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%); border:3px solid #fff; border-radius:2px 6px 6px 2px;
+      box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.45); }
+    .mode-btn-half-right:active::after{ background:linear-gradient(180deg,#161616 0%,#000 100%); box-shadow: inset 0 2px 5px rgba(0,0,0,0.6); }
+    .mode-btn-half-right{ flex-direction:row-reverse; text-align:right; }
+    .mode-btn-half-right .mode-icon{ transform:scaleX(-1); }
+
     /* every other marker faces the opposite way (cap on the right) */
     #titleScreen .mode-btn:nth-of-type(even){
       margin: 12px 38px 12px 0;
@@ -1009,13 +1027,22 @@
   <div class="title-logo" id="logoContainer"><img id="logoImg" src="logo.jpg" alt="Qu33ph" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"></div>
   <div id="logoFallback" style="display:none; font-family:Helvetica, Arial, sans-serif; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;">Qu33ph</div>
 
-  <button class="mode-btn" id="btn1Round" onclick="startMode('single')">
-    <span class="mode-icon" data-icon="target"></span>
-    <span class="mode-text">
-      <span class="mode-name">QUICK GAME</span>
-      <span class="mode-desc">one round · 45 seconds · go for high score</span>
-    </span>
-  </button>
+  <div class="mode-btn-split">
+    <button class="mode-btn mode-btn-half mode-btn-half-left" id="btn1Round" onclick="startMode('single')">
+      <span class="mode-icon" data-icon="target"></span>
+      <span class="mode-text">
+        <span class="mode-name">QUICK GAME</span>
+        <span class="mode-desc">single player &middot; 45 seconds</span>
+      </span>
+    </button>
+    <button class="mode-btn mode-btn-half mode-btn-half-right" id="btn2Player" onclick="show2pPicker()">
+      <span class="mode-icon" data-icon="target"></span>
+      <span class="mode-text">
+        <span class="mode-name">2 PLAYER</span>
+        <span class="mode-desc">pass between 2 people &middot; 3, 5, or 10 rounds</span>
+      </span>
+    </button>
+  </div>
 
   <button class="mode-btn" id="btnOlympics" onclick="startMode('olympics')">
     <span class="mode-icon" data-icon="trophy"></span>
@@ -1051,6 +1078,9 @@
   </button>
 
   <div class="high-score-title" id="titleHighScore"></div>
+  <img id="allAchRing" src="qu33phring.png" alt="All achievements unlocked"
+       style="display:none;width:min(150px,34vw);height:auto;margin:12px auto 0;pointer-events:none;"
+       onerror="this.style.display='none'">
 </div>
 
 <!-- ACHIEVEMENTS SCREEN -->
@@ -1080,6 +1110,34 @@
   <div id="shopCoins" style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#ffd700;letter-spacing:2px;margin-bottom:6px;"></div>
   <div id="shopBody" style="width:min(400px,92vw);margin-top:6px;display:flex;flex-direction:column;gap:7px;"></div>
   <button onclick="showTitle()" class="mk-btn back-tl">← BACK</button>
+</div>
+
+<!-- 2 PLAYER: round-count picker -->
+<div id="twoPPicker" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:2000;align-items:center;justify-content:center;">
+  <div style="width:min(320px,86vw);background:#0e0e0e;border:2px solid #333;border-radius:14px;padding:22px 20px;text-align:center;">
+    <div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;color:#fff;letter-spacing:2px;">2 PLAYER</div>
+    <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;color:#999;margin:6px 0 18px;line-height:1.5;">pass the phone between 2 people after each throw &mdash; whoever wins the most rounds wins the match</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="mk-btn" style="margin:0;width:100%;justify-content:center;" onclick="start2pMatch(3)">3 ROUNDS</button>
+      <button class="mk-btn" style="margin:0;width:100%;justify-content:center;" onclick="start2pMatch(5)">5 ROUNDS</button>
+      <button class="mk-btn" style="margin:0;width:100%;justify-content:center;" onclick="start2pMatch(10)">10 ROUNDS</button>
+    </div>
+    <button style="margin-top:16px;background:none;border:none;color:#666;font-size:11px;letter-spacing:1px;cursor:pointer;" onclick="hide2pPicker()">CANCEL</button>
+  </div>
+</div>
+
+<!-- 2 PLAYER: pass-the-phone transition between turns -->
+<div id="twoPPass" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:2000;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;box-sizing:border-box;">
+  <div id="twoPPassTitle" style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;letter-spacing:3px;margin-bottom:10px;"></div>
+  <div id="twoPPassSub" style="font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#999;letter-spacing:1px;margin-bottom:28px;"></div>
+  <button class="mk-btn" style="margin:0;justify-content:center;" onclick="twoPPassContinue()" id="twoPPassBtn">PASS THE PHONE &mdash; TAP WHEN READY</button>
+</div>
+
+<!-- 2 PLAYER: final match result -->
+<div id="twoPFinal" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:2000;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;box-sizing:border-box;">
+  <div id="twoPFinalTitle" style="font-family:'Arial Black',Arial,sans-serif;font-size:26px;font-weight:bold;color:#ffd24a;letter-spacing:3px;margin-bottom:10px;"></div>
+  <div id="twoPFinalSub" style="font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#ccc;letter-spacing:1px;margin-bottom:28px;line-height:1.8;"></div>
+  <button class="mk-btn" style="margin:0;justify-content:center;" onclick="hide2pFinal();showTitle();">BACK TO TITLE</button>
 </div>
 
 <!-- SETTINGS SCREEN -->
@@ -2629,6 +2687,7 @@ function showTitle(){
   document.getElementById("timeline").style.display="none";
   let hs=localStorage.getItem("qu33phHigh")||0;
   document.getElementById("titleHighScore").innerText=hs>0?"HIGH SCORE: "+hs:"";
+  updateAllAchRing();
   document.getElementById("titleCoinCount").innerText=coins;
   document.getElementById("titleCoins").style.display="flex";
   document.getElementById("sideTabs").style.display="block";
@@ -2645,6 +2704,61 @@ function startMode(mode){
   } else {
     showNationSelect();
   }
+}
+
+// ── 2 PLAYER: pass-the-phone match, best-of-N rounds ──────────────────────
+let twoP=null;  // {rounds, round, turn, p1Wins, p2Wins, p1RoundScore}
+function show2pPicker(){ if(Date.now() < titleUnlockedAt) return; document.getElementById("twoPPicker").style.display="flex"; }
+function hide2pPicker(){ document.getElementById("twoPPicker").style.display="none"; }
+function start2pMatch(rounds){
+  hide2pPicker();
+  twoP={ rounds:rounds, round:1, turn:1, p1Wins:0, p2Wins:0, p1RoundScore:0 };
+  gameMode="twoplayer";
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("titleCoins").style.display="none";
+  document.getElementById("sideTabs").style.display="none";
+  showPassScreen("PLAYER 1's TURN","ROUND 1 of "+twoP.rounds,"START ROUND 1");
+}
+function showPassScreen(title,sub,btnText){
+  document.getElementById("twoPPassTitle").textContent=title;
+  document.getElementById("twoPPassSub").innerHTML=sub;
+  document.getElementById("twoPPassBtn").textContent=btnText||"PASS THE PHONE — TAP WHEN READY";
+  document.getElementById("twoPPass").style.display="flex";
+}
+function twoPPassContinue(){
+  document.getElementById("twoPPass").style.display="none";
+  startGame();
+}
+function hide2pFinal(){ document.getElementById("twoPFinal").style.display="none"; twoP=null; }
+// called from the round-over tap handler instead of showTitle() when in 2-player mode
+function handle2pRoundEnd(){
+  if(twoP.turn===1){
+    twoP.p1RoundScore=totalScore;
+    twoP.turn=2;
+    showPassScreen("PLAYER 2's TURN","ROUND "+twoP.round+" of "+twoP.rounds+"<br>beat Player 1's score of "+twoP.p1RoundScore,"START ROUND "+twoP.round);
+    return;
+  }
+  // turn 2 just finished — compare this round's scores
+  const p2Score=totalScore;
+  let roundResult;
+  if(twoP.p1RoundScore>p2Score){ twoP.p1Wins++; roundResult="PLAYER 1 WON ROUND "+twoP.round+" &middot; "+twoP.p1RoundScore+"&ndash;"+p2Score; }
+  else if(p2Score>twoP.p1RoundScore){ twoP.p2Wins++; roundResult="PLAYER 2 WON ROUND "+twoP.round+" &middot; "+p2Score+"&ndash;"+twoP.p1RoundScore; }
+  else { roundResult="ROUND "+twoP.round+" TIED &middot; "+twoP.p1RoundScore+"&ndash;"+p2Score; }
+
+  if(twoP.round>=twoP.rounds){
+    // match over
+    let winnerText, subText="FINAL SCORE: PLAYER 1 won "+twoP.p1Wins+" &middot; PLAYER 2 won "+twoP.p2Wins+(twoP.rounds>twoP.p1Wins+twoP.p2Wins?" &middot; "+(twoP.rounds-twoP.p1Wins-twoP.p2Wins)+" tied":"");
+    if(twoP.p1Wins>twoP.p2Wins) winnerText="PLAYER 1 WINS!";
+    else if(twoP.p2Wins>twoP.p1Wins) winnerText="PLAYER 2 WINS!";
+    else winnerText="IT'S A TIE!";
+    document.getElementById("twoPFinalTitle").textContent=winnerText;
+    document.getElementById("twoPFinalSub").innerHTML=roundResult+"<br><br>"+subText;
+    document.getElementById("twoPFinal").style.display="flex";
+    return;
+  }
+
+  twoP.round++; twoP.turn=1;
+  showPassScreen("PLAYER 1's TURN",roundResult+"<br>ROUND "+twoP.round+" of "+twoP.rounds,"START ROUND "+twoP.round);
 }
 
 // ─── BRACKET SCREEN ────────────────────────────────────────────────────────
@@ -3213,6 +3327,7 @@ canvas.addEventListener("pointerdown",e=>{
   if(gameState==="title"||gameState==="bracket") return;
 
   if(gameState==="end"||gameState==="olympicsResult"){
+    if(gameMode==="twoplayer"){ handle2pRoundEnd(); return; }
     if(gameMode==="single"){
       showTitle();
     } else {
@@ -3567,7 +3682,21 @@ function update(){
     m.rotation+=m.spinVelocity*speedMultiplier;
     m.spinVelocity*=0.96;
     if(suddenDeath&&!m.megaTriggered&&touchingChair(m)){
-      if(Math.random() < ((megaboostOwned&&megaboostOn)?0.45:0.25)) triggerMegaQu33ph(m);
+      if(Math.random() < ((megaboostOwned&&megaboostOn)?0.45:0.25)) {
+        triggerMegaQu33ph(m);
+      } else {
+        // same bounce-off-a-solid-obstacle feel as Mini Qu33ph's chair collision,
+        // adapted to this chair being a circle here instead of Mini's box —
+        // push the marker back out along the line from the chair's centre and
+        // reflect its velocity off that same line, with a bit of spin added
+        const dx=m.x-chair.x, dy=m.y-chair.y, dist=Math.hypot(dx,dy)||1;
+        const nx=dx/dist, ny=dy/dist;
+        m.x=chair.x+nx*chair.radius; m.y=chair.y+ny*chair.radius;
+        const relv=m.vx*nx+m.vy*ny;
+        if(relv<0){ m.vx-=1.6*relv*nx; m.vy-=1.6*relv*ny; }
+        m.spinVelocity += (nx>0?1:-1)*3.2;
+        try{ haptic(18); }catch(e){}
+      }
       m.megaTriggered=true;
     }
     m.trail.push({x:m.x,y:m.y});
@@ -4985,8 +5114,12 @@ const PF_ACT=[0.7225,0.5886,0.048];
 const PF_PNG_W=1440, PF_PNG_H=2560;
 function rrPf(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
 function showArcade(){
-  if(coins<5){ try{ haptic([30,40,30]); }catch(e){} var _tcc=document.getElementById("titleCoinCount"); if(_tcc){ _tcc.innerText="NEED 5"; setTimeout(function(){ try{_tcc.innerText=coins;}catch(e){} },1200); } return; }
-  addCoins(-5);
+  var alreadyPaid=false; try{ alreadyPaid = sessionStorage.getItem("qu33phArcadePaid")==="1"; }catch(e){}
+  if(!alreadyPaid){
+    if(coins<5){ try{ haptic([30,40,30]); }catch(e){} var _tcc=document.getElementById("titleCoinCount"); if(_tcc){ _tcc.innerText="NEED 5"; setTimeout(function(){ try{_tcc.innerText=coins;}catch(e){} },1200); } return; }
+    addCoins(-5);
+    try{ sessionStorage.setItem("qu33phArcadePaid","1"); }catch(e){}
+  }
   showArcadeMenu();
 }
 var _cabCentred={};
@@ -7788,7 +7921,13 @@ function forfeitGame(){
 function themeBack(){ if(paused){ showPauseOverlay(); } else { showTitle(); } }
 function settingsBack(){ if(paused){ showPauseOverlay(); } else { showTitle(); } }
 
-showTitle();
+// once you've paid to enter the arcade this session, flipping between Season 1
+// and Season 2 (which reloads this whole page) should never charge again —
+// go straight back into the arcade menu instead of making you pay at the door twice
+try{
+  if(sessionStorage.getItem("qu33phArcadePaid")==="1"){ showArcadeMenu(); }
+  else { showTitle(); }
+}catch(e){ showTitle(); }
 // returning from a game (bowling/fidget/mini/flip/qu33phball are now real
 // pages, not iframes) lands back here — jump straight to the arcade menu
 // instead of making them tap through the title screen again
@@ -8014,6 +8153,17 @@ function getUnlockedAch(){
   try { return JSON.parse(localStorage.getItem("qu33phAch")||"[]"); }
   catch(e){ return []; }
 }
+// shows the ring reward on the title screen once every single achievement
+// has been unlocked — checked against the actual ACHIEVEMENTS list, not
+// just a stored count, so it stays correct if the list ever grows
+function updateAllAchRing(){
+  try{
+    var unlocked=getUnlockedAch();
+    var allDone = ACHIEVEMENTS.every(function(a){ return unlocked.includes(a.id); });
+    var ring=document.getElementById("allAchRing");
+    if(ring) ring.style.display = allDone ? "block" : "none";
+  }catch(e){}
+}
 function unlockAch(id){
   try {
     let u = getUnlockedAch();
@@ -8028,6 +8178,7 @@ function unlockAch(id){
       var _sc=document.getElementById("slotCoinCount");  if(_sc) _sc.innerText=coins;
       haptic([15,25,45]);
       showAchToast(id);
+      updateAllAchRing();
     }
   } catch(e){}
 }
