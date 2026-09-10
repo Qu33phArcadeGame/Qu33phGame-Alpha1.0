@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:Arial,Helvetica,sans-serif}button{font:inherit}
 .screen{position:absolute;inset:0;background:#000;overflow:hidden}.hidden{display:none!important}
-.marker-btn{position:absolute;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
+.marker-btn{position:fixed;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
   background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;
   border:2.5px solid #fff;border-radius:4px 9px 9px 4px;
   font-family:Helvetica,Arial,sans-serif;font-size:9.5px;font-weight:bold;letter-spacing:1px;
@@ -20,9 +20,19 @@
 .marker-btn:active{background:linear-gradient(180deg,#161616 0%,#000 100%);transform:translateY(3px);
   box-shadow:0 0 0 rgba(0,0,0,0.55),0 1px 3px rgba(0,0,0,0.4),inset 0 2px 6px rgba(0,0,0,0.6);}
 .marker-btn:active::before{background:linear-gradient(180deg,#161616 0%,#000 100%);box-shadow:inset 0 2px 5px rgba(0,0,0,0.6);}
+/* the "SEASON 1" button on this page is the mirror image of the "SEASON 2"
+   button on the arcade menu — same top-right spot, cap flipped to the right
+   side, so flicking back and forth between the two feels symmetric. */
+.marker-btn.right{left:auto;right:22px;border-radius:9px 4px 4px 9px;}
+.marker-btn.right::before{left:auto;right:-15px;border-radius:2px 8px 8px 2px;}
+
+/* laid out to match index.html's #arcadeMenu exactly: same top padding, same
+   logo image/size/margin, same tagline position — so the cab-row grid below
+   lands in the same spot on both pages and switching feels seamless. */
 .menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:44px 20px 16px;overflow-y:auto;box-sizing:border-box;}
-.title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(27px,7vw,50px);letter-spacing:5px;margin:0}
-.sub{font-family:'Brush Script MT','Segoe Script',cursive;color:#ffd24a;font-size:20px;margin:0 0 14px}
+.s2logo{width:min(190px,44vw,15dvh);height:auto;display:block;margin:0 auto 4px;pointer-events:none;flex-shrink:0;}
+.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:clamp(15px,2.8dvh,23px);color:#ffd24a;
+  text-align:center;margin:-2px 0 10px;letter-spacing:6px;pointer-events:none;flex-shrink:0;}
 .cab-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:5px 3%; width:100%; max-width:430px; padding:2px; box-sizing:border-box; justify-items:center; align-items:start; }
 .cab-card{ width:100%; max-width:132px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
 .cab-card:active{ transform:scale(0.96); }
@@ -33,7 +43,9 @@
 .cab-card .empty-box{ width:100%; height:168px; border:2px dashed #2c2c32; border-radius:14px; background:#08080c; display:flex; align-items:center; justify-content:center; }
 .cab-card .empty-box span{ color:#444; font-size:9px; letter-spacing:1.5px; font-weight:bold; text-align:center; padding:0 8px; }
 .cab-card .empty-label{ color:#3a3a3a; }
+
 #selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.choice{background:#06060a;border:2px solid #29292f;border-radius:12px;padding:10px;cursor:pointer;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center}.choice:hover{border-color:#777}.choice img{width:min(190px,70%);height:250px;object-fit:contain}.choice span{font-size:11px;letter-spacing:2px;color:#aaa;margin-top:5px}.hint{margin-top:14px;color:#555;font-size:9.5px;letter-spacing:1.3px;line-height:1.9;}
+
 #gameScreen{touch-action:none;user-select:none;-webkit-user-select:none}
 .field{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.9);pointer-events:none;}
 .board-stage{position:absolute;left:0;top:0;width:100%;height:100%;perspective:500px;pointer-events:none;}
@@ -54,9 +66,10 @@
 </head>
 <body>
 <div id="menuScreen" class="screen">
-  <button class="marker-btn" onclick="location.href='/'">&larr; ARCADE</button>
+  <button class="marker-btn right" onclick="location.href='/'">SEASON 1 &rarr;</button>
   <div class="menu">
-    <div class="title">SEASON 2</div><div class="sub">NEW MACHINES COMING SOON</div>
+    <img class="s2logo" src="arcadelogo.png?v=377" alt="Qu33ph Arcade" onerror="this.style.display='none'">
+    <div class="s2tag">SEASON 2</div>
     <div class="cab-row">
       <div class="cab-card" onclick="openSelect()"><img src="season2-green.png" alt="Qu33ph Skateboarding"><div class="cab-label">QU33PH SKATEBOARDING</div></div>
       <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 02</div></div>
@@ -102,30 +115,40 @@
 <script>
 const boards={blue:'season2-green.png',green:'season2-blue.png',red:'season2-red.png'};
 const $=id=>document.getElementById(id);
-const boardEl=$('playerBoard'), gameEl=$('gameScreen'), chairEl=$('chairImg');
+const boardEl=$('playerBoard'), gameEl=$('gameScreen'), chairEl=$('chairImg'), fieldImgEl=$('fieldImg');
 
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');}
 function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); boardEl.src=boards[color]; restartGame();}
 function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();$('gameScreen').classList.add('hidden');openSelect();}
 
-// ── play area boundaries, imported straight from the original core game's
-// own countertop dimensions (LEFT_EDGE = 20% / RIGHT_WALL = 75% of width) ──
-const AREA_COUNT=3;
+// ── three visually distinct areas, each reusing a real Season 1 background
+// so the spots actually look different — the original counter, Mini
+// Qu33ph's table, and the Bowling lane. Boundaries are tuned per-image
+// since each photo's actual playable surface sits in a different spot;
+// these are estimates and may want further nudging once you can see them
+// live against the real images. ──────────────────────────────────────────
+const AREAS=[
+  { bg:'originalfield.png',  b:{left:0.20,right:0.75,top:0.16,bottom:0.86} },
+  { bg:'minitablefar.jpg',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92} },
+  { bg:'bowling.jpg',        b:{left:0.12,right:0.88,top:0.30,bottom:0.94} }
+];
+const AREA_COUNT=AREAS.length;
 let areaIdx=0, score=0;
 let bx=0, by=0, vx=0, vy=0, boardAngle=0;
 let pointers=new Map();
 let dragId=null, dragStart=null, dragNow=null;
-let lastTapTime=-9999, lastTapPos=null;   // for the tap-then-flick trick combo
+let lastTapTime=-9999, lastTapPos=null;
 let running=false, raf=0, last=0;
 const FRICTION=0.985;
 const FLICK_POWER=3.0;
 const MAX_SPEED=820;
 const MIN_FLICK=28;
 const HARD_FLICK=190;
-const TAP_MAX_MOVE=14;       // a "tap" is a press+release with less than this much drift
-const TAP_MAX_TIME=280;      // ...and released within this many ms
-const COMBO_WINDOW=550;      // a flick counts as a trick-flick if it starts this soon after a tap
+const TAP_MAX_MOVE=14;
+const TAP_MAX_TIME=280;
+const COMBO_WINDOW=550;
+const BOUNCE=0.68;          // bumped up from a mushier 0.5 — a wall hit should feel like a real bounce
 
 let trick=null;
 const TRICKS={
@@ -134,13 +157,14 @@ const TRICKS={
   shoveit:{dur:380,label:'SHOVE-IT',pts:50},
   popshoveit:{dur:520,label:'POP SHOVE-IT',pts:150}
 };
-let ollieHop=0;      // simple in-place Ollie bounce (visual only, doesn't move the board)
-let crossing=null;   // {startT,dur,fromX,fromY,toX,toY} — the animated hop between areas
+let ollieHop=0;
+let crossing=null;
+let peefAnim=null;   // {startT,dur} — falls away then rises back in, instead of an instant reset
 
 function fieldRect(){ return gameEl.getBoundingClientRect(); }
 function bounds(){
-  const r=fieldRect();
-  return { left:r.width*0.20, right:r.width*0.75, top:r.height*0.16, bottom:r.height*0.86 };
+  const r=fieldRect(), a=AREAS[areaIdx].b;
+  return { left:r.width*a.left, right:r.width*a.right, top:r.height*a.top, bottom:r.height*a.bottom };
 }
 
 function addScore(n){ score=Math.max(0,score+n); $('scoreHud').textContent=score; }
@@ -157,24 +181,32 @@ function placeChair(){
   }
 }
 
+function loadArea(idx){
+  areaIdx=idx;
+  fieldImgEl.src=AREAS[idx].bg;
+  $('areaHud').textContent='AREA '+(areaIdx+1)+'/'+AREA_COUNT;
+  placeChair();
+}
+
 function restartGame(){
-  areaIdx=0; score=0;
+  score=0;
+  loadArea(0);
   const b=bounds();
   bx=b.left+18; by=(b.top+b.bottom)/2;
-  vx=0; vy=0; boardAngle=90; trick=null; crossing=null; ollieHop=0;
+  vx=0; vy=0; boardAngle=90; trick=null; crossing=null; ollieHop=0; peefAnim=null;
   pointers.clear(); dragId=null; dragStart=null; dragNow=null;
   lastTapTime=-9999; lastTapPos=null;
   running=true; last=performance.now();
   $('trickLabel').classList.remove('show');
   $('peefLabel').classList.remove('show');
   $('scoreHud').textContent='0';
-  $('areaHud').textContent='AREA '+(areaIdx+1)+'/'+AREA_COUNT;
-  placeChair();
+  boardEl.style.opacity='1';
   render();
   frame(last);
 }
 
 function onDown(e){
+  if(peefAnim||crossing) return;
   try{ gameEl.setPointerCapture(e.pointerId); }catch(err){}
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(dragId===null){
@@ -212,9 +244,8 @@ gameEl.addEventListener('pointercancel',onUp);
 function doTap(x,y){
   lastTapTime=performance.now();
   lastTapPos={x,y};
-  ollieHop=1;   // triggers the little in-place hop in render()
+  ollieHop=1;
 
-  // Ollie while near the chair at the area's edge = cross to the next area
   if(!chairEl.classList.contains('hidden')){
     const cr=chairEl.getBoundingClientRect(), gr=fieldRect();
     const cx=cr.left-gr.left+cr.width/2, cy=cr.top-gr.top+cr.height/2;
@@ -227,7 +258,7 @@ function doTap(x,y){
 function crossToNextArea(){
   if(areaIdx>=AREA_COUNT-1) return;
   const b=bounds();
-  crossing={startT:performance.now(), dur:520, fromX:bx, fromY:by, toX:b.left+18, toY:by};
+  crossing={startT:performance.now(), dur:520, fromX:bx, fromY:by, nextIdx:areaIdx+1};
   addScore(100);
 }
 
@@ -239,8 +270,6 @@ function applyFlick(dx,dy){
   if(sp>MAX_SPEED){ vx*=MAX_SPEED/sp; vy*=MAX_SPEED/sp; }
   boardAngle=Math.atan2(dy,dx)*180/Math.PI+90;
 
-  // only counts as a trick if a tap (Ollie) happened just before this flick —
-  // a plain flick with no preceding tap is pure movement, no trick, any angle
   const sinceTap=performance.now()-lastTapTime;
   if(sinceTap>COMBO_WINDOW) return;
 
@@ -263,8 +292,8 @@ function startTrick(type){
 
 function doPeef(){
   addScore(-100);
-  const b=bounds();
-  bx=b.left+18; by=(b.top+b.bottom)/2; vx=0; vy=0;
+  vx=0; vy=0;
+  peefAnim={startT:performance.now(), dur:700};
   const lbl=$('peefLabel');
   lbl.classList.add('show');
   setTimeout(()=>lbl.classList.remove('show'), 700);
@@ -275,7 +304,7 @@ function frame(t){
   if(!running) return;
   const dt=Math.min(0.033,(t-last)/1000); last=t;
 
-  if(!crossing){
+  if(!crossing && !peefAnim){
     bx+=vx*dt; by+=vy*dt;
     vx*=FRICTION; vy*=FRICTION;
     if(Math.hypot(vx,vy)<2){ vx=0; vy=0; }
@@ -283,11 +312,11 @@ function frame(t){
     const b=bounds();
     if(bx<b.left){
       if(areaIdx===0){ doPeef(); }
-      else { bx=b.left; vx=Math.abs(vx)*0.5; }
+      else { bx=b.left; vx=Math.abs(vx)*BOUNCE; }
     }
-    if(bx>b.right){ bx=b.right; vx=-Math.abs(vx)*0.5; }
-    if(by<b.top){ by=b.top; vy=Math.abs(vy)*0.5; }
-    if(by>b.bottom){ by=b.bottom; vy=-Math.abs(vy)*0.5; }
+    if(bx>b.right){ bx=b.right; vx=-Math.abs(vx)*BOUNCE; }
+    if(by<b.top){ by=b.top; vy=Math.abs(vy)*BOUNCE; }
+    if(by>b.bottom){ by=b.bottom; vy=-Math.abs(vy)*BOUNCE; }
   }
 
   render();
@@ -295,18 +324,40 @@ function frame(t){
 }
 
 function render(){
-  let extraSpin=0, flipY=0, hop=0;
+  let extraSpin=0, flipY=0, hop=0, opacity=1, scale=1;
 
-  if(crossing){
+  if(peefAnim){
+    const el=performance.now()-peefAnim.startT, k=Math.min(1,el/peefAnim.dur);
+    if(k<0.5){
+      // falling away off the edge — drops, shrinks, fades
+      const fk=k/0.5;
+      hop=-fk*fk*70;
+      opacity=1-fk*0.9;
+      scale=1-fk*0.5;
+    } else if(k<1){
+      // climbing back up into its start spot
+      const rk=(k-0.5)/0.5;
+      const b=bounds();
+      bx=b.left+18; by=(b.top+b.bottom)/2;
+      hop=-(1-rk)*30;
+      opacity=0.1+rk*0.9;
+      scale=0.5+rk*0.5;
+    } else {
+      peefAnim=null;
+      opacity=1; scale=1; hop=0;
+    }
+  } else if(crossing){
     const el=performance.now()-crossing.startT, k=Math.min(1,el/crossing.dur);
     const ease=1-Math.pow(1-k,3);
-    bx=crossing.fromX+(crossing.toX-crossing.fromX)*ease;
-    hop=Math.sin(k*Math.PI)*46;
-    extraSpin=ease*360;
-    if(k>=1){
-      areaIdx++;
-      $('areaHud').textContent='AREA '+(areaIdx+1)+'/'+AREA_COUNT;
-      placeChair();
+    if(k<1){
+      const b=bounds();
+      bx=crossing.fromX+((b.right+90)-crossing.fromX)*ease;
+      hop=Math.sin(k*Math.PI)*46;
+      extraSpin=ease*360;
+    } else {
+      loadArea(crossing.nextIdx);
+      const b=bounds();
+      bx=b.left+18; by=by;
       crossing=null;
     }
   } else if(trick){
@@ -327,9 +378,10 @@ function render(){
     if(ollieHop<0) ollieHop=0;
   }
 
+  boardEl.style.opacity=opacity;
   boardEl.style.left=bx+'px';
   boardEl.style.top=(by-hop)+'px';
-  boardEl.style.transform=`translate(-50%,-50%) rotate(${boardAngle+extraSpin}deg) rotateY(${flipY}deg)`;
+  boardEl.style.transform=`translate(-50%,-50%) rotate(${boardAngle+extraSpin}deg) rotateY(${flipY}deg) scale(${scale})`;
 }
 </script>
 </body></html>
