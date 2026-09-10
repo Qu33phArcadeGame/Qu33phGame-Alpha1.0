@@ -147,7 +147,7 @@
        cap (facing left, unchanged single-player button), right gets a
        mirrored cap facing right via ::after instead of ::before, so the two
        halves read as a matched pair pointing away from each other */
-    .mode-btn-split{ display:flex; width:min(300px, calc(100vw - 70px)); margin:8px 0 8px 36px; gap:5px; }
+    .mode-btn-split{ display:flex; align-self:flex-start; width:min(320px, calc(100vw - 70px)); margin:8px 0 8px 36px; gap:5px; }
     .mode-btn-half{ margin:0 !important; width:auto; flex:1 1 0; min-width:0; padding-left:14px; padding-right:14px; }
     .mode-btn-half .mode-name{ font-size:13px; }
     .mode-btn-half .mode-desc{ font-size:9.5px; line-height:1.25; }
@@ -1118,9 +1118,9 @@
     <div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;color:#fff;letter-spacing:2px;">2 PLAYER</div>
     <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;color:#999;margin:6px 0 18px;line-height:1.5;">pass the phone between 2 people after each throw &mdash; scores add up across every round, whoever has the most points when the match ends wins</div>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button class="mk-btn" style="margin:0 0 0 26px;width:calc(100% - 26px);justify-content:center;" onclick="start2pMatch(3)">3 ROUNDS</button>
+      <button class="mk-btn flip" style="margin:0 26px 0 0;width:calc(100% - 26px);justify-content:center;" onclick="start2pMatch(3)">3 ROUNDS</button>
       <button class="mk-btn" style="margin:0 0 0 26px;width:calc(100% - 26px);justify-content:center;" onclick="start2pMatch(5)">5 ROUNDS</button>
-      <button class="mk-btn" style="margin:0 0 0 26px;width:calc(100% - 26px);justify-content:center;" onclick="start2pMatch(10)">10 ROUNDS</button>
+      <button class="mk-btn flip" style="margin:0 26px 0 0;width:calc(100% - 26px);justify-content:center;" onclick="start2pMatch(10)">10 ROUNDS</button>
     </div>
     <button class="mk-btn" style="margin:16px 0 0 26px;width:calc(100% - 26px);justify-content:center;" onclick="hide2pPicker()">&larr; BACK</button>
   </div>
@@ -3248,6 +3248,10 @@ function startGame(){
     suddenDeath=true;
     chairLocked=true;
     chair.x=(LEFT_EDGE+RIGHT_WALL)/2; chair.y=END_LINE_Y+90;
+  } else if(gameMode==="twoplayer"){
+    // every other 2-player round: no overtime window at all, so the chair never
+    // shows up — the round just ends the moment the timer runs out
+    TOTAL_TIME = ROUND_TIME;
   }
   explosions=[];
   scorePopups=[];
