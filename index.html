@@ -1031,15 +1031,15 @@
     <button class="mode-btn mode-btn-half mode-btn-half-left" id="btn1Round" onclick="startMode('single')">
       <span class="mode-icon" data-icon="target"></span>
       <span class="mode-text">
-        <span class="mode-name">QUICK GAME</span>
-        <span class="mode-desc">single player &middot; 45 seconds</span>
+        <span class="mode-name">1 PLAYER</span>
+        <span class="mode-desc" id="quickGameDesc">single player &middot; 45 seconds</span>
       </span>
     </button>
     <button class="mode-btn mode-btn-half mode-btn-half-right" id="btn2Player" onclick="show2pPicker()">
       <span class="mode-icon" data-icon="target"></span>
       <span class="mode-text">
         <span class="mode-name">2 PLAYER</span>
-        <span class="mode-desc">pass between 2 people &middot; 3, 5, or 10 rounds</span>
+        <span class="mode-desc" id="twoPlayerDesc">pass between 2 people &middot; 3, 5, or 10 rounds</span>
       </span>
     </button>
   </div>
@@ -1528,6 +1528,13 @@ let QUICK_ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer")||"30"); // b
 let TWOP_ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer2p")||"5");  // base timer for 2-player mode, per round
 let ROUND_TIME = QUICK_ROUND_TIME;   // active timer for whichever round is in progress — set at the top of startGame()
 let TOTAL_TIME = Math.round(ROUND_TIME*1.5);  // sudden-death extension scales with the round
+
+// keep the title-screen mode button descriptions in sync with whatever round timers are set in Settings
+function updateModeDescriptions(){
+  var qd=document.getElementById("quickGameDesc"); if(qd) qd.textContent="single player \u00b7 "+QUICK_ROUND_TIME+" seconds";
+  var td=document.getElementById("twoPlayerDesc"); if(td) td.textContent="pass between 2 people \u00b7 3, 5, or 10 rounds \u00b7 "+TWOP_ROUND_TIME+"s each round";
+}
+updateModeDescriptions();
 
 const orientations=["vertical","angled","horizontal"];
 let orientationIndex=0;
@@ -2654,6 +2661,7 @@ function showTitle(){
   stopMusic();
   if(xtimeApplied){ ROUND_TIME-=5; TOTAL_TIME=Math.round(ROUND_TIME*1.5); xtimeApplied=false; }
   paused=false;
+  updateModeDescriptions();
   { var _pb=document.getElementById("pauseBtn"); if(_pb) _pb.style.display="none"; var _po=document.getElementById("pauseOverlay"); if(_po) _po.style.display="none"; }
   gameState="title";
   titleUnlockedAt = Date.now() + 800;
@@ -8571,8 +8579,8 @@ function toggleJumpMusic(){ setJumpMute(!jumpMusicMuted); renderSettings(); }
 function toggleMusicVol(){ setMusicVolPct(musicVolPct>0?0:(musicVolPrevPct||100)); renderSettings(); }
 function slideMusicVol(v){ setMusicVolPct(parseInt(v,10)); renderSettings(); }
 function slideSfxVol(v){ setSfxVolPct(parseInt(v,10)); renderSettings(); }
-function setTimer(v){ QUICK_ROUND_TIME=parseInt(v); try{localStorage.setItem("qu33phTimer",String(QUICK_ROUND_TIME));}catch(e){} renderSettings(); }
-function setTimer2p(v){ TWOP_ROUND_TIME=parseInt(v); try{localStorage.setItem("qu33phTimer2p",String(TWOP_ROUND_TIME));}catch(e){} renderSettings(); }
+function setTimer(v){ QUICK_ROUND_TIME=parseInt(v); try{localStorage.setItem("qu33phTimer",String(QUICK_ROUND_TIME));}catch(e){} renderSettings(); updateModeDescriptions(); }
+function setTimer2p(v){ TWOP_ROUND_TIME=parseInt(v); try{localStorage.setItem("qu33phTimer2p",String(TWOP_ROUND_TIME));}catch(e){} renderSettings(); updateModeDescriptions(); }
 function setDefaultTheme(v){ currentTheme=v; try{localStorage.setItem("qu33phDefaultTheme",v);}catch(e){} try{updateLogo();}catch(e){} try{computeLayout();}catch(e){} renderSettings(); }
 function setDefaultOrientation(v){
   try{
