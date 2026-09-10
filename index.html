@@ -3357,12 +3357,11 @@ canvas.addEventListener("pointerdown",e=>{
   if(gameState==="title"||gameState==="bracket") return;
 
   if(gameState==="end"||gameState==="olympicsResult"){
-    if(gameMode==="twoplayer"){ handle2pRoundEnd(); return; }
-    if(gameMode==="single"){
-      showTitle();
-    } else {
-      showTitle();
-    }
+    // 2-player rounds now transition away from "playing" via endGame() itself
+    // (which calls handle2pRoundEnd() once), and the pass-the-phone overlay
+    // covers the canvas the whole time, so this tap can never reach here for
+    // gameMode==="twoplayer" — no need to (and must not) call it again
+    if(gameMode!=="twoplayer") showTitle();
     return;
   }
 
@@ -3856,7 +3855,11 @@ function endGame(){
 
   if(gameMode==="twoplayer"){
     // 2-player: skip the "tap anywhere to return to menu" branding screen entirely —
-    // go straight to the pass-the-phone screen for the next turn/round
+    // go straight to the pass-the-phone screen for the next turn/round.
+    // gameState MUST leave "playing" here, or update() (which only bails out when
+    // gameState!=="playing") keeps re-firing endGame() every frame once elapsed>TOTAL_TIME,
+    // which was calling handle2pRoundEnd() over and over and blowing the score up.
+    gameState="end";
     handle2pRoundEnd();
     return;
   }
