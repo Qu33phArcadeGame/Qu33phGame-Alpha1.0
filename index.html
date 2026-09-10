@@ -147,7 +147,7 @@
        cap (facing left, unchanged single-player button), right gets a
        mirrored cap facing right via ::after instead of ::before, so the two
        halves read as a matched pair pointing away from each other */
-    .mode-btn-split{ display:flex; width:min(344px,86vw); margin:8px 0 8px 36px; gap:5px; }
+    .mode-btn-split{ display:flex; width:min(344px, calc(100vw - 70px)); margin:8px 0 8px 36px; gap:5px; }
     .mode-btn-half{ margin:0 !important; width:auto; flex:1 1 0; min-width:0; padding-left:14px; padding-right:14px; }
     .mode-btn-half .mode-name{ font-size:13px; }
     .mode-btn-half .mode-desc{ font-size:9.5px; line-height:1.25; }
@@ -1523,7 +1523,9 @@ let previewMarkers=[
 ];
 let shake=0;
 
-let ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer")||"30");
+let QUICK_ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer")||"30"); // base timer for single-player & olympics
+let TWOP_ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer2p")||"5");  // base timer for 2-player mode, per round
+let ROUND_TIME = QUICK_ROUND_TIME;   // active timer for whichever round is in progress — set at the top of startGame()
 let TOTAL_TIME = Math.round(ROUND_TIME*1.5);  // sudden-death extension scales with the round
 
 const orientations=["vertical","angled","horizontal"];
@@ -3225,6 +3227,8 @@ function startGame(){
   totalScore=0;
   magnetLastScore=0; confetti=[]; coinFloats=[];
   computeLayout();
+  ROUND_TIME = (gameMode==="twoplayer") ? TWOP_ROUND_TIME : QUICK_ROUND_TIME;
+  TOTAL_TIME = Math.round(ROUND_TIME*1.5);
   if(xtimeOwned && xtimeOn){ ROUND_TIME+=5; TOTAL_TIME=Math.round(ROUND_TIME*1.5); xtimeApplied=true; }
   paused=false; showSwipeHint=true;
   { var _pb=document.getElementById("pauseBtn"); if(_pb) _pb.style.display="flex"; var _po=document.getElementById("pauseOverlay"); if(_po) _po.style.display="none"; }
@@ -3688,14 +3692,23 @@ function update(){
         // same bounce-off-a-solid-obstacle feel as Mini Qu33ph's chair collision,
         // adapted to this chair being a circle here instead of Mini's box —
         // push the marker back out along the line from the chair's centre and
-        // reflect its velocity off that same line, with a bit of spin added
+        // reflect its velocity off that same line, with a bit of spin added.
+        // Bounce is deliberately exaggerated: markers get shoved well past the
+        // chair's edge and curled around it with a hard tangential kick, and
+        // the vertical component is clamped so they sweep around/behind the
+        // chair instead of dribbling straight back down toward the start line.
         const dx=m.x-chair.x, dy=m.y-chair.y, dist=Math.hypot(dx,dy)||1;
         const nx=dx/dist, ny=dy/dist;
-        m.x=chair.x+nx*chair.radius; m.y=chair.y+ny*chair.radius;
+        m.x=chair.x+nx*chair.radius*1.9; m.y=chair.y+ny*chair.radius*1.9;
         const relv=m.vx*nx+m.vy*ny;
-        if(relv<0){ m.vx-=1.6*relv*nx; m.vy-=1.6*relv*ny; }
-        m.spinVelocity += (nx>0?1:-1)*3.2;
-        try{ haptic(18); }catch(e){}
+        if(relv<0){ m.vx-=2.4*relv*nx; m.vy-=2.4*relv*ny; }
+        // curl around the chair — tangential kick, biased to whichever side the marker is already on
+        const tx=-ny, ty=nx, side=(m.x<chair.x)?-1:1;
+        m.vx += tx*side*4.5; m.vy += ty*side*4.5;
+        // resist bouncing back toward the start — keep it heading up and past the chair
+        if(m.vy > -1.5) m.vy = -1.5 - Math.random()*2;
+        m.spinVelocity += (nx>0?1:-1)*4.5;
+        try{ haptic(22); }catch(e){}
       }
       m.megaTriggered=true;
     }
@@ -8526,7 +8539,8 @@ function renderSettings(){
   h+=volRow("Sound effects","every sound effect across the arcade",sfxVolPct,"toggleSfxVol","slideSfxVol","sfx");
   h+=toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true);
   h+=toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()");
-  h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(ROUND_TIME),"setTimer");
+  h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(QUICK_ROUND_TIME),"setTimer");
+  h+=segRow("2 player round timer","seconds per round in 2 player mode",[["5","5s"],["15","15s"],["30","30s"]],String(TWOP_ROUND_TIME),"setTimer2p");
   h+=segRow("Default orientation","applies to every game with an orientation",[["vertical","VERT"],["angled","ANGLED"],["horizontal","FLAT"]],(localStorage.getItem("qu33phOrientation")||"vertical"),"setDefaultOrientation");
   h+=resetRow("Reset high scores","keeps coins &amp; themes","#ffb020","rsScores");
   h+=resetRow("Reset everything","wipes all saved data","#ff5a5a","rsAll");
@@ -8539,7 +8553,8 @@ function toggleJumpMusic(){ setJumpMute(!jumpMusicMuted); renderSettings(); }
 function toggleMusicVol(){ setMusicVolPct(musicVolPct>0?0:(musicVolPrevPct||100)); renderSettings(); }
 function slideMusicVol(v){ setMusicVolPct(parseInt(v,10)); renderSettings(); }
 function slideSfxVol(v){ setSfxVolPct(parseInt(v,10)); renderSettings(); }
-function setTimer(v){ ROUND_TIME=parseInt(v); TOTAL_TIME=Math.round(ROUND_TIME*1.5); try{localStorage.setItem("qu33phTimer",String(ROUND_TIME));}catch(e){} renderSettings(); }
+function setTimer(v){ QUICK_ROUND_TIME=parseInt(v); try{localStorage.setItem("qu33phTimer",String(QUICK_ROUND_TIME));}catch(e){} renderSettings(); }
+function setTimer2p(v){ TWOP_ROUND_TIME=parseInt(v); try{localStorage.setItem("qu33phTimer2p",String(TWOP_ROUND_TIME));}catch(e){} renderSettings(); }
 function setDefaultTheme(v){ currentTheme=v; try{localStorage.setItem("qu33phDefaultTheme",v);}catch(e){} try{updateLogo();}catch(e){} try{computeLayout();}catch(e){} renderSettings(); }
 function setDefaultOrientation(v){
   try{
