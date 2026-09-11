@@ -67,6 +67,19 @@
   font-family:'Arial Black',Arial,sans-serif;font-size:clamp(22px,7vw,40px);letter-spacing:3px;text-shadow:0 3px 10px #000;
   pointer-events:none;opacity:0;transition:opacity .15s, transform .15s;}
 .peef-label.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+/* theme support — "inverted" flips the whole page like the rest of the arcade;
+   cartoon/neon/sunset/galaxy are applied as a CSS filter directly on the game
+   visuals (field photo, board, chair, platforms) instead, so UI chrome like the
+   BACK button and score HUD stay readable. See applyTheme() below. */
+body.th-inverted{ filter:invert(1); }
+/* the Flip crossing section renders flat/2D instead of the tilted photo perspective
+   used everywhere else — no field photo, just a simple sky, and the board loses its
+   3D perspective so it reads as a side-on platformer like Qu33ph Flip itself. */
+#gameScreen.flip2d{ background:linear-gradient(180deg,#8fd0ff 0%,#cdeeff 58%,#dcefc9 100%); }
+#gameScreen.flip2d .board-stage{ perspective:none; }
+.flip-plat{ position:absolute; z-index:6; height:14px; border-radius:3px; pointer-events:none;
+  background:linear-gradient(180deg,#9a6a44 0%,#6b4428 100%); border-top:3px solid #b98a5c;
+  box-shadow:0 4px 6px rgba(0,0,0,.35); }
 </style>
 </head>
 <body>
@@ -122,24 +135,68 @@ const boards={blue:'season2-green.png',green:'season2-blue.png',red:'season2-red
 const $=id=>document.getElementById(id);
 const boardEl=$('playerBoard'), gameEl=$('gameScreen'), chairEl=$('chairImg'), fieldImgEl=$('fieldImg');
 
+// ── theme support, same recipe as the main app's themeFilter() so this page
+// matches whatever theme is active when you leave the arcade menu. index.html's
+// openSeason2() passes it along as ?theme=; "inverted" flips the whole page,
+// the rest are applied as a filter on just the game visuals (see applyTheme). ──
+const THEME=(new URLSearchParams(location.search).get('theme')||'default').toLowerCase();
+function themeFilter(){
+  if(THEME==='cartoon') return 'contrast(1.06) saturate(1.05)';
+  if(THEME==='neon')    return 'hue-rotate(95deg) saturate(2) brightness(1.12)';
+  if(THEME==='sunset')  return 'sepia(0.5) saturate(1.6) brightness(1.22) hue-rotate(-8deg)';
+  if(THEME==='galaxy')  return 'hue-rotate(230deg) saturate(1.5) brightness(1.05)';
+  return 'none';
+}
+const THEME_CSS = themeFilter()==='none' ? '' : themeFilter();
+function applyTheme(){
+  if(THEME==='inverted'){ document.body.classList.add('th-inverted'); return; }
+  if(!THEME_CSS) return;
+  document.querySelectorAll('.s2logo, .cab-card img, .field, .board, .chairSpot').forEach(el=>{ el.style.filter=THEME_CSS; });
+}
+applyTheme();
+
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');}
-function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); boardEl.src=boards[color]; restartGame();}
-function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();$('gameScreen').classList.add('hidden');openSelect();}
+function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); boardEl.src=boards[color]; applyTheme(); restartGame();}
+function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();$('gameScreen').classList.add('hidden');openSelect();}
 
-// ── three visually distinct areas, each reusing a real Season 1 background
-// so the spots actually look different — the original counter, Mini
-// Qu33ph's table, and the Bowling lane. Boundaries are tuned per-image
-// since each photo's actual playable surface sits in a different spot;
-// these are estimates and may want further nudging once you can see them
-// live against the real images. ──────────────────────────────────────────
+// ── five areas, in order: the original field, two spots along the Mini Qu33ph
+// table, a Qu33ph Flip platformer crossing, then the Bowling lane. Each area
+// says which edge you leave from and how: 'chair' = ollie onto the chair to
+// cross (classic), 'fluid' = just skate past that edge, no chair, no tap —
+// it carries you straight into the next area. Boundaries are tuned per-image
+// and may want further nudging once you can see them live against the real
+// photos.
+// NOTE: 'minitableclose.jpg' for area 2 is a guess following the existing
+// 'minitablefar.jpg' naming — swap in the real filename for the second Mini
+// table shot if this isn't it. ─────────────────────────────────────────────
 const AREAS=[
-  { bg:'originalfield.png',  b:{left:0.20,right:0.75,top:0.16,bottom:0.86} },
-  { bg:'minitablefar.jpg',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92} },
-  { bg:'bowling.jpg',        b:{left:0.12,right:0.88,top:0.30,bottom:0.94} }
+  { bg:'originalfield.png',   b:{left:0.20,right:0.75,top:0.16,bottom:0.86}, crossEdge:'right', crossType:'chair' },
+  { bg:'minitablefar.jpg',    b:{left:0.10,right:0.90,top:0.28,bottom:0.92}, crossEdge:'top',   crossType:'fluid' },
+  { bg:'minitableclose.jpg',  b:{left:0.10,right:0.90,top:0.22,bottom:0.92}, crossEdge:'top',   crossType:'chair' },
+  { flip:true },
+  { bg:'bowling.jpg',         b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:null,    crossType:null }
 ];
 const AREA_COUNT=AREAS.length;
 let areaIdx=0, score=0;
+
+// ── the Flip crossing: a short side-on platformer you flick the board across,
+// reusing Qu33ph Flip's own "toss and land" feel. Platform coordinates are
+// fractions of the game box, left-to-right, ending at a chair on the last one
+// that launches you into Bowling. Flicks here are tuned a little easier to
+// get moving than the normal skate physics (lower minimum flick, more power),
+// since there's no rolling run-up like the fields have. ────────────────────
+const FLIP_PLATFORMS=[
+  {l:0.06, t:0.80, w:0.17},
+  {l:0.29, t:0.66, w:0.15},
+  {l:0.50, t:0.74, w:0.15},
+  {l:0.68, t:0.56, w:0.15},
+  {l:0.86, t:0.64, w:0.13}
+];
+const FLIP_GRAVITY=1500;
+const FLIP_MIN_FLICK=16;   // vs the normal MIN_FLICK of 28 — easier to get going
+const FLIP_FLICK_POWER=3.6; // vs the normal FLICK_POWER of 3.0
+let flipMode=false, fx=0, fy=0, fvx=0, fvy=0, flipPlatformEls=[];
 let bx=0, by=0, vx=0, vy=0, boardAngle=0;
 let pointers=new Map();
 let dragId=null, dragStart=null, dragNow=null;
@@ -175,22 +232,89 @@ function bounds(){
 function addScore(n){ score=Math.max(0,score+n); $('scoreHud').textContent=score; }
 
 function placeChair(){
-  const b=bounds();
-  if(areaIdx<AREA_COUNT-1){
+  const a=AREAS[areaIdx];
+  if(a.flip){
+    const r=fieldRect(), last=FLIP_PLATFORMS[FLIP_PLATFORMS.length-1];
     chairEl.classList.remove('hidden');
-    chairEl.style.left=(b.right-6)+'px';
-    chairEl.style.top=((b.top+b.bottom)/2)+'px';
-    chairEl.style.transform='translate(-50%,-50%) rotate(90deg)';
+    chairEl.style.left=(r.width*(last.l+last.w/2))+'px';
+    chairEl.style.top=(r.height*last.t-16)+'px';
+    chairEl.style.transform='translate(-50%,-50%) rotate(180deg)';
+    return;
+  }
+  if(a.crossType==='chair' && areaIdx<AREA_COUNT-1){
+    const b=bounds();
+    chairEl.classList.remove('hidden');
+    if(a.crossEdge==='top'){
+      chairEl.style.left=((b.left+b.right)/2)+'px';
+      chairEl.style.top=(b.top+6)+'px';
+      chairEl.style.transform='translate(-50%,-50%) rotate(0deg)';
+    } else {
+      chairEl.style.left=(b.right-6)+'px';
+      chairEl.style.top=((b.top+b.bottom)/2)+'px';
+      chairEl.style.transform='translate(-50%,-50%) rotate(90deg)';
+    }
   } else {
     chairEl.classList.add('hidden');
   }
 }
 
 function loadArea(idx){
+  const prev=AREAS[areaIdx];
   areaIdx=idx;
-  fieldImgEl.src=AREAS[idx].bg;
-  $('areaHud').textContent='AREA '+(areaIdx+1)+'/'+AREA_COUNT;
+  const a=AREAS[idx];
+  if(a.flip){
+    enterFlipMode();
+  } else {
+    if(prev && prev.flip) exitFlipMode();
+    fieldImgEl.classList.remove('hidden');
+    fieldImgEl.src=a.bg;
+    applyTheme();
+  }
+  $('areaHud').textContent = a.flip ? 'FLIP CROSSING' : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
   placeChair();
+}
+
+function enterFlipMode(){
+  flipMode=true;
+  fieldImgEl.classList.add('hidden');
+  gameEl.classList.add('flip2d');
+  const r=fieldRect(), p0=FLIP_PLATFORMS[0];
+  fx=r.width*p0.l+22; fy=r.height*p0.t-4; fvx=0; fvy=0;
+  bx=fx; by=fy;
+  buildFlipPlatformEls();
+}
+function exitFlipMode(){
+  if(!flipMode) return;
+  flipMode=false;
+  fieldImgEl.classList.remove('hidden');
+  gameEl.classList.remove('flip2d');
+  clearFlipPlatformEls();
+}
+function buildFlipPlatformEls(){
+  clearFlipPlatformEls();
+  const r=fieldRect();
+  FLIP_PLATFORMS.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='flip-plat';
+    d.style.left=(r.width*p.l)+'px';
+    d.style.top=(r.height*p.t)+'px';
+    d.style.width=(r.width*p.w)+'px';
+    if(THEME_CSS) d.style.filter=THEME_CSS;
+    gameEl.appendChild(d);
+    flipPlatformEls.push(d);
+  });
+}
+function clearFlipPlatformEls(){ flipPlatformEls.forEach(d=>d.remove()); flipPlatformEls=[]; }
+function flipFall(){
+  addScore(-50);
+  fvx=0; fvy=0;
+  const r=fieldRect(), p0=FLIP_PLATFORMS[0];
+  fx=r.width*p0.l+22; fy=r.height*p0.t-4;
+  bx=fx; by=fy;
+  const lbl=$('peefLabel');
+  lbl.classList.add('show');
+  setTimeout(()=>lbl.classList.remove('show'), 500);
+  try{ if(navigator.vibrate) navigator.vibrate([10,40,10]); }catch(e){}
 }
 
 function restartGame(){
@@ -262,14 +386,28 @@ function doTap(x,y){
 
 function crossToNextArea(){
   if(areaIdx>=AREA_COUNT-1) return;
-  const b=bounds();
   crossing={startT:performance.now(), dur:520, fromX:bx, fromY:by, nextIdx:areaIdx+1};
   addScore(100);
+}
+// same as crossToNextArea but triggered by simply reaching the edge — no chair,
+// no tap, no score bonus (it's a free continuation, not a trick)
+function fluidAdvance(){
+  if(crossing||peefAnim) return;
+  if(areaIdx>=AREA_COUNT-1) return;
+  crossing={startT:performance.now(), dur:420, fromX:bx, fromY:by, nextIdx:areaIdx+1};
 }
 
 function applyFlick(dx,dy){
   const dist=Math.hypot(dx,dy);
-  if(dist<MIN_FLICK) return;
+  const minFlick = flipMode?FLIP_MIN_FLICK:MIN_FLICK;
+  if(dist<minFlick) return;
+
+  if(flipMode){
+    fvx+=dx*FLIP_FLICK_POWER/10; fvy+=dy*FLIP_FLICK_POWER/10;
+    boardAngle=Math.atan2(dy,dx)*180/Math.PI+90;
+    return; // no tricks in the platformer section — flicks are purely movement here
+  }
+
   vx+=dx*FLICK_POWER/10; vy+=dy*FLICK_POWER/10;
   const sp=Math.hypot(vx,vy);
   if(sp>MAX_SPEED){ vx*=MAX_SPEED/sp; vy*=MAX_SPEED/sp; }
@@ -309,18 +447,38 @@ function frame(t){
   if(!running) return;
   const dt=Math.min(0.033,(t-last)/1000); last=t;
 
-  if(!crossing && !peefAnim){
+  if(flipMode){
+    if(!crossing){
+      fvy+=FLIP_GRAVITY*dt;
+      fx+=fvx*dt; fy+=fvy*dt;
+      fvx*=0.995;
+      const r=fieldRect();
+      FLIP_PLATFORMS.forEach(p=>{
+        const px=r.width*p.l, pw=r.width*p.w, py=r.height*p.t;
+        if(fvy>0 && fy>=py-4 && fy<=py+18 && fx>=px-10 && fx<=px+pw+10){ fy=py; fvy=0; }
+      });
+      if(fx<10){ fx=10; fvx=Math.abs(fvx)*BOUNCE; }
+      if(fy>r.height+80) flipFall();
+      bx=fx; by=fy;
+    }
+  } else if(!crossing && !peefAnim){
     bx+=vx*dt; by+=vy*dt;
     vx*=FRICTION; vy*=FRICTION;
     if(Math.hypot(vx,vy)<2){ vx=0; vy=0; }
 
-    const b=bounds();
+    const b=bounds(), a=AREAS[areaIdx];
     if(bx<b.left){
       if(areaIdx===0){ doPeef(); }
       else { bx=b.left; vx=Math.abs(vx)*BOUNCE; }
     }
-    if(bx>b.right){ bx=b.right; vx=-Math.abs(vx)*BOUNCE; }
-    if(by<b.top){ by=b.top; vy=Math.abs(vy)*BOUNCE; }
+    if(bx>b.right){
+      if(a.crossType==='fluid' && a.crossEdge==='right') fluidAdvance();
+      else { bx=b.right; vx=-Math.abs(vx)*BOUNCE; }
+    }
+    if(by<b.top){
+      if(a.crossType==='fluid' && a.crossEdge==='top') fluidAdvance();
+      else { by=b.top; vy=Math.abs(vy)*BOUNCE; }
+    }
     if(by>b.bottom){ by=b.bottom; vy=-Math.abs(vy)*BOUNCE; }
   }
 
@@ -354,15 +512,31 @@ function render(){
   } else if(crossing){
     const el=performance.now()-crossing.startT, k=Math.min(1,el/crossing.dur);
     const ease=1-Math.pow(1-k,3);
+    const leavingArea=AREAS[areaIdx];
     if(k<1){
-      const b=bounds();
-      bx=crossing.fromX+((b.right+90)-crossing.fromX)*ease;
+      if(leavingArea.flip){
+        const r=fieldRect();
+        bx=crossing.fromX+((r.width*1.15)-crossing.fromX)*ease;
+        by=crossing.fromY;
+      } else if(leavingArea.crossEdge==='top'){
+        const b=bounds();
+        by=crossing.fromY+((b.top-90)-crossing.fromY)*ease;
+        bx=crossing.fromX;
+      } else {
+        const b=bounds();
+        bx=crossing.fromX+((b.right+90)-crossing.fromX)*ease;
+        by=crossing.fromY;
+      }
       hop=Math.sin(k*Math.PI)*46;
       extraSpin=ease*360;
     } else {
+      const enteringFromTop = leavingArea.flip || leavingArea.crossEdge==='top';
       loadArea(crossing.nextIdx);
-      const b=bounds();
-      bx=b.left+18; by=by;
+      if(!AREAS[areaIdx].flip){
+        const nb=bounds();
+        if(enteringFromTop){ bx=(nb.left+nb.right)/2; by=nb.bottom-20; }
+        else { bx=nb.left+18; by=by; }
+      }
       crossing=null;
     }
   } else if(trick){

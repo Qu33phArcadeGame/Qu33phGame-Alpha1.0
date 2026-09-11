@@ -1525,7 +1525,8 @@ let previewMarkers=[
 let shake=0;
 
 let QUICK_ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer")||"30"); // base timer for single-player & olympics
-let TWOP_ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer2p")||"5");  // base timer for 2-player mode, per round
+let TWOP_ROUND_TIME = parseInt(localStorage.getItem("qu33phTimer2p")||"15");  // base timer for 2-player mode, per round
+if([15,30,60].indexOf(TWOP_ROUND_TIME)<0) TWOP_ROUND_TIME=15;  // migrate any old 5s/other value to the new option set
 let ROUND_TIME = QUICK_ROUND_TIME;   // active timer for whichever round is in progress — set at the top of startGame()
 let TOTAL_TIME = Math.round(ROUND_TIME*1.5);  // sudden-death extension scales with the round
 
@@ -5224,7 +5225,7 @@ function showArcadeMenu(){
   try{ applyThemeFilters(); }catch(e){}
 }
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
-function openSeason2(){ window.location.href="season2.html"; }
+function openSeason2(){ var _t=(typeof styleOf==="function"?styleOf():currentTheme); window.location.href="season2.html?theme="+encodeURIComponent(_t); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
 function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showCharSelect(); }
 function forceIframeMirror(f){
@@ -8576,7 +8577,7 @@ function renderSettings(){
   h+=toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true);
   h+=toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()");
   h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(QUICK_ROUND_TIME),"setTimer");
-  h+=segRow("2 player round timer","seconds per round in 2 player mode",[["5","5s"],["15","15s"],["30","30s"]],String(TWOP_ROUND_TIME),"setTimer2p");
+  h+=segRow("2 player round timer","seconds per round in 2 player mode",[["15","15s"],["30","30s"],["60","60s"]],String(TWOP_ROUND_TIME),"setTimer2p");
   h+=segRow("Default orientation","applies to every game with an orientation",[["vertical","VERT"],["angled","ANGLED"],["horizontal","FLAT"]],(localStorage.getItem("qu33phOrientation")||"vertical"),"setDefaultOrientation");
   h+=resetRow("Reset high scores","keeps coins &amp; themes","#ffb020","rsScores");
   h+=resetRow("Reset everything","wipes all saved data","#ff5a5a","rsAll");
