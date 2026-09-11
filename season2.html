@@ -141,6 +141,9 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
   transform:translate(-50%,-50%) rotate(-90deg); }
 .fidget-el{ position:absolute; z-index:6; pointer-events:none; transform-origin:50% 50%;
   filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+.pin-el{ position:absolute; z-index:6; width:26px; height:auto; pointer-events:none;
+  transform:translate(-50%,-50%) rotate(-90deg); filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));
+  transition:opacity .3s, transform .3s; }
 .rail-svg{ position:absolute; left:0; top:0; z-index:5; pointer-events:none; overflow:visible;
   filter:drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
 </style>
@@ -213,7 +216,7 @@ applyTheme();
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');}
 function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); boardEl.src=boards[color]; applyTheme(); restartGame();}
-function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();clearFidgetEls();fidgetSpinners=null;clearRailEls();grinding=null;$('gameScreen').classList.add('hidden');openSelect();}
+function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();clearFidgetEls();fidgetSpinners=null;clearRailEls();grinding=null;clearPins();$('gameScreen').classList.add('hidden');openSelect();}
 
 // ── nine areas, in order: original field → Mini (near, far) → Flip crossing →
 // Bowling → Pinball → Qu33ph Jump → Stack crossing → Fidget Qu33ph (terminal).
@@ -228,13 +231,30 @@ function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exi
 // (used as a stand-in field photo until a proper wide shot exists);
 // 'fidgetqu33phfield.png' is the real Fidget Qu33ph background from the main
 // app's theme system, so that one should already be correct. ────────────────
+// generates n straight rail segments evenly spaced around a circle (fractions
+// of the area's bounds box), skipping the segment indices in `skip` so the
+// ring has gaps you can duck out through
+function ringRails(cx,cy,rad,n,skip){
+  const pts=[];
+  for(let i=0;i<n;i++){
+    const ang=(i/n)*Math.PI*2 - Math.PI/2;
+    pts.push({x:cx+Math.cos(ang)*rad, y:cy+Math.sin(ang)*rad});
+  }
+  const rails=[];
+  for(let i=0;i<n;i++){
+    if(skip.indexOf(i)>=0) continue;
+    const a=pts[i], b=pts[(i+1)%n];
+    rails.push({x1:a.x,y1:a.y,x2:b.x,y2:b.y});
+  }
+  return rails;
+}
 const AREAS=[
   { bg:'originalfield.png',   b:{left:0.20,right:0.75,top:0.16,bottom:0.86}, crossEdge:'right', crossType:'chair',
-    rails:[{x1:0.30,y1:0.72,x2:0.68,y2:0.32}] },
+    rails:[{x1:0.45,y1:0.62,x2:0.58,y2:0.18}] },
   { bg:'minitablenear.png',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92}, crossEdge:'top',   crossType:'fluid',
-    rails:[{x1:0.22,y1:0.82,x2:0.60,y2:0.42}] },
+    rails:[{x1:0.50,y1:0.85,x2:0.50,y2:0.30}] },
   { bg:'minitablefar.jpg',    b:{left:0.10,right:0.90,top:0.22,bottom:0.92}, crossEdge:'top',   crossType:'chair',
-    rails:[{x1:0.28,y1:0.78,x2:0.68,y2:0.38}] },
+    rails:[{x1:0.50,y1:0.85,x2:0.50,y2:0.25}] },
   { obstacle:{ sky:'flip', gravity:1500, minFlick:16, flickPower:3.6, platforms:[
       {l:0.05, t:0.16, w:0.15, color:'red'},
       {l:0.25, t:0.29, w:0.15, color:'green'},
@@ -243,11 +263,22 @@ const AREAS=[
       {l:0.81, t:0.67, w:0.16, color:'green'}
   ] } },
   { bg:'bowling.jpg',         b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:'left', crossType:'chair', chairPos:0.18,
-    rails:[{x1:0.22,y1:0.80,x2:0.58,y2:0.40}] },
+    rails:[{x1:0.50,y1:0.90,x2:0.50,y2:0.35}],
+    pins:[{x:0.50,y:0.14},{x:0.44,y:0.20},{x:0.56,y:0.20},{x:0.38,y:0.26},{x:0.50,y:0.26},{x:0.62,y:0.26}] },
   { bg:'pinballicon.png',     b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'left', crossType:'chair',
-    rails:[{x1:0.30,y1:0.75,x2:0.62,y2:0.35}] },
+    rails:[
+      {x1:0.85,y1:0.78,x2:0.85,y2:0.42},   // the launch lane the marker ball shoots out from
+      {x1:0.32,y1:0.38,x2:0.68,y2:0.32},   // arcs up and over the bumper cluster
+      {x1:0.68,y1:0.34,x2:0.18,y2:0.55}    // and back down toward the chair on the left
+    ] },
   { bg:'qu33phjump.png',      b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'bottom',crossType:'chair',
-    rails:[{x1:0.28,y1:0.72,x2:0.62,y2:0.32}] },
+    rails:[   // a small square loop you can ride round and round
+      {x1:0.25,y1:0.25,x2:0.75,y2:0.25},
+      {x1:0.75,y1:0.25,x2:0.75,y2:0.75},
+      {x1:0.75,y1:0.75,x2:0.25,y2:0.75},
+      {x1:0.25,y1:0.75,x2:0.25,y2:0.25}
+    ],
+    halfpipe:{x1:0.30,x2:0.70,y:0.50,band:0.14} },  // rock back and forth in the middle
   { obstacle:{ sky:'stack', gravity:1700, minFlick:14, flickPower:3.8, platforms:[
       {l:0.42, t:0.08, w:0.16, color:'blue'},
       {l:0.20, t:0.24, w:0.16, color:'green'},
@@ -255,7 +286,8 @@ const AREAS=[
       {l:0.22, t:0.56, w:0.16, color:'green'},
       {l:0.55, t:0.72, w:0.16, color:'blue'}
   ] } },
-  { bg:'fidgetqu33phfield.png', b:{left:0.15,right:0.85,top:0.18,bottom:0.90}, crossEdge:null, crossType:null, fidget:true }
+  { bg:'fidgetqu33phfield.png', b:{left:0.15,right:0.85,top:0.18,bottom:0.90}, crossEdge:null, crossType:null, fidget:true,
+    rails: ringRails(0.5,0.46,0.34,8,[1,5]) }  // ring around the outside with two gaps to duck through toward the spinners
 ];
 const AREA_COUNT=AREAS.length;
 let areaIdx=0, score=0;
@@ -272,6 +304,9 @@ let fidgetSpinners=null, fidgetEls=[], airborne=0;
 // swipe as you come off the end to pop a trick (same "free flick" window as
 // launching off a Fidget spinner). ──────────────────────────────────────────
 let grinding=null, railEls=[], grindExit=0;
+// ── Bowling pins: real collectible markers standing in as pins — skate into
+// one to knock it down. ─────────────────────────────────────────────────────
+let pinEls=[], pinsState=null, pinsCleared=false;
 let bx=0, by=0, vx=0, vy=0, boardAngle=0;
 let pointers=new Map();
 let dragId=null, dragStart=null, dragNow=null;
@@ -358,8 +393,10 @@ function loadArea(idx){
   }
   if(a.fidget){ buildFidgetSpinners(); buildFidgetEls(); }
   else if(prev && prev.fidget){ clearFidgetEls(); fidgetSpinners=null; }
+  if(a.pins) buildPins(); else clearPins();
   grinding=null; grindExit=0;
   buildRailEls();
+  buildHalfpipeEl();
   $('areaHud').textContent = a.obstacle ? (a.obstacle.sky==='stack'?'QU33PH STACK CROSSING':'QU33PH FLIP CROSSING') : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
   placeChair();
 }
@@ -372,6 +409,27 @@ function railPoints(rl){
     p2:{x:b.left+(b.right-b.left)*rl.x2, y:b.top+(b.bottom-b.top)*rl.y2}
   };
 }
+function svgLine(svg,x1,y1,x2,y2,stroke,width,opacity){
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+  l.setAttribute('stroke',stroke); l.setAttribute('stroke-width',width);
+  l.setAttribute('stroke-linecap','round');
+  if(opacity!==undefined) l.setAttribute('opacity',opacity);
+  svg.appendChild(l);
+  return l;
+}
+// draws one rail segment as a shaded cylindrical tube — drop shadow, dark
+// underside, a graded metal body (several tones for a rounded look), and a
+// crisp white highlight riding the top edge, so it reads as a real 3D rail
+// rather than a flat painted bar
+function drawRailSegment(svg,p1,p2){
+  svgLine(svg,p1.x+2,p1.y+4,p2.x+2,p2.y+4,'#000',12,0.28);          // drop shadow
+  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#2c2c2c',12);                     // dark underside
+  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#6e6e6e',9);                      // mid body
+  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#a8a8a8',6);                      // upper body
+  svgLine(svg,p1.x,p1.y-1.5,p2.x,p2.y-1.5,'#e8e8e8',3);               // near-highlight band
+  svgLine(svg,p1.x,p1.y-2.5,p2.x,p2.y-2.5,'#fff',1.6,0.95);           // crisp top highlight
+}
 function buildRailEls(){
   clearRailEls();
   const a=AREAS[areaIdx];
@@ -383,31 +441,98 @@ function buildRailEls(){
   svg.setAttribute('height', Math.max(1,Math.round(r.height)));
   a.rails.forEach(rl=>{
     const {p1,p2}=railPoints(rl);
-    // dark base bar for thickness/shadow, then a bright metallic core, then a
-    // thin white highlight line riding one edge — reads as a shiny grind rail
-    const base=document.createElementNS('http://www.w3.org/2000/svg','line');
-    base.setAttribute('x1',p1.x); base.setAttribute('y1',p1.y);
-    base.setAttribute('x2',p2.x); base.setAttribute('y2',p2.y);
-    base.setAttribute('stroke','#4a4a4a'); base.setAttribute('stroke-width','11');
-    base.setAttribute('stroke-linecap','round');
-    svg.appendChild(base);
-    const core=document.createElementNS('http://www.w3.org/2000/svg','line');
-    core.setAttribute('x1',p1.x); core.setAttribute('y1',p1.y);
-    core.setAttribute('x2',p2.x); core.setAttribute('y2',p2.y);
-    core.setAttribute('stroke','#b7b7b7'); core.setAttribute('stroke-width','7');
-    core.setAttribute('stroke-linecap','round');
-    svg.appendChild(core);
-    const shine=document.createElementNS('http://www.w3.org/2000/svg','line');
-    shine.setAttribute('x1',p1.x); shine.setAttribute('y1',p1.y-2);
-    shine.setAttribute('x2',p2.x); shine.setAttribute('y2',p2.y-2);
-    shine.setAttribute('stroke','#fff'); shine.setAttribute('stroke-width','2.5');
-    shine.setAttribute('stroke-linecap','round'); shine.setAttribute('opacity','0.9');
-    svg.appendChild(shine);
+    drawRailSegment(svg,p1,p2);
   });
   gameEl.appendChild(svg);
   railEls.push(svg);
 }
 function clearRailEls(){ railEls.forEach(d=>d.remove()); railEls=[]; }
+
+// ── Bowling pins ─────────────────────────────────────────────────────────
+function buildPins(){
+  clearPins();
+  const a=AREAS[areaIdx];
+  if(!a.pins) return;
+  pinsCleared=false;
+  const b=bounds();
+  pinsState=a.pins.map(p=>({x:p.x,y:p.y,down:false,el:null}));
+  pinsState.forEach(p=>{
+    const img=document.createElement('img');
+    img.className='pin-el';
+    img.alt='';
+    img.src='stackred.png';
+    img.style.left=(b.left+(b.right-b.left)*p.x)+'px';
+    img.style.top=(b.top+(b.bottom-b.top)*p.y)+'px';
+    gameEl.appendChild(img);
+    pinEls.push(img);
+    p.el=img;
+  });
+}
+function clearPins(){ pinEls.forEach(d=>d.remove()); pinEls=[]; pinsState=null; }
+function updatePins(){
+  if(!pinsState) return;
+  const b=bounds();
+  let allDown=true;
+  pinsState.forEach(p=>{
+    if(p.down) return;
+    allDown=false;
+    const px=b.left+(b.right-b.left)*p.x, py=b.top+(b.bottom-b.top)*p.y;
+    if(Math.hypot(bx-px,by-py) < 26){
+      p.down=true;
+      p.el.style.opacity='0';
+      p.el.style.transform='translate(-50%,-40%) rotate(70deg) scale(0.65)';
+      addScore(20);
+      try{ if(navigator.vibrate) navigator.vibrate(10); }catch(e){}
+    }
+  });
+  if(allDown && !pinsCleared){ pinsCleared=true; addScore(150); }
+}
+
+// ── Jump halfpipe: not a rail — a valley you roll back and forth in, built
+// from code (a couple of stacked SVG arcs), with a simple spring pulling you
+// back toward the middle so momentum carries you up one side and back down. ─
+function halfpipePoints(hp){
+  const b=bounds();
+  return {
+    x1:b.left+(b.right-b.left)*hp.x1,
+    x2:b.left+(b.right-b.left)*hp.x2,
+    y:b.top+(b.bottom-b.top)*hp.y,
+    band:(b.bottom-b.top)*hp.band
+  };
+}
+function buildHalfpipeEl(){
+  const a=AREAS[areaIdx];
+  if(!a.halfpipe) return;
+  const r=fieldRect(), hp=halfpipePoints(a.halfpipe);
+  const cx=(hp.x1+hp.x2)/2, depthPx=r.height*0.12;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','rail-svg');
+  svg.setAttribute('width', Math.max(1,Math.round(r.width)));
+  svg.setAttribute('height', Math.max(1,Math.round(r.height)));
+  const d='M '+hp.x1+' '+(hp.y-hp.band*0.3)+' Q '+cx+' '+(hp.y+depthPx)+' '+hp.x2+' '+(hp.y-hp.band*0.3);
+  const wide=document.createElementNS('http://www.w3.org/2000/svg','path');
+  wide.setAttribute('d',d); wide.setAttribute('fill','none');
+  wide.setAttribute('stroke','#6e6e6e'); wide.setAttribute('stroke-width','16'); wide.setAttribute('stroke-linecap','round');
+  svg.appendChild(wide);
+  const mid=document.createElementNS('http://www.w3.org/2000/svg','path');
+  mid.setAttribute('d',d); mid.setAttribute('fill','none');
+  mid.setAttribute('stroke','#a8a8a8'); mid.setAttribute('stroke-width','10'); mid.setAttribute('stroke-linecap','round');
+  svg.appendChild(mid);
+  const hi=document.createElementNS('http://www.w3.org/2000/svg','path');
+  hi.setAttribute('d',d); hi.setAttribute('fill','none');
+  hi.setAttribute('stroke','#f0f0f0'); hi.setAttribute('stroke-width','3'); hi.setAttribute('stroke-linecap','round'); hi.setAttribute('opacity','0.85');
+  svg.appendChild(hi);
+  gameEl.appendChild(svg);
+  railEls.push(svg);
+}
+function updateHalfpipe(dt){
+  const a=AREAS[areaIdx];
+  if(!a.halfpipe || grinding) return;
+  const hp=halfpipePoints(a.halfpipe), cx=(hp.x1+hp.x2)/2;
+  if(Math.abs(by-hp.y) < hp.band && bx>hp.x1-24 && bx<hp.x2+24){
+    vx += -(bx-cx)*3.0*dt*60;
+  }
+}
 
 function enterFlipMode(){
   flipMode=true;
@@ -727,6 +852,8 @@ function frame(t){
     }
 
     if(a.fidget) updateFidget(dt);
+    if(a.pins) updatePins();
+    if(a.halfpipe) updateHalfpipe(dt);
 
     // jump up onto a rail — catch near either end and grind the whole length
     if(a.rails){
