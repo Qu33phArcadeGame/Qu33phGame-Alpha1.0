@@ -141,6 +141,14 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
   transform:translate(-50%,-50%) rotate(-90deg); }
 .fidget-el{ position:absolute; z-index:6; pointer-events:none; transform-origin:50% 50%;
   filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+.rail-el{ position:absolute; z-index:5; pointer-events:none; height:9px; border-radius:5px;
+  transform-origin:0% 50%;
+  background:linear-gradient(180deg,#fff 0%,#dcdcdc 18%,#8f8f8f 46%,#5a5a5a 54%,#c8c8c8 82%,#fff 100%);
+  box-shadow:0 3px 5px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.8); }
+.rail-el::after{ content:""; position:absolute; inset:0; border-radius:5px;
+  background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.85) 8%, transparent 16%);
+  background-size:220% 100%; animation:railShine 1.8s linear infinite; }
+@keyframes railShine{ 0%{background-position:120% 0;} 100%{background-position:-120% 0;} }
 </style>
 </head>
 <body>
@@ -211,7 +219,7 @@ applyTheme();
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');}
 function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); boardEl.src=boards[color]; applyTheme(); restartGame();}
-function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();clearFidgetEls();fidgetSpinners=null;$('gameScreen').classList.add('hidden');openSelect();}
+function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();clearFidgetEls();fidgetSpinners=null;clearRailEls();grinding=null;$('gameScreen').classList.add('hidden');openSelect();}
 
 // ── nine areas, in order: original field → Mini (near, far) → Flip crossing →
 // Bowling → Pinball → Qu33ph Jump → Stack crossing → Fidget Qu33ph (terminal).
@@ -227,9 +235,12 @@ function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exi
 // 'fidgetqu33phfield.png' is the real Fidget Qu33ph background from the main
 // app's theme system, so that one should already be correct. ────────────────
 const AREAS=[
-  { bg:'originalfield.png',   b:{left:0.20,right:0.75,top:0.16,bottom:0.86}, crossEdge:'right', crossType:'chair' },
-  { bg:'minitablenear.png',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92}, crossEdge:'top',   crossType:'fluid' },
-  { bg:'minitablefar.jpg',    b:{left:0.10,right:0.90,top:0.22,bottom:0.92}, crossEdge:'top',   crossType:'chair' },
+  { bg:'originalfield.png',   b:{left:0.20,right:0.75,top:0.16,bottom:0.86}, crossEdge:'right', crossType:'chair',
+    rails:[{x1:0.30,y1:0.72,x2:0.68,y2:0.32}] },
+  { bg:'minitablenear.png',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92}, crossEdge:'top',   crossType:'fluid',
+    rails:[{x1:0.22,y1:0.82,x2:0.60,y2:0.42}] },
+  { bg:'minitablefar.jpg',    b:{left:0.10,right:0.90,top:0.22,bottom:0.92}, crossEdge:'top',   crossType:'chair',
+    rails:[{x1:0.28,y1:0.78,x2:0.68,y2:0.38}] },
   { obstacle:{ sky:'flip', gravity:1500, minFlick:16, flickPower:3.6, platforms:[
       {l:0.05, t:0.16, w:0.15, color:'red'},
       {l:0.25, t:0.29, w:0.15, color:'green'},
@@ -237,9 +248,12 @@ const AREAS=[
       {l:0.63, t:0.55, w:0.15, color:'red'},
       {l:0.81, t:0.67, w:0.16, color:'green'}
   ] } },
-  { bg:'bowling.jpg',         b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:'left', crossType:'chair', chairPos:0.18 },
-  { bg:'pinballicon.png',     b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'left', crossType:'chair' },
-  { bg:'qu33phjump.png',      b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'bottom',crossType:'chair' },
+  { bg:'bowling.jpg',         b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:'left', crossType:'chair', chairPos:0.18,
+    rails:[{x1:0.22,y1:0.80,x2:0.58,y2:0.40}] },
+  { bg:'pinballicon.png',     b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'left', crossType:'chair',
+    rails:[{x1:0.30,y1:0.75,x2:0.62,y2:0.35}] },
+  { bg:'qu33phjump.png',      b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'bottom',crossType:'chair',
+    rails:[{x1:0.28,y1:0.72,x2:0.62,y2:0.32}] },
   { obstacle:{ sky:'stack', gravity:1700, minFlick:14, flickPower:3.8, platforms:[
       {l:0.42, t:0.08, w:0.16, color:'blue'},
       {l:0.20, t:0.24, w:0.16, color:'green'},
@@ -260,6 +274,10 @@ let flipMode=false, fx=0, fy=0, fvx=0, fvy=0, flipPlatformEls=[];
 // tricks directly (no tap-first needed). Cooldown stops one overlap from
 // scoring every single frame. ───────────────────────────────────────────────
 let fidgetSpinners=null, fidgetEls=[], airborne=0;
+// ── Rails: jump onto one and it carries you the full length automatically;
+// swipe as you come off the end to pop a trick (same "free flick" window as
+// launching off a Fidget spinner). ──────────────────────────────────────────
+let grinding=null, railEls=[], grindExit=0;
 let bx=0, by=0, vx=0, vy=0, boardAngle=0;
 let pointers=new Map();
 let dragId=null, dragStart=null, dragNow=null;
@@ -346,9 +364,38 @@ function loadArea(idx){
   }
   if(a.fidget){ buildFidgetSpinners(); buildFidgetEls(); }
   else if(prev && prev.fidget){ clearFidgetEls(); fidgetSpinners=null; }
+  grinding=null; grindExit=0;
+  buildRailEls();
   $('areaHud').textContent = a.obstacle ? (a.obstacle.sky==='stack'?'QU33PH STACK CROSSING':'QU33PH FLIP CROSSING') : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
   placeChair();
 }
+
+// ── Rails ────────────────────────────────────────────────────────────────
+function railPoints(rl){
+  const b=bounds();
+  return {
+    p1:{x:b.left+(b.right-b.left)*rl.x1, y:b.top+(b.bottom-b.top)*rl.y1},
+    p2:{x:b.left+(b.right-b.left)*rl.x2, y:b.top+(b.bottom-b.top)*rl.y2}
+  };
+}
+function buildRailEls(){
+  clearRailEls();
+  const a=AREAS[areaIdx];
+  if(!a.rails) return;
+  a.rails.forEach(rl=>{
+    const {p1,p2}=railPoints(rl);
+    const len=Math.hypot(p2.x-p1.x, p2.y-p1.y);
+    const ang=Math.atan2(p2.y-p1.y, p2.x-p1.x)*180/Math.PI;
+    const el=document.createElement('div');
+    el.className='rail-el';
+    el.style.left=p1.x+'px'; el.style.top=(p1.y-4)+'px';
+    el.style.width=len+'px';
+    el.style.transform='rotate('+ang+'deg)';
+    gameEl.appendChild(el);
+    railEls.push(el);
+  });
+}
+function clearRailEls(){ railEls.forEach(d=>d.remove()); railEls=[]; }
 
 function enterFlipMode(){
   flipMode=true;
@@ -562,6 +609,7 @@ function applyFlick(dx,dy){
     boardAngle=Math.atan2(dy,dx)*180/Math.PI+90;
     return; // no tricks in the platformer sections — flicks are purely movement here
   }
+  if(grinding) return; // the rail rides itself — flicks kick in again once you pop off the end
 
   vx+=dx*FLICK_POWER/10; vy+=dy*FLICK_POWER/10;
   const sp=Math.hypot(vx,vy);
@@ -569,9 +617,10 @@ function applyFlick(dx,dy){
   boardAngle=Math.atan2(dy,dx)*180/Math.PI+90;
 
   // normally a trick needs a tap right before the flick (the combo window) —
-  // but mid-air off a Fidget spinner hit, any flick can trigger a trick
+  // but mid-air off a Fidget spinner hit, or just off the end of a rail,
+  // any flick can trigger a trick straight away
   const sinceTap=performance.now()-lastTapTime;
-  if(airborne<=0 && sinceTap>COMBO_WINDOW) return;
+  if(airborne<=0 && grindExit<=0 && sinceTap>COMBO_WINDOW) return;
 
   const ang=Math.atan2(dy,dx)*180/Math.PI;
   const upRight     = ang>-80  && ang<-10;
@@ -624,6 +673,22 @@ function frame(t){
       if(fy>r.height+80) flipFall();
       bx=fx; by=fy;
     }
+  } else if(grinding){
+    // locked to the rail — rides it smoothly from one end to the other, no steering needed
+    grinding.t += dt/grinding.dur;
+    if(grinding.t>=1){
+      const spd=300, ux=(grinding.p2.x-grinding.p1.x)/grinding.len, uy=(grinding.p2.y-grinding.p1.y)/grinding.len;
+      bx=grinding.p2.x; by=grinding.p2.y;
+      vx=ux*spd; vy=uy*spd;
+      boardAngle=Math.atan2(uy,ux)*180/Math.PI+90;
+      grindExit=1.1;   // free-flick trick window as you come off the end
+      addScore(40);
+      grinding=null;
+    } else {
+      bx=grinding.p1.x+(grinding.p2.x-grinding.p1.x)*grinding.t;
+      by=grinding.p1.y+(grinding.p2.y-grinding.p1.y)*grinding.t;
+      boardAngle=Math.atan2(grinding.p2.y-grinding.p1.y, grinding.p2.x-grinding.p1.x)*180/Math.PI+90;
+    }
   } else if(!crossing && !peefAnim){
     bx+=vx*dt; by+=vy*dt;
     const fric = airborne>0 ? 0.997 : FRICTION;  // weightless/floaty while airborne — keeps you up there for the trick window
@@ -650,7 +715,20 @@ function frame(t){
     }
 
     if(a.fidget) updateFidget(dt);
+
+    // jump up onto a rail — catch near either end and grind the whole length
+    if(a.rails){
+      a.rails.forEach(rl=>{
+        const {p1,p2}=railPoints(rl);
+        if(Math.hypot(bx-p1.x,by-p1.y) < 40){
+          grinding={p1,p2,len:Math.hypot(p2.x-p1.x,p2.y-p1.y),t:0,dur:1.15};
+          addScore(15);
+          try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){}
+        }
+      });
+    }
   }
+  if(grindExit>0) grindExit=Math.max(0, grindExit-dt);
 
   render();
   raf=requestAnimationFrame(frame);
