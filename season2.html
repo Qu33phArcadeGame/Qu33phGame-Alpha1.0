@@ -141,8 +141,8 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
   transform:translate(-50%,-50%) rotate(-90deg); }
 .fidget-el{ position:absolute; z-index:6; pointer-events:none; transform-origin:50% 50%;
   filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
-.pin-el{ position:absolute; z-index:6; width:26px; height:auto; pointer-events:none;
-  transform:translate(-50%,-50%) rotate(-90deg); filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));
+.pin-el{ position:absolute; z-index:6; height:34px; width:auto; pointer-events:none;
+  transform:translate(-50%,-50%); filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));
   transition:opacity .3s, transform .3s; }
 .rail-svg{ position:absolute; left:0; top:0; z-index:5; pointer-events:none; overflow:visible;
   filter:drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
@@ -252,8 +252,10 @@ const AREAS=[
   { bg:'originalfield.png',   b:{left:0.20,right:0.75,top:0.16,bottom:0.86}, crossEdge:'right', crossType:'chair',
     rails:[{x1:0.45,y1:0.62,x2:0.58,y2:0.18}] },
   { bg:'minitablenear.png',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92}, crossEdge:'top',   crossType:'fluid',
-    rails:[{x1:0.50,y1:0.85,x2:0.50,y2:0.30}] },
+    entryPoint:'railStart',
+    rails:[{x1:0.50,y1:0.62,x2:0.50,y2:0.10}] },
   { bg:'minitablefar.jpg',    b:{left:0.10,right:0.90,top:0.22,bottom:0.92}, crossEdge:'top',   crossType:'chair',
+    entryPoint:'railStart',
     rails:[{x1:0.50,y1:0.85,x2:0.50,y2:0.25}] },
   { obstacle:{ sky:'flip', gravity:1500, minFlick:16, flickPower:3.6, platforms:[
       {l:0.05, t:0.16, w:0.15, color:'red'},
@@ -275,13 +277,14 @@ const AREAS=[
       {x:0.384,y:0.14,color:'green'},{x:0.461,y:0.14,color:'red'},{x:0.539,y:0.14,color:'green'},{x:0.616,y:0.14,color:'red'}
     ] },
   { bg:'pinballicon.png',     b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'left', crossType:'chair', chairPos:0.62,
+    entryPoint:'railStart',
     rails:[
       {x1:0.93,y1:0.78,x2:0.93,y2:0.42},   // the launch lane the marker ball shoots out from, pushed further right
       {x1:0.35,y1:0.30,x2:0.58,y2:0.30},   // small horizontal rail up top
       {x1:0.58,y1:0.30,x2:0.06,y2:0.62}    // long rail leading straight down to the chair
     ] },
   { bg:'qu33phjump.png',      b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'bottom',crossType:'chair',
-    halfpipe:{x1:0.25,x2:0.75,y:0.55,band:0.16} },  // wooden halfpipe — drop in, ride it, pop out over either ledge
+    halfpipe:{x1:0.06,x2:0.94,y:0.50,band:0.24} },  // fills the screen — drop in, ride it, pop out over either ledge for a trick window
   { obstacle:{ sky:'stack', gravity:1700, minFlick:14, flickPower:3.8, platforms:[
       {l:0.42, t:0.08, w:0.16, color:'blue'},
       {l:0.20, t:0.24, w:0.16, color:'green'},
@@ -290,7 +293,9 @@ const AREAS=[
       {l:0.55, t:0.72, w:0.16, color:'blue'}
   ] } },
   { bg:'fidgetqu33phfield.png', b:{left:0.15,right:0.85,top:0.18,bottom:0.90}, crossEdge:null, crossType:null, fidget:true,
-    rails: ringRails(0.5,0.46,0.34,8,[1,5]) }  // ring around the outside with two gaps to duck through toward the spinners
+    // figure-8 — one loop around each spinner, crossing in the middle where
+    // they nearly touch, with a gap on each loop's outer side to duck out
+    rails: [...ringRails(0.32,0.50,0.20,8,[6]), ...ringRails(0.68,0.50,0.20,8,[2])] }
 ];
 const AREA_COUNT=AREAS.length;
 let areaIdx=0, score=0;
@@ -306,7 +311,7 @@ let fidgetSpinners=null, fidgetEls=[], airborne=0;
 // ── Rails: jump onto one and it carries you the full length automatically;
 // swipe as you come off the end to pop a trick (same "free flick" window as
 // launching off a Fidget spinner). ──────────────────────────────────────────
-let grinding=null, railEls=[], grindExit=0;
+let grinding=null, railEls=[], grindExit=0, hpWasIn=false;
 // ── Bowling pins: real collectible markers standing in as pins — skate into
 // one to knock it down. ─────────────────────────────────────────────────────
 let pinEls=[], pinsState=null, pinsCleared=false;
@@ -433,6 +438,22 @@ function drawRailSegment(svg,p1,p2){
   svgLine(svg,p1.x,p1.y-0.5,p2.x,p2.y-0.5,'#9a9a9a',5.5);              // upper body, nudged up for roundness
   svgLine(svg,p1.x,p1.y-1.6,p2.x,p2.y-1.6,'#c7c7c7',3.2);              // near-highlight band
   svgLine(svg,p1.x,p1.y-2.6,p2.x,p2.y-2.6,'#fff',1.5,0.95);            // crisp top highlight
+  // small mounting-post caps at each end, like a real grind rail's supports —
+  // reads as more 3D and grounds it to the surface instead of floating
+  [p1,p2].forEach(p=>{
+    const post=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    post.setAttribute('cx',p.x); post.setAttribute('cy',p.y+3); post.setAttribute('r',6.5);
+    post.setAttribute('fill','#222'); post.setAttribute('opacity','0.55');
+    svg.appendChild(post);
+    const cap=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    cap.setAttribute('cx',p.x); cap.setAttribute('cy',p.y); cap.setAttribute('r',5.5);
+    cap.setAttribute('fill','#8a8a8a'); cap.setAttribute('stroke','#3a3a3a'); cap.setAttribute('stroke-width','1');
+    svg.appendChild(cap);
+    const capHi=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    capHi.setAttribute('cx',p.x-1.2); capHi.setAttribute('cy',p.y-1.2); capHi.setAttribute('r',2);
+    capHi.setAttribute('fill','#eee'); capHi.setAttribute('opacity','0.85');
+    svg.appendChild(capHi);
+  });
 }
 function buildRailEls(){
   clearRailEls();
@@ -484,7 +505,7 @@ function updatePins(){
     if(Math.hypot(bx-px,by-py) < 26){
       p.down=true;
       p.el.style.opacity='0';
-      p.el.style.transform='translate(-50%,-40%) rotate(70deg) scale(0.65)';
+      p.el.style.transform='translate(-50%,-40%) rotate(90deg) scale(0.85)';
       addScore(20);
       try{ if(navigator.vibrate) navigator.vibrate(10); }catch(e){}
     }
@@ -554,11 +575,21 @@ function updateHalfpipe(dt){
   const a=AREAS[areaIdx];
   if(!a.halfpipe || grinding) return;
   const hp=halfpipePoints(a.halfpipe), cx=(hp.x1+hp.x2)/2;
-  // spring pulls you back toward the middle while you're inside the walls —
-  // build enough speed and you carry past x1/x2 onto a ledge, where the spring
-  // lets go and normal physics takes over so you can ride off or drop back in
-  if(Math.abs(by-hp.y) < hp.band && bx>hp.x1+8 && bx<hp.x2-8){
-    vx += -(bx-cx)*3.0*dt*60;
+  const inBand = Math.abs(by-hp.y) < hp.band;
+  const inWalls = bx>hp.x1+8 && bx<hp.x2-8;
+  if(inBand && inWalls){
+    vx += -(bx-cx)*2.4*dt*60;   // a bit softer than before — wider, easier roll back and forth
+    hpWasIn=true;
+  } else if(hpWasIn && inBand && Math.abs(vx)>140){
+    // just carried past a wall with real speed — pop out onto the ledge with
+    // a short trick window (reuses the same airborne state as the Fidget
+    // spinners, so the board grows and free-flicks trigger tricks here too)
+    hpWasIn=false;
+    airborne=1.6;
+    addScore(25);
+    try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
+  } else if(!inBand){
+    hpWasIn=false;
   }
 }
 
@@ -953,6 +984,10 @@ function render(){
           // edge-entry spot, so you roll straight onto it
           const {p1}=railPoints(na.rails[0]);
           bx=p1.x; by=p1.y+18;
+        } else if(na.halfpipe){
+          // lands you right at the drop-in ledge on the left wall
+          const hp=halfpipePoints(na.halfpipe);
+          bx=hp.x1-18; by=hp.y-hp.band*0.3-14;
         } else {
           const nb=bounds();
           if(enterEdge==='top'){ bx=(nb.left+nb.right)/2; by=nb.top+20; }
