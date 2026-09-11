@@ -141,14 +141,8 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
   transform:translate(-50%,-50%) rotate(-90deg); }
 .fidget-el{ position:absolute; z-index:6; pointer-events:none; transform-origin:50% 50%;
   filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
-.rail-el{ position:absolute; z-index:5; pointer-events:none; height:9px; border-radius:5px;
-  transform-origin:0% 50%;
-  background:linear-gradient(180deg,#fff 0%,#dcdcdc 18%,#8f8f8f 46%,#5a5a5a 54%,#c8c8c8 82%,#fff 100%);
-  box-shadow:0 3px 5px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.8); }
-.rail-el::after{ content:""; position:absolute; inset:0; border-radius:5px;
-  background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.85) 8%, transparent 16%);
-  background-size:220% 100%; animation:railShine 1.8s linear infinite; }
-@keyframes railShine{ 0%{background-position:120% 0;} 100%{background-position:-120% 0;} }
+.rail-svg{ position:absolute; left:0; top:0; z-index:5; pointer-events:none; overflow:visible;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
 </style>
 </head>
 <body>
@@ -382,18 +376,36 @@ function buildRailEls(){
   clearRailEls();
   const a=AREAS[areaIdx];
   if(!a.rails) return;
+  const r=fieldRect();
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','rail-svg');
+  svg.setAttribute('width', Math.max(1,Math.round(r.width)));
+  svg.setAttribute('height', Math.max(1,Math.round(r.height)));
   a.rails.forEach(rl=>{
     const {p1,p2}=railPoints(rl);
-    const len=Math.hypot(p2.x-p1.x, p2.y-p1.y);
-    const ang=Math.atan2(p2.y-p1.y, p2.x-p1.x)*180/Math.PI;
-    const el=document.createElement('div');
-    el.className='rail-el';
-    el.style.left=p1.x+'px'; el.style.top=(p1.y-4)+'px';
-    el.style.width=len+'px';
-    el.style.transform='rotate('+ang+'deg)';
-    gameEl.appendChild(el);
-    railEls.push(el);
+    // dark base bar for thickness/shadow, then a bright metallic core, then a
+    // thin white highlight line riding one edge — reads as a shiny grind rail
+    const base=document.createElementNS('http://www.w3.org/2000/svg','line');
+    base.setAttribute('x1',p1.x); base.setAttribute('y1',p1.y);
+    base.setAttribute('x2',p2.x); base.setAttribute('y2',p2.y);
+    base.setAttribute('stroke','#4a4a4a'); base.setAttribute('stroke-width','11');
+    base.setAttribute('stroke-linecap','round');
+    svg.appendChild(base);
+    const core=document.createElementNS('http://www.w3.org/2000/svg','line');
+    core.setAttribute('x1',p1.x); core.setAttribute('y1',p1.y);
+    core.setAttribute('x2',p2.x); core.setAttribute('y2',p2.y);
+    core.setAttribute('stroke','#b7b7b7'); core.setAttribute('stroke-width','7');
+    core.setAttribute('stroke-linecap','round');
+    svg.appendChild(core);
+    const shine=document.createElementNS('http://www.w3.org/2000/svg','line');
+    shine.setAttribute('x1',p1.x); shine.setAttribute('y1',p1.y-2);
+    shine.setAttribute('x2',p2.x); shine.setAttribute('y2',p2.y-2);
+    shine.setAttribute('stroke','#fff'); shine.setAttribute('stroke-width','2.5');
+    shine.setAttribute('stroke-linecap','round'); shine.setAttribute('opacity','0.9');
+    svg.appendChild(shine);
   });
+  gameEl.appendChild(svg);
+  railEls.push(svg);
 }
 function clearRailEls(){ railEls.forEach(d=>d.remove()); railEls=[]; }
 
