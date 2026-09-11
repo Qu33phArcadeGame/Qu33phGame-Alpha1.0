@@ -293,9 +293,9 @@ const AREAS=[
       {l:0.55, t:0.72, w:0.16, color:'blue'}
   ] } },
   { bg:'fidgetqu33phfield.png', b:{left:0.15,right:0.85,top:0.18,bottom:0.90}, crossEdge:null, crossType:null, fidget:true,
-    // figure-8 — one loop around each spinner, crossing in the middle where
+    // figure-8 — one big loop around each spinner, crossing in the middle where
     // they nearly touch, with a gap on each loop's outer side to duck out
-    rails: [...ringRails(0.32,0.50,0.20,8,[6]), ...ringRails(0.68,0.50,0.20,8,[2])] }
+    rails: [...ringRails(0.30,0.48,0.30,8,[6]), ...ringRails(0.70,0.48,0.30,8,[2])] }
 ];
 const AREA_COUNT=AREAS.length;
 let areaIdx=0, score=0;
@@ -525,24 +525,39 @@ function halfpipePoints(hp){
     band:(b.bottom-b.top)*hp.band
   };
 }
+// single source of truth for the ramp's shape, shared by physics AND the
+// rendered path, so what you see is exactly what you ride on — no more gap
+// between the visual curve and where the board actually sits
+function curveDepthPx(){ return fieldRect().height*0.20; }
+function halfpipeLipY(hp){ return hp.y-hp.band*0.35; }
+function halfpipeCurveY(hp,x){
+  const cx=(hp.x1+hp.x2)/2, halfW=(hp.x2-hp.x1)/2;
+  const t=Math.max(-1,Math.min(1,(x-cx)/halfW));
+  return halfpipeLipY(hp) + curveDepthPx()*(1-t*t);
+}
 function buildHalfpipeEl(){
   const a=AREAS[areaIdx];
   if(!a.halfpipe) return;
-  const r=fieldRect(), hp=halfpipePoints(a.halfpipe);
-  const cx=(hp.x1+hp.x2)/2, depthPx=r.height*0.17, topY=hp.y-hp.band*0.35;
+  const r=fieldRect(), hp=halfpipePoints(a.halfpipe), topY=halfpipeLipY(hp);
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.setAttribute('class','rail-svg');
   svg.setAttribute('width', Math.max(1,Math.round(r.width)));
   svg.setAttribute('height', Math.max(1,Math.round(r.height)));
-  const d='M '+hp.x1+' '+topY+' Q '+cx+' '+(hp.y+depthPx)+' '+hp.x2+' '+topY;
+  // sample the exact same curve the physics uses, point for point
+  const N=28; let d='';
+  for(let i=0;i<=N;i++){
+    const x=hp.x1+(hp.x2-hp.x1)*i/N, y=halfpipeCurveY(hp,x);
+    d += (i===0?'M ':'L ')+x+' '+y+' ';
+  }
   // wooden ramp surface — several stacked tones for a rounded, varnished look
   [
-    {w:24,c:'#2a1608'}, {w:19,c:'#4a2c12'}, {w:14,c:'#7a4a22'},
+    {w:26,c:'#2a1608'}, {w:20,c:'#4a2c12'}, {w:14,c:'#7a4a22'},
     {w:9, c:'#a8703c'}, {w:5, c:'#d19a5e'}, {w:2, c:'#f3d9ab', o:0.9}
   ].forEach(L=>{
     const p=document.createElementNS('http://www.w3.org/2000/svg','path');
     p.setAttribute('d',d); p.setAttribute('fill','none');
-    p.setAttribute('stroke',L.c); p.setAttribute('stroke-width',L.w); p.setAttribute('stroke-linecap','round');
+    p.setAttribute('stroke',L.c); p.setAttribute('stroke-width',L.w);
+    p.setAttribute('stroke-linecap','round'); p.setAttribute('stroke-linejoin','round');
     if(L.o!==undefined) p.setAttribute('opacity',L.o);
     svg.appendChild(p);
   });
@@ -570,27 +585,6 @@ function buildHalfpipeEl(){
   svg.appendChild(dropTxt);
   gameEl.appendChild(svg);
   railEls.push(svg);
-}
-function updateHalfpipe(dt){
-  const a=AREAS[areaIdx];
-  if(!a.halfpipe || grinding) return;
-  const hp=halfpipePoints(a.halfpipe), cx=(hp.x1+hp.x2)/2;
-  const inBand = Math.abs(by-hp.y) < hp.band;
-  const inWalls = bx>hp.x1+8 && bx<hp.x2-8;
-  if(inBand && inWalls){
-    vx += -(bx-cx)*2.4*dt*60;   // a bit softer than before — wider, easier roll back and forth
-    hpWasIn=true;
-  } else if(hpWasIn && inBand && Math.abs(vx)>140){
-    // just carried past a wall with real speed — pop out onto the ledge with
-    // a short trick window (reuses the same airborne state as the Fidget
-    // spinners, so the board grows and free-flicks trigger tricks here too)
-    hpWasIn=false;
-    airborne=1.6;
-    addScore(25);
-    try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
-  } else if(!inBand){
-    hpWasIn=false;
-  }
 }
 
 function enterFlipMode(){
@@ -873,11 +867,11 @@ function frame(t){
     // locked to the rail — rides it smoothly from one end to the other, no steering needed
     grinding.t += dt/grinding.dur;
     if(grinding.t>=1){
-      const spd=300, ux=(grinding.p2.x-grinding.p1.x)/grinding.len, uy=(grinding.p2.y-grinding.p1.y)/grinding.len;
+      const spd=420, ux=(grinding.p2.x-grinding.p1.x)/grinding.len, uy=(grinding.p2.y-grinding.p1.y)/grinding.len;
       bx=grinding.p2.x; by=grinding.p2.y;
       vx=ux*spd; vy=uy*spd;
       boardAngle=Math.atan2(uy,ux)*180/Math.PI+90;
-      grindExit=1.1;   // free-flick trick window as you come off the end
+      grindExit=1.1;   // free-flick trick window as you come off the end — carry your speed to continue onto the next segment, or peel off elsewhere
       addScore(40);
       grinding=null;
     } else {
@@ -885,7 +879,27 @@ function frame(t){
       by=grinding.p1.y+(grinding.p2.y-grinding.p1.y)*grinding.t;
       boardAngle=Math.atan2(grinding.p2.y-grinding.p1.y, grinding.p2.x-grinding.p1.x)*180/Math.PI+90;
     }
+  } else if(AREAS[areaIdx].halfpipe && !crossing && !peefAnim && (function(){ const hp=halfpipePoints(AREAS[areaIdx].halfpipe); return bx>hp.x1 && bx<hp.x2; })()){
+    // gravity-driven curve physics — rides the exact same parabola the ramp is
+    // drawn with, so the board visually sits right on the surface at all times
+    const hp=halfpipePoints(AREAS[areaIdx].halfpipe);
+    const cx=(hp.x1+hp.x2)/2, halfW=(hp.x2-hp.x1)/2;
+    vx += -(bx-cx)*7.5*dt*60;      // strong pull toward the bottom of the valley — a real "gravity" feel
+    vx *= 0.999;                   // minimal rolling friction — keeps the swing alive
+    bx += vx*dt;
+    const t=Math.max(-1,Math.min(1,(bx-cx)/halfW));
+    by = halfpipeCurveY(hp,bx);
+    boardAngle = Math.atan2(-2*curveDepthPx()*t/halfW, 1)*180/Math.PI+90;  // tilts to match the local slope
+    hpWasIn=true;
   } else if(!crossing && !peefAnim){
+    if(hpWasIn){
+      // just carried past a wall — pop out onto the ledge; a short trick
+      // window if you had real speed (same airborne state the Fidget
+      // spinners use, so the board grows and free-flicks trigger tricks)
+      hpWasIn=false;
+      if(Math.abs(vx)>140){ airborne=1.6; addScore(25); try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){} }
+      vy = -Math.abs(vx)*0.4;
+    }
     bx+=vx*dt; by+=vy*dt;
     const fric = airborne>0 ? 0.997 : FRICTION;  // weightless/floaty while airborne — keeps you up there for the trick window
     vx*=fric; vy*=fric;
@@ -912,14 +926,16 @@ function frame(t){
 
     if(a.fidget) updateFidget(dt);
     if(a.pins) updatePins();
-    if(a.halfpipe) updateHalfpipe(dt);
 
     // jump up onto a rail — catch near either end and grind the whole length
+    // at a consistent speed (not a fixed time), so longer rails like the
+    // Fidget figure-8 don't feel slower just because they're bigger
     if(a.rails){
       a.rails.forEach(rl=>{
         const {p1,p2}=railPoints(rl);
         if(Math.hypot(bx-p1.x,by-p1.y) < 40){
-          grinding={p1,p2,len:Math.hypot(p2.x-p1.x,p2.y-p1.y),t:0,dur:1.15};
+          const len=Math.hypot(p2.x-p1.x,p2.y-p1.y);
+          grinding={p1,p2,len,t:0,dur:Math.max(0.35,len/460)};
           addScore(15);
           try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){}
         }
@@ -985,9 +1001,10 @@ function render(){
           const {p1}=railPoints(na.rails[0]);
           bx=p1.x; by=p1.y+18;
         } else if(na.halfpipe){
-          // lands you right at the drop-in ledge on the left wall
+          // lands you exactly at the drop-in point, right on the lip of the curve
           const hp=halfpipePoints(na.halfpipe);
-          bx=hp.x1-18; by=hp.y-hp.band*0.3-14;
+          bx=hp.x1+6; by=halfpipeCurveY(hp,hp.x1+6);
+          vx=0; vy=0;
         } else {
           const nb=bounds();
           if(enterEdge==='top'){ bx=(nb.left+nb.right)/2; by=nb.top+20; }
