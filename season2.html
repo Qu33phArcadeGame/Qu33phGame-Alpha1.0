@@ -846,6 +846,8 @@ function doPeef(){
 function frame(t){
   if(!running) return;
   const dt=Math.min(0.033,(t-last)/1000); last=t;
+  const curArea=AREAS[areaIdx];
+  const hp0 = curArea.halfpipe ? halfpipePoints(curArea.halfpipe) : null;
 
   if(flipMode){
     if(!crossing){
@@ -879,16 +881,20 @@ function frame(t){
       by=grinding.p1.y+(grinding.p2.y-grinding.p1.y)*grinding.t;
       boardAngle=Math.atan2(grinding.p2.y-grinding.p1.y, grinding.p2.x-grinding.p1.x)*180/Math.PI+90;
     }
-  } else if(AREAS[areaIdx].halfpipe && !crossing && !peefAnim && (function(){ const hp=halfpipePoints(AREAS[areaIdx].halfpipe); return bx>hp.x1 && bx<hp.x2; })()){
+  } else if(hp0 && !crossing && !peefAnim && bx>hp0.x1 && bx<hp0.x2){
     // gravity-driven curve physics — rides the exact same parabola the ramp is
-    // drawn with, so the board visually sits right on the surface at all times
-    const hp=halfpipePoints(AREAS[areaIdx].halfpipe);
-    const cx=(hp.x1+hp.x2)/2, halfW=(hp.x2-hp.x1)/2;
-    vx += -(bx-cx)*7.5*dt*60;      // strong pull toward the bottom of the valley — a real "gravity" feel
-    vx *= 0.999;                   // minimal rolling friction — keeps the swing alive
+    // drawn with, so the board visually sits right on the surface at all times.
+    // Tuned as a gentle pendulum (a small restoring accel + real per-second
+    // damping), not a stiff spring — the previous version's spring constant
+    // was wildly too strong and caused an out-of-control high-frequency
+    // shudder right at the bottom instead of a smooth back-and-forth roll.
+    const cx=(hp0.x1+hp0.x2)/2, halfW=(hp0.x2-hp0.x1)/2;
+    vx += -(bx-cx)*3.0*dt;         // gentle restoring pull toward the bottom of the valley
+    vx *= (1-0.35*dt);             // real per-second damping so it settles instead of ringing forever
+    vx = Math.max(-480,Math.min(480,vx));   // safety clamp — nothing should ever run away
     bx += vx*dt;
     const t=Math.max(-1,Math.min(1,(bx-cx)/halfW));
-    by = halfpipeCurveY(hp,bx);
+    by = halfpipeCurveY(hp0,bx);
     boardAngle = Math.atan2(-2*curveDepthPx()*t/halfW, 1)*180/Math.PI+90;  // tilts to match the local slope
     hpWasIn=true;
   } else if(!crossing && !peefAnim){
