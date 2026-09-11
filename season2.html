@@ -263,22 +263,25 @@ const AREAS=[
       {l:0.81, t:0.67, w:0.16, color:'green'}
   ] } },
   { bg:'bowling.jpg',         b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:'left', crossType:'chair', chairPos:0.18,
+    entryPoint:'railStart',
     rails:[{x1:0.50,y1:0.90,x2:0.50,y2:0.35}],
-    pins:[{x:0.50,y:0.14},{x:0.44,y:0.20},{x:0.56,y:0.20},{x:0.38,y:0.26},{x:0.50,y:0.26},{x:0.62,y:0.26}] },
-  { bg:'pinballicon.png',     b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'left', crossType:'chair',
+    // the real 10-pin triangle and colors, pulled straight from bowling.html's
+    // own PIN_LAYOUT/PIN_COL (head pin blue, rest alternating red/green) —
+    // skate into a pin to knock it down, clear all ten for a strike bonus
+    pins:[
+      {x:0.500,y:0.30,color:'blue'},
+      {x:0.461,y:0.25,color:'red'},{x:0.539,y:0.25,color:'green'},
+      {x:0.423,y:0.20,color:'red'},{x:0.500,y:0.20,color:'green'},{x:0.577,y:0.20,color:'red'},
+      {x:0.384,y:0.14,color:'green'},{x:0.461,y:0.14,color:'red'},{x:0.539,y:0.14,color:'green'},{x:0.616,y:0.14,color:'red'}
+    ] },
+  { bg:'pinballicon.png',     b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'left', crossType:'chair', chairPos:0.62,
     rails:[
-      {x1:0.85,y1:0.78,x2:0.85,y2:0.42},   // the launch lane the marker ball shoots out from
-      {x1:0.32,y1:0.38,x2:0.68,y2:0.32},   // arcs up and over the bumper cluster
-      {x1:0.68,y1:0.34,x2:0.18,y2:0.55}    // and back down toward the chair on the left
+      {x1:0.93,y1:0.78,x2:0.93,y2:0.42},   // the launch lane the marker ball shoots out from, pushed further right
+      {x1:0.35,y1:0.30,x2:0.58,y2:0.30},   // small horizontal rail up top
+      {x1:0.58,y1:0.30,x2:0.06,y2:0.62}    // long rail leading straight down to the chair
     ] },
   { bg:'qu33phjump.png',      b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'bottom',crossType:'chair',
-    rails:[   // a small square loop you can ride round and round
-      {x1:0.25,y1:0.25,x2:0.75,y2:0.25},
-      {x1:0.75,y1:0.25,x2:0.75,y2:0.75},
-      {x1:0.75,y1:0.75,x2:0.25,y2:0.75},
-      {x1:0.25,y1:0.75,x2:0.25,y2:0.25}
-    ],
-    halfpipe:{x1:0.30,x2:0.70,y:0.50,band:0.14} },  // rock back and forth in the middle
+    halfpipe:{x1:0.25,x2:0.75,y:0.55,band:0.16} },  // wooden halfpipe — drop in, ride it, pop out over either ledge
   { obstacle:{ sky:'stack', gravity:1700, minFlick:14, flickPower:3.8, platforms:[
       {l:0.42, t:0.08, w:0.16, color:'blue'},
       {l:0.20, t:0.24, w:0.16, color:'green'},
@@ -423,12 +426,13 @@ function svgLine(svg,x1,y1,x2,y2,stroke,width,opacity){
 // crisp white highlight riding the top edge, so it reads as a real 3D rail
 // rather than a flat painted bar
 function drawRailSegment(svg,p1,p2){
-  svgLine(svg,p1.x+2,p1.y+4,p2.x+2,p2.y+4,'#000',12,0.28);          // drop shadow
-  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#2c2c2c',12);                     // dark underside
-  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#6e6e6e',9);                      // mid body
-  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#a8a8a8',6);                      // upper body
-  svgLine(svg,p1.x,p1.y-1.5,p2.x,p2.y-1.5,'#e8e8e8',3);               // near-highlight band
-  svgLine(svg,p1.x,p1.y-2.5,p2.x,p2.y-2.5,'#fff',1.6,0.95);           // crisp top highlight
+  svgLine(svg,p1.x+3,p1.y+5,p2.x+3,p2.y+5,'#000',13,0.32);           // drop shadow (cast onto the ground below)
+  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#181818',13);                      // outer dark edge
+  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#3a3a3a',10.5);                    // dark underside
+  svgLine(svg,p1.x,p1.y,p2.x,p2.y,'#6e6e6e',8);                       // mid body
+  svgLine(svg,p1.x,p1.y-0.5,p2.x,p2.y-0.5,'#9a9a9a',5.5);              // upper body, nudged up for roundness
+  svgLine(svg,p1.x,p1.y-1.6,p2.x,p2.y-1.6,'#c7c7c7',3.2);              // near-highlight band
+  svgLine(svg,p1.x,p1.y-2.6,p2.x,p2.y-2.6,'#fff',1.5,0.95);            // crisp top highlight
 }
 function buildRailEls(){
   clearRailEls();
@@ -455,12 +459,12 @@ function buildPins(){
   if(!a.pins) return;
   pinsCleared=false;
   const b=bounds();
-  pinsState=a.pins.map(p=>({x:p.x,y:p.y,down:false,el:null}));
+  pinsState=a.pins.map(p=>({x:p.x,y:p.y,color:p.color||'red',down:false,el:null}));
   pinsState.forEach(p=>{
     const img=document.createElement('img');
     img.className='pin-el';
     img.alt='';
-    img.src='stackred.png';
+    img.src=FLIP_MARKER_IMG[p.color]||'stackred.png';
     img.style.left=(b.left+(b.right-b.left)*p.x)+'px';
     img.style.top=(b.top+(b.bottom-b.top)*p.y)+'px';
     gameEl.appendChild(img);
@@ -504,24 +508,45 @@ function buildHalfpipeEl(){
   const a=AREAS[areaIdx];
   if(!a.halfpipe) return;
   const r=fieldRect(), hp=halfpipePoints(a.halfpipe);
-  const cx=(hp.x1+hp.x2)/2, depthPx=r.height*0.12;
+  const cx=(hp.x1+hp.x2)/2, depthPx=r.height*0.17, topY=hp.y-hp.band*0.35;
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.setAttribute('class','rail-svg');
   svg.setAttribute('width', Math.max(1,Math.round(r.width)));
   svg.setAttribute('height', Math.max(1,Math.round(r.height)));
-  const d='M '+hp.x1+' '+(hp.y-hp.band*0.3)+' Q '+cx+' '+(hp.y+depthPx)+' '+hp.x2+' '+(hp.y-hp.band*0.3);
-  const wide=document.createElementNS('http://www.w3.org/2000/svg','path');
-  wide.setAttribute('d',d); wide.setAttribute('fill','none');
-  wide.setAttribute('stroke','#6e6e6e'); wide.setAttribute('stroke-width','16'); wide.setAttribute('stroke-linecap','round');
-  svg.appendChild(wide);
-  const mid=document.createElementNS('http://www.w3.org/2000/svg','path');
-  mid.setAttribute('d',d); mid.setAttribute('fill','none');
-  mid.setAttribute('stroke','#a8a8a8'); mid.setAttribute('stroke-width','10'); mid.setAttribute('stroke-linecap','round');
-  svg.appendChild(mid);
-  const hi=document.createElementNS('http://www.w3.org/2000/svg','path');
-  hi.setAttribute('d',d); hi.setAttribute('fill','none');
-  hi.setAttribute('stroke','#f0f0f0'); hi.setAttribute('stroke-width','3'); hi.setAttribute('stroke-linecap','round'); hi.setAttribute('opacity','0.85');
-  svg.appendChild(hi);
+  const d='M '+hp.x1+' '+topY+' Q '+cx+' '+(hp.y+depthPx)+' '+hp.x2+' '+topY;
+  // wooden ramp surface — several stacked tones for a rounded, varnished look
+  [
+    {w:24,c:'#2a1608'}, {w:19,c:'#4a2c12'}, {w:14,c:'#7a4a22'},
+    {w:9, c:'#a8703c'}, {w:5, c:'#d19a5e'}, {w:2, c:'#f3d9ab', o:0.9}
+  ].forEach(L=>{
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',d); p.setAttribute('fill','none');
+    p.setAttribute('stroke',L.c); p.setAttribute('stroke-width',L.w); p.setAttribute('stroke-linecap','round');
+    if(L.o!==undefined) p.setAttribute('opacity',L.o);
+    svg.appendChild(p);
+  });
+  // flat ledges at the top of each wall — like real coping, and where you pop
+  // out onto if you carry enough speed up either side
+  const ledgeW=r.width*0.15;
+  [[hp.x1-ledgeW, hp.x1],[hp.x2, hp.x2+ledgeW]].forEach(([lx1,lx2])=>{
+    [[8,'#5a3a1c'],[4,'#8a5c30']].forEach(([h,c],i)=>{
+      const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x',lx1); rect.setAttribute('y',topY-10+ (i? -1:0));
+      rect.setAttribute('width', lx2-lx1); rect.setAttribute('height', h);
+      rect.setAttribute('rx', 3); rect.setAttribute('fill', c);
+      svg.appendChild(rect);
+    });
+  });
+  const dropTxt=document.createElementNS('http://www.w3.org/2000/svg','text');
+  dropTxt.setAttribute('x', hp.x1-ledgeW*0.5);
+  dropTxt.setAttribute('y', topY-16);
+  dropTxt.setAttribute('fill', '#ffd24a');
+  dropTxt.setAttribute('font-size', '11');
+  dropTxt.setAttribute('font-family', 'Arial,Helvetica,sans-serif');
+  dropTxt.setAttribute('font-weight', 'bold');
+  dropTxt.setAttribute('text-anchor', 'middle');
+  dropTxt.textContent='DROP IN';
+  svg.appendChild(dropTxt);
   gameEl.appendChild(svg);
   railEls.push(svg);
 }
@@ -529,7 +554,10 @@ function updateHalfpipe(dt){
   const a=AREAS[areaIdx];
   if(!a.halfpipe || grinding) return;
   const hp=halfpipePoints(a.halfpipe), cx=(hp.x1+hp.x2)/2;
-  if(Math.abs(by-hp.y) < hp.band && bx>hp.x1-24 && bx<hp.x2+24){
+  // spring pulls you back toward the middle while you're inside the walls —
+  // build enough speed and you carry past x1/x2 onto a ledge, where the spring
+  // lets go and normal physics takes over so you can ride off or drop back in
+  if(Math.abs(by-hp.y) < hp.band && bx>hp.x1+8 && bx<hp.x2-8){
     vx += -(bx-cx)*3.0*dt*60;
   }
 }
@@ -918,12 +946,20 @@ function render(){
     } else {
       const enterEdge = oppositeEdge(exitEdge);
       loadArea(crossing.nextIdx);
-      if(!AREAS[areaIdx].obstacle){
-        const nb=bounds();
-        if(enterEdge==='top'){ bx=(nb.left+nb.right)/2; by=nb.top+20; }
-        else if(enterEdge==='bottom'){ bx=(nb.left+nb.right)/2; by=nb.bottom-20; }
-        else if(enterEdge==='left'){ bx=nb.left+18; by=(nb.top+nb.bottom)/2; }
-        else { bx=nb.right-18; by=(nb.top+nb.bottom)/2; }
+      const na=AREAS[areaIdx];
+      if(!na.obstacle){
+        if(na.entryPoint==='railStart' && na.rails && na.rails[0]){
+          // lands you right near the bottom of the rail instead of the generic
+          // edge-entry spot, so you roll straight onto it
+          const {p1}=railPoints(na.rails[0]);
+          bx=p1.x; by=p1.y+18;
+        } else {
+          const nb=bounds();
+          if(enterEdge==='top'){ bx=(nb.left+nb.right)/2; by=nb.top+20; }
+          else if(enterEdge==='bottom'){ bx=(nb.left+nb.right)/2; by=nb.bottom-20; }
+          else if(enterEdge==='left'){ bx=nb.left+18; by=(nb.top+nb.bottom)/2; }
+          else { bx=nb.right-18; by=(nb.top+nb.bottom)/2; }
+        }
       }
       crossing=null;
     }
