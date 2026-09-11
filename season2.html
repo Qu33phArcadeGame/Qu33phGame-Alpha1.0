@@ -202,18 +202,12 @@ function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exi
 // the chair to cross (classic), 'fluid' = just skate past that edge, no chair,
 // no tap — it carries you straight into the next area. Boundaries are tuned
 // per-image and may want further nudging once you can see them live.
-// NOTE on filenames: 'minitablefar.jpg' is the original, confirmed real Mini
-// background. 'minitablenear.jpg' for the first Mini stop is a guess following
-// that same naming — swap in the real filename if this isn't it. Same for
-// 'bowlingfield.jpg' on the last area: this should be the wide shot with the
-// machines beside the lane (the one Bowling itself uses), NOT the zoomed-in
-// 'bowling.jpg' — swap in the real filename if 'bowlingfield.jpg' isn't it. ──
 const AREAS=[
   { bg:'originalfield.png',   b:{left:0.20,right:0.75,top:0.16,bottom:0.86}, crossEdge:'right', crossType:'chair' },
-  { bg:'minitablenear.jpg',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92}, crossEdge:'top',   crossType:'fluid' },
+  { bg:'minitablenear.png',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92}, crossEdge:'top',   crossType:'fluid' },
   { bg:'minitablefar.jpg',    b:{left:0.10,right:0.90,top:0.22,bottom:0.92}, crossEdge:'top',   crossType:'chair' },
   { flip:true },
-  { bg:'bowlingfield.jpg',    b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:null,    crossType:null }
+  { bg:'bowling.jpg',         b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:null,    crossType:null }
 ];
 const AREA_COUNT=AREAS.length;
 let areaIdx=0, score=0;
