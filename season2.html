@@ -136,8 +136,9 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
 #gameScreen.flip2d{ background:linear-gradient(180deg,#8fd0ff 0%,#cdeeff 58%,#dcefc9 100%); }
 #gameScreen.flip2d.sky-stack{ background:linear-gradient(180deg,#3a3226 0%,#2a2318 55%,#1a150e 100%); }
 #gameScreen.flip2d .board-stage{ perspective:none; }
-.flip-mk{ position:absolute; z-index:6; width:min(72px,17vw); height:auto; pointer-events:none;
-  transform:rotate(-90deg); transform-origin:0% 50%; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
+.flip-mk-wrap{ position:absolute; z-index:6; pointer-events:none; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
+.flip-mk-wrap img.flip-mk{ position:absolute; top:50%; left:50%; height:70px; width:auto; max-width:none;
+  transform:translate(-50%,-50%) rotate(-90deg); }
 .fidget-el{ position:absolute; z-index:6; pointer-events:none; transform-origin:50% 50%;
   filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
 </style>
@@ -370,14 +371,23 @@ function buildFlipPlatformEls(){
   clearFlipPlatformEls();
   const r=fieldRect();
   AREAS[areaIdx].obstacle.platforms.forEach(p=>{
+    // wrapper occupies exactly the collision zone (same l/t/w the physics uses),
+    // and clips/centers the rotated marker image inside it — so what you see
+    // IS the hitbox, not some independently-sized graphic floating nearby
+    const wrap=document.createElement('div');
+    wrap.className='flip-mk-wrap';
+    wrap.style.left=(r.width*p.l)+'px';
+    wrap.style.top=(r.height*p.t-4)+'px';
+    wrap.style.width=(r.width*p.w)+'px';
+    wrap.style.height='24px';
+    wrap.style.overflow='hidden';
     const img=document.createElement('img');
     img.className='flip-mk';
     img.alt='';
     img.src=FLIP_MARKER_IMG[p.color]||'stackred.png';
-    img.style.left=(r.width*p.l)+'px';
-    img.style.top=(r.height*p.t)+'px';
-    gameEl.appendChild(img);
-    flipPlatformEls.push(img);
+    wrap.appendChild(img);
+    gameEl.appendChild(wrap);
+    flipPlatformEls.push(wrap);
   });
 }
 function clearFlipPlatformEls(){ flipPlatformEls.forEach(d=>d.remove()); flipPlatformEls=[]; }
