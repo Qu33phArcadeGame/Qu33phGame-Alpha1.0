@@ -1974,7 +1974,7 @@ function applyThemeFilters(){
         _bi.style.setProperty("--vAngle","97deg"); _bi.style.setProperty("--hAngle","7deg"); }   // default blue marker: capped so rotation doesn't blow out of the card
     } }
   var pbg=document.getElementById("pinballBg"); if(pbg) pbg.style.filter=(s==="cartoon")?"grayscale(1) contrast(1.18)":css;
-  { var _cb=(s==="cartoon"); ["slotBtn","plinkoBtn","titleCoins"].forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.toggle("comic-benday-icon", _cb); }); }
+  { var _cb=(s==="cartoon"); ["slotBtn","plinkoBtn","platformerBtn","titleCoins"].forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.toggle("comic-benday-icon", _cb); }); }
   { var _ps=document.getElementById("pinballScreen"); if(_ps) _ps.classList.toggle("pb-comic", s==="cartoon"); }
   var pcv=document.getElementById("pinballCanvas"); if(pcv) pcv.style.filter="";
 }
