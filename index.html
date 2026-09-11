@@ -3725,21 +3725,23 @@ function update(){
         // adapted to this chair being a circle here instead of Mini's box —
         // push the marker back out along the line from the chair's centre and
         // reflect its velocity off that same line, with a bit of spin added.
-        // Bounce is deliberately exaggerated: markers get shoved well past the
-        // chair's edge and curled around it with a hard tangential kick, and
-        // the vertical component is clamped so they sweep around/behind the
-        // chair instead of dribbling straight back down toward the start line.
+        // Tuned gentler than before: the earlier version threw markers hard
+        // enough to spin wildly and rocket into frequent PEEFs off the left
+        // edge. This keeps the "sweep around the chair" feel but softer, and
+        // specifically damps any strong leftward kick so falling off is an
+        // occasional risk again, not the norm.
         const dx=m.x-chair.x, dy=m.y-chair.y, dist=Math.hypot(dx,dy)||1;
         const nx=dx/dist, ny=dy/dist;
-        m.x=chair.x+nx*chair.radius*1.9; m.y=chair.y+ny*chair.radius*1.9;
+        m.x=chair.x+nx*chair.radius*1.5; m.y=chair.y+ny*chair.radius*1.5;
         const relv=m.vx*nx+m.vy*ny;
-        if(relv<0){ m.vx-=2.4*relv*nx; m.vy-=2.4*relv*ny; }
-        // curl around the chair — tangential kick, biased to whichever side the marker is already on
+        if(relv<0){ m.vx-=1.6*relv*nx; m.vy-=1.6*relv*ny; }
+        // curl around the chair — a much gentler tangential kick than before
         const tx=-ny, ty=nx, side=(m.x<chair.x)?-1:1;
-        m.vx += tx*side*4.5; m.vy += ty*side*4.5;
-        // resist bouncing back toward the start — keep it heading up and past the chair
-        if(m.vy > -1.5) m.vy = -1.5 - Math.random()*2;
-        m.spinVelocity += (nx>0?1:-1)*4.5;
+        m.vx += tx*side*1.8; m.vy += ty*side*1.8;
+        // resist bouncing back toward the start, but not so hard it rockets sideways
+        if(m.vy > -1) m.vy = -1 - Math.random()*1.2;
+        if(m.vx < -3) m.vx = -3 + Math.random()*1.5;   // soften hard leftward kicks so they don't peef every time
+        m.spinVelocity += (nx>0?1:-1)*1.1;
         try{ haptic(22); }catch(e){}
       }
       m.megaTriggered=true;
