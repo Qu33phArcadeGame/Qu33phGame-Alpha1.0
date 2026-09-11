@@ -346,7 +346,7 @@ function loadArea(idx){
   }
   if(a.fidget){ buildFidgetSpinners(); buildFidgetEls(); }
   else if(prev && prev.fidget){ clearFidgetEls(); fidgetSpinners=null; }
-  $('areaHud').textContent = a.obstacle ? (a.obstacle.sky==='stack'?'STACK CROSSING':'FLIP CROSSING') : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
+  $('areaHud').textContent = a.obstacle ? (a.obstacle.sky==='stack'?'QU33PH STACK CROSSING':'QU33PH FLIP CROSSING') : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
   placeChair();
 }
 
@@ -370,7 +370,9 @@ function exitFlipMode(){
 function buildFlipPlatformEls(){
   clearFlipPlatformEls();
   const r=fieldRect();
-  AREAS[areaIdx].obstacle.platforms.forEach(p=>{
+  const isStack = AREAS[areaIdx].obstacle.sky==='stack';
+  const colors=['red','green','blue'];
+  AREAS[areaIdx].obstacle.platforms.forEach((p,pi)=>{
     // wrapper occupies exactly the collision zone (same l/t/w the physics uses),
     // and clips/centers the rotated marker image inside it — so what you see
     // IS the hitbox, not some independently-sized graphic floating nearby
@@ -388,6 +390,29 @@ function buildFlipPlatformEls(){
     wrap.appendChild(img);
     gameEl.appendChild(wrap);
     flipPlatformEls.push(wrap);
+
+    // Stack crossing: each landing spot is a genuine STACK — a couple more
+    // marker slices sitting right below the hitbox one, purely decorative,
+    // so it visibly reads as a tower you're descending through
+    if(isStack){
+      for(let k=1;k<=2;k++){
+        const deco=document.createElement('div');
+        deco.className='flip-mk-wrap';
+        deco.style.left=(r.width*p.l)+'px';
+        deco.style.top=(r.height*p.t-4+k*22)+'px';
+        deco.style.width=(r.width*p.w)+'px';
+        deco.style.height='20px';
+        deco.style.overflow='hidden';
+        deco.style.opacity=(1-k*0.18);
+        const dimg=document.createElement('img');
+        dimg.className='flip-mk';
+        dimg.alt='';
+        dimg.src=FLIP_MARKER_IMG[colors[(pi+k)%3]];
+        deco.appendChild(dimg);
+        gameEl.appendChild(deco);
+        flipPlatformEls.push(deco);
+      }
+    }
   });
 }
 function clearFlipPlatformEls(){ flipPlatformEls.forEach(d=>d.remove()); flipPlatformEls=[]; }
@@ -413,16 +438,13 @@ function buildFidgetSpinners(){
 }
 function buildFidgetEls(){
   clearFidgetEls();
+  const imgs=['fidgetblue.png','fidgetgreen.png'];
   fidgetSpinners.forEach((s,i)=>{
-    const el=document.createElement('div');
+    const el=document.createElement('img');
     el.className='fidget-el';
+    el.alt='';
+    el.src=imgs[i%imgs.length];
     el.style.width=(s.r*2)+'px'; el.style.height=(s.r*2)+'px';
-    el.innerHTML='<svg viewBox="0 0 100 100" width="100%" height="100%">'+
-      '<g fill="'+(i===0?'#ff5a5a':'#4d9bff')+'">'+
-      '<ellipse cx="50" cy="18" rx="13" ry="20"/>'+
-      '<ellipse cx="22" cy="72" rx="13" ry="20" transform="rotate(120 22 72)"/>'+
-      '<ellipse cx="78" cy="72" rx="13" ry="20" transform="rotate(240 78 72)"/>'+
-      '</g><circle cx="50" cy="50" r="12" fill="#222"/></svg>';
     gameEl.appendChild(el);
     fidgetEls.push(el);
   });
@@ -437,10 +459,10 @@ function updateFidget(dt){
     if(d < s.r*0.6){
       s.spin = -s.spin*(1.15+Math.random()*0.3);
       const ang=Math.atan2(by-s.y, bx-s.x);
-      const boost=380+Math.random()*160;
-      vx += Math.cos(ang)*boost*0.4;
-      vy = -Math.abs(Math.sin(ang)*boost) - 260;
-      airborne = 0.9;
+      const boost=560+Math.random()*220;               // a much harder launch than before
+      vx += Math.cos(ang)*boost*0.55;
+      vy = -Math.abs(Math.sin(ang)*boost) - 420;
+      airborne = 7;   // a long hangtime window (5-10s) to flip and swipe through tricks
       s.cooldown = 0.5;
       addScore(30);
       try{ if(navigator.vibrate) navigator.vibrate(18); }catch(e){}
@@ -604,7 +626,8 @@ function frame(t){
     }
   } else if(!crossing && !peefAnim){
     bx+=vx*dt; by+=vy*dt;
-    vx*=FRICTION; vy*=FRICTION;
+    const fric = airborne>0 ? 0.997 : FRICTION;  // weightless/floaty while airborne — keeps you up there for the trick window
+    vx*=fric; vy*=fric;
     if(Math.hypot(vx,vy)<2){ vx=0; vy=0; }
 
     const b=bounds(), a=AREAS[areaIdx];
@@ -706,6 +729,15 @@ function render(){
     hop+=Math.sin(Math.min(1,ollieHop)*Math.PI)*16;
     ollieHop-=0.09;
     if(ollieHop<0) ollieHop=0;
+  }
+
+  // grown large and hanging while airborne off a Fidget spinner hit — a big obvious
+  // "flip me now" cue, easing back down to normal size as the window runs out
+  if(airborne>0){
+    const growK = Math.min(1, (7-airborne)/1.2);       // ramp up over the first ~1.2s
+    const shrinkK = Math.min(1, airborne/1.5);          // ease back down over the last ~1.5s
+    scale *= 1 + 1.1*growK*shrinkK;
+    hop += 30*shrinkK;
   }
 
   boardEl.style.opacity=opacity;
