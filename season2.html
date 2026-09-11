@@ -87,6 +87,10 @@ body.th-cartoon .cab-card::after{ content:""; position:absolute; inset:0 0 26px 
   background-image:radial-gradient(circle, rgba(0,0,0,0.55) 1.5px, transparent 1.7px); background-size:7px 7px; }
 body.th-cartoon .marker-btn, body.th-cartoon .mk-btn{ border-color:#f2f2f2; }
 body.th-cartoon .marker-btn::before, body.th-cartoon .mk-btn::before{ border-color:#f2f2f2; }
+body.th-cartoon .choice img{ filter:grayscale(1) contrast(1.15); }
+body.th-cartoon .choice{ border-color:#555; }
+body.th-cartoon .select-title, body.th-cartoon .s2tag{ color:#f2f2f2; }
+body.th-cartoon .select-sub, body.th-cartoon .hint{ color:#999; }
 body.th-cartoon #gameScreen.flip2d{ background:linear-gradient(180deg,#cfcfcf 0%,#e8e8e8 58%,#f4f4f4 100%); filter:grayscale(1) contrast(1.1); }
 
 body.th-neon .s2logo, body.th-neon .cab-card img{
@@ -96,6 +100,9 @@ body.th-neon .board, body.th-neon .chairSpot, body.th-neon .flip-mk{
   filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 10px rgba(40,255,130,0.65)); }
 body.th-neon .marker-btn, body.th-neon .mk-btn{ border-color:#28ff82; box-shadow:0 0 10px rgba(40,255,130,0.55), 0 3px 0 rgba(0,0,0,0.55); }
 body.th-neon .marker-btn::before, body.th-neon .mk-btn::before{ border-color:#28ff82; }
+body.th-neon .choice img{ filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 10px rgba(40,255,130,0.6)); }
+body.th-neon .choice{ border-color:#28ff82; }
+body.th-neon .select-title{ color:#28ff82; text-shadow:0 0 8px #28ff82, 0 0 18px rgba(40,255,130,0.7); }
 body.th-neon #gameScreen.flip2d{ background:linear-gradient(180deg,#03140c 0%,#05261a 58%,#062f1e 100%); }
 
 body.th-sunset .s2logo, body.th-sunset .cab-card img{
@@ -105,6 +112,9 @@ body.th-sunset .board, body.th-sunset .chairSpot, body.th-sunset .field, body.th
   filter:sepia(0.5) saturate(1.6) brightness(1.2) hue-rotate(-8deg) drop-shadow(0 0 8px rgba(255,200,60,0.6)); }
 body.th-sunset .marker-btn, body.th-sunset .mk-btn{ border-color:#ffc23a; box-shadow:0 0 10px rgba(255,176,32,0.55), 0 3px 0 rgba(0,0,0,0.55); }
 body.th-sunset .marker-btn::before, body.th-sunset .mk-btn::before{ border-color:#ffc23a; }
+body.th-sunset .choice img{ filter:sepia(0.5) saturate(1.6) brightness(1.2) hue-rotate(-8deg) drop-shadow(0 0 8px rgba(255,200,60,0.6)); }
+body.th-sunset .choice{ border-color:#ffc23a; }
+body.th-sunset .select-title{ color:#ffd24a; text-shadow:0 0 10px rgba(255,200,60,0.85), 0 0 22px rgba(255,176,32,0.6); }
 body.th-sunset #gameScreen.flip2d{ background:linear-gradient(180deg,#4a2c10 0%,#7a4614 58%,#a5661c 100%); }
 
 body.th-galaxy .s2logo, body.th-galaxy .cab-card img{
@@ -114,6 +124,9 @@ body.th-galaxy .board, body.th-galaxy .chairSpot, body.th-galaxy .field, body.th
   filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 8px rgba(180,120,255,0.6)); }
 body.th-galaxy .marker-btn, body.th-galaxy .mk-btn{ border-color:#b478ff; box-shadow:0 0 10px rgba(180,120,255,0.5), 0 3px 0 rgba(0,0,0,0.55); }
 body.th-galaxy .marker-btn::before, body.th-galaxy .mk-btn::before{ border-color:#b478ff; }
+body.th-galaxy .choice img{ filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 8px rgba(180,120,255,0.6)); }
+body.th-galaxy .choice{ border-color:#b478ff; }
+body.th-galaxy .select-title{ color:#b478ff; text-shadow:0 0 10px rgba(180,120,255,0.8), 0 0 22px rgba(150,90,255,0.55); }
 body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,#241040 58%,#2e1550 100%); }
 
 /* the Flip crossing section renders flat/2D instead of the tilted photo perspective
@@ -121,9 +134,12 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
    3D perspective so it reads as a side-on platformer like Qu33ph Flip itself. The
    platforms are the actual Qu33ph markers, same as real Flip, not plain planks. */
 #gameScreen.flip2d{ background:linear-gradient(180deg,#8fd0ff 0%,#cdeeff 58%,#dcefc9 100%); }
+#gameScreen.flip2d.sky-stack{ background:linear-gradient(180deg,#3a3226 0%,#2a2318 55%,#1a150e 100%); }
 #gameScreen.flip2d .board-stage{ perspective:none; }
 .flip-mk{ position:absolute; z-index:6; width:min(72px,17vw); height:auto; pointer-events:none;
   transform:rotate(-90deg); transform-origin:0% 50%; filter:drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
+.fidget-el{ position:absolute; z-index:6; pointer-events:none; transform-origin:50% 50%;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
 </style>
 </head>
 <body>
@@ -194,42 +210,55 @@ applyTheme();
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');}
 function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); boardEl.src=boards[color]; applyTheme(); restartGame();}
-function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();$('gameScreen').classList.add('hidden');openSelect();}
+function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();clearFidgetEls();fidgetSpinners=null;$('gameScreen').classList.add('hidden');openSelect();}
 
-// ── five areas, in order: the original field, two spots along the Mini Qu33ph
-// table (near, then far), a Qu33ph Flip platformer crossing, then the Bowling
-// lane. Each area says which edge you leave from and how: 'chair' = ollie onto
-// the chair to cross (classic), 'fluid' = just skate past that edge, no chair,
-// no tap — it carries you straight into the next area. Boundaries are tuned
-// per-image and may want further nudging once you can see them live.
+// ── nine areas, in order: original field → Mini (near, far) → Flip crossing →
+// Bowling → Pinball → Qu33ph Jump → Stack crossing → Fidget Qu33ph (terminal).
+// Each area says which edge you leave from and how: 'chair' = ollie onto the
+// chair to cross, 'fluid' = just skate past that edge, no chair, no tap.
+// chairPos (0-1, default 0.5) slides the chair along that edge — e.g. Bowling's
+// chair sits near the top-left corner rather than dead-center.
+// NOTE on filenames: 'minitablefar.jpg'/'bowling.jpg' are confirmed real.
+// 'minitablenear.png' and the rest below are best-guesses following the
+// existing naming — swap in real filenames if any of these don't look right:
+// 'pinballicon.png' and 'qu33phjump.png' are the actual cabinet-icon images
+// (used as a stand-in field photo until a proper wide shot exists);
+// 'fidgetqu33phfield.png' is the real Fidget Qu33ph background from the main
+// app's theme system, so that one should already be correct. ────────────────
 const AREAS=[
   { bg:'originalfield.png',   b:{left:0.20,right:0.75,top:0.16,bottom:0.86}, crossEdge:'right', crossType:'chair' },
   { bg:'minitablenear.png',   b:{left:0.10,right:0.90,top:0.28,bottom:0.92}, crossEdge:'top',   crossType:'fluid' },
   { bg:'minitablefar.jpg',    b:{left:0.10,right:0.90,top:0.22,bottom:0.92}, crossEdge:'top',   crossType:'chair' },
-  { flip:true },
-  { bg:'bowling.jpg',         b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:null,    crossType:null }
+  { obstacle:{ sky:'flip', gravity:1500, minFlick:16, flickPower:3.6, platforms:[
+      {l:0.05, t:0.16, w:0.15, color:'red'},
+      {l:0.25, t:0.29, w:0.15, color:'green'},
+      {l:0.44, t:0.42, w:0.15, color:'blue'},
+      {l:0.63, t:0.55, w:0.15, color:'red'},
+      {l:0.81, t:0.67, w:0.16, color:'green'}
+  ] } },
+  { bg:'bowling.jpg',         b:{left:0.12,right:0.88,top:0.30,bottom:0.94}, crossEdge:'left', crossType:'chair', chairPos:0.18 },
+  { bg:'pinballicon.png',     b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'left', crossType:'chair' },
+  { bg:'qu33phjump.png',      b:{left:0.22,right:0.78,top:0.20,bottom:0.85}, crossEdge:'bottom',crossType:'chair' },
+  { obstacle:{ sky:'stack', gravity:1700, minFlick:14, flickPower:3.8, platforms:[
+      {l:0.42, t:0.08, w:0.16, color:'blue'},
+      {l:0.20, t:0.24, w:0.16, color:'green'},
+      {l:0.58, t:0.40, w:0.16, color:'red'},
+      {l:0.22, t:0.56, w:0.16, color:'green'},
+      {l:0.55, t:0.72, w:0.16, color:'blue'}
+  ] } },
+  { bg:'fidgetqu33phfield.png', b:{left:0.15,right:0.85,top:0.18,bottom:0.90}, crossEdge:null, crossType:null, fidget:true }
 ];
 const AREA_COUNT=AREAS.length;
 let areaIdx=0, score=0;
+function oppositeEdge(e){ return e==='left'?'right':e==='right'?'left':e==='top'?'bottom':'top'; }
 
-// ── the Flip crossing: a short side-on platformer you flick the board across,
-// reusing Qu33ph Flip's own "toss and land" feel. Platform coordinates are
-// fractions of the game box, left-to-right, ending at a chair on the last one
-// that launches you into Bowling. Flicks here are tuned a little easier to
-// get moving than the normal skate physics (lower minimum flick, more power),
-// since there's no rolling run-up like the fields have. ────────────────────
-const FLIP_PLATFORMS=[
-  {l:0.05, t:0.16, w:0.15, color:'red'},
-  {l:0.25, t:0.29, w:0.15, color:'green'},
-  {l:0.44, t:0.42, w:0.15, color:'blue'},
-  {l:0.63, t:0.55, w:0.15, color:'red'},
-  {l:0.81, t:0.67, w:0.16, color:'green'}
-];
 const FLIP_MARKER_IMG={red:'stackred.png', green:'stackgreen.png', blue:'stackblue.png'};
-const FLIP_GRAVITY=1500;
-const FLIP_MIN_FLICK=16;   // vs the normal MIN_FLICK of 28 — easier to get going
-const FLIP_FLICK_POWER=3.6; // vs the normal FLICK_POWER of 3.0
 let flipMode=false, fx=0, fy=0, fvx=0, fvy=0, flipPlatformEls=[];
+// ── Fidget Qu33ph: two spinners you skate into — each hit reverses/speeds up
+// that spinner and launches you airborne; while airborne, flicks trigger
+// tricks directly (no tap-first needed). Cooldown stops one overlap from
+// scoring every single frame. ───────────────────────────────────────────────
+let fidgetSpinners=null, fidgetEls=[], airborne=0;
 let bx=0, by=0, vx=0, vy=0, boardAngle=0;
 let pointers=new Map();
 let dragId=null, dragStart=null, dragNow=null;
@@ -250,7 +279,10 @@ const TRICKS={
   kickflip:{dur:450,label:'KICKFLIP',pts:50},
   treflip:{dur:650,label:'TRE FLIP',pts:150},
   shoveit:{dur:380,label:'SHOVE-IT',pts:50},
-  popshoveit:{dur:520,label:'POP SHOVE-IT',pts:150}
+  popshoveit:{dur:520,label:'POP SHOVE-IT',pts:150},
+  nosegrab:{dur:400,label:'NOSEGRAB',pts:70},
+  impossible:{dur:750,label:'IMPOSSIBLE',pts:220},
+  bigspin:{dur:480,label:'BIGSPIN',pts:90}
 };
 let ollieHop=0;
 let crossing=null;
@@ -266,8 +298,8 @@ function addScore(n){ score=Math.max(0,score+n); $('scoreHud').textContent=score
 
 function placeChair(){
   const a=AREAS[areaIdx];
-  if(a.flip){
-    const r=fieldRect(), last=FLIP_PLATFORMS[FLIP_PLATFORMS.length-1];
+  if(a.obstacle){
+    const r=fieldRect(), plats=a.obstacle.platforms, last=plats[plats.length-1];
     chairEl.classList.remove('hidden');
     chairEl.style.left=(r.width*(last.l+last.w/2))+'px';
     chairEl.style.top=(r.height*last.t-16)+'px';
@@ -275,15 +307,23 @@ function placeChair(){
     return;
   }
   if(a.crossType==='chair' && areaIdx<AREA_COUNT-1){
-    const b=bounds();
+    const b=bounds(), pos=(a.chairPos===undefined?0.5:a.chairPos);
     chairEl.classList.remove('hidden');
     if(a.crossEdge==='top'){
-      chairEl.style.left=((b.left+b.right)/2)+'px';
+      chairEl.style.left=(b.left+(b.right-b.left)*pos)+'px';
       chairEl.style.top=(b.top+6)+'px';
       chairEl.style.transform='translate(-50%,-50%) rotate(0deg)';
+    } else if(a.crossEdge==='bottom'){
+      chairEl.style.left=(b.left+(b.right-b.left)*pos)+'px';
+      chairEl.style.top=(b.bottom-6)+'px';
+      chairEl.style.transform='translate(-50%,-50%) rotate(180deg)';
+    } else if(a.crossEdge==='left'){
+      chairEl.style.left=(b.left+6)+'px';
+      chairEl.style.top=(b.top+(b.bottom-b.top)*pos)+'px';
+      chairEl.style.transform='translate(-50%,-50%) rotate(-90deg)';
     } else {
       chairEl.style.left=(b.right-6)+'px';
-      chairEl.style.top=((b.top+b.bottom)/2)+'px';
+      chairEl.style.top=(b.top+(b.bottom-b.top)*pos)+'px';
       chairEl.style.transform='translate(-50%,-50%) rotate(90deg)';
     }
   } else {
@@ -295,15 +335,17 @@ function loadArea(idx){
   const prev=AREAS[areaIdx];
   areaIdx=idx;
   const a=AREAS[idx];
-  if(a.flip){
+  if(a.obstacle){
     enterFlipMode();
   } else {
-    if(prev && prev.flip) exitFlipMode();
+    if(prev && prev.obstacle) exitFlipMode();
     fieldImgEl.classList.remove('hidden');
     fieldImgEl.src=a.bg;
     applyTheme();
   }
-  $('areaHud').textContent = a.flip ? 'FLIP CROSSING' : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
+  if(a.fidget){ buildFidgetSpinners(); buildFidgetEls(); }
+  else if(prev && prev.fidget){ clearFidgetEls(); fidgetSpinners=null; }
+  $('areaHud').textContent = a.obstacle ? (a.obstacle.sky==='stack'?'STACK CROSSING':'FLIP CROSSING') : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
   placeChair();
 }
 
@@ -311,7 +353,8 @@ function enterFlipMode(){
   flipMode=true;
   fieldImgEl.classList.add('hidden');
   gameEl.classList.add('flip2d');
-  const r=fieldRect(), p0=FLIP_PLATFORMS[0];
+  gameEl.classList.toggle('sky-stack', AREAS[areaIdx].obstacle.sky==='stack');
+  const r=fieldRect(), p0=AREAS[areaIdx].obstacle.platforms[0];
   fx=r.width*p0.l+22; fy=r.height*p0.t-4; fvx=0; fvy=0;
   bx=fx; by=fy;
   buildFlipPlatformEls();
@@ -320,13 +363,13 @@ function exitFlipMode(){
   if(!flipMode) return;
   flipMode=false;
   fieldImgEl.classList.remove('hidden');
-  gameEl.classList.remove('flip2d');
+  gameEl.classList.remove('flip2d','sky-stack');
   clearFlipPlatformEls();
 }
 function buildFlipPlatformEls(){
   clearFlipPlatformEls();
   const r=fieldRect();
-  FLIP_PLATFORMS.forEach(p=>{
+  AREAS[areaIdx].obstacle.platforms.forEach(p=>{
     const img=document.createElement('img');
     img.className='flip-mk';
     img.alt='';
@@ -341,13 +384,59 @@ function clearFlipPlatformEls(){ flipPlatformEls.forEach(d=>d.remove()); flipPla
 function flipFall(){
   addScore(-50);
   fvx=0; fvy=0;
-  const r=fieldRect(), p0=FLIP_PLATFORMS[0];
+  const r=fieldRect(), p0=AREAS[areaIdx].obstacle.platforms[0];
   fx=r.width*p0.l+22; fy=r.height*p0.t-4;
   bx=fx; by=fy;
   const lbl=$('peefLabel');
   lbl.classList.add('show');
   setTimeout(()=>lbl.classList.remove('show'), 500);
   try{ if(navigator.vibrate) navigator.vibrate([10,40,10]); }catch(e){}
+}
+
+// ── Fidget Qu33ph spinners ──────────────────────────────────────────────
+function buildFidgetSpinners(){
+  const b=bounds();
+  fidgetSpinners=[
+    {x:b.left+(b.right-b.left)*0.32, y:(b.top+b.bottom)/2, rot:0, spin:2.2, r:46, cooldown:0},
+    {x:b.left+(b.right-b.left)*0.68, y:(b.top+b.bottom)/2, rot:0, spin:-2.2, r:46, cooldown:0}
+  ];
+}
+function buildFidgetEls(){
+  clearFidgetEls();
+  fidgetSpinners.forEach((s,i)=>{
+    const el=document.createElement('div');
+    el.className='fidget-el';
+    el.style.width=(s.r*2)+'px'; el.style.height=(s.r*2)+'px';
+    el.innerHTML='<svg viewBox="0 0 100 100" width="100%" height="100%">'+
+      '<g fill="'+(i===0?'#ff5a5a':'#4d9bff')+'">'+
+      '<ellipse cx="50" cy="18" rx="13" ry="20"/>'+
+      '<ellipse cx="22" cy="72" rx="13" ry="20" transform="rotate(120 22 72)"/>'+
+      '<ellipse cx="78" cy="72" rx="13" ry="20" transform="rotate(240 78 72)"/>'+
+      '</g><circle cx="50" cy="50" r="12" fill="#222"/></svg>';
+    gameEl.appendChild(el);
+    fidgetEls.push(el);
+  });
+}
+function clearFidgetEls(){ fidgetEls.forEach(d=>d.remove()); fidgetEls=[]; }
+function updateFidget(dt){
+  if(!fidgetSpinners) return;
+  fidgetSpinners.forEach(s=>{
+    s.rot += s.spin*dt*60;
+    if(s.cooldown>0){ s.cooldown-=dt; return; }
+    const d=Math.hypot(bx-s.x, by-s.y);
+    if(d < s.r*0.6){
+      s.spin = -s.spin*(1.15+Math.random()*0.3);
+      const ang=Math.atan2(by-s.y, bx-s.x);
+      const boost=380+Math.random()*160;
+      vx += Math.cos(ang)*boost*0.4;
+      vy = -Math.abs(Math.sin(ang)*boost) - 260;
+      airborne = 0.9;
+      s.cooldown = 0.5;
+      addScore(30);
+      try{ if(navigator.vibrate) navigator.vibrate(18); }catch(e){}
+    }
+  });
+  if(airborne>0) airborne=Math.max(0, airborne-dt);
 }
 
 function restartGame(){
@@ -432,13 +521,14 @@ function fluidAdvance(){
 
 function applyFlick(dx,dy){
   const dist=Math.hypot(dx,dy);
-  const minFlick = flipMode?FLIP_MIN_FLICK:MIN_FLICK;
+  const obs = flipMode ? AREAS[areaIdx].obstacle : null;
+  const minFlick = obs?obs.minFlick:MIN_FLICK;
   if(dist<minFlick) return;
 
   if(flipMode){
-    fvx+=dx*FLIP_FLICK_POWER/10; fvy+=dy*FLIP_FLICK_POWER/10;
+    fvx+=dx*obs.flickPower/10; fvy+=dy*obs.flickPower/10;
     boardAngle=Math.atan2(dy,dx)*180/Math.PI+90;
-    return; // no tricks in the platformer section — flicks are purely movement here
+    return; // no tricks in the platformer sections — flicks are purely movement here
   }
 
   vx+=dx*FLICK_POWER/10; vy+=dy*FLICK_POWER/10;
@@ -446,14 +536,20 @@ function applyFlick(dx,dy){
   if(sp>MAX_SPEED){ vx*=MAX_SPEED/sp; vy*=MAX_SPEED/sp; }
   boardAngle=Math.atan2(dy,dx)*180/Math.PI+90;
 
+  // normally a trick needs a tap right before the flick (the combo window) —
+  // but mid-air off a Fidget spinner hit, any flick can trigger a trick
   const sinceTap=performance.now()-lastTapTime;
-  if(sinceTap>COMBO_WINDOW) return;
+  if(airborne<=0 && sinceTap>COMBO_WINDOW) return;
 
   const ang=Math.atan2(dy,dx)*180/Math.PI;
-  const upRight = ang>-80 && ang<-10;
-  const upLeft  = ang<-100 && ang>-170;
-  if(upRight) startTrick(dist>=HARD_FLICK ? 'treflip' : 'kickflip');
+  const upRight     = ang>-80  && ang<-10;
+  const upLeft      = ang<-100 && ang>-170;
+  const straightUp  = ang<=-80 && ang>=-100;
+  const straightDown= ang>=80  && ang<=100;
+  if(straightUp) startTrick(dist>=HARD_FLICK ? 'impossible' : 'nosegrab');
+  else if(upRight) startTrick(dist>=HARD_FLICK ? 'treflip' : 'kickflip');
   else if(upLeft) startTrick(dist>=HARD_FLICK ? 'popshoveit' : 'shoveit');
+  else if(straightDown) startTrick('bigspin');
 }
 
 function startTrick(type){
@@ -482,15 +578,17 @@ function frame(t){
 
   if(flipMode){
     if(!crossing){
-      fvy+=FLIP_GRAVITY*dt;
+      const obs=AREAS[areaIdx].obstacle;
+      fvy+=obs.gravity*dt;
       fx+=fvx*dt; fy+=fvy*dt;
       fvx*=0.995;
       const r=fieldRect();
-      FLIP_PLATFORMS.forEach(p=>{
+      obs.platforms.forEach(p=>{
         const px=r.width*p.l, pw=r.width*p.w, py=r.height*p.t;
         if(fvy>0 && fy>=py-4 && fy<=py+18 && fx>=px-10 && fx<=px+pw+10){ fy=py; fvy=0; }
       });
       if(fx<10){ fx=10; fvx=Math.abs(fvx)*BOUNCE; }
+      if(fx>r.width-10){ fx=r.width-10; fvx=-Math.abs(fvx)*BOUNCE; }
       if(fy>r.height+80) flipFall();
       bx=fx; by=fy;
     }
@@ -502,6 +600,7 @@ function frame(t){
     const b=bounds(), a=AREAS[areaIdx];
     if(bx<b.left){
       if(areaIdx===0){ doPeef(); }
+      else if(a.crossType==='fluid' && a.crossEdge==='left') fluidAdvance();
       else { bx=b.left; vx=Math.abs(vx)*BOUNCE; }
     }
     if(bx>b.right){
@@ -512,7 +611,12 @@ function frame(t){
       if(a.crossType==='fluid' && a.crossEdge==='top') fluidAdvance();
       else { by=b.top; vy=Math.abs(vy)*BOUNCE; }
     }
-    if(by>b.bottom){ by=b.bottom; vy=-Math.abs(vy)*BOUNCE; }
+    if(by>b.bottom){
+      if(a.crossType==='fluid' && a.crossEdge==='bottom') fluidAdvance();
+      else { by=b.bottom; vy=-Math.abs(vy)*BOUNCE; }
+    }
+
+    if(a.fidget) updateFidget(dt);
   }
 
   render();
@@ -546,29 +650,30 @@ function render(){
     const el=performance.now()-crossing.startT, k=Math.min(1,el/crossing.dur);
     const ease=1-Math.pow(1-k,3);
     const leavingArea=AREAS[areaIdx];
+    const exitEdge = leavingArea.obstacle ? 'right' : leavingArea.crossEdge;
     if(k<1){
-      if(leavingArea.flip){
+      if(leavingArea.obstacle){
         const r=fieldRect();
         bx=crossing.fromX+((r.width*1.15)-crossing.fromX)*ease;
         by=crossing.fromY;
-      } else if(leavingArea.crossEdge==='top'){
-        const b=bounds();
-        by=crossing.fromY+((b.top-90)-crossing.fromY)*ease;
-        bx=crossing.fromX;
       } else {
         const b=bounds();
-        bx=crossing.fromX+((b.right+90)-crossing.fromX)*ease;
-        by=crossing.fromY;
+        if(exitEdge==='top'){ by=crossing.fromY+((b.top-90)-crossing.fromY)*ease; bx=crossing.fromX; }
+        else if(exitEdge==='bottom'){ by=crossing.fromY+((b.bottom+90)-crossing.fromY)*ease; bx=crossing.fromX; }
+        else if(exitEdge==='left'){ bx=crossing.fromX+((b.left-90)-crossing.fromX)*ease; by=crossing.fromY; }
+        else { bx=crossing.fromX+((b.right+90)-crossing.fromX)*ease; by=crossing.fromY; }
       }
       hop=Math.sin(k*Math.PI)*46;
       extraSpin=ease*360;
     } else {
-      const enteringFromTop = leavingArea.flip || leavingArea.crossEdge==='top';
+      const enterEdge = oppositeEdge(exitEdge);
       loadArea(crossing.nextIdx);
-      if(!AREAS[areaIdx].flip){
+      if(!AREAS[areaIdx].obstacle){
         const nb=bounds();
-        if(enteringFromTop){ bx=(nb.left+nb.right)/2; by=nb.bottom-20; }
-        else { bx=nb.left+18; by=by; }
+        if(enterEdge==='top'){ bx=(nb.left+nb.right)/2; by=nb.top+20; }
+        else if(enterEdge==='bottom'){ bx=(nb.left+nb.right)/2; by=nb.bottom-20; }
+        else if(enterEdge==='left'){ bx=nb.left+18; by=(nb.top+nb.bottom)/2; }
+        else { bx=nb.right-18; by=(nb.top+nb.bottom)/2; }
       }
       crossing=null;
     }
@@ -581,6 +686,9 @@ function render(){
       else if(trick.type==='treflip'){ flipY=ease*360; extraSpin=ease*360; }
       else if(trick.type==='shoveit'){ extraSpin=ease*180; }
       else if(trick.type==='popshoveit'){ extraSpin=ease*360; hop=Math.sin(k*Math.PI)*26; }
+      else if(trick.type==='nosegrab'){ hop=Math.sin(k*Math.PI)*20; flipY=ease*180; }
+      else if(trick.type==='impossible'){ flipY=ease*720; extraSpin=ease*180; hop=Math.sin(k*Math.PI)*30; }
+      else if(trick.type==='bigspin'){ extraSpin=ease*360; flipY=ease*180; }
     }
   }
 
@@ -594,6 +702,14 @@ function render(){
   boardEl.style.left=bx+'px';
   boardEl.style.top=(by-hop)+'px';
   boardEl.style.transform=`translate(-50%,-50%) rotate(${boardAngle+extraSpin}deg) rotateY(${flipY}deg) scale(${scale})`;
+
+  if(fidgetSpinners){
+    fidgetSpinners.forEach((s,i)=>{
+      const el=fidgetEls[i]; if(!el) return;
+      el.style.left=(s.x-s.r)+'px'; el.style.top=(s.y-s.r)+'px';
+      el.style.transform='rotate('+s.rot+'deg)';
+    });
+  }
 }
 </script>
 </body></html>
