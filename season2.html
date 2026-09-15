@@ -31,23 +31,38 @@
    than forward, even though it lives in the same top-right spot. */
 .marker-btn.pos-right{left:auto;right:22px;}
 
-/* laid out to match index.html's #arcadeMenu exactly: same top padding, same
-   logo image/size/margin, same tagline position — so the cab-row grid below
-   lands in the same spot on both pages and switching feels seamless. */
-.menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:44px 20px 16px;overflow-y:auto;box-sizing:border-box;}
-.s2logo{width:min(190px,44vw,15dvh);height:auto;display:block;margin:0 auto 4px;pointer-events:none;flex-shrink:0;}
-.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:clamp(15px,2.8dvh,23px);color:#ffd24a;
-  text-align:center;margin:-2px 0 10px;letter-spacing:6px;pointer-events:none;flex-shrink:0;}
-.cab-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:5px 3%; width:100%; max-width:430px; padding:2px; box-sizing:border-box; justify-items:center; align-items:start; }
-.cab-card{ width:100%; max-width:132px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
-.cab-card:active{ transform:scale(0.96); }
-.cab-card img{ width:100%; height:168px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); border-radius:14px; }
-.cab-card .cab-label{ font-family:Helvetica,Arial,sans-serif; font-size:clamp(8px,1.8dvh,10px); font-weight:bold; letter-spacing:1px; color:#fff; text-align:center; line-height:1.15; max-width:96%; }
-.cab-card.empty{ cursor:default; }
-.cab-card.empty:active{ transform:none; }
-.cab-card .empty-box{ width:100%; height:168px; border:2px dashed #2c2c32; border-radius:14px; background:#08080c; display:flex; align-items:center; justify-content:center; }
-.cab-card .empty-box span{ color:#444; font-size:9px; letter-spacing:1.5px; font-weight:bold; text-align:center; padding:0 8px; }
-.cab-card .empty-label{ color:#3a3a3a; }
+/* laid out to match index.html's #arcadeMenu but compacted — 9 cards need to
+   fit on one screen with no scrolling, so the header and every card are
+   sized much tighter than Season 1's roomier single-game layout. */
+.menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:14px 14px 8px;overflow-y:auto;box-sizing:border-box;}
+.s2logo{width:min(110px,26vw,7dvh);height:auto;display:block;margin:0 auto 2px;pointer-events:none;flex-shrink:0;}
+.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:clamp(10px,1.8dvh,14px);color:#ffd24a;
+  text-align:center;margin:-1px 0 6px;letter-spacing:3px;pointer-events:none;flex-shrink:0;}
+.cab-row{ display:grid; grid-template-columns:repeat(2,1fr); gap:6px 7px; width:100%; max-width:460px; padding:2px; box-sizing:border-box; }
+.cab-card{ position:relative; width:100%; border-radius:10px; overflow:hidden; cursor:pointer;
+  -webkit-tap-highlight-color:transparent; border:2px solid #3a3a3a; background:#0a0a0c;
+  box-shadow:0 4px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); }
+.cab-card:active{ transform:scale(0.97); }
+.cab-card .cab-media{ display:block; width:100%; aspect-ratio:16/9; object-fit:cover; }
+/* a lit marquee strip across the top of every card — the one throughline
+   tying this list back to Season 1's actual cabinet marquees */
+.cab-card .cab-marquee{ position:absolute; top:0; left:0; right:0; height:3px; z-index:2;
+  background:linear-gradient(90deg,#ffd24a,#ff8a3a,#ffd24a); opacity:0.9; }
+.cab-card .cab-label{ position:absolute; left:7px; bottom:5px; z-index:2; font-family:Helvetica,Arial,sans-serif;
+  font-size:9px; font-weight:bold; letter-spacing:0.8px; color:#fff; text-shadow:0 2px 5px rgba(0,0,0,.85); }
+.cab-card.soon{ cursor:default; }
+.cab-card.soon:active{ transform:none; }
+.cab-card.soon .cab-media{ filter:brightness(0.55) saturate(0.75); }
+.soon-ribbon{ position:absolute; inset:0; z-index:3; display:flex; align-items:center; justify-content:center; }
+.soon-ribbon span{ background:linear-gradient(180deg,#ffdd66,#e8a83c); color:#241300; font-weight:bold;
+  font-size:9px; letter-spacing:1px; padding:3px 10px; border-radius:5px; transform:rotate(-4deg);
+  box-shadow:0 3px 7px rgba(0,0,0,.55); }
+/* fully empty slots — no art yet, so just the plain text, no cabinet-icon
+   box treatment at all */
+.cab-card.empty-slot{ cursor:default; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center;
+  border-style:dashed; border-color:#26262c; background:#08080c; box-shadow:none; }
+.cab-card.empty-slot:active{ transform:none; }
+.cab-card.empty-slot span{ color:#4a4a4a; font-size:9px; letter-spacing:1.5px; font-weight:bold; }
 
 #selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.choice{background:#06060a;border:2px solid #29292f;border-radius:12px;padding:10px;cursor:pointer;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center}.choice:hover{border-color:#777}.choice img{width:min(190px,70%);height:250px;object-fit:contain}.choice span{font-size:11px;letter-spacing:2px;color:#aaa;margin-top:5px}.hint{margin-top:14px;color:#555;font-size:9.5px;letter-spacing:1.3px;line-height:1.9;}
 
@@ -77,7 +92,7 @@
    both the menu screen and in-game visuals in one place. */
 body.th-inverted{ filter:invert(1); }
 
-body.th-cartoon .s2logo, body.th-cartoon .cab-card img,
+body.th-cartoon .s2logo, body.th-cartoon .cab-card .cab-media,
 body.th-cartoon .field, body.th-cartoon .board, body.th-cartoon .chairSpot, body.th-cartoon .flip-mk{
   filter:grayscale(1) contrast(1.15); }
 body.th-cartoon .s2tag{ color:#f2f2f2; text-shadow:none; }
@@ -93,7 +108,7 @@ body.th-cartoon .select-title, body.th-cartoon .s2tag{ color:#f2f2f2; }
 body.th-cartoon .select-sub, body.th-cartoon .hint{ color:#999; }
 body.th-cartoon #gameScreen.flip2d{ background:linear-gradient(180deg,#cfcfcf 0%,#e8e8e8 58%,#f4f4f4 100%); filter:grayscale(1) contrast(1.1); }
 
-body.th-neon .s2logo, body.th-neon .cab-card img{
+body.th-neon .s2logo, body.th-neon .cab-card .cab-media{
   filter:drop-shadow(0 0 4px #28ff82) drop-shadow(0 0 10px #28ff82) drop-shadow(0 0 20px rgba(40,255,130,0.6)); }
 body.th-neon .s2tag{ color:#28ff82; text-shadow:0 0 8px #28ff82, 0 0 18px rgba(40,255,130,0.7); }
 body.th-neon .board, body.th-neon .chairSpot, body.th-neon .flip-mk{
@@ -105,7 +120,7 @@ body.th-neon .choice{ border-color:#28ff82; }
 body.th-neon .select-title{ color:#28ff82; text-shadow:0 0 8px #28ff82, 0 0 18px rgba(40,255,130,0.7); }
 body.th-neon #gameScreen.flip2d{ background:linear-gradient(180deg,#03140c 0%,#05261a 58%,#062f1e 100%); }
 
-body.th-sunset .s2logo, body.th-sunset .cab-card img{
+body.th-sunset .s2logo, body.th-sunset .cab-card .cab-media{
   filter:sepia(0.6) saturate(2) brightness(1.15) hue-rotate(-10deg) drop-shadow(0 0 10px rgba(255,200,60,0.75)); }
 body.th-sunset .s2tag{ color:#ffd24a; text-shadow:0 0 10px rgba(255,200,60,0.85), 0 0 22px rgba(255,176,32,0.6); }
 body.th-sunset .board, body.th-sunset .chairSpot, body.th-sunset .field, body.th-sunset .flip-mk{
@@ -117,7 +132,7 @@ body.th-sunset .choice{ border-color:#ffc23a; }
 body.th-sunset .select-title{ color:#ffd24a; text-shadow:0 0 10px rgba(255,200,60,0.85), 0 0 22px rgba(255,176,32,0.6); }
 body.th-sunset #gameScreen.flip2d{ background:linear-gradient(180deg,#4a2c10 0%,#7a4614 58%,#a5661c 100%); }
 
-body.th-galaxy .s2logo, body.th-galaxy .cab-card img{
+body.th-galaxy .s2logo, body.th-galaxy .cab-card .cab-media{
   filter:hue-rotate(230deg) saturate(1.5) brightness(1.05) drop-shadow(0 0 10px rgba(180,120,255,0.75)); }
 body.th-galaxy .s2tag{ color:#b478ff; text-shadow:0 0 10px rgba(180,120,255,0.8), 0 0 22px rgba(150,90,255,0.55); }
 body.th-galaxy .board, body.th-galaxy .chairSpot, body.th-galaxy .field, body.th-galaxy .flip-mk{
@@ -155,15 +170,42 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
     <img class="s2logo" src="arcadelogo.png?v=377" alt="Qu33ph Arcade" onerror="this.style.display='none'">
     <div class="s2tag">SEASON 2</div>
     <div class="cab-row">
-      <div class="cab-card" onclick="openSelect()"><img src="season2-green.png" alt="Qu33ph Skateboarding"><div class="cab-label">QU33PH SKATEBOARDING</div></div>
-      <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 02</div></div>
-      <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 03</div></div>
-      <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 04</div></div>
-      <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 05</div></div>
-      <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 06</div></div>
-      <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 07</div></div>
-      <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 08</div></div>
-      <div class="cab-card empty"><div class="empty-box"><span>EMPTY<br>MACHINE SLOT</span></div><div class="cab-label empty-label">SLOT 09</div></div>
+      <div class="cab-card" onclick="openSelect()">
+        <div class="cab-marquee"></div>
+        <img class="cab-media" src="skateboardingbanner.png" alt="Qu33ph Skateboarding">
+      </div>
+      <div class="cab-card soon">
+        <div class="cab-marquee"></div>
+        <video class="cab-media" src="qu33ph10.mp4" autoplay loop muted playsinline preload="metadata"></video>
+        <div class="soon-ribbon"><span>COMING SOON</span></div>
+      </div>
+      <div class="cab-card soon">
+        <div class="cab-marquee"></div>
+        <img class="cab-media" src="qu33phmusicposter.png" alt="Qu33ph Music">
+        <div class="soon-ribbon"><span>COMING SOON</span></div>
+      </div>
+      <div class="cab-card soon">
+        <div class="cab-marquee"></div>
+        <img class="cab-media" src="qu33phadventures.jpg" alt="Qu33ph Adventures">
+        <div class="soon-ribbon"><span>COMING SOON</span></div>
+      </div>
+      <div class="cab-card soon">
+        <div class="cab-marquee"></div>
+        <img class="cab-media" src="qu33phpodcast.jpg" alt="Qu33ph Podcast">
+        <div class="soon-ribbon"><span>COMING SOON</span></div>
+      </div>
+      <div class="cab-card soon">
+        <div class="cab-marquee"></div>
+        <img class="cab-media" src="qu33phstorytime.jpg" alt="Qu33ph Story Time">
+        <div class="soon-ribbon"><span>COMING SOON</span></div>
+      </div>
+      <div class="cab-card soon">
+        <div class="cab-marquee"></div>
+        <img class="cab-media" src="qu33phcinema.jpg" alt="Qu33ph Cinema">
+        <div class="soon-ribbon"><span>COMING SOON</span></div>
+      </div>
+      <div class="cab-card empty-slot"><span>COMING SOON</span></div>
+      <div class="cab-card empty-slot"><span>COMING SOON</span></div>
     </div>
   </div>
 </div>
