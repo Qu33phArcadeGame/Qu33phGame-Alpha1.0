@@ -7,10 +7,22 @@
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Helvetica,Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;}
-.back-btn{position:fixed;top:9px;left:12px;z-index:50;display:inline-flex;align-items:center;justify-content:center;
-  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;text-decoration:none;
-  border:2px solid #fff;border-radius:4px 9px 9px 4px;font-size:11px;font-weight:bold;letter-spacing:1px;
-  padding:6px 12px;box-shadow:0 3px 0 rgba(0,0,0,.55),0 6px 10px rgba(0,0,0,.4);}
+
+/* exact same marker-cap back button used everywhere else in the app */
+.marker-btn{position:fixed;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;
+  border:2.5px solid #fff;border-radius:4px 9px 9px 4px;
+  font-family:Helvetica,Arial,sans-serif;font-size:9.5px;font-weight:bold;letter-spacing:1px;
+  padding:5px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 3px 0 rgba(0,0,0,0.55),0 6px 10px rgba(0,0,0,0.4),inset 0 1.5px 0 rgba(255,255,255,0.4),inset 0 -4px 7px rgba(0,0,0,0.45);
+  transform:translateY(0);transition:transform 0.08s ease,box-shadow 0.08s ease;}
+.marker-btn::before{content:"";position:absolute;left:-15px;top:2px;bottom:2px;width:15px;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35),inset 0 -3px 5px rgba(0,0,0,0.45);}
+.marker-btn:active{background:linear-gradient(180deg,#161616 0%,#000 100%);transform:translateY(3px);
+  box-shadow:0 0 0 rgba(0,0,0,0.55),0 1px 3px rgba(0,0,0,0.4),inset 0 2px 6px rgba(0,0,0,0.6);}
+.marker-btn:active::before{background:linear-gradient(180deg,#161616 0%,#000 100%);box-shadow:inset 0 2px 5px rgba(0,0,0,0.6);}
+
 .wrap{height:100%;display:flex;flex-direction:column;padding:8px 8px 0;box-sizing:border-box;}
 h1{margin:34px 0 2px;text-align:center;font-size:clamp(16px,4.2vw,22px);letter-spacing:2px;
   color:#ffd24a;text-shadow:0 0 10px rgba(255,210,74,.5);}
@@ -18,21 +30,28 @@ h1{margin:34px 0 2px;text-align:center;font-size:clamp(16px,4.2vw,22px);letter-s
 
 .instr-row{display:flex;justify-content:center;gap:8px;margin-bottom:8px;flex-shrink:0;}
 .instr-btn{background:linear-gradient(180deg,#222,#0a0a0a);border:2px solid #444;color:#999;
-  font-size:11px;font-weight:bold;letter-spacing:1.5px;padding:8px 16px;border-radius:8px;cursor:pointer;
+  font-size:11px;font-weight:bold;letter-spacing:1.5px;padding:8px 14px;border-radius:8px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;}
 .instr-btn.active{border-color:#ffd24a;color:#ffd24a;background:linear-gradient(180deg,#3a2f0e,#1a1608);
   box-shadow:0 0 10px rgba(255,210,74,.4);}
 
-.transport{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;flex-shrink:0;flex-wrap:wrap;}
+#recWrap{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;flex-shrink:0;}
 .tbtn{border:2px solid #666;background:linear-gradient(180deg,#2a2a2a,#0d0d0d);color:#fff;
   font-size:11px;font-weight:bold;letter-spacing:1px;padding:9px 14px;border-radius:8px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;}
 .tbtn.rec{border-color:#ff4d4d;color:#ff8080;}
 .tbtn.rec.on{background:linear-gradient(180deg,#5a1414,#2a0808);color:#fff;animation:pulse 1s infinite;}
+.tbtn.play{border-color:#4dafff;color:#8ecfff;}
 .tbtn.done{border-color:#4dff8a;color:#7bffa8;}
+.tbtn.reset{border-color:#777;color:#999;font-size:10px;padding:6px 10px;}
 .tbtn:disabled{opacity:0.35;cursor:default;animation:none;}
 @keyframes pulse{0%,100%{box-shadow:0 0 4px rgba(255,60,60,.5);}50%{box-shadow:0 0 16px rgba(255,60,60,.9);}}
 #timer{font-family:'Courier New',monospace;font-size:13px;color:#ccc;min-width:42px;text-align:center;}
+
+#layerPanel{display:none;flex-shrink:0;margin-bottom:6px;}
+#waveCanvas{display:block;width:100%;height:50px;background:#0a0a0c;border:1px solid #2a2a2e;border-radius:6px;}
+#layerInfo{text-align:center;font-size:10px;color:#888;letter-spacing:1px;margin:4px 0 6px;}
+.layer-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
 
 #downloadArea{text-align:center;margin-bottom:6px;min-height:0;flex-shrink:0;}
 #downloadArea a{display:inline-block;background:linear-gradient(180deg,#ffdd66,#e8a83c);color:#241300;
@@ -54,7 +73,7 @@ h1{margin:34px 0 2px;text-align:center;font-size:clamp(16px,4.2vw,22px);letter-s
 </style>
 </head>
 <body>
-<a href="season2.html" class="back-btn">← BACK</a>
+<button class="marker-btn" onclick="location.href='season2.html'">&larr; BACK</button>
 <div class="wrap">
   <h1>QU33PH MUSIC</h1>
   <div class="sub">pick an instrument, play the keyboard, record a track</div>
@@ -65,16 +84,27 @@ h1{margin:34px 0 2px;text-align:center;font-size:clamp(16px,4.2vw,22px);letter-s
     <button class="instr-btn" data-kind="hit" onclick="setInstrument('hit',this)">HIT</button>
   </div>
 
-  <div class="instr-row">
-    <button class="instr-btn active" id="octBtn0" onclick="setOctave(0)">OCTAVE 1</button>
-    <button class="instr-btn" id="octBtn1" onclick="setOctave(1)">OCTAVE 2</button>
+  <div class="instr-row" id="octRow">
+    <button class="instr-btn active" onclick="setOctave(0,this)">OCTAVE 1</button>
+    <button class="instr-btn" onclick="setOctave(1,this)">OCTAVE 2</button>
+    <button class="instr-btn" onclick="setOctave(2,this)">OCTAVE 3</button>
   </div>
 
-  <div class="transport">
-    <button class="tbtn rec" id="recBtn" onclick="toggleRecord()">⚫ RECORD</button>
+  <div id="recWrap">
+    <button class="tbtn rec" id="recBtn" onclick="toggleRecord()">&#9899; RECORD</button>
     <span id="timer">0:00</span>
-    <button class="tbtn done" id="doneBtn" onclick="exportMp3()" disabled>DONE — EXPORT MP3</button>
   </div>
+
+  <div id="layerPanel">
+    <canvas id="waveCanvas"></canvas>
+    <div id="layerInfo">0/3 layers</div>
+    <div class="layer-actions">
+      <button class="tbtn play" id="playAddBtn" onclick="playAndAddLayer()">&#9654; PLAY &amp; ADD LAYER</button>
+      <button class="tbtn done" id="exportBtn" onclick="exportMp3()">&#11015; EXPORT MP3</button>
+      <button class="tbtn reset" id="resetBtn" onclick="resetAll()">&#8634; START OVER</button>
+    </div>
+  </div>
+
   <div id="encodeStatus"></div>
   <div id="downloadArea"></div>
 
@@ -83,25 +113,27 @@ h1{margin:34px 0 2px;text-align:center;font-size:clamp(16px,4.2vw,22px);letter-s
 
 <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"></script>
 <script>
-// ── sound sources — real files already used elsewhere in the app:
-// "vertical1.m4a" is a normal throw sound, "verticalpeef1.m4a" is a peef/miss
-// sound, "hitc1.m4a" is the Fidget spinner hit sound. Each is pitch-shifted
-// per key (via playbackRate) to build a full musical scale out of one sample —
-// same trick a sampler keyboard uses. ─────────────────────────────────────────
+// ── sound sources — real files already used elsewhere in the app ──────────
 const SOUND_FILES={ throw:'vertical1.m4a', peef:'verticalpeef1.m4a', hit:'hitc1.m4a' };
 const KEY_IMG=['stackred.png','stackgreen.png','stackblue.png']; // red, green, blue — repeating
 const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const KEYS_PER_OCTAVE=12;
-// two full octaves, one shown at a time — OCTAVE 1 is the octave below
-// middle C, OCTAVE 2 starts right at middle C. The switch above just swaps
-// which 12-key set is on screen.
-const OCTAVE_BASES=[-12,0];
+// three full octaves, one shown at a time via the OCTAVE 1/2/3 switch
+const OCTAVE_BASES=[-12,0,12];
 let currentOctave=0;
 
 let currentKind='throw';
 let audioCtx=null, buffers={}, loading={};
-let recDest=null, mediaRecorder=null, recordedChunks=[], recording=false, recordStartT=0, timerInt=null;
-let lastMp3Url=null;
+let recDest=null;
+
+// ── layers ──────────────────────────────────────────────────────────────
+// each layer is an independently-recorded, CLEAN take — reference playback
+// of earlier layers during an overdub goes to the speakers only, never back
+// into the recorder, so mixing at export time is just summing buffers with
+// no quality loss from re-recording earlier layers over and over
+let layers=[];                 // [{buffer:AudioBuffer}, ...]  max 3
+let mediaRecorder=null, recordedChunks=[], recording=false, recordStartT=0, timerInt=null;
+let referenceSource=null, lastMp3Url=null;
 
 function ensureAudio(){
   if(!audioCtx){
@@ -128,11 +160,10 @@ function setInstrument(kind,el){
   ensureAudio();
   loadBuffer(kind);
 }
-
-function setOctave(idx){
+function setOctave(idx,el){
   currentOctave=idx;
-  document.getElementById('octBtn0').classList.toggle('active', idx===0);
-  document.getElementById('octBtn1').classList.toggle('active', idx===1);
+  document.getElementById('octRow').querySelectorAll('.instr-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
   buildKeyboard();
 }
 
@@ -149,15 +180,9 @@ async function playNote(semitone,keyEl){
   gain.connect(audioCtx.destination);
   gain.connect(recDest); // always wired to the recorder — only matters while actually recording
   src.start();
-  if(keyEl){
-    keyEl.classList.add('down');
-    setTimeout(()=>keyEl.classList.remove('down'),120);
-  }
+  if(keyEl){ keyEl.classList.add('down'); setTimeout(()=>keyEl.classList.remove('down'),120); }
 }
 
-// ── build the keyboard — red, green, blue repeating, one octave on screen at
-// a time so there's no scrolling needed; the OCTAVE 1 / OCTAVE 2 switch just
-// shifts everything up or down 12 semitones and redraws ───────────────────
 function buildKeyboard(){
   const kb=document.getElementById('keyboard');
   kb.innerHTML='';
@@ -167,61 +192,158 @@ function buildKeyboard(){
     const key=document.createElement('div');
     key.className='key';
     const img=document.createElement('img');
-    img.src=KEY_IMG[i%3]; // same note = same color across both octaves
+    img.src=KEY_IMG[i%3]; // same note = same color across every octave
     img.alt='';
     const note=document.createElement('span');
     note.className='note';
     const noteIdx=((semitone%12)+12)%12;
-    const octave=4+Math.floor((semitone+9)/12); // rough octave numbering around middle C (C4)
+    const octave=4+Math.floor((semitone+9)/12);
     note.textContent=NOTE_NAMES[noteIdx]+octave;
-    key.appendChild(img);
-    key.appendChild(note);
+    key.appendChild(img); key.appendChild(note);
     key.addEventListener('pointerdown',e=>{ e.preventDefault(); playNote(semitone,key); });
     kb.appendChild(key);
   }
 }
 buildKeyboard();
 
-// ── recording ───────────────────────────────────────────────────────────
+// ── recording / layers ─────────────────────────────────────────────────
 function toggleRecord(){
   ensureAudio();
   if(!recording) startRecording(); else stopRecording();
 }
 function startRecording(){
   recordedChunks=[];
-  try{
-    mediaRecorder=new MediaRecorder(recDest.stream);
-  }catch(e){
-    alert('Recording isn\'t supported in this browser.');
-    return;
-  }
+  try{ mediaRecorder=new MediaRecorder(recDest.stream); }
+  catch(e){ alert("Recording isn't supported in this browser."); return; }
   mediaRecorder.ondataavailable=e=>{ if(e.data && e.data.size>0) recordedChunks.push(e.data); };
   mediaRecorder.start();
   recording=true;
   recordStartT=Date.now();
-  document.getElementById('recBtn').textContent='⏹ STOP';
-  document.getElementById('recBtn').classList.add('on');
-  document.getElementById('doneBtn').disabled=true;
+  const recBtn=document.getElementById('recBtn');
+  recBtn.textContent='\u23F9 STOP';
+  recBtn.classList.add('on');
+  document.getElementById('recWrap').style.display='flex';
+  document.getElementById('playAddBtn').disabled=true;
+  document.getElementById('exportBtn').disabled=true;
   document.getElementById('downloadArea').innerHTML='';
   document.getElementById('encodeStatus').textContent='';
   timerInt=setInterval(updateTimer,200);
 }
 function stopRecording(){
   if(!mediaRecorder) return;
-  mediaRecorder.stop();
-  recording=false;
   clearInterval(timerInt);
-  document.getElementById('recBtn').textContent='⚫ RECORD';
-  document.getElementById('recBtn').classList.remove('on');
-  document.getElementById('doneBtn').disabled = recordedChunks.length===0;
+  recording=false;
+  const recBtn=document.getElementById('recBtn');
+  recBtn.textContent='\u26AB RECORD';
+  recBtn.classList.remove('on');
+  if(referenceSource){ try{ referenceSource.stop(); }catch(e){} referenceSource=null; }
+
+  // IMPORTANT: MediaRecorder delivers its data asynchronously when stop()
+  // finishes — waiting for onstop (instead of checking recordedChunks right
+  // after calling stop()) is what fixes the export button never lighting up
+  mediaRecorder.onstop=async ()=>{
+    if(recordedChunks.length>0){
+      try{
+        const blob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||'audio/webm'});
+        const arrBuf=await blob.arrayBuffer();
+        const buf=await audioCtx.decodeAudioData(arrBuf.slice(0));
+        layers.push({buffer:buf});
+        if(layers.length>3) layers=layers.slice(0,3);
+      }catch(err){ console.error(err); }
+    }
+    refreshUI();
+  };
+  mediaRecorder.stop();
 }
 function updateTimer(){
   const s=Math.floor((Date.now()-recordStartT)/1000);
   document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 }
 
-// ── export: decode whatever the recorder captured, re-encode as a real MP3
-// in-browser with lamejs (no server involved), then hand back a download link
+function playAndAddLayer(){
+  if(layers.length>=3 || recording) return;
+  ensureAudio();
+  const mix=mixLayers();
+  if(mix){
+    const src=audioCtx.createBufferSource();
+    src.buffer=mix;
+    src.connect(audioCtx.destination); // reference only — NOT routed into recDest
+    src.start();
+    referenceSource=src;
+  }
+  startRecording();
+}
+
+function mixLayers(){
+  if(layers.length===0) return null;
+  if(layers.length===1) return layers[0].buffer;
+  const sr=layers[0].buffer.sampleRate;
+  const maxLen=Math.max.apply(null, layers.map(l=>l.buffer.length));
+  const numCh=Math.max.apply(null, layers.map(l=>l.buffer.numberOfChannels));
+  const mixed=audioCtx.createBuffer(numCh,maxLen,sr);
+  for(let ch=0; ch<numCh; ch++){
+    const out=mixed.getChannelData(ch);
+    layers.forEach(l=>{
+      const src=l.buffer.getChannelData(Math.min(ch,l.buffer.numberOfChannels-1));
+      for(let i=0;i<src.length;i++) out[i]+=src[i];
+    });
+    for(let i=0;i<out.length;i++) out[i]=Math.max(-1,Math.min(1,out[i]));
+  }
+  return mixed;
+}
+
+function drawWaveform(buf){
+  const canvas=document.getElementById('waveCanvas');
+  const cssW=canvas.clientWidth||300;
+  canvas.width=cssW*2; canvas.height=100;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!buf) return;
+  const data=buf.getChannelData(0);
+  const barW=3, bars=Math.floor(canvas.width/barW);
+  const step=Math.max(1,Math.floor(data.length/bars));
+  ctx.fillStyle='#ffd24a';
+  for(let i=0;i<bars;i++){
+    let mn=1,mx=-1;
+    for(let j=0;j<step;j++){
+      const idx=i*step+j; if(idx>=data.length) break;
+      const v=data[idx]; if(v<mn) mn=v; if(v>mx) mx=v;
+    }
+    const y1=(1-mx)*0.5*canvas.height, y2=(1-mn)*0.5*canvas.height;
+    ctx.fillRect(i*barW, y1, barW-1, Math.max(2,y2-y1));
+  }
+}
+
+function refreshUI(){
+  const recWrap=document.getElementById('recWrap');
+  const panel=document.getElementById('layerPanel');
+  if(recording){
+    recWrap.style.display='flex';
+    return;
+  }
+  if(layers.length===0){
+    recWrap.style.display='flex';
+    panel.style.display='none';
+    return;
+  }
+  recWrap.style.display='none';
+  panel.style.display='block';
+  document.getElementById('layerInfo').textContent=layers.length+'/3 layers';
+  drawWaveform(mixLayers());
+  const playBtn=document.getElementById('playAddBtn');
+  playBtn.style.display = layers.length>=3 ? 'none' : 'inline-flex';
+  document.getElementById('exportBtn').disabled=false;
+}
+
+function resetAll(){
+  layers=[];
+  document.getElementById('downloadArea').innerHTML='';
+  document.getElementById('encodeStatus').textContent='';
+  refreshUI();
+}
+
+// ── export — mixes every layer down into one real MP3 file, encoded fully
+// in-browser with lamejs (no server involved) ──────────────────────────
 function floatTo16BitPCM(f32){
   const out=new Int16Array(f32.length);
   for(let i=0;i<f32.length;i++){
@@ -231,22 +353,19 @@ function floatTo16BitPCM(f32){
   return out;
 }
 async function exportMp3(){
-  if(!recordedChunks.length) return;
+  if(layers.length===0) return;
   const statusEl=document.getElementById('encodeStatus');
-  const doneBtn=document.getElementById('doneBtn');
-  doneBtn.disabled=true;
+  const exportBtn=document.getElementById('exportBtn');
+  exportBtn.disabled=true;
   statusEl.textContent='Encoding...';
-  await new Promise(r=>setTimeout(r,30)); // let the status text paint before the blocking encode work
+  await new Promise(r=>setTimeout(r,30));
 
   try{
-    const blob=new Blob(recordedChunks, {type:mediaRecorder.mimeType||'audio/webm'});
-    const arrBuf=await blob.arrayBuffer();
-    const audioBuffer=await audioCtx.decodeAudioData(arrBuf.slice(0));
-
-    const ch0=floatTo16BitPCM(audioBuffer.getChannelData(0));
-    const ch1=audioBuffer.numberOfChannels>1 ? floatTo16BitPCM(audioBuffer.getChannelData(1)) : ch0;
-    const channels=audioBuffer.numberOfChannels>1?2:1;
-    const encoder=new lamejs.Mp3Encoder(channels, audioBuffer.sampleRate, 128);
+    const mixed=mixLayers();
+    const ch0=floatTo16BitPCM(mixed.getChannelData(0));
+    const ch1=mixed.numberOfChannels>1 ? floatTo16BitPCM(mixed.getChannelData(1)) : ch0;
+    const channels=mixed.numberOfChannels>1?2:1;
+    const encoder=new lamejs.Mp3Encoder(channels, mixed.sampleRate, 128);
     const mp3Data=[];
     const blockSize=1152;
     for(let i=0;i<ch0.length;i+=blockSize){
@@ -265,16 +384,18 @@ async function exportMp3(){
     const a=document.createElement('a');
     a.href=lastMp3Url;
     a.download='qu33ph-music-track.mp3';
-    a.textContent='⬇ DOWNLOAD MP3';
+    a.textContent='\u2B07 DOWNLOAD MP3';
     document.getElementById('downloadArea').innerHTML='';
     document.getElementById('downloadArea').appendChild(a);
     statusEl.textContent='Done!';
   }catch(err){
     console.error(err);
-    statusEl.textContent='Something went wrong encoding that — try recording again.';
+    statusEl.textContent='Something went wrong encoding that — try again.';
   }
-  doneBtn.disabled=false;
+  exportBtn.disabled=false;
 }
+
+refreshUI();
 </script>
 </body>
 </html>
