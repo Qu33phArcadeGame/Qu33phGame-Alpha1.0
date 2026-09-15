@@ -28,18 +28,36 @@
   <iframe id="gameFrame" src="game.html" scrolling="no" allow="autoplay"></iframe>
 </div>
 <script>
-// the one true "screen size" for the whole app — change these two numbers to
-// redesign the virtual resolution everything is built against
+// the one true "screen size" for the whole app — DESIGN_W is what every
+// vw/vh/dvh rule in the game actually computes against, so this is the
+// number that matters for layout. DESIGN_H is only a target for landscape/
+// desktop letterboxing (see below) — portrait screens ignore it entirely.
 var DESIGN_W = 420, DESIGN_H = 900;
 
 function fitStage(){
   var vw = window.innerWidth, vh = window.innerHeight;
-  var scale = Math.min(vw / DESIGN_W, vh / DESIGN_H);
   var f = document.getElementById('gameFrame');
-  f.width = DESIGN_W;
-  f.height = DESIGN_H;
-  f.style.width = DESIGN_W + 'px';
-  f.style.height = DESIGN_H + 'px';
+  var w, h, scale;
+  if(vw <= vh){
+    // portrait / phone-like — fill the screen completely. Width is still
+    // locked to DESIGN_W internally (that's what fixes the layout bugs),
+    // but the iframe's height flexes to whatever this device's actual
+    // proportions are, so there's no wasted black space on ordinary phones.
+    scale = vw / DESIGN_W;
+    w = DESIGN_W;
+    h = vh / scale;
+  } else {
+    // landscape / wide desktop window — fitting to width would squash
+    // everything absurdly short, so fit to height instead and letterbox
+    // the sides. This is the only case that should ever show bars.
+    scale = vh / DESIGN_H;
+    w = DESIGN_W;
+    h = DESIGN_H;
+  }
+  f.width = w;
+  f.height = h;
+  f.style.width = w + 'px';
+  f.style.height = h + 'px';
   f.style.transform = 'scale(' + scale + ')';
 }
 fitStage();
