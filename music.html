@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Qu33ph Music</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Helvetica,Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;}
+.back-btn{position:fixed;top:9px;left:12px;z-index:50;display:inline-flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;text-decoration:none;
+  border:2px solid #fff;border-radius:4px 9px 9px 4px;font-size:11px;font-weight:bold;letter-spacing:1px;
+  padding:6px 12px;box-shadow:0 3px 0 rgba(0,0,0,.55),0 6px 10px rgba(0,0,0,.4);}
+.wrap{height:100%;display:flex;flex-direction:column;padding:8px 8px 0;box-sizing:border-box;}
+h1{margin:34px 0 2px;text-align:center;font-size:clamp(16px,4.2vw,22px);letter-spacing:2px;
+  color:#ffd24a;text-shadow:0 0 10px rgba(255,210,74,.5);}
+.sub{text-align:center;font-size:10px;color:#888;letter-spacing:1px;margin-bottom:8px;}
+
+.instr-row{display:flex;justify-content:center;gap:8px;margin-bottom:8px;flex-shrink:0;}
+.instr-btn{background:linear-gradient(180deg,#222,#0a0a0a);border:2px solid #444;color:#999;
+  font-size:11px;font-weight:bold;letter-spacing:1.5px;padding:8px 16px;border-radius:8px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;}
+.instr-btn.active{border-color:#ffd24a;color:#ffd24a;background:linear-gradient(180deg,#3a2f0e,#1a1608);
+  box-shadow:0 0 10px rgba(255,210,74,.4);}
+
+.transport{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;flex-shrink:0;flex-wrap:wrap;}
+.tbtn{border:2px solid #666;background:linear-gradient(180deg,#2a2a2a,#0d0d0d);color:#fff;
+  font-size:11px;font-weight:bold;letter-spacing:1px;padding:9px 14px;border-radius:8px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;}
+.tbtn.rec{border-color:#ff4d4d;color:#ff8080;}
+.tbtn.rec.on{background:linear-gradient(180deg,#5a1414,#2a0808);color:#fff;animation:pulse 1s infinite;}
+.tbtn.done{border-color:#4dff8a;color:#7bffa8;}
+.tbtn:disabled{opacity:0.35;cursor:default;animation:none;}
+@keyframes pulse{0%,100%{box-shadow:0 0 4px rgba(255,60,60,.5);}50%{box-shadow:0 0 16px rgba(255,60,60,.9);}}
+#timer{font-family:'Courier New',monospace;font-size:13px;color:#ccc;min-width:42px;text-align:center;}
+
+#downloadArea{text-align:center;margin-bottom:6px;min-height:0;flex-shrink:0;}
+#downloadArea a{display:inline-block;background:linear-gradient(180deg,#ffdd66,#e8a83c);color:#241300;
+  font-weight:bold;font-size:12px;letter-spacing:1px;padding:9px 20px;border-radius:8px;text-decoration:none;
+  box-shadow:0 4px 10px rgba(0,0,0,.4);}
+#encodeStatus{text-align:center;font-size:11px;color:#ffd24a;margin-bottom:6px;flex-shrink:0;}
+
+.keyboard-wrap{flex:1;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+  border-top:2px solid #222;padding-top:6px;min-height:0;}
+.keyboard{display:flex;align-items:flex-end;height:100%;padding:0 8px 10px;gap:3px;width:max-content;}
+.key{position:relative;width:42px;height:88%;max-height:230px;border-radius:8px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:transform .05s ease,filter .05s ease;
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;}
+.key img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));}
+.key .note{position:relative;z-index:2;font-size:8px;font-weight:bold;color:#fff;text-shadow:0 1px 3px #000;
+  opacity:0.65;pointer-events:none;}
+.key.down{transform:translateY(6px) scale(0.96);filter:brightness(1.35);}
+</style>
+</head>
+<body>
+<a href="season2.html" class="back-btn">← BACK</a>
+<div class="wrap">
+  <h1>QU33PH MUSIC</h1>
+  <div class="sub">pick an instrument, play the keyboard, record a track</div>
+
+  <div class="instr-row" id="instrRow">
+    <button class="instr-btn active" data-kind="throw" onclick="setInstrument('throw',this)">THROW</button>
+    <button class="instr-btn" data-kind="peef" onclick="setInstrument('peef',this)">PEEF</button>
+    <button class="instr-btn" data-kind="hit" onclick="setInstrument('hit',this)">HIT</button>
+  </div>
+
+  <div class="instr-row">
+    <button class="instr-btn active" id="octBtn0" onclick="setOctave(0)">OCTAVE 1</button>
+    <button class="instr-btn" id="octBtn1" onclick="setOctave(1)">OCTAVE 2</button>
+  </div>
+
+  <div class="transport">
+    <button class="tbtn rec" id="recBtn" onclick="toggleRecord()">⚫ RECORD</button>
+    <span id="timer">0:00</span>
+    <button class="tbtn done" id="doneBtn" onclick="exportMp3()" disabled>DONE — EXPORT MP3</button>
+  </div>
+  <div id="encodeStatus"></div>
+  <div id="downloadArea"></div>
+
+  <div class="keyboard-wrap"><div class="keyboard" id="keyboard"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"></script>
+<script>
+// ── sound sources — real files already used elsewhere in the app:
+// "vertical1.m4a" is a normal throw sound, "verticalpeef1.m4a" is a peef/miss
+// sound, "hitc1.m4a" is the Fidget spinner hit sound. Each is pitch-shifted
+// per key (via playbackRate) to build a full musical scale out of one sample —
+// same trick a sampler keyboard uses. ─────────────────────────────────────────
+const SOUND_FILES={ throw:'vertical1.m4a', peef:'verticalpeef1.m4a', hit:'hitc1.m4a' };
+const KEY_IMG=['stackred.png','stackgreen.png','stackblue.png']; // red, green, blue — repeating
+const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const KEYS_PER_OCTAVE=12;
+// two full octaves, one shown at a time — OCTAVE 1 is the octave below
+// middle C, OCTAVE 2 starts right at middle C. The switch above just swaps
+// which 12-key set is on screen.
+const OCTAVE_BASES=[-12,0];
+let currentOctave=0;
+
+let currentKind='throw';
+let audioCtx=null, buffers={}, loading={};
+let recDest=null, mediaRecorder=null, recordedChunks=[], recording=false, recordStartT=0, timerInt=null;
+let lastMp3Url=null;
+
+function ensureAudio(){
+  if(!audioCtx){
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    recDest=audioCtx.createMediaStreamDestination();
+  }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+}
+
+function loadBuffer(kind){
+  if(buffers[kind]) return Promise.resolve(buffers[kind]);
+  if(loading[kind]) return loading[kind];
+  loading[kind]=fetch(SOUND_FILES[kind]).then(r=>r.arrayBuffer())
+    .then(arr=>audioCtx.decodeAudioData(arr))
+    .then(buf=>{ buffers[kind]=buf; return buf; })
+    .catch(err=>{ console.warn('sound load failed for',kind,err); return null; });
+  return loading[kind];
+}
+
+function setInstrument(kind,el){
+  currentKind=kind;
+  document.getElementById('instrRow').querySelectorAll('.instr-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  ensureAudio();
+  loadBuffer(kind);
+}
+
+function setOctave(idx){
+  currentOctave=idx;
+  document.getElementById('octBtn0').classList.toggle('active', idx===0);
+  document.getElementById('octBtn1').classList.toggle('active', idx===1);
+  buildKeyboard();
+}
+
+async function playNote(semitone,keyEl){
+  ensureAudio();
+  const buf=await loadBuffer(currentKind);
+  if(!buf) return;
+  const src=audioCtx.createBufferSource();
+  src.buffer=buf;
+  src.playbackRate.value=Math.pow(2,semitone/12);
+  const gain=audioCtx.createGain();
+  gain.gain.value=0.9;
+  src.connect(gain);
+  gain.connect(audioCtx.destination);
+  gain.connect(recDest); // always wired to the recorder — only matters while actually recording
+  src.start();
+  if(keyEl){
+    keyEl.classList.add('down');
+    setTimeout(()=>keyEl.classList.remove('down'),120);
+  }
+}
+
+// ── build the keyboard — red, green, blue repeating, one octave on screen at
+// a time so there's no scrolling needed; the OCTAVE 1 / OCTAVE 2 switch just
+// shifts everything up or down 12 semitones and redraws ───────────────────
+function buildKeyboard(){
+  const kb=document.getElementById('keyboard');
+  kb.innerHTML='';
+  const start=OCTAVE_BASES[currentOctave];
+  for(let i=0;i<KEYS_PER_OCTAVE;i++){
+    const semitone=start+i;
+    const key=document.createElement('div');
+    key.className='key';
+    const img=document.createElement('img');
+    img.src=KEY_IMG[i%3]; // same note = same color across both octaves
+    img.alt='';
+    const note=document.createElement('span');
+    note.className='note';
+    const noteIdx=((semitone%12)+12)%12;
+    const octave=4+Math.floor((semitone+9)/12); // rough octave numbering around middle C (C4)
+    note.textContent=NOTE_NAMES[noteIdx]+octave;
+    key.appendChild(img);
+    key.appendChild(note);
+    key.addEventListener('pointerdown',e=>{ e.preventDefault(); playNote(semitone,key); });
+    kb.appendChild(key);
+  }
+}
+buildKeyboard();
+
+// ── recording ───────────────────────────────────────────────────────────
+function toggleRecord(){
+  ensureAudio();
+  if(!recording) startRecording(); else stopRecording();
+}
+function startRecording(){
+  recordedChunks=[];
+  try{
+    mediaRecorder=new MediaRecorder(recDest.stream);
+  }catch(e){
+    alert('Recording isn\'t supported in this browser.');
+    return;
+  }
+  mediaRecorder.ondataavailable=e=>{ if(e.data && e.data.size>0) recordedChunks.push(e.data); };
+  mediaRecorder.start();
+  recording=true;
+  recordStartT=Date.now();
+  document.getElementById('recBtn').textContent='⏹ STOP';
+  document.getElementById('recBtn').classList.add('on');
+  document.getElementById('doneBtn').disabled=true;
+  document.getElementById('downloadArea').innerHTML='';
+  document.getElementById('encodeStatus').textContent='';
+  timerInt=setInterval(updateTimer,200);
+}
+function stopRecording(){
+  if(!mediaRecorder) return;
+  mediaRecorder.stop();
+  recording=false;
+  clearInterval(timerInt);
+  document.getElementById('recBtn').textContent='⚫ RECORD';
+  document.getElementById('recBtn').classList.remove('on');
+  document.getElementById('doneBtn').disabled = recordedChunks.length===0;
+}
+function updateTimer(){
+  const s=Math.floor((Date.now()-recordStartT)/1000);
+  document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+
+// ── export: decode whatever the recorder captured, re-encode as a real MP3
+// in-browser with lamejs (no server involved), then hand back a download link
+function floatTo16BitPCM(f32){
+  const out=new Int16Array(f32.length);
+  for(let i=0;i<f32.length;i++){
+    const s=Math.max(-1,Math.min(1,f32[i]));
+    out[i]=s<0?s*0x8000:s*0x7FFF;
+  }
+  return out;
+}
+async function exportMp3(){
+  if(!recordedChunks.length) return;
+  const statusEl=document.getElementById('encodeStatus');
+  const doneBtn=document.getElementById('doneBtn');
+  doneBtn.disabled=true;
+  statusEl.textContent='Encoding...';
+  await new Promise(r=>setTimeout(r,30)); // let the status text paint before the blocking encode work
+
+  try{
+    const blob=new Blob(recordedChunks, {type:mediaRecorder.mimeType||'audio/webm'});
+    const arrBuf=await blob.arrayBuffer();
+    const audioBuffer=await audioCtx.decodeAudioData(arrBuf.slice(0));
+
+    const ch0=floatTo16BitPCM(audioBuffer.getChannelData(0));
+    const ch1=audioBuffer.numberOfChannels>1 ? floatTo16BitPCM(audioBuffer.getChannelData(1)) : ch0;
+    const channels=audioBuffer.numberOfChannels>1?2:1;
+    const encoder=new lamejs.Mp3Encoder(channels, audioBuffer.sampleRate, 128);
+    const mp3Data=[];
+    const blockSize=1152;
+    for(let i=0;i<ch0.length;i+=blockSize){
+      const l=ch0.subarray(i,i+blockSize);
+      const r=ch1.subarray(i,i+blockSize);
+      const buf=channels>1 ? encoder.encodeBuffer(l,r) : encoder.encodeBuffer(l);
+      if(buf.length>0) mp3Data.push(buf);
+    }
+    const end=encoder.flush();
+    if(end.length>0) mp3Data.push(end);
+
+    const mp3Blob=new Blob(mp3Data, {type:'audio/mp3'});
+    if(lastMp3Url) URL.revokeObjectURL(lastMp3Url);
+    lastMp3Url=URL.createObjectURL(mp3Blob);
+
+    const a=document.createElement('a');
+    a.href=lastMp3Url;
+    a.download='qu33ph-music-track.mp3';
+    a.textContent='⬇ DOWNLOAD MP3';
+    document.getElementById('downloadArea').innerHTML='';
+    document.getElementById('downloadArea').appendChild(a);
+    statusEl.textContent='Done!';
+  }catch(err){
+    console.error(err);
+    statusEl.textContent='Something went wrong encoding that — try recording again.';
+  }
+  doneBtn.disabled=false;
+}
+</script>
+</body>
+</html>
