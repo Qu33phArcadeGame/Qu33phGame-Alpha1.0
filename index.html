@@ -47,7 +47,7 @@ document.addEventListener('dragstart', function(e){
 </script>
 
 <div id="stageOuter">
-  <iframe id="gameFrame" src="game.html" scrolling="no" allow="autoplay"></iframe>
+  <iframe id="gameFrame" scrolling="no" allow="autoplay"></iframe>
 </div>
 <script>
 // the one true "screen size" for the whole app — DESIGN_W is what every
@@ -55,6 +55,13 @@ document.addEventListener('dragstart', function(e){
 // number that matters for layout. DESIGN_H is only a target for landscape/
 // desktop letterboxing (see below) — portrait screens ignore it entirely.
 var DESIGN_W = 420, DESIGN_H = 900;
+
+// bump this by one every time you upload a new game.html so players (and
+// you) actually get the update instead of a cached copy. Nobody ever sees
+// this number — it's only used internally to build the iframe's URL, never
+// shown in the address bar.
+var GAME_VERSION = 1;
+document.getElementById('gameFrame').src = 'game.html?v=' + GAME_VERSION;
 
 // game.html is loaded fresh every time, not from Chrome's cache — otherwise
 // updating game.html on the server and reloading the shell can still show
