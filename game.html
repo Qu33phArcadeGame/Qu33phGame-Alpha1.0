@@ -1052,27 +1052,6 @@ document.addEventListener('dragstart', function(e){
   <div class="title-logo" id="logoContainer" onclick="openBackstory()" style="cursor:pointer;"><img id="logoImg" src="logo.jpg" alt="Qu33ph" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"></div>
   <div id="logoFallback" style="display:none; font-family:Helvetica, Arial, sans-serif; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;" onclick="openBackstory()">Qu33ph</div>
 
-  <div id="backstoryOverlay" style="display:none;position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,0.55);" onclick="if(event.target===this) closeBackstory()">
-    <div id="backstoryPanel" style="position:absolute;left:0;right:0;bottom:0;max-height:66dvh;background:#0a0a0c;
-      border-top:3px solid #ffd24a;border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.6);
-      padding:18px 18px 26px;box-sizing:border-box;overflow-y:auto;">
-      <button onclick="closeBackstory()" style="position:absolute;top:8px;right:10px;background:none;border:none;
-        color:#888;font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;">&times;</button>
-      <div style="text-align:center;color:#ffd24a;font-family:Helvetica,Arial,sans-serif;font-weight:bold;
-        letter-spacing:2px;font-size:16px;margin:8px 0 4px;">THE QU33PH BACKSTORY</div>
-      <div style="text-align:center;color:#666;font-family:Helvetica,Arial,sans-serif;font-size:10px;
-        letter-spacing:1px;margin-bottom:16px;">COMING SOON</div>
-      <div style="max-width:280px;margin:0 auto;aspect-ratio:16/9;background:#151517;border:2px dashed #333;
-        border-radius:10px;display:flex;align-items:center;justify-content:center;color:#444;font-size:11px;
-        font-family:Helvetica,Arial,sans-serif;letter-spacing:1px;">VIDEO NOT UPLOADED YET</div>
-      <div style="text-align:center;color:#888;font-family:Helvetica,Arial,sans-serif;font-size:12px;
-        line-height:1.6;padding:16px 6px 0;">The full story behind Qu33ph is on its way.</div>
-    </div>
-  </div>
-  <script>
-    function openBackstory(){ document.getElementById('backstoryOverlay').style.display='block'; }
-    function closeBackstory(){ document.getElementById('backstoryOverlay').style.display='none'; }
-  </script>
 
   <div class="mode-btn-split">
     <button class="mode-btn mode-btn-half mode-btn-half-left" id="btn1Round" onclick="startMode('single')">
@@ -8769,5 +8748,37 @@ try{ applyVolumeSettings(); }catch(e){}
 loop();
       </script>
 
+
+<!-- backstory window — deliberately a direct child of <body>, NOT of
+     #titleScreen. #titleScreen is a stacking context (position:absolute +
+     z-index:100), so an overlay nested inside it can never paint above the
+     icon buttons that sit outside it at z-index:200. At body level with a
+     high z-index it covers the entire menu, icons included. -->
+<div id="backstoryOverlay" onclick="if(event.target===this) closeBackstory()"
+  style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.82);
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);">
+  <div id="backstoryPanel" style="position:absolute;top:16px;left:14px;right:14px;bottom:16px;
+    background:#0a0a0c;border:3px solid #ffd24a;border-radius:16px;
+    box-shadow:0 10px 40px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.06);
+    padding:20px 16px;box-sizing:border-box;overflow-y:auto;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+    <button onclick="closeBackstory()" aria-label="Close" style="position:absolute;top:6px;right:10px;
+      background:none;border:none;color:#888;font-size:26px;line-height:1;cursor:pointer;
+      -webkit-tap-highlight-color:transparent;z-index:2;">&times;</button>
+    <div style="text-align:center;color:#ffd24a;font-family:Helvetica,Arial,sans-serif;font-weight:bold;
+      letter-spacing:2px;font-size:17px;">THE QU33PH BACKSTORY</div>
+    <div style="text-align:center;color:#666;font-family:Helvetica,Arial,sans-serif;font-size:10px;
+      letter-spacing:1px;margin-bottom:18px;">COMING SOON</div>
+    <div style="width:100%;max-width:300px;aspect-ratio:16/9;background:#151517;border:2px dashed #333;
+      border-radius:10px;display:flex;align-items:center;justify-content:center;color:#444;font-size:11px;
+      font-family:Helvetica,Arial,sans-serif;letter-spacing:1px;flex-shrink:0;">VIDEO NOT UPLOADED YET</div>
+    <div style="text-align:center;color:#888;font-family:Helvetica,Arial,sans-serif;font-size:12px;
+      line-height:1.6;padding:18px 6px 0;">The full story behind Qu33ph is on its way.</div>
+  </div>
+</div>
+<script>
+  function openBackstory(){ document.getElementById('backstoryOverlay').style.display='block'; }
+  function closeBackstory(){ document.getElementById('backstoryOverlay').style.display='none'; }
+</script>
 </body>
 </html>
