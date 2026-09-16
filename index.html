@@ -47,7 +47,7 @@ document.addEventListener('dragstart', function(e){
 </script>
 
 <div id="stageOuter">
-  <iframe id="gameFrame" scrolling="no" allow="autoplay"></iframe>
+  <iframe id="gameFrame" allow="autoplay"></iframe>
 </div>
 <script>
 // the one true "screen size" for the whole app — DESIGN_W is what every
@@ -73,8 +73,8 @@ document.getElementById('gameFrame').src = 'game.html?v=' + GAME_VERSION;
 // (window.innerHeight can be stale right at load) — visualViewport is the
 // more reliable source when it's available, and we re-check a few times
 // after load/rotation to catch the browser chrome settling a moment later.
-function getVW(){ return window.visualViewport ? window.visualViewport.width : window.innerWidth; }
-function getVH(){ return window.visualViewport ? window.visualViewport.height : window.innerHeight; }
+function getVW(){ return document.documentElement.clientWidth || window.innerWidth; }
+function getVH(){ return document.documentElement.clientHeight || window.innerHeight; }
 
 function fitStage(){
   var vw = getVW(), vh = getVH();
