@@ -331,6 +331,7 @@ function refreshUI(){
   document.getElementById('layerInfo').textContent=layers.length+'/3 layers';
   drawWaveform(mixLayers());
   const playBtn=document.getElementById('playAddBtn');
+  playBtn.disabled = layers.length>=3;
   playBtn.style.display = layers.length>=3 ? 'none' : 'inline-flex';
   document.getElementById('exportBtn').disabled=false;
 }

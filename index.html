@@ -34,8 +34,15 @@
 // desktop letterboxing (see below) — portrait screens ignore it entirely.
 var DESIGN_W = 420, DESIGN_H = 900;
 
+// mobile browsers resize the REAL usable viewport as the URL bar shows/hides
+// (window.innerHeight can be stale right at load) — visualViewport is the
+// more reliable source when it's available, and we re-check a few times
+// after load/rotation to catch the browser chrome settling a moment later.
+function getVW(){ return window.visualViewport ? window.visualViewport.width : window.innerWidth; }
+function getVH(){ return window.visualViewport ? window.visualViewport.height : window.innerHeight; }
+
 function fitStage(){
-  var vw = window.innerWidth, vh = window.innerHeight;
+  var vw = getVW(), vh = getVH();
   var f = document.getElementById('gameFrame');
   var w, h, scale;
   if(vw <= vh){
@@ -62,7 +69,14 @@ function fitStage(){
 }
 fitStage();
 window.addEventListener('resize', fitStage);
-window.addEventListener('orientationchange', function(){ setTimeout(fitStage, 60); });
+window.addEventListener('orientationchange', function(){ setTimeout(fitStage, 60); setTimeout(fitStage, 350); });
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', fitStage);
+  window.visualViewport.addEventListener('scroll', fitStage);
+}
+// catch the mobile browser chrome (URL bar) settling a moment after load
+setTimeout(fitStage, 300);
+setTimeout(fitStage, 1000);
 </script>
 </body>
 </html>
