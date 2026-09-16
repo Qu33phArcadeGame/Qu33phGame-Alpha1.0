@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Qu33ph Bowling</title>
 <style>
+/* nobody gets to long-press/right-click-save any image in this app — the
+   long-press "download/copy image" context menu on Android/iOS specifically
+   comes from -webkit-touch-callout, so that's the one that actually matters
+   on mobile; the rest are backup layers for desktop browsers. */
+img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+  -webkit-user-drag:none;-khtml-user-drag:none;-moz-user-select:none;-ms-user-select:none;
+  pointer-events:auto;}
+
   html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden;
     -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;}
   #wrap{position:absolute;inset:0;overflow:hidden;}
@@ -19,6 +27,20 @@
 </style>
 </head>
 <body>
+<script>
+// belt-and-suspenders against saving/copying images — the CSS touch-callout
+// rule above is what actually stops the mobile long-press menu; this catches
+// the desktop right-click case and any image the CSS somehow missed.
+document.addEventListener('contextmenu', function(e){
+  var t = e.target;
+  if(t && (t.tagName==='IMG' || t.tagName==='VIDEO')) e.preventDefault();
+});
+document.addEventListener('dragstart', function(e){
+  var t = e.target;
+  if(t && (t.tagName==='IMG' || t.tagName==='VIDEO')) e.preventDefault();
+});
+</script>
+
 <style>
   .game-back-tl{ position:fixed; top:9px; left:22px; z-index:99999;
     display:inline-flex; align-items:center; justify-content:center;

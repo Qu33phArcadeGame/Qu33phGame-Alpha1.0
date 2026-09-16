@@ -8,6 +8,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Qu33ph</title>
 <style>
+/* nobody gets to long-press/right-click-save any image in this app — the
+   long-press "download/copy image" context menu on Android/iOS specifically
+   comes from -webkit-touch-callout, so that's the one that actually matters
+   on mobile; the rest are backup layers for desktop browsers. */
+img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+  -webkit-user-drag:none;-khtml-user-drag:none;-moz-user-select:none;-ms-user-select:none;
+  pointer-events:auto;}
+
   html,body{ margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden;
     -webkit-user-select:none; user-select:none; touch-action:none; }
   /* the real game lives in game.html, loaded here at a FIXED logical size —
@@ -24,6 +32,20 @@
 </style>
 </head>
 <body>
+<script>
+// belt-and-suspenders against saving/copying images — the CSS touch-callout
+// rule above is what actually stops the mobile long-press menu; this catches
+// the desktop right-click case and any image the CSS somehow missed.
+document.addEventListener('contextmenu', function(e){
+  var t = e.target;
+  if(t && (t.tagName==='IMG' || t.tagName==='VIDEO')) e.preventDefault();
+});
+document.addEventListener('dragstart', function(e){
+  var t = e.target;
+  if(t && (t.tagName==='IMG' || t.tagName==='VIDEO')) e.preventDefault();
+});
+</script>
+
 <div id="stageOuter">
   <iframe id="gameFrame" src="game.html" scrolling="no" allow="autoplay"></iframe>
 </div>
@@ -33,6 +55,12 @@
 // number that matters for layout. DESIGN_H is only a target for landscape/
 // desktop letterboxing (see below) — portrait screens ignore it entirely.
 var DESIGN_W = 420, DESIGN_H = 900;
+
+// game.html is loaded fresh every time, not from Chrome's cache — otherwise
+// updating game.html on the server and reloading the shell can still show
+// the old cached copy inside the iframe, even with a cache-buster on the
+// shell's own URL (that only busts the shell's cache, not the iframe's).
+
 
 // mobile browsers resize the REAL usable viewport as the URL bar shows/hides
 // (window.innerHeight can be stale right at load) — visualViewport is the
