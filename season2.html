@@ -44,9 +44,9 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
    pass. The grid below makes up the difference by actually filling
    whatever vertical space is left instead of leaving it empty. */
 .menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:14px 14px 10px;overflow-y:auto;box-sizing:border-box;}
-.s2logo{width:190px;height:auto;display:block;margin:-8px auto 4px;pointer-events:none;flex-shrink:0;}
-.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:23px;color:#ffd24a;
-  text-align:center;margin:-2px 0 10px;letter-spacing:3px;pointer-events:none;flex-shrink:0;}
+.s2logo{width:250px;height:auto;display:block;margin:-6px auto 4px;pointer-events:none;flex-shrink:0;}
+.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:30px;color:#ffd24a;
+  text-align:center;margin:-2px 0 12px;letter-spacing:4px;pointer-events:none;flex-shrink:0;}
 /* the grid itself takes up all the leftover height (flex:1) and splits it
    evenly across the 5 rows, so the cards grow or shrink to actually fill
    the page on every device instead of sitting at a fixed small size with
@@ -57,7 +57,8 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
   -webkit-tap-highlight-color:transparent; border:2px solid #3a3a3a; background:#0a0a0c;
   box-shadow:0 4px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); }
 .cab-card:active{ transform:scale(0.97); }
-.cab-card .cab-media{ display:block; width:100%; height:100%; object-fit:cover; }
+.cab-card .cab-media{ display:block; width:100%; height:100%; object-fit:contain;
+  background:#0a0a0c; }
 /* a lit marquee strip across the top of every card — the one throughline
    tying this list back to Season 1's actual cabinet marquees */
 .cab-card .cab-marquee{ position:absolute; top:0; left:0; right:0; height:3px; z-index:2;
