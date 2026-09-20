@@ -44,37 +44,48 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
    pass. The grid below makes up the difference by actually filling
    whatever vertical space is left instead of leaving it empty. */
 .menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:14px 14px 10px;overflow-y:auto;box-sizing:border-box;}
-.s2logo{width:250px;height:auto;display:block;margin:-6px auto 4px;pointer-events:none;flex-shrink:0;}
-.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:30px;color:#ffd24a;
-  text-align:center;margin:-2px 0 12px;letter-spacing:4px;pointer-events:none;flex-shrink:0;}
+.s2logo{width:200px;height:auto;display:block;margin:-6px auto 2px;pointer-events:none;flex-shrink:0;}
+.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:24px;color:#ffd24a;
+  text-align:center;margin:-2px 0 10px;letter-spacing:3px;pointer-events:none;flex-shrink:0;}
 /* the grid itself takes up all the leftover height (flex:1) and splits it
    evenly across the 5 rows, so the cards grow or shrink to actually fill
    the page on every device instead of sitting at a fixed small size with
    empty black space underneath */
-.cab-row{ display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(5,1fr);
-  gap:10px; width:100%; max-width:460px; flex:1; min-height:0; padding:2px; box-sizing:border-box; }
-.cab-card{ position:relative; width:100%; height:100%; border-radius:10px; overflow:hidden; cursor:pointer;
+.cab-row{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+  gap:10px 8px; width:100%; max-width:460px; flex:1; min-height:0; padding:2px; box-sizing:border-box;
+  place-items:center; }
+/* circular tiles — the art fills the circle as a textured backdrop and the
+   name is drawn as real centered text on top, rather than relying on the
+   text baked into each image (which a circular crop would always clip) */
+.cab-card{ position:relative; width:100%; aspect-ratio:1; height:auto; max-height:100%;
+  border-radius:50%; overflow:hidden; cursor:pointer;
   -webkit-tap-highlight-color:transparent; border:2px solid #3a3a3a; background:#0a0a0c;
   box-shadow:0 4px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); }
 .cab-card:active{ transform:scale(0.97); }
-.cab-card .cab-media{ display:block; width:100%; height:100%; object-fit:contain;
-  background:#0a0a0c; }
+.cab-card .cab-media{ display:block; width:100%; height:100%; object-fit:cover;
+  background:#0a0a0c; filter:brightness(0.5) saturate(0.9); }
 /* a lit marquee strip across the top of every card — the one throughline
    tying this list back to Season 1's actual cabinet marquees */
-.cab-card .cab-marquee{ position:absolute; top:0; left:0; right:0; height:3px; z-index:2;
-  background:linear-gradient(90deg,#ffd24a,#ff8a3a,#ffd24a); opacity:0.9; }
-.cab-card .cab-label{ position:absolute; left:7px; bottom:5px; z-index:2; font-family:Helvetica,Arial,sans-serif;
-  font-size:9px; font-weight:bold; letter-spacing:0.8px; color:#fff; text-shadow:0 2px 5px rgba(0,0,0,.85); }
+.cab-card .cab-marquee{ position:absolute; inset:0; z-index:2; border-radius:50%;
+  border:3px solid transparent;
+  background:linear-gradient(90deg,#ffd24a,#ff8a3a,#ffd24a) border-box;
+  -webkit-mask:linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude; opacity:0.9; pointer-events:none; }
+.cab-card .cab-label{ position:absolute; inset:0; z-index:4; display:flex; align-items:center;
+  justify-content:center; text-align:center; padding:0 14%; box-sizing:border-box;
+  font-family:Helvetica,Arial,sans-serif; font-size:11px; font-weight:bold; letter-spacing:1px;
+  line-height:1.25; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.95); pointer-events:none; }
 .cab-card.soon{ cursor:default; }
 .cab-card.soon:active{ transform:none; }
 .cab-card.soon .cab-media{ filter:brightness(0.55) saturate(0.75); }
-.soon-ribbon{ position:absolute; inset:0; z-index:3; display:flex; align-items:center; justify-content:center; }
+.soon-ribbon{ position:absolute; inset:0; z-index:5; display:flex; align-items:flex-end;
+  justify-content:center; padding-bottom:13%; pointer-events:none; }
 .soon-ribbon span{ background:linear-gradient(180deg,#ffdd66,#e8a83c); color:#241300; font-weight:bold;
   font-size:9px; letter-spacing:1px; padding:3px 10px; border-radius:5px; transform:rotate(-4deg);
   box-shadow:0 3px 7px rgba(0,0,0,.55); }
 /* fully empty slots — no art yet, so just the plain text, no cabinet-icon
    box treatment at all */
-.cab-card.empty-slot{ cursor:default; display:flex; align-items:center; justify-content:center;
+.cab-card.empty-slot{ cursor:default; display:flex; align-items:center; justify-content:center; border-radius:50%;
   border-style:dashed; border-color:#26262c; background:#08080c; box-shadow:none; }
 .cab-card.empty-slot:active{ transform:none; }
 .cab-card.empty-slot span{ color:#4a4a4a; font-size:9px; letter-spacing:1.5px; font-weight:bold; }
@@ -202,34 +213,41 @@ document.addEventListener('dragstart', function(e){
       <div class="cab-card" onclick="openSelect()">
         <div class="cab-marquee"></div>
         <img class="cab-media" src="skateboardingbanner.png" alt="Qu33ph Skateboarding">
+        <div class="cab-label">SKATEBOARDING</div>
       </div>
       <div class="cab-card soon">
         <div class="cab-marquee"></div>
         <video class="cab-media" src="qu33ph10.mp4" autoplay loop muted playsinline preload="metadata"></video>
+        <div class="cab-label">TOP 10</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
       <div class="cab-card" onclick="location.href='music.html'">
         <div class="cab-marquee"></div>
         <img class="cab-media" src="qu33phmusicposter.png" alt="Qu33ph Music">
+        <div class="cab-label">MUSIC</div>
       </div>
       <div class="cab-card soon">
         <div class="cab-marquee"></div>
         <img class="cab-media" src="qu33phadventures.jpg" alt="Qu33ph Adventures">
+        <div class="cab-label">ADVENTURES</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
       <div class="cab-card soon">
         <div class="cab-marquee"></div>
         <img class="cab-media" src="qu33phpodcast.jpg" alt="Qu33ph Podcast">
+        <div class="cab-label">PODCAST</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
       <div class="cab-card soon">
         <div class="cab-marquee"></div>
         <img class="cab-media" src="qu33phstorytime.jpg" alt="Qu33ph Story Time">
+        <div class="cab-label">STORY TIME</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
       <div class="cab-card soon">
         <div class="cab-marquee"></div>
         <img class="cab-media" src="qu33phcinema.jpg" alt="Qu33ph Cinema">
+        <div class="cab-label">CINEMA</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
       <div class="cab-card empty-slot"><span>COMING SOON</span></div>

@@ -157,10 +157,66 @@ let layers=[];                 // [{buffer:AudioBuffer}, ...]  max 3
 let mediaRecorder=null, recordedChunks=[], recording=false, recordStartT=0, timerInt=null;
 let referenceSource=null, lastMp3Url=null;
 
+// ── the "make it sound like music" chain ────────────────────────────────
+// Raw one-shot samples pitched up and down sound dry and clicky, which is
+// what makes a keyboard feel like sound effects instead of an instrument.
+// Three things fix that, and they all run automatically:
+//   1. a soft attack/release envelope on every note (kills the click at the
+//      start and the abrupt cut at the end)
+//   2. a gentle low-pass that rolls off the harsh top end the pitch-shifting
+//      introduces on high notes
+//   3. a real convolution reverb, so notes ring into a shared space and
+//      overlapping notes blend instead of stacking up as separate blips
+let masterBus=null, dryGain=null, wetGain=null, convolver=null, toneFilter=null;
+
+// An impulse response IS the reverb: noise that decays over ~2.3s, which the
+// convolver uses to smear every note across that decay. Generated here so
+// there's no audio file to ship or load.
+function buildImpulse(seconds, decay){
+  const rate=audioCtx.sampleRate;
+  const len=Math.max(1, Math.floor(rate*seconds));
+  const imp=audioCtx.createBuffer(2, len, rate);
+  for(let ch=0; ch<2; ch++){
+    const d=imp.getChannelData(ch);
+    for(let i=0;i<len;i++){
+      d[i]=(Math.random()*2-1)*Math.pow(1-i/len, decay);
+    }
+  }
+  return imp;
+}
+
+function buildFx(){
+  masterBus=audioCtx.createGain();
+  masterBus.gain.value=0.95;
+
+  toneFilter=audioCtx.createBiquadFilter();
+  toneFilter.type='lowpass';
+  toneFilter.frequency.value=7200;
+  toneFilter.Q.value=0.6;
+
+  convolver=audioCtx.createConvolver();
+  convolver.buffer=buildImpulse(2.3, 2.6);
+
+  dryGain=audioCtx.createGain();
+  wetGain=audioCtx.createGain();
+  dryGain.gain.value=0.78;   // most of the direct note
+  wetGain.gain.value=0.38;   // enough tail to feel like a room, not a cave
+
+  // notes -> tone -> (dry + reverb) -> master -> speakers & recorder
+  toneFilter.connect(dryGain);
+  toneFilter.connect(convolver);
+  convolver.connect(wetGain);
+  dryGain.connect(masterBus);
+  wetGain.connect(masterBus);
+  masterBus.connect(audioCtx.destination);
+  masterBus.connect(recDest);
+}
+
 function ensureAudio(){
   if(!audioCtx){
     audioCtx=new (window.AudioContext||window.webkitAudioContext)();
     recDest=audioCtx.createMediaStreamDestination();
+    buildFx();
   }
   if(audioCtx.state==='suspended') audioCtx.resume();
 }
@@ -193,15 +249,28 @@ async function playNote(semitone,keyEl){
   ensureAudio();
   const buf=await loadBuffer(currentKind);
   if(!buf) return;
+  const rate=Math.pow(2,semitone/12);
   const src=audioCtx.createBufferSource();
   src.buffer=buf;
-  src.playbackRate.value=Math.pow(2,semitone/12);
+  src.playbackRate.value=rate;
+
   const gain=audioCtx.createGain();
-  gain.gain.value=0.9;
+  const now=audioCtx.currentTime;
+  // pitching a sample up also shortens it, so scale the envelope with the
+  // rate instead of using fixed times — otherwise high notes clip short
+  const dur=buf.duration/rate;
+  const attack=0.008;
+  const peak=0.9;
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(peak, now+attack);
+  // smooth fade instead of a hard stop at the end of the sample
+  gain.gain.setTargetAtTime(0.0001, now+Math.max(attack, dur*0.55), Math.max(0.06, dur*0.25));
+
   src.connect(gain);
-  gain.connect(audioCtx.destination);
-  gain.connect(recDest); // always wired to the recorder — only matters while actually recording
-  src.start();
+  gain.connect(toneFilter);   // -> dry + reverb -> master -> out & recorder
+  src.start(now);
+  src.stop(now+dur+1.2);      // leave headroom for the release tail
+
   if(keyEl){ keyEl.classList.add('down'); setTimeout(()=>keyEl.classList.remove('down'),120); }
 }
 
