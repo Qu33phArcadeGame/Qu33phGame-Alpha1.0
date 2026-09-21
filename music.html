@@ -67,10 +67,12 @@ h1{margin:34px 0 2px;text-align:center;font-size:clamp(16px,4.2vw,22px);letter-s
   box-shadow:0 4px 10px rgba(0,0,0,.4);}
 #encodeStatus{text-align:center;font-size:11px;color:#ffd24a;margin-bottom:6px;flex-shrink:0;}
 
-.keyboard-wrap{flex:1;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
-  border-top:2px solid #222;padding-top:6px;min-height:0;}
-.keyboard{display:flex;align-items:flex-end;height:100%;padding:0 8px 10px;gap:3px;width:max-content;}
-.key{position:relative;width:42px;height:88%;max-height:230px;border-radius:8px;cursor:pointer;
+/* no horizontal scrolling — the 12 keys share the width evenly, so the whole
+   octave is always on screen whatever the phone */
+.keyboard-wrap{flex:1;overflow:hidden;border-top:2px solid #222;padding-top:6px;min-height:0;}
+.keyboard{display:flex;align-items:flex-end;height:100%;width:100%;padding:0 6px 10px;gap:2px;
+  box-sizing:border-box;}
+.key{position:relative;flex:1 1 0;min-width:0;height:88%;max-height:230px;border-radius:8px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;transition:transform .05s ease,filter .05s ease;
   display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;}
 .key img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;
@@ -78,6 +80,18 @@ h1{margin:34px 0 2px;text-align:center;font-size:clamp(16px,4.2vw,22px);letter-s
 .key .note{position:relative;z-index:2;font-size:8px;font-weight:bold;color:#fff;text-shadow:0 1px 3px #000;
   opacity:0.65;pointer-events:none;}
 .key.down{transform:translateY(6px) scale(0.96);filter:brightness(1.35);}
+
+/* sound-design panel — collapsed by default so it never steals keyboard room */
+#fxPanel{display:none;flex-shrink:0;background:#0b0b0d;border:1px solid #23232a;border-radius:8px;
+  padding:8px 10px;margin-bottom:6px;}
+#fxPanel.open{display:block;}
+.fx-line{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.fx-line:last-child{margin-bottom:0;}
+.fx-line label{font-size:9px;letter-spacing:1px;color:#888;width:58px;flex-shrink:0;}
+.fx-line input[type=range]{flex:1;accent-color:#ffd24a;height:18px;}
+.fx-line select{flex:1;background:#151518;color:#ffd24a;border:1px solid #333;border-radius:5px;
+  font-size:11px;font-weight:bold;padding:4px 6px;}
+.fx-val{font-size:9px;color:#666;width:30px;text-align:right;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -112,6 +126,52 @@ document.addEventListener('dragstart', function(e){
     <button class="instr-btn" onclick="setOctave(2,this)">OCTAVE 3</button>
   </div>
 
+  <div class="instr-row">
+    <button class="instr-btn" id="fxToggle" onclick="toggleFx()">&#9835; SOUND</button>
+  </div>
+
+  <div id="fxPanel">
+    <div class="fx-line">
+      <label>KEY</label>
+      <select id="rootSel" onchange="buildKeyboard()">
+        <option value="0">C</option><option value="1">C#</option><option value="2">D</option>
+        <option value="3">D#</option><option value="4">E</option><option value="5">F</option>
+        <option value="6">F#</option><option value="7">G</option><option value="8">G#</option>
+        <option value="9">A</option><option value="10">A#</option><option value="11">B</option>
+      </select>
+    </div>
+    <div class="fx-line">
+      <label>SCALE</label>
+      <select id="scaleSel" onchange="buildKeyboard()">
+        <option value="major">Major (happy)</option>
+        <option value="minor">Minor (moody)</option>
+        <option value="pentatonic">Pentatonic (can't miss)</option>
+        <option value="blues">Blues</option>
+        <option value="chromatic">Chromatic (all notes)</option>
+      </select>
+    </div>
+    <div class="fx-line">
+      <label>REVERB</label>
+      <input type="range" id="revSlider" min="0" max="100" value="62" oninput="setReverb(this.value)">
+      <span class="fx-val" id="revVal">62</span>
+    </div>
+    <div class="fx-line">
+      <label>ECHO</label>
+      <input type="range" id="dlySlider" min="0" max="100" value="18" oninput="setEcho(this.value)">
+      <span class="fx-val" id="dlyVal">18</span>
+    </div>
+    <div class="fx-line">
+      <label>TONE</label>
+      <input type="range" id="toneSlider" min="0" max="100" value="55" oninput="setTone(this.value)">
+      <span class="fx-val" id="toneVal">55</span>
+    </div>
+    <div class="fx-line">
+      <label>SUSTAIN</label>
+      <input type="range" id="susSlider" min="0" max="100" value="40" oninput="setSustain(this.value)">
+      <span class="fx-val" id="susVal">40</span>
+    </div>
+  </div>
+
   <div id="recWrap">
     <button class="tbtn rec" id="recBtn" onclick="toggleRecord()">&#9899; RECORD</button>
     <span id="timer">0:00</span>
@@ -144,6 +204,36 @@ const KEYS_PER_OCTAVE=12;
 const OCTAVE_BASES=[-12,0,12];
 let currentOctave=0;
 
+// ── "autotune" for a keyboard ───────────────────────────────────────────
+// True autotune corrects a singer's pitch. The equivalent here — and what
+// actually makes noodling sound like music — is making wrong notes
+// unreachable: the keys are remapped onto a scale, so every key you can
+// press is in key. Chromatic keeps all 12 if you want full freedom.
+const SCALES={
+  major:      [0,2,4,5,7,9,11],
+  minor:      [0,2,3,5,7,8,10],
+  pentatonic: [0,3,5,7,10],
+  blues:      [0,3,5,6,7,10],
+  chromatic:  [0,1,2,3,4,5,6,7,8,9,10,11]
+};
+// semitone offsets for the keys currently on screen, in order
+function currentKeyOffsets(){
+  const scaleName=(document.getElementById('scaleSel')||{}).value||'major';
+  const root=parseInt((document.getElementById('rootSel')||{}).value||'0',10);
+  const steps=SCALES[scaleName]||SCALES.major;
+  const out=[];
+  // always lay out 12 keys so the board looks consistent — for shorter
+  // scales that just means wrapping into the octave above
+  for(let i=0;i<KEYS_PER_OCTAVE;i++){
+    const oct=Math.floor(i/steps.length);
+    out.push(root + steps[i%steps.length] + oct*12);
+  }
+  return out;
+}
+
+// live-tweakable sound settings, driven by the SOUND panel
+let sustainAmt=0.40;
+
 let currentKind='throw';
 let audioCtx=null, buffers={}, loading={};
 let recDest=null;
@@ -168,6 +258,7 @@ let referenceSource=null, lastMp3Url=null;
 //   3. a real convolution reverb, so notes ring into a shared space and
 //      overlapping notes blend instead of stacking up as separate blips
 let masterBus=null, dryGain=null, wetGain=null, convolver=null, toneFilter=null;
+let delayNode=null, delayFeedback=null, delayGain=null;
 
 // An impulse response IS the reverb: noise that decays over ~2.3s, which the
 // convolver uses to smear every note across that decay. Generated here so
@@ -199,17 +290,60 @@ function buildFx(){
 
   dryGain=audioCtx.createGain();
   wetGain=audioCtx.createGain();
-  dryGain.gain.value=0.78;   // most of the direct note
-  wetGain.gain.value=0.38;   // enough tail to feel like a room, not a cave
+  dryGain.gain.value=0.72;
+  wetGain.gain.value=0.62;   // default reverb is heavier now
 
-  // notes -> tone -> (dry + reverb) -> master -> speakers & recorder
+  // a short feedback echo — this is what turns single taps into a rhythm
+  delayNode=audioCtx.createDelay(2.0);
+  delayNode.delayTime.value=0.28;
+  delayFeedback=audioCtx.createGain();
+  delayFeedback.gain.value=0.32;
+  delayGain=audioCtx.createGain();
+  delayGain.gain.value=0.18;
+  delayNode.connect(delayFeedback);
+  delayFeedback.connect(delayNode);   // the repeats
+  delayNode.connect(delayGain);
+
+  // notes -> tone -> (dry + reverb + echo) -> master -> speakers & recorder
   toneFilter.connect(dryGain);
   toneFilter.connect(convolver);
+  toneFilter.connect(delayNode);
   convolver.connect(wetGain);
   dryGain.connect(masterBus);
   wetGain.connect(masterBus);
+  delayGain.connect(convolver);       // echoes get reverb too, so they sit back
+  delayGain.connect(masterBus);
   masterBus.connect(audioCtx.destination);
   masterBus.connect(recDest);
+}
+
+// ── live controls ───────────────────────────────────────────────────────
+function toggleFx(){
+  const p=document.getElementById('fxPanel');
+  p.classList.toggle('open');
+  document.getElementById('fxToggle').classList.toggle('active', p.classList.contains('open'));
+}
+function setReverb(v){
+  document.getElementById('revVal').textContent=v;
+  ensureAudio();
+  wetGain.gain.value=(v/100)*1.15;
+  dryGain.gain.value=0.9-(v/100)*0.28;   // pull the dry back as wet comes up
+}
+function setEcho(v){
+  document.getElementById('dlyVal').textContent=v;
+  ensureAudio();
+  delayGain.gain.value=(v/100)*0.55;
+  delayFeedback.gain.value=0.15+(v/100)*0.35;
+}
+function setTone(v){
+  document.getElementById('toneVal').textContent=v;
+  ensureAudio();
+  // 0 = dark and mellow, 100 = bright and glassy
+  toneFilter.frequency.value=900*Math.pow(2, (v/100)*4.2);
+}
+function setSustain(v){
+  document.getElementById('susVal').textContent=v;
+  sustainAmt=v/100;
 }
 
 function ensureAudio(){
@@ -264,12 +398,15 @@ async function playNote(semitone,keyEl){
   gain.gain.setValueAtTime(0.0001, now);
   gain.gain.exponentialRampToValueAtTime(peak, now+attack);
   // smooth fade instead of a hard stop at the end of the sample
-  gain.gain.setTargetAtTime(0.0001, now+Math.max(attack, dur*0.55), Math.max(0.06, dur*0.25));
+  // SUSTAIN stretches how long the note holds before it starts fading
+  const holdFor=dur*(0.30+sustainAmt*0.85);
+  const fadeOver=Math.max(0.05, dur*(0.12+sustainAmt*0.7));
+  gain.gain.setTargetAtTime(0.0001, now+Math.max(attack, holdFor), fadeOver);
 
   src.connect(gain);
   gain.connect(toneFilter);   // -> dry + reverb -> master -> out & recorder
   src.start(now);
-  src.stop(now+dur+1.2);      // leave headroom for the release tail
+  src.stop(now+dur+2.5);      // headroom for the release + echo tail
 
   if(keyEl){ keyEl.classList.add('down'); setTimeout(()=>keyEl.classList.remove('down'),120); }
 }
@@ -278,8 +415,9 @@ function buildKeyboard(){
   const kb=document.getElementById('keyboard');
   kb.innerHTML='';
   const start=OCTAVE_BASES[currentOctave];
+  const offsets=currentKeyOffsets();
   for(let i=0;i<KEYS_PER_OCTAVE;i++){
-    const semitone=start+i;
+    const semitone=start+offsets[i];
     const key=document.createElement('div');
     key.className='key';
     const img=document.createElement('img');

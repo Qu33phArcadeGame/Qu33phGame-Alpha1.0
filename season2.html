@@ -43,10 +43,10 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
    23px tagline — instead of the smaller ones from the original compacting
    pass. The grid below makes up the difference by actually filling
    whatever vertical space is left instead of leaving it empty. */
-.menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:14px 14px 10px;overflow-y:auto;box-sizing:border-box;}
-.s2logo{width:200px;height:auto;display:block;margin:-6px auto 2px;pointer-events:none;flex-shrink:0;}
-.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:24px;color:#ffd24a;
-  text-align:center;margin:-2px 0 10px;letter-spacing:3px;pointer-events:none;flex-shrink:0;}
+.menu{height:100%;display:flex;flex-direction:column;align-items:center;padding:44px 20px 16px;overflow-y:auto;box-sizing:border-box;}
+.s2logo{width:min(190px,44vw,15dvh);height:auto;display:block;margin:0 auto 4px;pointer-events:none;flex-shrink:0;}
+.s2tag{font-family:'Courier New',Consolas,monospace;font-weight:bold;font-size:clamp(15px,2.8dvh,23px);
+  color:#ffd24a;text-align:center;margin:-6px 0 6px;letter-spacing:3px;pointer-events:none;flex-shrink:0;}
 /* the grid itself takes up all the leftover height (flex:1) and splits it
    evenly across the 5 rows, so the cards grow or shrink to actually fill
    the page on every device instead of sitting at a fixed small size with
