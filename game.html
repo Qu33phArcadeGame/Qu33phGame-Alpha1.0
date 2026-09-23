@@ -1452,6 +1452,10 @@ let hapticsOn = localStorage.getItem("qu33phHaptics") !== "off";
 // percentage so it can reuse the same toggle+slider row the volumes use.
 let sbs3dPct = (function(){ var v=parseInt(localStorage.getItem("qu33phSbs3d")||"0",10); return isNaN(v)?0:Math.max(0,Math.min(100,v)); })();
 let sbs3dPrevPct = sbs3dPct>0 ? sbs3dPct : 45;
+// Anaglyph (red/cyan glasses). Same shape as above; the two 3D modes are
+// mutually exclusive since they're two different ways of showing one frame.
+let anaglyphPct = (function(){ var v=parseInt(localStorage.getItem("qu33phAnaglyph")||"0",10); return isNaN(v)?0:Math.max(0,Math.min(100,v)); })();
+let anaglyphPrevPct = anaglyphPct>0 ? anaglyphPct : 45;
 let hapticStrength = localStorage.getItem("qu33phHapticStrength") || "medium"; // light|medium|strong
 let reduceMotion = localStorage.getItem("qu33phReduceMotion") === "on";
 let mirrorMode = localStorage.getItem("qu33phMirror") === "on";
@@ -8208,41 +8212,90 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-// ─── SIDE-BY-SIDE 3D ────────────────────────────────────────────────────
-// Copies the finished frame into two half-width panes. Each eye is nudged
-// horizontally in opposite directions — that horizontal disparity is what
-// the brain reads as depth once the phone is in a headset. Half-width
-// squeeze is the standard SBS format; the headset's lenses stretch it back.
-let _sbsCv=null, _sbsCtx=null;
+// ─── 3D MODES (side-by-side + red/cyan anaglyph) ────────────────────────
+// Both work the same way: take the finished frame and draw it twice with a
+// horizontal offset between the eyes. That disparity is what reads as depth.
+// SBS splits into two panes for a headset; anaglyph overlays them in red and
+// cyan so cheap paper glasses separate them instead.
+let _sbsCv=null, _sbsCtx=null, _eyeL=null, _eyeR=null;
+
+function _eyeCanvas(which, W, H){
+  var ref = which==='L' ? _eyeL : _eyeR;
+  if(!ref){ ref=document.createElement("canvas"); if(which==='L') _eyeL=ref; else _eyeR=ref; }
+  if(ref.width!==W || ref.height!==H){ ref.width=W; ref.height=H; }
+  return ref;
+}
+
 function drawSbs3d(){
   if(!_sbsCv){
     _sbsCv=document.getElementById("sbs3d");
     if(!_sbsCv) return;
     _sbsCtx=_sbsCv.getContext("2d");
   }
-  if(sbs3dPct<=0){
-    if(_sbsCv.style.display!=="none"){ _sbsCv.style.display="none"; canvas.style.visibility=""; }
+  var mode = sbs3dPct>0 ? "sbs" : (anaglyphPct>0 ? "ana" : "off");
+  if(mode==="off"){
+    if(_sbsCv.style.display!=="none"){
+      _sbsCv.style.display="none";
+      canvas.style.opacity="";
+    }
     return;
   }
   const W=canvas.width, H=canvas.height;
   if(_sbsCv.width!==W || _sbsCv.height!==H){ _sbsCv.width=W; _sbsCv.height=H; }
+  // IMPORTANT: opacity:0, never visibility:hidden. A visibility:hidden element
+  // stops receiving pointer events, which killed all touch input on the game.
+  // opacity:0 keeps it fully interactive while the overlay shows the 3D view.
   if(_sbsCv.style.display==="none"){
     _sbsCv.style.display="block";
-    _sbsCv.style.width=canvas.style.width||(W+"px");
-    _sbsCv.style.height=canvas.style.height||(H+"px");
-    // keep the source canvas laid out and clickable, just not visible
-    canvas.style.visibility="hidden";
+    canvas.style.opacity="0";
   }
-  // up to ~7% of half-pane width of shift per eye at max
-  const d=(sbs3dPct/100)*(W*0.035);
-  _sbsCtx.clearRect(0,0,W,H);
-  _sbsCtx.fillStyle="#000"; _sbsCtx.fillRect(0,0,W,H);
-  _sbsCtx.drawImage(canvas, 0,0,W,H,  d, 0, W/2, H);        // left eye
-  _sbsCtx.drawImage(canvas, 0,0,W,H,  W/2-d, 0, W/2, H);    // right eye
-  // thin centre seam helps you line the headset up
+  _sbsCv.style.width=(canvas.offsetWidth||W)+"px";
+  _sbsCv.style.height=(canvas.offsetHeight||H)+"px";
+
+  _sbsCtx.globalCompositeOperation="source-over";
+  _sbsCtx.globalAlpha=1;
   _sbsCtx.fillStyle="#000";
-  _sbsCtx.fillRect(W/2-1, 0, 2, H);
+  _sbsCtx.fillRect(0,0,W,H);
+
+  if(mode==="sbs"){
+    // meaningful range: up to ~9% of the frame, so the slider is clearly felt
+    const d=(sbs3dPct/100)*(W*0.09);
+    _sbsCtx.drawImage(canvas, 0,0,W,H,  d, 0, W/2, H);       // left eye
+    _sbsCtx.drawImage(canvas, 0,0,W,H,  W/2-d, 0, W/2, H);   // right eye
+    _sbsCtx.fillStyle="#000";
+    _sbsCtx.fillRect(W/2-1, 0, 2, H);
+    return;
+  }
+
+  // ── anaglyph ──
+  // Each eye is rendered to its own scratch canvas, then tinted by multiplying
+  // against pure red / pure cyan so only that channel survives. Adding the two
+  // back together ('lighter') gives the classic red-blue image.
+  const d=(anaglyphPct/100)*(W*0.035);
+  const L=_eyeCanvas('L',W,H), R=_eyeCanvas('R',W,H);
+  const lc=L.getContext("2d"), rc=R.getContext("2d");
+
+  lc.globalCompositeOperation="source-over";
+  lc.clearRect(0,0,W,H);
+  lc.drawImage(canvas, -d, 0);
+  lc.globalCompositeOperation="multiply";
+  lc.fillStyle="#ff0000";           // left eye keeps red
+  lc.fillRect(0,0,W,H);
+
+  rc.globalCompositeOperation="source-over";
+  rc.clearRect(0,0,W,H);
+  rc.drawImage(canvas, d, 0);
+  rc.globalCompositeOperation="multiply";
+  rc.fillStyle="#00ffff";           // right eye keeps cyan
+  rc.fillRect(0,0,W,H);
+
+  _sbsCtx.globalCompositeOperation="source-over";
+  _sbsCtx.drawImage(L,0,0);
+  _sbsCtx.globalCompositeOperation="lighter";
+  _sbsCtx.drawImage(R,0,0);
+  _sbsCtx.globalCompositeOperation="source-over";
 }
+
 // ─── ACHIEVEMENTS (self-contained · fully guarded · cannot break the game) ──
 const ACHIEVEMENTS = [
   { id:"first_game",   name:"FIRST SLIDE",  desc:"Play your first game" },
@@ -8583,7 +8636,7 @@ function renderSettings(){
       +'<span id="volNum_'+id+'" style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#aaa;min-width:30px;text-align:right;">'+pct+'</span>'
       +'</div></div>';
   }
-  window.VOL_ROW_FNS = { music:{ set:function(v){ setMusicVolPct(v); } }, sfx:{ set:function(v){ setSfxVolPct(v); } }, sbs:{ set:function(v){ setSbs3dPct(v); } } };
+  window.VOL_ROW_FNS = { music:{ set:function(v){ setMusicVolPct(v); } }, sfx:{ set:function(v){ setSfxVolPct(v); } }, sbs:{ set:function(v){ setSbs3dPct(v); } }, ana:{ set:function(v){ setAnaglyphPct(v); } } };
   window.volPctFromEvent = function(el, clientX){
     var r = el.getBoundingClientRect();
     var x = Math.max(0, Math.min(r.width, clientX - r.left));
@@ -8646,7 +8699,8 @@ function renderSettings(){
   h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
   h+=volRow("Music","background music, where a game has it",musicVolPct,"toggleMusicVol","slideMusicVol","music");
   h+=volRow("Sound effects","every sound effect across the arcade",sfxVolPct,"toggleSfxVol","slideSfxVol","sfx");
-  h+=volRow("Side-by-side 3D","split the screen for a VR headset &middot; slider sets eye separation",sbs3dPct,"toggleSbs3d","slideSbs3d","sbs");
+  h+=volRow("Side-by-side 3D","split screen for a VR headset &middot; slider sets eye separation",sbs3dPct,"toggleSbs3d","slideSbs3d","sbs");
+  h+=volRow("Red/cyan 3D","for red-blue anaglyph glasses &middot; slider sets depth",anaglyphPct,"toggleAnaglyph","slideAnaglyph","ana");
   h+=toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true);
   h+=toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()");
   h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(QUICK_ROUND_TIME),"setTimer");
@@ -8665,10 +8719,27 @@ function setSbs3dPct(v){
   if(v>0) sbs3dPrevPct=v;
   sbs3dPct=v;
   try{ localStorage.setItem("qu33phSbs3d",String(v)); }catch(e){}
+  if(v>0 && anaglyphPct>0){   // only one 3D mode can be on at a time
+    anaglyphPct=0;
+    try{ localStorage.setItem("qu33phAnaglyph","0"); }catch(e){}
+  }
   // drawSbs3d() picks the change up on the very next frame
 }
 function toggleSbs3d(){ setSbs3dPct(sbs3dPct>0?0:(sbs3dPrevPct||45)); renderSettings(); }
 function slideSbs3d(v){ setSbs3dPct(v); renderSettings(); }
+
+function setAnaglyphPct(v){
+  v=Math.max(0,Math.min(100,parseInt(v,10)||0));
+  if(v>0) anaglyphPrevPct=v;
+  anaglyphPct=v;
+  try{ localStorage.setItem("qu33phAnaglyph",String(v)); }catch(e){}
+  if(v>0 && sbs3dPct>0){
+    sbs3dPct=0;
+    try{ localStorage.setItem("qu33phSbs3d","0"); }catch(e){}
+  }
+}
+function toggleAnaglyph(){ setAnaglyphPct(anaglyphPct>0?0:(anaglyphPrevPct||45)); renderSettings(); }
+function slideAnaglyph(v){ setAnaglyphPct(v); renderSettings(); }
 function toggleMusicVol(){ setMusicVolPct(musicVolPct>0?0:(musicVolPrevPct||100)); renderSettings(); }
 function slideMusicVol(v){ setMusicVolPct(parseInt(v,10)); renderSettings(); }
 function slideSfxVol(v){ setSfxVolPct(parseInt(v,10)); renderSettings(); }
