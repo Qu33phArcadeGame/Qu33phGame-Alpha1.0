@@ -3387,6 +3387,15 @@ function updateOrientIcon(){
 
 // ─── INPUT ────────────────────────────────────────────────────────────────
 let dragging=false,startX,startY,currentX,currentY;
+// ── MOTION CONTROLS ─────────────────────────────────────────────────────
+// 0 = off, 1-100 = sensitivity. Low numbers need a firm flick, high numbers
+// trip on a small one; the middle is tuned to a natural throwing motion.
+let motionPct = (function(){ var v=parseInt(localStorage.getItem("qu33phMotion")||"0",10); return isNaN(v)?0:Math.max(0,Math.min(100,v)); })();
+let motionPrevPct = motionPct>0 ? motionPct : 50;
+let motionReady=false;            // devicemotion listener attached
+let aimAngle=-Math.PI/2;          // straight up the field by default
+let aimDragging=false;
+let _motionPeak=0, _motionLastThrow=0, _motionArmed=false;
 let showSwipeHint=true;
 const colors=["green","red","blue"];
 const lengths=[60,60,90];
@@ -3412,6 +3421,15 @@ canvas.addEventListener("pointerdown",e=>{
 
   if(current>=3 && markers.length===0) return;
 
+  // With motion controls on, dragging aims the arrow instead of throwing —
+  // the throw itself comes from flicking the phone.
+  if(motionPct>0 && current<3){
+    aimDragging=true;
+    updateAimFromPointer(e.clientX, e.clientY);
+    try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
+    return;
+  }
+
   let sx = mirrorMode ? (canvas.width - e.clientX) : e.clientX;
   if(sx < LEFT_EDGE || sx > RIGHT_WALL) return;   // only a swipe inside the playing field rolls a marker
   dragging=true;
@@ -3419,9 +3437,14 @@ canvas.addEventListener("pointerdown",e=>{
   startY=e.clientY;
   currentX=startX;
   currentY=startY;
+  // Touch implies pointer capture; a mouse does NOT. Without this, dragging
+  // off the canvas with a mouse or XR-glasses cursor loses the pointerup and
+  // the throw never happens. Capturing keeps the whole gesture on the canvas.
+  try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
 });
 
 canvas.addEventListener("pointermove",e=>{
+  if(aimDragging){ updateAimFromPointer(e.clientX, e.clientY); return; }
   if(!dragging) return;
   currentX = mirrorMode ? (canvas.width - e.clientX) : e.clientX;
   currentY=e.clientY;
@@ -3429,14 +3452,22 @@ canvas.addEventListener("pointermove",e=>{
 
 window.addEventListener("pointerdown",function(){ try{ sfxWarm(); }catch(e){} },{once:true});
 canvas.addEventListener("pointerup",()=>{
+  if(aimDragging){ aimDragging=false; return; }
   if(!dragging) return;
   dragging=false;
 
   if(gameState!=="playing") return;
   if(current>=3) return;
 
-  let dx=currentX-startX;
-  let dy=currentY-startY;
+  throwMarker(currentX-startX, currentY-startY);
+});
+
+// One throw path for every input: swipe, mouse drag, or phone flick. dx/dy is
+// the gesture vector in pixels — motion controls synthesise an equivalent one
+// from the flick's direction and strength so the physics stay identical.
+function throwMarker(dx, dy){
+  if(gameState!=="playing") return;
+  if(current>=3) return;
 
   let baseRot=
     currentOrientation==="vertical"?Math.PI/3:
@@ -3473,7 +3504,7 @@ canvas.addEventListener("pointerup",()=>{
   showSwipeHint=false;
   current++;
   previewMarkers[current-1].used=true;
-});
+}
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────
 function touching(a,b){ return Math.hypot(a.x-b.x,a.y-b.y)<45; }
@@ -8208,9 +8239,118 @@ function loop(){
     if(currentTheme!=="default") drawPopups();
     if(currentTheme!=="default") drawHudReadable();
   }
+  drawAimArrow();
   drawSbs3d();
   requestAnimationFrame(loop);
 }
+
+// ─── MOTION CONTROLS ────────────────────────────────────────────────────
+// Flick the phone like you're actually throwing the marker. Direction comes
+// from the on-screen aim arrow (so you decide where it goes), and strength
+// comes from how hard you flick.
+function updateAimFromPointer(cx, cy){
+  var px = mirrorMode ? (canvas.width - cx) : cx;
+  var a = Math.atan2(cy - LAUNCH_Y, px - FIELD_CX);
+  // clamp to the forward half — you throw up the field, never backwards
+  if(a > -0.12) a = -0.12;
+  if(a < -Math.PI + 0.12) a = -Math.PI + 0.12;
+  aimAngle = a;
+}
+
+function drawAimArrow(){
+  if(motionPct<=0 || gameState!=="playing" || current>=3) return;
+  var len = Math.min(canvas.height*0.20, 150);
+  var tipX = FIELD_CX + Math.cos(aimAngle)*len;
+  var tipY = LAUNCH_Y + Math.sin(aimAngle)*len;
+  ctx.save();
+  ctx.globalAlpha = aimDragging ? 0.95 : 0.65;
+  ctx.strokeStyle = "#ffd24a";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.setLineDash([9,7]);
+  ctx.beginPath();
+  ctx.moveTo(FIELD_CX, LAUNCH_Y);
+  ctx.lineTo(tipX, tipY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // head
+  ctx.translate(tipX, tipY);
+  ctx.rotate(aimAngle);
+  ctx.fillStyle = "#ffd24a";
+  ctx.beginPath();
+  ctx.moveTo(14,0); ctx.lineTo(-8,9); ctx.lineTo(-8,-9); ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  // grab handle at the tip, so it reads as draggable
+  ctx.save();
+  ctx.globalAlpha = aimDragging ? 0.5 : 0.28;
+  ctx.fillStyle = "#ffd24a";
+  ctx.beginPath(); ctx.arc(tipX, tipY, 20, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function enableMotion(){
+  if(motionReady) return;
+  function attach(){
+    window.addEventListener("devicemotion", onDeviceMotion, {passive:true});
+    motionReady=true;
+  }
+  // iOS 13+ demands an explicit permission prompt from a user gesture; the
+  // settings toggle tap is that gesture.
+  try{
+    if(typeof DeviceMotionEvent!=="undefined" &&
+       typeof DeviceMotionEvent.requestPermission==="function"){
+      DeviceMotionEvent.requestPermission().then(function(res){
+        if(res==="granted") attach();
+      }).catch(function(){});
+    } else attach();
+  }catch(e){}
+}
+
+function onDeviceMotion(ev){
+  if(motionPct<=0) return;
+  if(gameState!=="playing" || current>=3) return;
+  var a = ev.acceleration || ev.accelerationIncludingGravity;
+  if(!a) return;
+  var mag = Math.hypot(a.x||0, a.y||0, a.z||0);
+  // gravity-inclusive fallback sits at ~9.8 at rest — subtract it out
+  if(!ev.acceleration) mag = Math.abs(mag - 9.81);
+
+  // sensitivity: 1 -> needs a firm flick (~26), 100 -> light one (~9).
+  // The middle lands near a natural throwing motion, which is the default.
+  var threshold = 26 - (motionPct/100)*17;
+  var now = Date.now();
+
+  if(mag > threshold){
+    if(!_motionArmed){ _motionArmed=true; _motionPeak=0; }
+    if(mag > _motionPeak) _motionPeak = mag;
+    return;
+  }
+
+  // released: the flick has peaked and is decelerating -> throw once
+  if(_motionArmed){
+    _motionArmed=false;
+    if(now - _motionLastThrow < 500){ _motionPeak=0; return; }  // debounce
+    _motionLastThrow = now;
+    // map peak strength onto the same pixel-gesture the swipe would produce,
+    // clamped so a wild shake can't fire the marker off the map
+    var over = Math.max(0, _motionPeak - threshold);
+    var power = Math.max(70, Math.min(230, 70 + over*7));
+    _motionPeak=0;
+    throwMarker(Math.cos(aimAngle)*power, Math.sin(aimAngle)*power);
+  }
+}
+
+function setMotionPct(v){
+  v=Math.max(0,Math.min(100,parseInt(v,10)||0));
+  if(v>0) motionPrevPct=v;
+  motionPct=v;
+  try{ localStorage.setItem("qu33phMotion",String(v)); }catch(e){}
+  if(v>0) enableMotion();
+}
+function toggleMotion(){ setMotionPct(motionPct>0?0:(motionPrevPct||50)); renderSettings(); }
+function slideMotion(v){ setMotionPct(v); renderSettings(); }
+if(motionPct>0){ try{ enableMotion(); }catch(e){} }
 
 // ─── 3D MODES (side-by-side + red/cyan anaglyph) ────────────────────────
 // Both work the same way: take the finished frame and draw it twice with a
@@ -8636,7 +8776,7 @@ function renderSettings(){
       +'<span id="volNum_'+id+'" style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#aaa;min-width:30px;text-align:right;">'+pct+'</span>'
       +'</div></div>';
   }
-  window.VOL_ROW_FNS = { music:{ set:function(v){ setMusicVolPct(v); } }, sfx:{ set:function(v){ setSfxVolPct(v); } }, sbs:{ set:function(v){ setSbs3dPct(v); } }, ana:{ set:function(v){ setAnaglyphPct(v); } } };
+  window.VOL_ROW_FNS = { music:{ set:function(v){ setMusicVolPct(v); } }, sfx:{ set:function(v){ setSfxVolPct(v); } }, sbs:{ set:function(v){ setSbs3dPct(v); } }, ana:{ set:function(v){ setAnaglyphPct(v); } }, motion:{ set:function(v){ setMotionPct(v); } } };
   window.volPctFromEvent = function(el, clientX){
     var r = el.getBoundingClientRect();
     var x = Math.max(0, Math.min(r.width, clientX - r.left));
@@ -8699,6 +8839,7 @@ function renderSettings(){
   h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
   h+=volRow("Music","background music, where a game has it",musicVolPct,"toggleMusicVol","slideMusicVol","music");
   h+=volRow("Sound effects","every sound effect across the arcade",sfxVolPct,"toggleSfxVol","slideSfxVol","sfx");
+  h+=volRow("Motion throw","flick your phone to throw &middot; slider sets sensitivity",motionPct,"toggleMotion","slideMotion","motion");
   h+=volRow("Side-by-side 3D","split screen for a VR headset &middot; slider sets eye separation",sbs3dPct,"toggleSbs3d","slideSbs3d","sbs");
   h+=volRow("Red/cyan 3D","for red-blue anaglyph glasses &middot; slider sets depth",anaglyphPct,"toggleAnaglyph","slideAnaglyph","ana");
   h+=toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true);
