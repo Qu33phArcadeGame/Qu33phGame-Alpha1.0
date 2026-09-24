@@ -258,6 +258,9 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
       #logoFallback{ font-size:clamp(28px,6vw,44px) !important; }
       .mode-btn{ width:300px; min-height:44px; margin:5px 0 5px 30px; padding:7px 13px 7px 18px; }
       .mode-btn-split{ width:300px; margin:5px 0 5px 30px; }
+      /* the halves must stay auto-width or the landscape .mode-btn width
+         above makes each one 300px and the pair runs double-wide */
+      .mode-btn-half{ width:auto !important; flex:1 1 0; }
       .mode-name{ font-size:13px; }
       .mode-desc{ font-size:8.5px; }
       .mode-btn-half .mode-name{ font-size:11.5px; }
@@ -1356,8 +1359,34 @@ let currentTheme = "default"; // "default" | "cartoon" | "neon" | "sunset"
 
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
+// ─── WORLD SPACE ────────────────────────────────────────────────────────
+// The playfield must stay tall and narrow. In portrait the window already is,
+// so the canvas matches the window exactly as before — nothing changes.
+// In landscape the window is short and wide, and sizing the canvas to it would
+// make LEFT_EDGE/RIGHT_WALL (both derived from canvas.width) produce a field
+// WIDER than it is tall, wrecking the geometry. So in landscape the canvas
+// keeps a fixed portrait drawing surface and we zoom/scroll that surface over
+// the wide screen with a CSS transform instead. Every coordinate in the game
+// stays exactly as it was; only presentation changes.
+const WORLD_W=420, WORLD_H=900;
+function isLandscapeView(){ return window.innerWidth > window.innerHeight; }
+function applyCanvasSize(){
+  if(isLandscapeView()){
+    canvas.width=WORLD_W; canvas.height=WORLD_H;
+    canvas.style.width=WORLD_W+"px";
+    canvas.style.height=WORLD_H+"px";
+    canvas.style.transformOrigin="0 0";
+    canvas.style.position="absolute";
+    canvas.style.left="0"; canvas.style.top="0";
+  } else {
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+    canvas.style.width=""; canvas.style.height="";
+    canvas.style.transform=""; canvas.style.transformOrigin="";
+    canvas.style.position=""; canvas.style.left=""; canvas.style.top="";
+  }
+}
+applyCanvasSize();
 
 // ─── LAYOUT ───────────────────────────────────────────────────────────────
 let LEFT_EDGE=canvas.width*0.2;
@@ -3480,16 +3509,17 @@ canvas.addEventListener("pointerdown",e=>{
   // the throw itself comes from flicking the phone.
   if(motionPct>0 && current<3){
     aimDragging=true;
-    updateAimFromPointer(e.clientX, e.clientY);
+    updateAimFromPointer(evX(e), evY(e));
     try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
     return;
   }
 
-  let sx = mirrorMode ? (canvas.width - e.clientX) : e.clientX;
+  let px = evX(e), py = evY(e);
+  let sx = mirrorMode ? (canvas.width - px) : px;
   if(sx < LEFT_EDGE || sx > RIGHT_WALL) return;   // only a swipe inside the playing field rolls a marker
   dragging=true;
   startX=sx;
-  startY=e.clientY;
+  startY=py;
   currentX=startX;
   currentY=startY;
   // Touch implies pointer capture; a mouse does NOT. Without this, dragging
@@ -3499,10 +3529,11 @@ canvas.addEventListener("pointerdown",e=>{
 });
 
 canvas.addEventListener("pointermove",e=>{
-  if(aimDragging){ updateAimFromPointer(e.clientX, e.clientY); return; }
+  if(aimDragging){ updateAimFromPointer(evX(e), evY(e)); return; }
   if(!dragging) return;
-  currentX = mirrorMode ? (canvas.width - e.clientX) : e.clientX;
-  currentY=e.clientY;
+  let mx=evX(e);
+  currentX = mirrorMode ? (canvas.width - mx) : mx;
+  currentY=evY(e);
 });
 
 window.addEventListener("pointerdown",function(){ try{ sfxWarm(); }catch(e){} },{once:true});
@@ -8295,9 +8326,80 @@ function loop(){
     if(currentTheme!=="default") drawHudReadable();
   }
   drawAimArrow();
+  applyCamera();
   drawSbs3d();
   requestAnimationFrame(loop);
 }
+
+// ─── LANDSCAPE CAMERA ───────────────────────────────────────────────────
+// Zooms the portrait playfield so it fills the width of a landscape screen,
+// then scrolls down to follow whichever marker has travelled furthest —
+// the "mini Qu33ph" view. Snaps back to the launch area quickly so you can
+// keep throwing in quick succession.
+let camY=0, _camInit=false;
+function applyCamera(){
+  if(!isLandscapeView()){ return; }
+  const SW=window.innerWidth, SH=window.innerHeight;
+  const margin=18;
+  let k, tx, visH;
+
+  if(gameState!=="playing"){
+    // menus / results: show the whole board, centred, nothing cropped
+    k=Math.min(SW/WORLD_W, SH/WORLD_H);
+    tx=(SW-WORLD_W*k)/2;
+    canvas.style.transform="translate("+tx+"px,"+((SH-WORLD_H*k)/2)+"px) scale("+k+")";
+    _camInit=false;
+    return;
+  }
+
+  const fieldW=(RIGHT_WALL-LEFT_EDGE)+margin*2;
+  k=SW/fieldW;                       // field spans the full screen width
+  tx=-(LEFT_EDGE-margin)*k;
+  visH=SH/k;
+
+  // where we want to be looking
+  let target=WORLD_H-visH;           // idle: the launch area, bottom of field
+  const live=markers.filter(m=>!m.stopped && !m.fallen);
+  if(live.length){
+    let lead=live[0];
+    for(const m of live) if(m.y<lead.y) lead=m;   // furthest up the field
+    target=lead.y-visH*0.45;
+  }
+  target=Math.max(0, Math.min(WORLD_H-visH, target));
+
+  if(!_camInit){ camY=target; _camInit=true; }
+  // chase faster on the way back so the next throw isn't held up
+  const ease=(target>camY)?0.14:0.22;
+  camY+=(target-camY)*ease;
+  if(Math.abs(target-camY)<0.4) camY=target;
+
+  canvas.style.transform="translate("+tx+"px,"+(-camY*k)+"px) scale("+k+")";
+  const ov=document.getElementById("sbs3d");
+  if(ov && ov.style.display!=="none"){
+    ov.style.transformOrigin="0 0";
+    ov.style.transform=canvas.style.transform;
+  }
+}
+
+// Screen -> world. getBoundingClientRect() already accounts for the CSS
+// transform, so one formula covers portrait (untransformed) and the zoomed
+// landscape camera alike.
+function evX(e){
+  const r=canvas.getBoundingClientRect();
+  if(!r.width) return e.clientX;
+  return (e.clientX-r.left)/r.width*canvas.width;
+}
+function evY(e){
+  const r=canvas.getBoundingClientRect();
+  if(!r.height) return e.clientY;
+  return (e.clientY-r.top)/r.height*canvas.height;
+}
+
+window.addEventListener("resize",function(){
+  applyCanvasSize();
+  try{ setBase(); }catch(e){}
+  _camInit=false;
+});
 
 // ─── MOTION CONTROLS ────────────────────────────────────────────────────
 // Flick the phone like you're actually throwing the marker. Direction comes
