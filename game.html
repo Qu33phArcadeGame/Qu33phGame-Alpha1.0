@@ -257,7 +257,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
       .high-score-title{ align-self:center; margin-top:6px; }
       #logoFallback{ font-size:clamp(28px,6vw,44px) !important; }
       .mode-btn{ width:300px; min-height:44px; margin:5px 0 5px 30px; padding:7px 13px 7px 18px; }
-      .mode-btn-split{ width:300px; margin:5px 0 5px 30px; }
+      .mode-btn-split{ width:300px; margin:5px 0 5px 14px; }
       /* the halves must stay auto-width or the landscape .mode-btn width
          above makes each one 300px and the pair runs double-wide */
       .mode-btn-half{ width:auto !important; flex:1 1 0; }
@@ -8352,9 +8352,10 @@ function applyCamera(){
     return;
   }
 
-  const fieldW=(RIGHT_WALL-LEFT_EDGE)+margin*2;
-  k=SW/fieldW;                       // field spans the full screen width
-  tx=-(LEFT_EDGE-margin)*k;
+  // zoom to the whole world width, not just the field — the floor, window
+  // and scenery live outside LEFT_EDGE/RIGHT_WALL and must stay on screen
+  k=SW/WORLD_W;
+  tx=0;
   visH=SH/k;
 
   // where we want to be looking
