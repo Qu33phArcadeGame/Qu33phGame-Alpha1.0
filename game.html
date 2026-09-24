@@ -228,6 +228,9 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
     .arcade-game-btn { width:min(300px,82vw); margin:7px 0; padding:15px 18px; background:#0c0c12; border:2px solid #2a2a38; border-radius:12px; color:#fff; font-family:Helvetica,Arial,sans-serif; font-size:17px; font-weight:bold; letter-spacing:2px; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; display:flex; flex-direction:column; gap:3px; }
     .arcade-game-btn span { font-size:10px; font-weight:normal; letter-spacing:1px; color:#777; }
     .arcade-game-btn:active { border-color:#3aa0ff; }
+    /* portrait: wrapper is invisible to layout, so nothing changes there */
+    #titleBtns{ display:contents; }
+
     /* ══════════════ LANDSCAPE ══════════════
        Same layout as portrait, re-flowed to fit a short wide window. The
        title screen wraps its column into two, the arcade grid goes wider
@@ -243,11 +246,12 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
         gap:26px;
         padding:8px 74px;           /* clear of the side icon rails */
       }
-      #titleBtns{
-        display:flex;
+      #titleScreen > #titleBtns{
+        display:flex !important;
         flex-direction:column;
         align-items:flex-start;
         justify-content:center;
+        flex:0 1 auto;
       }
       .title-logo{ width:min(180px,23vw); margin:0; flex-shrink:0; }
       .high-score-title{ align-self:center; margin-top:6px; }
@@ -277,7 +281,6 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
       #arcadeSeasonTag{ font-size:15px !important; margin:-4px 0 4px !important; }
     }
 
-    #titleBtns{ display:contents; }
     .cab-row { display:grid; grid-template-columns:repeat(3,1fr); gap:5px 3%; width:100%; max-width:430px; padding:2px; box-sizing:border-box; justify-items:center; align-items:start; overflow:hidden; }
     .cab-card { width:100%; max-width:132px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .cab-card:active { transform:scale(0.96); }
