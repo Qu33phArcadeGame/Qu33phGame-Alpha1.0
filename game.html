@@ -243,9 +243,13 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
         flex-wrap:nowrap;
         align-items:center;
         justify-content:center;
-        gap:26px;
-        padding:8px 74px;           /* clear of the side icon rails */
+        gap:22px;
+        padding:6px 72px;           /* clear of the side icon rails */
+        overflow:hidden;            /* locked — everything is sized to fit */
       }
+      /* coin counter pins to the viewport like the icon rails, so it can
+         never drift relative to them */
+      #titleCoins{ position:fixed; }
       #titleScreen > #titleBtns{
         display:flex !important;
         flex-direction:column;
@@ -253,18 +257,18 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
         justify-content:center;
         flex:0 1 auto;
       }
-      .title-logo{ width:min(180px,23vw); margin:0; flex-shrink:0; }
-      .high-score-title{ align-self:center; margin-top:6px; }
+      .title-logo{ width:min(160px,20vw); margin:0; flex-shrink:0; }
+      .high-score-title{ align-self:center; margin-top:3px; font-size:9px; }
       #logoFallback{ font-size:clamp(28px,6vw,44px) !important; }
-      .mode-btn{ width:300px; min-height:44px; margin:5px 0 5px 30px; padding:7px 13px 7px 18px; }
-      .mode-btn-split{ width:266px; margin:5px 0 5px 30px; }
+      .mode-btn{ width:300px; min-height:34px; margin:3px 0 3px 30px; padding:5px 12px 5px 17px; }
+      .mode-btn-split{ width:266px; margin:3px 0 3px 30px; }
       /* the halves must stay auto-width or the landscape .mode-btn width
          above makes each one 300px and the pair runs double-wide */
-      .mode-btn-half{ width:auto !important; flex:1 1 0; }
-      .mode-name{ font-size:13px; }
-      .mode-desc{ font-size:8.5px; }
-      .mode-btn-half .mode-name{ font-size:11.5px; }
-      .mode-btn-half .mode-desc{ font-size:8px; }
+      .mode-btn-half{ width:auto !important; flex:1 1 0; padding-left:10px; padding-right:10px; }
+      .mode-name{ font-size:12px; }
+      .mode-desc{ font-size:8px; line-height:1.2; }
+      .mode-btn-half .mode-name{ font-size:10.5px; }
+      .mode-btn-half .mode-desc{ font-size:7.2px; line-height:1.15; }
 
       /* icon rails tighten up so they fit the shorter height */
       #slotBtn, #plinkoBtn, #platformerBtn, #settingsBtn, #themesBtn{ font-size:8px; }
@@ -1374,9 +1378,8 @@ let LAND_W=WORLD_W;                      // landscape canvas width (computed)
 function isLandscapeView(){ return window.innerWidth > window.innerHeight; }
 function applyCanvasSize(){
   if(isLandscapeView()){
-    // Make the canvas as wide as the screen's aspect demands, so that showing
-    // the ENTIRE field height still fills the width — no scrolling, no bars.
-    LAND_W=Math.round(WORLD_H*(window.innerWidth/window.innerHeight));
+    // Portrait-shaped world, same as portrait mode. The camera scrolls it.
+    LAND_W=WORLD_W;
     canvas.width=LAND_W; canvas.height=WORLD_H;
     canvas.style.width=LAND_W+"px";
     canvas.style.height=WORLD_H+"px";
@@ -8367,9 +8370,13 @@ function applyCamera(){
     return;
   }
 
-  // the canvas is now sized so the full field fits — just scale to fill
-  k=SW/canvas.width;
-  tx=0;
+  // Zoom so the board occupies LAND_FILL of the screen width. Lower zoom than
+  // filling the width outright, which means a taller slice of field is
+  // visible — the "bottom section" — with bars either side. Raise LAND_FILL
+  // to zoom in (less field visible), lower it to zoom out (more field).
+  const LAND_FILL=0.62;
+  k=(SW*LAND_FILL)/canvas.width;
+  tx=(SW-canvas.width*k)/2;          // centred, bars left and right
   visH=SH/k;
 
   // where we want to be looking
