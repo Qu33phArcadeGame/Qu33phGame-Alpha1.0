@@ -88,12 +88,14 @@ function fitStage(){
     w = DESIGN_W;
     h = vh / scale;
   } else {
-    // landscape / wide desktop window — fitting to width would squash
-    // everything absurdly short, so fit to height instead and letterbox
-    // the sides. This is the only case that should ever show bars.
-    scale = vh / DESIGN_H;
-    w = DESIGN_W;
-    h = DESIGN_H;
+    // landscape — the game now has a real landscape layout, so instead of
+    // letterboxing it into a portrait strip we lock the SHORT side (height)
+    // to the design size and let width flex. DESIGN_W doubles as "short
+    // side": portrait locks it as width, landscape locks it as height, so
+    // buttons and text come out the same physical size either way.
+    scale = vh / DESIGN_W;
+    h = DESIGN_W;
+    w = vw / scale;
   }
   f.width = w;
   f.height = h;
