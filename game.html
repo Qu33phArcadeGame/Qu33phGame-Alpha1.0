@@ -257,7 +257,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
       .high-score-title{ align-self:center; margin-top:6px; }
       #logoFallback{ font-size:clamp(28px,6vw,44px) !important; }
       .mode-btn{ width:300px; min-height:44px; margin:5px 0 5px 30px; padding:7px 13px 7px 18px; }
-      .mode-btn-split{ width:300px; margin:5px 0 5px 14px; }
+      .mode-btn-split{ width:266px; margin:5px 0 5px 30px; }
       /* the halves must stay auto-width or the landscape .mode-btn width
          above makes each one 300px and the pair runs double-wide */
       .mode-btn-half{ width:auto !important; flex:1 1 0; }
@@ -1369,11 +1369,16 @@ const ctx=canvas.getContext("2d");
 // the wide screen with a CSS transform instead. Every coordinate in the game
 // stays exactly as it was; only presentation changes.
 const WORLD_W=420, WORLD_H=900;
+const PORTRAIT_ASPECT=WORLD_W/WORLD_H;   // the shape the field is designed for
+let LAND_W=WORLD_W;                      // landscape canvas width (computed)
 function isLandscapeView(){ return window.innerWidth > window.innerHeight; }
 function applyCanvasSize(){
   if(isLandscapeView()){
-    canvas.width=WORLD_W; canvas.height=WORLD_H;
-    canvas.style.width=WORLD_W+"px";
+    // Make the canvas as wide as the screen's aspect demands, so that showing
+    // the ENTIRE field height still fills the width — no scrolling, no bars.
+    LAND_W=Math.round(WORLD_H*(window.innerWidth/window.innerHeight));
+    canvas.width=LAND_W; canvas.height=WORLD_H;
+    canvas.style.width=LAND_W+"px";
     canvas.style.height=WORLD_H+"px";
     canvas.style.transformOrigin="0 0";
     canvas.style.position="absolute";
@@ -2114,19 +2119,29 @@ function getMarkerImg(color){
   return markerImages[color];
 }
 function computeLayout(){
+  // In landscape the canvas is deliberately much wider than the field needs
+  // to be, so the whole field height fits on a short wide screen. To keep the
+  // game itself identical, every field constant is measured inside a virtual
+  // portrait-width column (BW) centred in that wide canvas (offset OX) —
+  // the same proportions as portrait, just with scenery either side.
+  var BW = canvas.width, OX = 0;
+  if(isLandscapeView()){
+    BW = canvas.height*PORTRAIT_ASPECT;
+    OX = (canvas.width-BW)/2;
+  }
   if(isRZ()){
     // smaller field; right wall sits just left of the photo's sensor so the mega is reachable
-    LEFT_EDGE  = canvas.width*0.185;
-    RIGHT_WALL = canvas.width*0.5188 - 6;
+    LEFT_EDGE  = OX + BW*0.185;
+    RIGHT_WALL = OX + BW*0.5188 - 6;
   } else {
-    LEFT_EDGE  = canvas.width*0.2;
-    RIGHT_WALL = canvas.width*0.75;
+    LEFT_EDGE  = OX + BW*0.2;
+    RIGHT_WALL = OX + BW*0.75;
   }
   FIELD_CX = (LEFT_EDGE+RIGHT_WALL)/2;
   LAUNCH_Y = isRZ() ? canvas.height*0.975 : canvas.height-16;
   try {
     chair.x = FIELD_CX;
-    if(isRZ()){ redDot.x = canvas.width*0.5188; redDot.y = canvas.height*0.1776; }
+    if(isRZ()){ redDot.x = OX + BW*0.5188; redDot.y = canvas.height*0.1776; }
     else { redDot.x = RIGHT_WALL+6; redDot.y = canvas.height*0.08 + canvas.height*0.09; }
   } catch(e){}
 }
@@ -8345,16 +8360,15 @@ function applyCamera(){
 
   if(gameState!=="playing"){
     // menus / results: show the whole board, centred, nothing cropped
-    k=Math.min(SW/WORLD_W, SH/WORLD_H);
-    tx=(SW-WORLD_W*k)/2;
+    k=Math.min(SW/canvas.width, SH/WORLD_H);
+    tx=(SW-canvas.width*k)/2;
     canvas.style.transform="translate("+tx+"px,"+((SH-WORLD_H*k)/2)+"px) scale("+k+")";
     _camInit=false;
     return;
   }
 
-  // zoom to the whole world width, not just the field — the floor, window
-  // and scenery live outside LEFT_EDGE/RIGHT_WALL and must stay on screen
-  k=SW/WORLD_W;
+  // the canvas is now sized so the full field fits — just scale to fill
+  k=SW/canvas.width;
   tx=0;
   visH=SH/k;
 
