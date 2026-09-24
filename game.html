@@ -234,14 +234,23 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
        and shorter, and everything shrinks just enough to stay on screen
        without scrolling. */
     @media (orientation:landscape){
+      /* logo parks on the left, every button stacks in one column beside it */
       #titleScreen{
-        flex-flow:column wrap;      /* one tall column becomes two short ones */
-        align-content:center;
-        justify-content:flex-start;
-        gap:0 22px;
-        padding:10px 76px;          /* clear of the side icon columns */
+        flex-direction:row;
+        flex-wrap:nowrap;
+        align-items:center;
+        justify-content:center;
+        gap:26px;
+        padding:8px 74px;           /* clear of the side icon rails */
       }
-      .title-logo{ width:min(150px,20vw); margin-top:0; margin-bottom:10px; }
+      #titleBtns{
+        display:flex;
+        flex-direction:column;
+        align-items:flex-start;
+        justify-content:center;
+      }
+      .title-logo{ width:min(180px,23vw); margin:0; flex-shrink:0; }
+      .high-score-title{ align-self:center; margin-top:6px; }
       #logoFallback{ font-size:clamp(28px,6vw,44px) !important; }
       .mode-btn{ width:300px; min-height:44px; margin:5px 0 5px 30px; padding:7px 13px 7px 18px; }
       .mode-btn-split{ width:300px; margin:5px 0 5px 30px; }
@@ -268,6 +277,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
       #arcadeSeasonTag{ font-size:15px !important; margin:-4px 0 4px !important; }
     }
 
+    #titleBtns{ display:contents; }
     .cab-row { display:grid; grid-template-columns:repeat(3,1fr); gap:5px 3%; width:100%; max-width:430px; padding:2px; box-sizing:border-box; justify-items:center; align-items:start; overflow:hidden; }
     .cab-card { width:100%; max-width:132px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .cab-card:active { transform:scale(0.96); }
@@ -1096,6 +1106,7 @@ document.addEventListener('dragstart', function(e){
   <div id="logoFallback" style="display:none; font-family:Helvetica, Arial, sans-serif; font-size:clamp(42px,11vw,80px); font-weight:bold; color:#fff; letter-spacing:8px; margin-bottom:8px;" onclick="openBackstory()">Qu33ph</div>
 
 
+  <div id="titleBtns">
   <div class="mode-btn-split">
     <button class="mode-btn mode-btn-half mode-btn-half-left" id="btn1Round" onclick="startMode('single')">
       <span class="mode-icon" data-icon="target"></span>
@@ -1147,6 +1158,7 @@ document.addEventListener('dragstart', function(e){
   </button>
 
   <div class="high-score-title" id="titleHighScore"></div>
+  </div><!-- /titleBtns -->
   <img id="allAchRing" src="qu33phring.png" alt="All achievements unlocked"
        style="display:none;width:min(150px,34vw);height:auto;margin:12px auto 0;pointer-events:none;"
        onerror="this.style.display='none'">
