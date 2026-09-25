@@ -103,6 +103,14 @@ if(mirrorMode) document.body.classList.add('qmirror');
 // this just calls the plain native methods so every existing mtext() call site
 // keeps working unchanged
 function mtext(c,txt,x,y,strokeFirst){
+  if(LAND && c===ctx){
+    // landscape: the field is drawn turned sideways, but text never is —
+    // find where (x,y) lands on screen and write it upright there
+    const p=c.getTransform().transformPoint(new DOMPoint(x,y));
+    c.save(); c.setTransform(1,0,0,1,0,0);
+    if(strokeFirst) c.strokeText(txt,p.x,p.y);
+    c.fillText(txt,p.x,p.y); c.restore(); return;
+  }
   if(strokeFirst) c.strokeText(txt,x,y);
   c.fillText(txt,x,y);
 }
@@ -130,14 +138,24 @@ SPIN.green.src='spinnergreen.png'; SPIN.blue.src='spinnerblue.png';
 function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 function lineColor(c){ return c==='green' ? '#46e05a' : '#4a90ff'; }
 
-let CW=0, CH=0, DPR=1, centerY=0;
+// ── LANDSCAPE ────────────────────────────────────────────────────────────
+// The game itself still thinks in portrait (CW across, CH end to end, you at
+// the bottom). In landscape the canvas fills the screen and the whole field is
+// drawn turned a quarter-turn: your end is on the LEFT, theirs on the RIGHT.
+// baseT() applies that turn, pt() undoes it for touches, and mtext() keeps
+// every bit of text upright. SW/SH are the real canvas pixels on screen.
+let CW=0, CH=0, DPR=1, centerY=0, LAND=false, SW=0, SH=0;
+function baseT(){ if(LAND) ctx.setTransform(0,1,-1,0,CH,0); else ctx.setTransform(1,0,0,1,0,0); }
 function resize(){
   const r=document.getElementById('wrap').getBoundingClientRect();
   DPR=Math.min(2, window.devicePixelRatio||1);
+  LAND = r.width>r.height;
   let aw=r.width, ah=r.height, ar=720/1280;
   let w=aw, h=aw/ar; if(h>ah){ h=ah; w=ah*ar; }
+  if(LAND){ w=aw; h=ah; }
   cv.style.width=w+'px'; cv.style.height=h+'px';
-  CW=Math.round(w*DPR); CH=Math.round(h*DPR); cv.width=CW; cv.height=CH;
+  SW=Math.round(w*DPR); SH=Math.round(h*DPR); cv.width=SW; cv.height=SH;
+  if(LAND){ CW=SH; CH=SW; } else { CW=SW; CH=SH; }
   centerY=CH*(LINE_FRAC[THEME]||0.49); layout();
 }
 window.addEventListener('resize',resize);
@@ -178,11 +196,13 @@ function resetPositions(){
 }
 
 // ---- input (multitouch) ----
-function pt(e){ const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)/r.width*CW, y:(e.clientY-r.top)/r.height*CH}; }
+function pt(e){ const r=cv.getBoundingClientRect();
+  const sx=(e.clientX-r.left)/r.width*SW, sy=(e.clientY-r.top)/r.height*SH;
+  return LAND ? {x:sy, y:CH-sx, sx:sx, sy:sy} : {x:sx, y:sy, sx:sx, sy:sy}; }
 cv.addEventListener('pointerdown',e=>{
   startMusicOnce();
   const p=pt(e);
-  if(state==='pick'){ pickTap(p); return; }
+  if(state==='pick'){ if(LAND) pickTapLand(p); else pickTap(p); return; }
   if(state==='win'){ state='pick'; document.getElementById('resetBtn').style.display='none'; return; }
   if(state==='play'||state==='goal'){
     if(p.y>centerY){ s1.drag=e.pointerId; moveSpinner(s1,p,true); }
@@ -201,6 +221,17 @@ function moveSpinner(sp,p,bottom){
   sp.x=Math.max(R_SPIN, Math.min(CW-R_SPIN, p.x));
   sp.y=bottom ? Math.max(centerY+R_SPIN*0.6, Math.min(CH-R_SPIN, p.y))
               : Math.max(R_SPIN, Math.min(centerY-R_SPIN*0.6, p.y));
+}
+// landscape pick screen, laid out in real screen space (see drawPickLand)
+function pickTapLand(p){
+  const x=p.sx/SW, y=p.sy/SH;
+  if(y<0.37 && Math.abs(x-0.5)<0.24){ mode=(x<0.5)?'1p':'2p'; return; }
+  if(x>0.78){ for(let i=0;i<3;i++){ if(Math.abs(y-(0.54+i*0.14))<0.065){ winGoals=[3,5,7][i]; break; } } return; }
+  if(y>0.45 && x>0.2 && x<0.78){
+    c1=(x<0.5)?'green':'blue'; c2=c1==='green'?'blue':'green';
+    score1=0; score2=0; resetPositions(); state='play'; msg='';
+    document.getElementById('resetBtn').style.display='block';
+  }
 }
 function pickTap(p){
   if(p.y < CH*0.42){ mode=(p.x<CW/2)?'1p':'2p'; return; }
@@ -262,7 +293,7 @@ function drawSpinner(sp,color){
   ctx.restore();
 }
 function draw(){
-  ctx.setTransform(1,0,0,1,0,0);
+  baseT();
   if(ready(FIELD)){ let ar=FIELD.naturalWidth/FIELD.naturalHeight, car=CW/CH, sw,sh;
     if(ar>car){ sh=FIELD.naturalHeight; sw=sh*car; } else { sw=FIELD.naturalWidth; sh=sw/car; }
     ctx.drawImage(FIELD,(FIELD.naturalWidth-sw)/2,(FIELD.naturalHeight-sh)/2,sw,sh,0,0,CW,CH);
@@ -274,17 +305,56 @@ function draw(){
   ctx.beginPath(); ctx.moveTo(0,centerY); ctx.lineTo(CW,centerY); ctx.stroke(); ctx.setLineDash([]);
   ctx.beginPath(); ctx.arc(CW/2,centerY,CW*0.12,0,7); ctx.stroke();
 
-  if(state==='pick'){ drawPick(); return; }
+  if(state==='pick'){ if(LAND){ ctx.setTransform(1,0,0,1,0,0); drawPickLand(); } else drawPick(); return; }
   ctx.save(); ctx.translate(ball.x,ball.y); ctx.rotate(ball.rot);
   if(ready(BALLIMG)){ let s=R_BALL*2.2; ctx.drawImage(BALLIMG,-s/2,-s/2,s,s); } else { ctx.fillStyle='#ff3b4a'; ctx.beginPath(); ctx.arc(0,0,R_BALL,0,7); ctx.fill(); }
   ctx.restore();
   drawSpinner(s2,c2); drawSpinner(s1,c1);
+  if(LAND){
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+    const mx=SW-centerY, ty=SH*0.10;          // the centre line, on screen
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(SH*0.08)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
+    ctx.fillText(score1+'  –  '+score2, mx, ty+SH*0.03);
+    ctx.font='bold '+Math.round(SH*0.035)+'px Helvetica';
+    ctx.textAlign='right'; ctx.fillStyle='#cfe'; ctx.fillText(mode==='2p'?'P1':'YOU', mx-SH*0.16, ty+SH*0.02);
+    ctx.textAlign='left';  ctx.fillStyle='#fcc'; ctx.fillText(mode==='2p'?'P2':'CPU', mx+SH*0.16, ty+SH*0.02);
+    ctx.shadowBlur=0; ctx.restore(); ctx.textAlign='center';
+  } else {
   ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.07)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
   mtext(ctx,score1+'  –  '+score2, CW/2, centerY-CW*0.03);
   ctx.font='bold '+Math.round(CW*0.03)+'px Helvetica'; ctx.fillStyle='#cfe'; mtext(ctx,mode==='2p'?'P1':'YOU', CW/2-CW*0.14, centerY-CW*0.02);
   ctx.fillStyle='#fcc'; mtext(ctx,mode==='2p'?'P2':'CPU', CW/2+CW*0.14, centerY-CW*0.02); ctx.shadowBlur=0;
+  }
   if(state==='goal'){ ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.12)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=12; mtext(ctx,msg,CW/2,CH*0.5); ctx.shadowBlur=0; }
   if(state==='win'){ ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,CW,CH); ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.11)+'px Helvetica'; mtext(ctx,winner,CW/2,CH*0.46); ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; mtext(ctx,score1+' – '+score2,CW/2,CH*0.54); ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; mtext(ctx,'tap to play again',CW/2,CH*0.62); }
+}
+function drawPickLand(){
+  const W=SW, H=SH, u=H;                    // sizes follow the short side, like portrait's width
+  ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H); ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(u*0.09)+'px Helvetica'; ctx.fillText('FIDGET QU33PH',W/2,H*0.15);
+  function tab(txt,x,on){ ctx.fillStyle=on?'#ffd54a':'rgba(255,255,255,0.12)'; ctx.strokeStyle=on?'#ffd54a':'#555'; ctx.lineWidth=2;
+    const w=W*0.20,h=H*0.12,y=H*0.28; ctx.beginPath(); ctx.roundRect(x-w/2,y-h/2,w,h,10); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(u*0.05)+'px Helvetica'; ctx.fillText(txt,x,y+u*0.018); }
+  tab('1 PLAYER',W*0.385,mode==='1p'); tab('2 PLAYER',W*0.615,mode==='2p');
+  ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(u*0.045)+'px Helvetica';
+  ctx.fillText(mode==='2p'?'P1 — PICK YOUR SPINNER':'PICK YOUR SPINNER',W/2,H*0.46);
+  const r=H*0.15, gy=H*0.66;
+  [['green',W*0.385,1],['blue',W*0.615,-1]].forEach(([c,x,dir])=>{ const im=SPIN[c]; ctx.save(); ctx.translate(x,gy); ctx.rotate(performance.now()*0.002*dir);
+    if(ready(im)){ const w=r*2,h=w*(im.naturalHeight/im.naturalWidth); ctx.drawImage(im,-w/2,-h/2,w,h); }
+    else { ctx.fillStyle=c==='green'?'#3ad24a':'#3a8bff'; ctx.beginPath(); ctx.arc(0,0,r*0.8,0,7); ctx.fill(); }
+    ctx.restore(); });
+  ctx.font='bold '+Math.round(u*0.04)+'px Helvetica';
+  ctx.fillStyle='#9fe3b8'; ctx.fillText('GREEN',W*0.385,gy+r+u*0.07);
+  ctx.fillStyle='#9ec7ff'; ctx.fillText('BLUE',W*0.615,gy+r+u*0.07);
+  // FIRST TO — a column down the right-hand side
+  const fx=W*0.87;
+  ctx.fillStyle='#ccc'; ctx.font='bold '+Math.round(u*0.036)+'px Helvetica'; ctx.fillText('FIRST TO',fx,H*0.44);
+  [3,5,7].forEach((n,i)=>{ const y=H*(0.54+i*0.14), on=(winGoals===n), rr=u*0.055;
+    ctx.beginPath(); ctx.arc(fx,y,rr,0,7); ctx.fillStyle=on?'#ffd54a':'rgba(255,255,255,0.1)'; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle=on?'#ffd54a':'#666'; ctx.stroke();
+    ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(u*0.05)+'px Helvetica'; ctx.fillText(n,fx,y+u*0.018); });
+  ctx.fillStyle='#999'; ctx.font='bold '+Math.round(u*0.032)+'px Helvetica';
+  ctx.fillText(mode==='2p'?'P1 left · P2 right · tap a spinner to start':'you play from the left · tap a spinner to start',W/2,H*0.955);
 }
 function drawPick(){
   ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,CW,CH); ctx.textAlign='center';

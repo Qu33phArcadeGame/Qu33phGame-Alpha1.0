@@ -221,9 +221,32 @@ function resize(){
   cv.style.width=CW+'px'; cv.style.height=CH+'px';
   cv.width=Math.round(CW*DPR); cv.height=Math.round(CH*DPR);
   ctx.setTransform(DPR,0,0,DPR,0,0);
-  const s=Math.min(CW/ART_W,CH/ART_H);
-  AW=ART_W*s; AH=ART_H*s; AX=(CW-AW)/2; AY=(CH-AH)/2;
+  const bg=document.getElementById('bg');
+  if(CW>CH){
+    // landscape: zoom the cabinet so the lane — pin deck to ball return —
+    // fills the screen height; the scorecard moves into the side bars
+    AH=CH/BW_SPAN; AW=AH*ART_W/ART_H; AX=(CW-AW)/2; AY=-bwTop*AH;
+    bg.style.left=AX+'px'; bg.style.top=AY+'px'; bg.style.width=AW+'px'; bg.style.height=AH+'px';
+  } else {
+    const s=Math.min(CW/ART_W,CH/ART_H);
+    AW=ART_W*s; AH=ART_H*s; AX=(CW-AW)/2; AY=(CH-AH)/2;
+    bg.style.left=bg.style.top=bg.style.width=bg.style.height='';
+  }
   starCv=null;
+}
+// ─── LANDSCAPE CAMERA ───────────────────────────────────────────────────
+// BW_SPAN is how much of the art's height fits on screen (lower = more zoom).
+// The view sits on the lane, and only lifts to the speaker boxes while a
+// MEGA is flying up into one.
+const BW_SPAN=0.645, BW_TOP_LANE=0.295, BW_TOP_MEGA=0.200;
+let bwTop=BW_TOP_LANE;
+function bowlCam(){
+  if(!(CW>CH)) return;
+  const t=(phase==='mega')?BW_TOP_MEGA:BW_TOP_LANE;
+  if(Math.abs(t-bwTop)<0.0005) return;
+  bwTop+=(t-bwTop)*0.12;
+  AY=-bwTop*AH;
+  document.getElementById('bg').style.top=AY+'px';
 }
 addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,120));
 // art-space normalised → screen pixels
@@ -793,7 +816,56 @@ function drawQueue(){
   }
 }
 
+// landscape scorecard: SCORE and the ten frames (two rows of five) in the
+// left bar, HIGH SCORE and the mega card in the right bar
+function drawHUDLand(){
+  const f=Math.round(CH*0.050), pad=Math.max(10,AX*0.07), bwid=AX-pad*2;
+  const lx=AX/2, rx=AX+AW+(CW-AX-AW)/2;
+  ctx.save();
+  ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillStyle=T.ink;
+  ctx.font='bold '+f+'px Helvetica,Arial,sans-serif';
+  mtext(ctx,'SCORE '+finalScore(), lx, CH*0.17);
+  if(megaWon){ ctx.fillStyle='#ff4d3d'; ctx.font='bold '+Math.round(f*0.72)+'px Helvetica,Arial,sans-serif';
+    mtext(ctx,'+33 MEGA', lx, CH*0.17+f*1.2); }
+  const view=frameView(), bw=bwid/5, bh=Math.min(bw*1.15, CH*0.17), mh=bh*0.58;
+  const by0=CH*0.36;
+  ctx.lineWidth=1;
+  for(let i=0;i<10;i++){
+    const cx=pad+bw*(i%5), cy=by0+Math.floor(i/5)*(bh+CH*0.03), cur=(i===frame&&!gameOver);
+    ctx.fillStyle= cur? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.045)';
+    ctx.fillRect(cx,cy,bw,bh);
+    ctx.strokeStyle= cur? T.accent : 'rgba(255,255,255,0.24)';
+    ctx.strokeRect(cx+0.5,cy+0.5,bw-1,bh-1);
+    ctx.beginPath(); ctx.moveTo(cx,cy+mh); ctx.lineTo(cx+bw,cy+mh);
+    ctx.strokeStyle='rgba(255,255,255,0.20)'; ctx.stroke();
+    ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillStyle='rgba(255,255,255,0.34)';
+    ctx.font='bold '+Math.round(bh*0.17)+'px Helvetica,Arial,sans-serif';
+    mtext(ctx,String(i+1), cx+bw*0.08, cy+bh*0.03);
+    const m=view[i].marks.filter(q=>q!=='');
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=T.ink;
+    ctx.font='bold '+Math.round(mh*(m.length>2?0.36:0.46))+'px Helvetica,Arial,sans-serif';
+    if(m.length) mtext(ctx,m.join(' '), cx+bw*0.56, cy+mh*0.60);
+    if(view[i].total!==null){
+      ctx.fillStyle=T.accent; ctx.font='bold '+Math.round((bh-mh)*0.55)+'px Helvetica,Arial,sans-serif';
+      mtext(ctx,String(view[i].total), cx+bw*0.5, cy+mh+(bh-mh)*0.52);
+    }
+  }
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(f*0.55)+'px Helvetica,Arial,sans-serif';
+  mtext(ctx,'HIGH SCORE', rx, CH*0.17);
+  ctx.fillStyle='#ff4d3d'; ctx.font='bold '+f+'px Helvetica,Arial,sans-serif';
+  if(T.glow){ ctx.shadowColor=T.glow; ctx.shadowBlur=CH*0.02; }
+  mtext(ctx,String(high), rx, CH*0.17+f*0.9);
+  ctx.shadowBlur=0;
+  if(ready(MEGACARD)){                     // the speaker-box mega card, repeated where you can see it
+    const armed=(frame===9&&!megaWon), w=Math.min((CW-AX-AW)*0.55, CH*0.30), h=w*(MEGACARD.naturalHeight/MEGACARD.naturalWidth);
+    ctx.globalAlpha = megaWon?1 : (armed? 0.92+0.08*Math.sin(performance.now()*0.007) : 0.34);
+    ctx.drawImage(MEGACARD, rx-w/2, CH*0.45, w, h); ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
 function drawHUD(){
+  if(CW>CH){ drawHUDLand(); return; }
   const f=Math.round(AH*0.026);
   ctx.save();
   ctx.font='bold '+f+'px Helvetica,Arial,sans-serif';
@@ -962,7 +1034,7 @@ function overlay(){
 let last=performance.now();
 function frameLoop(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;
-  step(dt);
+  step(dt); bowlCam();
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,CW,CH);
   overlay();                 // themed wash sits under the markers

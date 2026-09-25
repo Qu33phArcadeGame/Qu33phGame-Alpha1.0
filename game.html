@@ -288,6 +288,79 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
       #arcadeSeasonTag{ font-size:15px !important; margin:-4px 0 4px !important; }
     }
 
+    /* Small landscape screens (the LG Wing's second display, split-screen,
+       folded devices). The main landscape layout assumes a phone's full
+       width; on a narrower one the fixed 300px buttons plus the icon rails
+       run out of room and start overlapping, so everything steps down. */
+    @media (orientation:landscape) and (max-width:900px){
+      #titleScreen{ padding:4px 60px; gap:14px; }
+      .title-logo{ width:min(120px,15vw); }
+      .mode-btn{ width:min(300px,44vw); min-height:30px; margin:2px 0 2px 26px;
+                 padding:4px 10px 4px 15px; }
+      .mode-btn-split{ width:min(266px,39vw); margin:2px 0 2px 26px; }
+      .mode-name{ font-size:11px; }
+      .mode-desc{ font-size:7.4px; }
+      .mode-btn-half .mode-name{ font-size:9.5px; }
+      .mode-btn-half .mode-desc{ font-size:6.6px; }
+      #slotBtn, #plinkoBtn, #platformerBtn, #settingsBtn, #themesBtn{ font-size:7px; }
+      #slotBtn img, #plinkoBtn img, #platformerBtn img{ width:34px; height:34px; }
+      #slotBtn{ top:4px; } #plinkoBtn{ top:60px; } #platformerBtn{ top:116px; }
+      #settingsBtn{ top:4px; } #themesBtn{ top:60px; }
+      #titleCoins{ top:116px; width:58px; font-size:11px; }
+      #titleCoins img{ width:24px; height:24px; }
+      .high-score-title{ font-size:8px; }
+    }
+    @media (orientation:landscape) and (max-width:700px){
+      #titleScreen{ padding:3px 50px; gap:10px; }
+      .title-logo{ width:min(96px,14vw); }
+      .mode-btn{ width:min(260px,46vw); min-height:26px; margin:2px 0 2px 22px; }
+      .mode-btn-split{ width:min(230px,41vw); margin:2px 0 2px 22px; }
+      .mode-name{ font-size:10px; }
+      .mode-desc{ font-size:6.8px; }
+      #slotBtn img, #plinkoBtn img, #platformerBtn img{ width:28px; height:28px; }
+      #slotBtn{ top:3px; } #plinkoBtn{ top:50px; } #platformerBtn{ top:97px; }
+      #settingsBtn{ top:3px; } #themesBtn{ top:50px; }
+      #titleCoins{ top:97px; width:50px; font-size:10px; }
+      #titleCoins img{ width:20px; height:20px; }
+    }
+    /* Near-square screens — the LG Wing's bottom display (about 1240x1080),
+       folded devices, small split-screen windows. There isn't the width for
+       logo | buttons side by side plus both icon rails, so this goes back to a
+       centred column (logo on top, buttons under it) that sits between the
+       rails, sized to fit the short height without scrolling. */
+    @media (orientation:landscape) and (max-aspect-ratio:7/5){
+      #titleScreen{ flex-direction:column !important; justify-content:center !important; align-items:center !important;
+                    gap:3px !important; padding:4px 58px !important; }
+      #titleScreen .title-logo{ width:min(100px,24vw); margin:0 0 2px !important; }
+      #logoFallback{ font-size:24px !important; letter-spacing:5px !important; margin:0 !important; }
+      #titleScreen > #titleBtns{ align-items:center !important; }
+      #titleBtns .mode-btn{ width:min(290px, calc(100vw - 152px)) !important; min-height:30px !important; height:auto !important;
+                 margin:2px 0 2px 22px !important; padding:3px 10px 3px 13px !important; gap:8px; }
+      #titleBtns .mode-btn::before{ left:-22px; width:24px; }
+      #titleScreen #titleBtns .mode-btn:nth-of-type(even){ margin:2px 22px 2px 0 !important; }
+      #titleScreen #titleBtns .mode-btn:nth-of-type(even)::before{ left:auto; right:-22px; }
+      #titleBtns .mode-btn-half-right::after{ right:-22px; width:24px; }
+      #titleBtns .mode-btn-split{ width:min(266px, calc(100vw - 176px)) !important; margin:2px 0 2px 22px !important; }
+      #titleBtns .mode-btn-half{ margin:0 !important; min-height:34px !important; padding:3px 8px !important; }
+      #titleBtns .mode-btn-half .mode-desc{ display:none; }        /* no room — the names say it */
+      #titleBtns .mode-name{ font-size:10px !important; }
+      #titleBtns .mode-desc{ font-size:6.8px !important; line-height:1.15 !important; }
+      #titleBtns .mode-btn-half .mode-name{ font-size:9.5px !important; white-space:nowrap; letter-spacing:0.5px !important; }
+      #titleBtns .mode-icon{ transform:scale(0.8); }
+      #titleBtns .mode-btn-half-right .mode-icon{ transform:scale(-0.8,0.8); }
+      .high-score-title{ font-size:8px !important; margin-top:2px !important; }
+      /* rails: slot / plinko / arcade on the left, settings / themes / coins on
+         the right, each narrowed to fit the 58px gutters */
+      #slotBtn, #plinkoBtn, #platformerBtn, #settingsBtn, #themesBtn{ width:54px !important; font-size:6.5px !important; padding:2px 0 !important; }
+      #slotBtn img, #plinkoBtn img, #platformerBtn img{ width:28px !important; height:28px !important; }
+      #settingsBtn svg, #themesBtn svg{ width:26px; height:26px; }
+      #slotBtn{ top:6px !important; } #plinkoBtn{ top:58px !important; } #platformerBtn{ top:110px !important; }
+      #settingsBtn{ top:6px !important; } #themesBtn{ top:58px !important; }
+      #titleCoins{ top:112px !important; right:4px !important; width:50px !important; font-size:10px !important; }
+      #titleCoins img{ width:20px !important; height:20px !important; }
+    }
+
+
     .cab-row { display:grid; grid-template-columns:repeat(3,1fr); gap:5px 3%; width:100%; max-width:430px; padding:2px; box-sizing:border-box; justify-items:center; align-items:start; overflow:hidden; }
     .cab-card { width:100%; max-width:132px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .cab-card:active { transform:scale(0.96); }
@@ -5429,7 +5502,7 @@ function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf===
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
 function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=459&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
-function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
+function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=388&_="+Date.now()+"&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
 // two machines side by side: the arrows page between them and the choice sticks
 var SKEE_MACHINES=[
@@ -5468,7 +5541,7 @@ function orientFlipIcon(im){
 }
 function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=459&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
-function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=387&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
+function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=388&_="+Date.now()+"&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
 function showCharSelect(){ setMusicScreen("jump"); showPlatformer("charselect"); }
 function csNav(dir){ pfCharIdx=(pfCharIdx+dir+PF_CHARS.length)%PF_CHARS.length; try{haptic(6);}catch(e){} }
@@ -7904,7 +7977,40 @@ var pbBlueCanvas=null;
 var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
 var LW=1.0, LH=1.5, PB_G=0.0006, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=false;   // TWEAK: draws the play-field wall outline; set false to hide
+// ─── PINBALL, LANDSCAPE ──────────────────────────────────────────────────
+// Zoomed so the whole playfield — top bumpers down past the flippers — fills
+// the screen height. The backglass (score, high score) is cropped off, so the
+// score moves into the side bars, and each half of the screen is a flipper.
+var PB_LAND_TOP=0.385, PB_LAND_BOT=0.875;   // crop, as fractions of pinball.jpg's height
+function layoutPinballLand(){
+  var sw=window.innerWidth, sh=window.innerHeight;
+  var bg=document.getElementById("pinballBg"), iw=(bg&&bg.naturalWidth)||1183, ih=(bg&&bg.naturalHeight)||2560;
+  pbImgRH=sh/(PB_LAND_BOT-PB_LAND_TOP); pbImgRW=pbImgRH*iw/ih;
+  pbImgOX=(sw-pbImgRW)/2; pbImgOY=-PB_LAND_TOP*pbImgRH;
+  if(bg){ bg.style.left=pbImgOX+"px"; bg.style.top=pbImgOY+"px"; bg.style.width=pbImgRW+"px"; bg.style.height=pbImgRH+"px"; }
+  pbCanvas.style.left="0px"; pbCanvas.style.top="0px"; pbCanvas.style.width=sw+"px"; pbCanvas.style.height=sh+"px";
+  pbCanvas.width=Math.round(sw); pbCanvas.height=Math.round(sh);
+  pbctx=pbCanvas.getContext("2d"); pbW=pbCanvas.width; pbH=pbCanvas.height;
+  PB_R=0.040; PB_RX=PB_R*0.62; PB_RY=PB_R*1.35; pbBuildTable();
+  var fl=document.getElementById("pbFlipLeft"),fr=document.getElementById("pbFlipRight"),lb=document.getElementById("pbLaunchBtn");
+  fl.style.left="0px"; fl.style.right=""; fl.style.bottom="0px"; fl.style.width=(sw/2)+"px"; fl.style.height="100%";
+  fr.style.left=(sw/2)+"px"; fr.style.right=""; fr.style.bottom="0px"; fr.style.width=(sw/2)+"px"; fr.style.height="100%";
+  lb.style.left=(pbImgOX+0.70*pbImgRW)+"px"; lb.style.right=""; lb.style.top=(pbImgOY+0.74*pbImgRH)+"px"; lb.style.bottom="";
+}
+function pbDrawLandHud(c){
+  var lx=pbImgOX/2, rx=pbImgOX+pbImgRW+pbImgOX/2, u=pbH;
+  c.save(); c.textAlign="center"; c.textBaseline="middle"; c.shadowBlur=0;
+  c.fillStyle="rgba(255,255,255,0.55)"; c.font="bold "+(u*0.030)+"px Helvetica, Arial, sans-serif";
+  c.fillText("SCORE", lx, u*0.34); c.fillText("HIGH SCORE", rx, u*0.34);
+  c.fillStyle="#fff"; c.font="bold "+(u*0.075)+"px Helvetica, Arial, sans-serif"; c.fillText(pbScore, lx, u*0.43);
+  c.fillStyle="#8fe0ff"; c.fillText(pbHigh||0, rx, u*0.43);
+  c.fillStyle="#ffd24a"; c.font="bold "+(u*0.036)+"px Helvetica, Arial, sans-serif"; c.fillText("BALLS "+pbBalls, lx, u*0.53);
+  c.fillStyle="rgba(255,255,255,0.35)"; c.font="bold "+(u*0.026)+"px Helvetica, Arial, sans-serif";
+  c.fillText("\u2190 TAP LEFT", lx, u*0.88); c.fillText("TAP RIGHT \u2192", rx, u*0.88);
+  c.restore();
+}
 function layoutPinball(){
+  if(isLandscapeView()){ layoutPinballLand(); return; }
   var sw=window.innerWidth,sh=window.innerHeight,pbOX=0;
   // A pinball table is inherently tall. On a short wide screen, stretching it
   // to fit would distort the table and crop the photo to nothing, so instead
@@ -7920,7 +8026,7 @@ function layoutPinball(){
     if(_bg0){ _bg0.style.left=pbOX+"px"; _bg0.style.width=colW+"px"; _bg0.style.height=sh+"px"; }
   } else {
     var _bgP=document.getElementById("pinballBg");
-    if(_bgP){ _bgP.style.left="0px"; _bgP.style.width="100%"; _bgP.style.height="100%"; }
+    if(_bgP){ _bgP.style.left="0px"; _bgP.style.top="0px"; _bgP.style.width="100%"; _bgP.style.height="100%"; }
   }
   pbCanvas.style.left=pbOX+"px";pbCanvas.style.top="0px";pbCanvas.style.width=sw+"px";pbCanvas.style.height=sh+"px";
   pbCanvas.width=Math.round(sw);pbCanvas.height=Math.round(sh);
@@ -8123,6 +8229,7 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   _gs(false);
   c.fillStyle="#8fe0ff";c.textBaseline="middle"; c.font="bold "+(pbImgRW*0.03)+"px Helvetica, Arial, sans-serif"; c.textAlign="right"; c.fillText(pbHigh||0, pbImgOX+0.63*pbImgRW, pbImgOY+0.315*pbImgRH);
   c.font="bold "+(pbImgRW*0.023)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.fillText("SCORE "+pbScore+"    BALLS "+pbBalls, pbImgOX+0.5*pbImgRW, pbImgOY+0.328*pbImgRH);
+  if(isLandscapeView()) pbDrawLandHud(c);
   if(pbState==="ready"){ var rp=pbProject(0.86,1.02); c.fillStyle="rgba(255,255,255,0.9)";c.font="bold "+(pbImgRW*0.022)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("LAUNCH \u2192",rp[0],rp[1]); }
   if(typeof PB_SHOW_BOUNDS!=="undefined" && PB_SHOW_BOUNDS){
     // --- TWEAK OUTLINE: traces the actual ball-collision walls (left/right curve inward) ---
@@ -8500,33 +8607,57 @@ function updateAimFromPointer(cx, cy){
 
 function drawAimArrow(){
   if(motionPct<=0 || gameState!=="playing" || current>=3) return;
-  var len = Math.min(canvas.height*0.20, 150);
-  var tipX = FIELD_CX + Math.cos(aimAngle)*len;
-  var tipY = LAUNCH_Y + Math.sin(aimAngle)*len;
+
+  // Sit clear ABOVE the preview stack rather than over it. The previews run
+  // from LAUNCH_Y-30 upward at 46px spacing (3 of them, ~50 tall), so the
+  // top one reaches about LAUNCH_Y-147 — park the indicator above that.
+  var ax=FIELD_CX, ay=LAUNCH_Y-190;
+
+  var L=58, W=19;                     // marker body length / width
+  var tip=16;                         // nib length
   ctx.save();
-  ctx.globalAlpha = aimDragging ? 0.95 : 0.65;
-  ctx.strokeStyle = "#ffd24a";
-  ctx.lineWidth = 4;
-  ctx.lineCap = "round";
-  ctx.setLineDash([9,7]);
-  ctx.beginPath();
-  ctx.moveTo(FIELD_CX, LAUNCH_Y);
-  ctx.lineTo(tipX, tipY);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  // head
-  ctx.translate(tipX, tipY);
-  ctx.rotate(aimAngle);
-  ctx.fillStyle = "#ffd24a";
-  ctx.beginPath();
-  ctx.moveTo(14,0); ctx.lineTo(-8,9); ctx.lineTo(-8,-9); ctx.closePath();
-  ctx.fill();
+  ctx.translate(ax, ay);
+  ctx.rotate(aimAngle + Math.PI/2);   // local -Y is "up"; align it to the aim
+  ctx.globalAlpha = aimDragging ? 1 : 0.88;
+
+  // soft ground shadow so it reads as floating above the previews
+  ctx.save();
+  ctx.globalAlpha *= 0.35; ctx.fillStyle="#000";
+  ctx.beginPath(); ctx.ellipse(0, L*0.42, W*0.62, 5, 0, 0, Math.PI*2); ctx.fill();
   ctx.restore();
-  // grab handle at the tip, so it reads as draggable
-  ctx.save();
-  ctx.globalAlpha = aimDragging ? 0.5 : 0.28;
-  ctx.fillStyle = "#ffd24a";
-  ctx.beginPath(); ctx.arc(tipX, tipY, 20, 0, Math.PI*2); ctx.fill();
+
+  var half=W/2, bodyTop=-L/2+tip, bodyBot=L/2, r=5;
+  var g=ctx.createLinearGradient(-half,0,half,0);
+  g.addColorStop(0,"#3c3c3c"); g.addColorStop(0.46,"#161616"); g.addColorStop(1,"#000");
+
+  // nib — the pointed end, and the bit that shows which way you'll throw
+  ctx.beginPath();
+  ctx.moveTo(0, -L/2);
+  ctx.lineTo(half*0.72, bodyTop);
+  ctx.lineTo(-half*0.72, bodyTop);
+  ctx.closePath();
+  ctx.fillStyle=g; ctx.fill();
+  ctx.lineWidth=2.5; ctx.strokeStyle="#fff"; ctx.stroke();
+
+  // body — rounded rect, same black-with-white-outline as the marker buttons
+  ctx.beginPath();
+  ctx.moveTo(-half+r, bodyTop);
+  ctx.lineTo(half-r, bodyTop);
+  ctx.quadraticCurveTo(half, bodyTop, half, bodyTop+r);
+  ctx.lineTo(half, bodyBot-r);
+  ctx.quadraticCurveTo(half, bodyBot, half-r, bodyBot);
+  ctx.lineTo(-half+r, bodyBot);
+  ctx.quadraticCurveTo(-half, bodyBot, -half, bodyBot-r);
+  ctx.lineTo(-half, bodyTop+r);
+  ctx.quadraticCurveTo(-half, bodyTop, -half+r, bodyTop);
+  ctx.closePath();
+  ctx.fillStyle=g; ctx.fill(); ctx.stroke();
+
+  // highlight down one edge, matching the button styling
+  ctx.beginPath();
+  ctx.moveTo(-half+3, bodyTop+4); ctx.lineTo(-half+3, bodyBot-4);
+  ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.35)"; ctx.stroke();
+
   ctx.restore();
 }
 
