@@ -952,8 +952,8 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
        and would otherwise win. */
     @media (orientation:landscape){
       /* ── ARCADE MENU: logo + season on the left, all 9 cabinets in a 5x2 grid ── */
-      #arcadeMenu{ padding:12px 2.5vw 8px 27vw !important; justify-content:center !important;
-                   --cabH:min(150px, calc(50vh - 60px)); }
+      #arcadeMenu{ padding:46px 2.5vw 8px 27vw !important; justify-content:center !important;
+                   --cabH:min(146px, calc(50vh - 76px)); }   /* top padding clears the SEASON 2 button */
       #arcadeLogo{ position:absolute; left:3vw; top:50%; transform:translateY(-68%);
                    width:min(210px,21vw) !important; margin:0 !important; }
       #arcadeSeasonTag{ position:absolute; left:3vw; top:50%; width:min(210px,21vw);
@@ -1031,6 +1031,9 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
       #titleCoins{ top:69vh !important; right:6px !important; width:min(150px,15vw) !important; font-size:clamp(14px,4.4vh,20px) !important; }
       #titleCoins img{ width:min(58px,13vh) !important; height:min(58px,13vh) !important; }
     }
+    /* 1 PLAYER / 2 PLAYER: identical boxes. 2 PLAYER is the 2nd button in its row,
+       so the "every other button" rule gave it wider padding and it grew. */
+    #titleScreen .mode-btn-split .mode-btn-half{ box-sizing:border-box; padding-left:12px !important; padding-right:12px !important; }
     #slotPayInline{ display:none; width:min(430px,48vw); margin-top:8px; border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; }
     #slotPayInline .pt-head{ font-family:Helvetica,Arial,sans-serif; font-size:8px; color:#777; letter-spacing:2px; text-align:center; padding:4px 0 3px; border-bottom:1px solid #151515; }
     #paytableInline{ display:grid; grid-template-columns:1fr 1fr; }
@@ -8708,51 +8711,39 @@ function drawAimArrow(){
   // top one reaches about LAUNCH_Y-147 — park the indicator above that.
   var ax=FIELD_CX, ay=LAUNCH_Y-190;
 
-  var L=58, W=19;                     // marker body length / width
-  var tip=16;                         // nib length
+  // The indicator IS a marker button (.mk-btn): same gradient, 3px white
+  // border, radii, top highlight and drop shadow — drawn lying along the aim
+  // with its cap end leading, so the cap points where the throw will go.
+  var BL=62, BH=28, CL=22, B=3;       // body length, body height, cap length, border
   ctx.save();
   ctx.translate(ax, ay);
-  ctx.rotate(aimAngle + Math.PI/2);   // local -Y is "up"; align it to the aim
-  ctx.globalAlpha = aimDragging ? 1 : 0.88;
-
-  // soft ground shadow so it reads as floating above the previews
-  ctx.save();
-  ctx.globalAlpha *= 0.35; ctx.fillStyle="#000";
-  ctx.beginPath(); ctx.ellipse(0, L*0.42, W*0.62, 5, 0, 0, Math.PI*2); ctx.fill();
-  ctx.restore();
-
-  var half=W/2, bodyTop=-L/2+tip, bodyBot=L/2, r=5;
-  var g=ctx.createLinearGradient(-half,0,half,0);
-  g.addColorStop(0,"#3c3c3c"); g.addColorStop(0.46,"#161616"); g.addColorStop(1,"#000");
-
-  // nib — the pointed end, and the bit that shows which way you'll throw
-  ctx.beginPath();
-  ctx.moveTo(0, -L/2);
-  ctx.lineTo(half*0.72, bodyTop);
-  ctx.lineTo(-half*0.72, bodyTop);
-  ctx.closePath();
-  ctx.fillStyle=g; ctx.fill();
-  ctx.lineWidth=2.5; ctx.strokeStyle="#fff"; ctx.stroke();
-
-  // body — rounded rect, same black-with-white-outline as the marker buttons
-  ctx.beginPath();
-  ctx.moveTo(-half+r, bodyTop);
-  ctx.lineTo(half-r, bodyTop);
-  ctx.quadraticCurveTo(half, bodyTop, half, bodyTop+r);
-  ctx.lineTo(half, bodyBot-r);
-  ctx.quadraticCurveTo(half, bodyBot, half-r, bodyBot);
-  ctx.lineTo(-half+r, bodyBot);
-  ctx.quadraticCurveTo(-half, bodyBot, -half, bodyBot-r);
-  ctx.lineTo(-half, bodyTop+r);
-  ctx.quadraticCurveTo(-half, bodyTop, -half+r, bodyTop);
-  ctx.closePath();
-  ctx.fillStyle=g; ctx.fill(); ctx.stroke();
-
-  // highlight down one edge, matching the button styling
-  ctx.beginPath();
-  ctx.moveTo(-half+3, bodyTop+4); ctx.lineTo(-half+3, bodyBot-4);
-  ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.35)"; ctx.stroke();
-
+  ctx.rotate(aimAngle - Math.PI);     // local -X (the cap end) points along the aim
+  ctx.globalAlpha = aimDragging ? 1 : 0.9;
+  var tot=BL+CL, x0=-tot/2+CL;        // body spans x0..x0+BL, cap sits in front of it
+  function rr(x,y,w,h,tl,tr,br,bl){   // rounded rect, per-corner radii
+    ctx.beginPath();
+    ctx.moveTo(x+tl,y); ctx.lineTo(x+w-tr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+tr);
+    ctx.lineTo(x+w,y+h-br); ctx.quadraticCurveTo(x+w,y+h,x+w-br,y+h);
+    ctx.lineTo(x+bl,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-bl);
+    ctx.lineTo(x,y+tl); ctx.quadraticCurveTo(x,y,x+tl,y); ctx.closePath();
+  }
+  function grad(y,h){ var g=ctx.createLinearGradient(0,y,0,y+h);
+    g.addColorStop(0,"#3c3c3c"); g.addColorStop(0.46,"#161616"); g.addColorStop(1,"#000"); return g; }
+  // drop shadow (0 3px 0 rgba(0,0,0,0.55), like the buttons)
+  ctx.save(); ctx.globalAlpha*=0.55; ctx.fillStyle="#000";
+  rr(x0-CL, -BH/2+2+3, CL, BH-4, 8,2,2,8); ctx.fill();
+  rr(x0, -BH/2+3, BL, BH, 4,10,10,4); ctx.fill(); ctx.restore();
+  // body — 4px corners at the cap end, 10px at the far end
+  rr(x0, -BH/2, BL, BH, 4,10,10,4); ctx.fillStyle=grad(-BH/2,BH); ctx.fill();
+  ctx.lineWidth=B; ctx.strokeStyle="#fff"; ctx.stroke();
+  // cap (::before) — painted over the body's edge, as in the CSS; — 2px shorter top and bottom, rounded on its outer end
+  var cy=-BH/2+2, ch=BH-4;
+  rr(x0-CL, cy, CL, ch, 8,2,2,8); ctx.fillStyle=grad(cy,ch); ctx.fill();
+  ctx.lineWidth=B; ctx.strokeStyle="#fff"; ctx.stroke();
+  // inset highlight along the top edge (inset 0 1.5px 0 rgba(255,255,255,0.4))
+  ctx.beginPath(); ctx.moveTo(x0+5, -BH/2+B+0.8); ctx.lineTo(x0+BL-9, -BH/2+B+0.8);
+  ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.stroke();
+  // (highlight drawn last on the body only, clear of the cap)
   ctx.restore();
 }
 
@@ -9304,11 +9295,12 @@ function renderSettings(){
   h+=toggleRow("Haptic feedback","vibrate on taps &amp; events",hapticsOn,"toggleHaptics()");
   h+=toggleRow("Reduce motion","less shake &amp; jitter",reduceMotion,"toggleReduceMotion()");
   h+=segRow("Haptic strength","how strong the vibration feels",[["light","LIGHT"],["medium","MEDIUM"],["strong","STRONG"]],hapticStrength,"setHapticStrength");
-  h+=volRow("Music","background music, where a game has it",musicVolPct,"toggleMusicVol","slideMusicVol","music");
+  // 3D options sit together (Red/cyan above Side-by-side); Music moved to Red/cyan's old spot
+  h+=volRow("Red/cyan 3D","for red-blue anaglyph glasses &middot; slider sets depth",anaglyphPct,"toggleAnaglyph","slideAnaglyph","ana");
   h+=volRow("Sound effects","every sound effect across the arcade",sfxVolPct,"toggleSfxVol","slideSfxVol","sfx");
   h+=volRow("Motion throw","flick your phone to throw &middot; slider sets sensitivity",motionPct,"toggleMotion","slideMotion","motion");
   h+=volRow("Side-by-side 3D","split screen for a VR headset &middot; slider sets eye separation",sbs3dPct,"toggleSbs3d","slideSbs3d","sbs");
-  h+=volRow("Red/cyan 3D","for red-blue anaglyph glasses &middot; slider sets depth",anaglyphPct,"toggleAnaglyph","slideAnaglyph","ana");
+  h+=volRow("Music","background music, where a game has it",musicVolPct,"toggleMusicVol","slideMusicVol","music");
   h+=toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true);
   h+=toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()");
   h+=segRow("Round timer","seconds per round (sudden death scales)",[["30","30s"],["45","45s"],["60","60s"]],String(QUICK_ROUND_TIME),"setTimer");

@@ -187,6 +187,32 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
   transition:opacity .3s, transform .3s; }
 .rail-svg{ position:absolute; left:0; top:0; z-index:5; pointer-events:none; overflow:visible;
   filter:drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
+
+/* ══ LANDSCAPE — laid out like the Season 1 arcade menu ═══════════════════
+   Big logo + "SEASON 2" parked in a left column; the nine tiles become true
+   circles in a 3x3 grid on the right, sized from the screen height so the
+   whole grid fits with no scrolling. Portrait is untouched. */
+@media (orientation:landscape){
+  .menu{ padding:46px 3vw 10px 30vw; justify-content:center; overflow:hidden; }
+  .s2logo{ position:absolute; left:4vw; top:50%; width:min(230px,22vw); margin:0;
+           transform:translateY(-66%); }
+  .s2tag{ position:absolute; left:4vw; top:50%; width:min(230px,22vw); margin:0;
+          transform:translateY(calc(min(230px,22vw) * 0.24)); font-size:clamp(18px,5vh,28px); letter-spacing:4px; }
+  .cab-row{ --c:min(calc((100vh - 76px) / 3), calc((67vw - 40px) / 3));
+            grid-template-columns:repeat(3,var(--c)); grid-template-rows:repeat(3,var(--c));
+            width:auto; max-width:none; flex:none; gap:8px 3vw; place-content:center; }
+  .cab-card{ width:var(--c); height:var(--c); max-height:none; aspect-ratio:1; }
+  .cab-card .cab-label{ font-size:clamp(9px,2.8vh,13px); }
+  .soon-ribbon span{ font-size:clamp(7px,2vh,10px); }
+
+  /* CHOOSE YOUR MARKER: title, three boards and the rules all on one screen */
+  #selectScreen{ padding:40px 16px 8px; }
+  .select-title{ font-size:clamp(18px,6.5vh,32px); }
+  .select-sub{ margin:2px 0 8px; font-size:10px; }
+  .choice{ min-height:0; padding:6px; }
+  .choice img{ height:calc(100vh - 250px); min-height:90px; }
+  .hint{ margin-top:8px; font-size:8.5px; line-height:1.6; }
+}
 </style>
 </head>
 <body>
