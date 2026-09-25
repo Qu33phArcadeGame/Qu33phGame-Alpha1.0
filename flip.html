@@ -77,6 +77,16 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
      canvas, buttons, and every label all mirror together. Nothing is counter-mirrored. */
   body.qmirror{ transform:scaleX(-1); }
   body.th-inverted{ filter:invert(1); }
+
+/* ── LANDSCAPE ──────────────────────────────────────────────────────────
+   Portrait playfield, so on a short wide screen it plays as a full-height
+   portrait column centred on screen. The canvas sizes itself from #wrap,
+   so constraining #wrap is all that's needed. */
+@media (orientation:landscape){
+  #wrap{ left:50% !important; right:auto !important;
+         transform:translateX(-50%);
+         width:auto !important; aspect-ratio:9 / 16; max-width:100vw; }
+}
 </style>
 </head>
 <body>

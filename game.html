@@ -5747,6 +5747,47 @@ function layoutPlatformer(){
   var sw=window.innerWidth, sh=window.innerHeight, cv=pfCanvas;
   var bg=document.getElementById("platformerBg"), expand=document.getElementById("pfExpandBtn"), pause=document.getElementById("arcadePauseBtn");
   var isJump=(arcadeGame==="jump");
+
+  // ── LANDSCAPE ────────────────────────────────────────────────────────
+  // The cabinet artwork is portrait, so it can't be used on a short wide
+  // screen. Instead the controls split into columns either side of a big
+  // central play area: direction pad on the left, action buttons on the
+  // right, game in the middle — the way a real cabinet reads.
+  if(isLandscapeView()){
+    bg.style.display="none";
+    document.getElementById("pfDpad").style.display="none";
+    var br=Math.min(sw*0.075, sh*0.30);         // button radius
+    var gap=sw*0.016;
+    var byC=(sh-br)/2;                           // vertically centred
+    var isMenuL=(arcadeGame==="jumpmenu"||arcadeGame==="charselect");
+    var dL,dR,aR,aB;
+    if(isMenuL){ dL="\u25B2"; dR="\u25BC"; aR="PLAY"; aB="PLAY"; }
+    else if(isJump){ dL="\u25C0"; dR="\u25B6"; aR="JUMP"; aB="JUMP"; }
+    else { dL="\u25C0"; dR="\u25B6"; aR="FUSE"; aB="VIEW"; }
+
+    var lx1=sw*0.015, lx2=lx1+br+gap;            // left column: directions
+    var rx2=sw*0.985-br, rx1=rx2-br-gap;         // right column: actions
+    fsStyleBtn("pfLeftBtn",  lx1, byC, br, br, "green", dL, "50%");
+    fsStyleBtn("pfRightBtn", lx2, byC, br, br, "green", dR, "50%");
+    fsStyleBtn("pfJumpBtn",  rx1, byC, br, br, "red",  aR, "50%");
+    fsStyleBtn("pfActionBtn",rx2, byC, br, br, "blue", aB, "50%");
+
+    // everything between the two columns is play area
+    var cvL=lx2+br+sw*0.022, cvR=rx1-sw*0.022;
+    var cvT=34, cvW2=Math.max(120, cvR-cvL), cvH2=Math.max(80, sh-cvT-10);
+    cv.style.left=cvL+"px"; cv.style.top=cvT+"px";
+    cv.style.width=cvW2+"px"; cv.style.height=cvH2+"px";
+    cv.width=Math.round(cvW2); cv.height=Math.round(cvH2);
+    pfctx=cv.getContext("2d");
+
+    expand.style.display="none";                 // no cabinet to expand out of
+    pause.style.left="10px"; pause.style.top="6px";
+    var _fcbL=document.getElementById("fuseContinueBtn");
+    if(_fcbL){ var _cwL=cvW2*0.32; _fcbL.style.left=(cvL+cvW2/2-_cwL/2)+"px";
+               _fcbL.style.top=(cvT+cvH2*0.62)+"px"; _fcbL.style.width=_cwL+"px"; }
+    return;
+  }
+
   if(arcadeFullscreen){
     bg.style.display="none";
     var cvTop=48, cvH=Math.round(sh*0.54), cvW=sw;
@@ -7864,8 +7905,24 @@ var pbImgRW=0,pbImgRH=0,pbImgOX=0,pbImgOY=0;
 var LW=1.0, LH=1.5, PB_G=0.0006, PB_PERSP=0.5;
 var PB_SHOW_BOUNDS=false;   // TWEAK: draws the play-field wall outline; set false to hide
 function layoutPinball(){
-  var sw=window.innerWidth,sh=window.innerHeight;
-  pbCanvas.style.left="0px";pbCanvas.style.top="0px";pbCanvas.style.width=sw+"px";pbCanvas.style.height=sh+"px";
+  var sw=window.innerWidth,sh=window.innerHeight,pbOX=0;
+  // A pinball table is inherently tall. On a short wide screen, stretching it
+  // to fit would distort the table and crop the photo to nothing, so instead
+  // it plays as a full-height portrait column centred on screen. Everything
+  // below still works in canvas-local coordinates — only the element's
+  // position and size change.
+  if(isLandscapeView()){
+    var _bg0=document.getElementById("pinballBg");
+    var _iw=(_bg0&&_bg0.naturalWidth)||1183, _ih=(_bg0&&_bg0.naturalHeight)||2560;
+    var colW=Math.round(sh*(_iw/_ih));
+    pbOX=Math.round((sw-colW)/2);
+    sw=colW;
+    if(_bg0){ _bg0.style.left=pbOX+"px"; _bg0.style.width=colW+"px"; _bg0.style.height=sh+"px"; }
+  } else {
+    var _bgP=document.getElementById("pinballBg");
+    if(_bgP){ _bgP.style.left="0px"; _bgP.style.width="100%"; _bgP.style.height="100%"; }
+  }
+  pbCanvas.style.left=pbOX+"px";pbCanvas.style.top="0px";pbCanvas.style.width=sw+"px";pbCanvas.style.height=sh+"px";
   pbCanvas.width=Math.round(sw);pbCanvas.height=Math.round(sh);
   pbctx=pbCanvas.getContext("2d");pbW=pbCanvas.width;pbH=pbCanvas.height;
   var bg=document.getElementById("pinballBg"),iw=(bg&&bg.naturalWidth)||1183,ih=(bg&&bg.naturalHeight)||2560;
@@ -7879,9 +7936,10 @@ function layoutPinball(){
   pbImgRW=iw*scale; pbImgRH=ih*scale; pbImgOX=(sw-pbImgRW)/2; pbImgOY=(sh-pbImgRH)/2;
   PB_R=0.040; PB_RX=PB_R*0.62; PB_RY=PB_R*1.35; pbBuildTable();
   var fl=document.getElementById("pbFlipLeft"),fr=document.getElementById("pbFlipRight"),lb=document.getElementById("pbLaunchBtn");
-  fl.style.left="0px";fl.style.right="";fl.style.bottom="0px";fl.style.width="50%";fl.style.height="40%";
-  fr.style.right="0px";fr.style.left="";fr.style.bottom="0px";fr.style.width="50%";fr.style.height="40%";
-  lb.style.left=(pbImgOX+0.70*pbImgRW)+"px";lb.style.right="";lb.style.top=(pbImgOY+0.74*pbImgRH)+"px";lb.style.bottom="";
+  // in landscape the flipper zones stay inside the column so the bars aren't live
+  fl.style.left=pbOX+"px";fl.style.right="";fl.style.bottom="0px";fl.style.width=(sw/2)+"px";fl.style.height="40%";
+  fr.style.left=(pbOX+sw/2)+"px";fr.style.right="";fr.style.bottom="0px";fr.style.width=(sw/2)+"px";fr.style.height="40%";
+  lb.style.left=(pbOX+pbImgOX+0.70*pbImgRW)+"px";lb.style.right="";lb.style.top=(pbImgOY+0.74*pbImgRH)+"px";lb.style.bottom="";
 }
 function pbVP(y){ var v=y/LH; if(v<-0.13)v=-0.13; if(v>1.15)v=1.15; return v/(1+PB_PERSP*(1-v)); }   // perspective foreshortening
 function pbProject(x,y){ var u=x/LW, vp=pbVP(y), q=PB_QUAD;
@@ -8421,6 +8479,10 @@ window.addEventListener("resize",function(){
   applyCanvasSize();
   try{ setBase(); }catch(e){}
   _camInit=false;
+  // arcade games size themselves once on launch, so they need a nudge when
+  // the device rotates under them
+  try{ if(typeof pfActive!=="undefined" && pfActive) layoutPlatformer(); }catch(e){}
+  try{ if(typeof pbActive!=="undefined" && pbActive) layoutPinball(); }catch(e){}
 });
 
 // ─── MOTION CONTROLS ────────────────────────────────────────────────────
