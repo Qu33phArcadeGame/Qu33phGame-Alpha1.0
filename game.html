@@ -944,6 +944,68 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
     .corner-back:active{ background:linear-gradient(180deg,#161616 0%,#000 100%); transform:translateY(3px);
       box-shadow:0 0 0 rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.6); }
     .corner-back:active::before{ background:linear-gradient(180deg,#161616 0%,#000 100%); box-shadow:inset 0 2px 5px rgba(0,0,0,0.6); }
+
+    /* ══ LANDSCAPE LAYOUTS FOR THE MENU SCREENS ════════════════════════════
+       Everything here only applies with the phone sideways, so portrait is
+       untouched. It sits at the very end of the stylesheet on purpose: several
+       base rules (.cab-row etc.) are declared after the older landscape block
+       and would otherwise win. */
+    @media (orientation:landscape){
+      /* ── ARCADE MENU: logo + season on the left, all 9 cabinets in a 5x2 grid ── */
+      #arcadeMenu{ padding:12px 2.5vw 8px 27vw !important; justify-content:center !important;
+                   --cabH:min(150px, calc(50vh - 60px)); }
+      #arcadeLogo{ position:absolute; left:3vw; top:50%; transform:translateY(-68%);
+                   width:min(210px,21vw) !important; margin:0 !important; }
+      #arcadeSeasonTag{ position:absolute; left:3vw; top:50%; width:min(210px,21vw);
+                        transform:translateY(calc(min(210px,21vw) * 0.20)); margin:0 !important;
+                        font-size:clamp(18px,4.6vh,26px) !important; }
+      #arcadeMenu .cab-row{ grid-template-columns:repeat(5,1fr); max-width:none; width:100%;
+                            gap:6px 1.4%; align-items:end; }
+      #arcadeMenu .cab-card{ max-width:none; gap:3px; }
+      #arcadeMenu .cab-card img{ height:var(--cabH); }
+      #arcadeMenu #skeeIcon{ height:var(--cabH) !important; }
+      #arcadeMenu #cabDozer img{ height:var(--cabH) !important; max-height:var(--cabH) !important; aspect-ratio:auto !important; }
+      #arcadeMenu #cabStack .stackbox, #arcadeMenu #cabFlip .flipbox{ height:var(--cabH); max-height:var(--cabH); aspect-ratio:auto; }
+      #arcadeMenu .cab-label{ font-size:clamp(7.5px,2.1vh,10px) !important; }
+
+      /* ── SLOT MACHINE: machine fills the height on the left, controls and the
+            full paytable on the right — no separate paytable screen needed ── */
+      #slotScreen{ padding-left:47vw !important; justify-content:center !important; }
+      #slotMachine{ position:absolute !important; left:24vw; top:50%; transform:translate(-50%,-50%);
+                    height:94vh; width:auto !important; }
+      #slotMachineImg{ height:100% !important; width:auto !important; }
+      #slotScreen > div:nth-of-type(1){ position:absolute !important; top:0; right:0; width:auto !important;
+                    padding:8px 16px 0 !important; }
+      #slotScreen > div:nth-of-type(1) img{ width:38px; height:38px; }
+      #slotScreen .slot-pay-btn{ display:none !important; }
+      #slotPayInline{ display:block !important; }
+      /* ── PAYTABLE SCREEN (if reached): three columns, fits one screen ── */
+      #paytableScreen{ padding-top:8px !important; }
+      #paytableScreen > div:nth-of-type(4){ width:min(820px,94vw) !important; }
+      #paytableScreen #paytable{ grid-template-columns:1fr 1fr 1fr; }
+
+      /* ── PLINQU33PH: the board keeps a sensible shape on the right, title,
+            coins, result and buttons stack in the left column ── */
+      #plinkoScreen{ justify-content:center !important; padding-right:min(58vw, 92vh) !important; box-sizing:border-box; }
+      #plinkoCanvas{ position:absolute; right:2vw; top:2vh; height:96vh !important; width:min(56vw, 90vh) !important; flex:none !important; }
+      #plinkoInfo{ max-width:34vw; text-align:center; line-height:1.5; }
+
+      /* ── COIN RECORD: coin on the left, the numbers on the right ── */
+      #coinRecordScreen{ padding-left:36vw !important; justify-content:center !important; }
+      #coinRecordScreen > img{ position:absolute; left:18vw; top:50%; transform:translate(-50%,-50%);
+                               width:min(220px,28vw,60vh) !important; margin:0 !important; }
+      #coinRecordBody{ width:min(460px,56vw) !important; }
+
+      /* ── SETTINGS: two columns of cards instead of one long scroll ── */
+      #settingsBody{ width:min(900px,92vw) !important; grid-template-columns:repeat(4,1fr) !important; }
+
+      /* ── THEMES: two columns ── */
+      #themeListScreen{ padding-top:14px !important; }
+      #themeListBody{ flex-direction:row !important; flex-wrap:wrap; justify-content:center; max-width:880px; column-gap:40px; }
+    }
+    #slotPayInline{ display:none; width:min(430px,48vw); margin-top:8px; border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; }
+    #slotPayInline .pt-head{ font-family:Helvetica,Arial,sans-serif; font-size:8px; color:#777; letter-spacing:2px; text-align:center; padding:4px 0 3px; border-bottom:1px solid #151515; }
+    #paytableInline{ display:grid; grid-template-columns:1fr 1fr; }
   </style>
 </head>
 <body>
@@ -1365,7 +1427,9 @@ document.addEventListener('dragstart', function(e){
   </div>
 
   <!-- View paytable button -->
-  <button onclick="showPaytable()" class="mk-btn gold" style="margin-top:10px;">VIEW PAYTABLE</button>
+  <button onclick="showPaytable()" class="mk-btn gold slot-pay-btn" style="margin-top:10px;">VIEW PAYTABLE</button>
+  <!-- landscape: the whole paytable sits right beside the machine -->
+  <div id="slotPayInline"><div class="pt-head">PAYTABLE &middot; 3&times; COSTS 3 BUT TRIPLES YOUR WIN</div><div id="paytableInline"></div></div>
 </div>
 
 <!-- PAYTABLE SCREEN -->
@@ -2610,6 +2674,7 @@ function showSlotMachine(){
   document.getElementById("titleCoins").style.display="none";
   document.getElementById("sideTabs").style.display="none";
   document.getElementById("slotScreen").style.display="flex";
+  try{ buildPaytable(); }catch(e){}            // fills the landscape side paytable too
   document.getElementById("slotCoinCount").innerText=coins;
   document.getElementById("slotResult").innerText="";
   buildPaytable();
@@ -2648,7 +2713,9 @@ function setSlotMode(mode){
 }
 
 function buildPaytable(){
-  let pt=document.getElementById("paytable");
+  ["paytable","paytableInline"].forEach(function(id){ var el=document.getElementById(id); if(el) buildPaytableInto(el); });
+}
+function buildPaytableInto(pt){
   pt.innerHTML="";
   let sorted=[...PAYTABLE].sort((a,b)=>b.win-a.win);
   sorted.forEach(row=>{

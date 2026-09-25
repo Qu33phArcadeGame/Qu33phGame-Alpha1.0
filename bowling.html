@@ -238,7 +238,12 @@ function resize(){
 // BW_SPAN is how much of the art's height fits on screen (lower = more zoom).
 // The view sits on the lane, and only lifts to the speaker boxes while a
 // MEGA is flying up into one.
-const BW_SPAN=0.645, BW_TOP_LANE=0.295, BW_TOP_MEGA=0.200;
+const BW_SPAN=0.645, BW_TOP_LANE=0.295, BW_TOP_MEGA=0.295;   // view no longer lifts for a MEGA — the card sits in view now
+// landscape: the speaker boxes are cropped off, so the mega card sits in the
+// dark space beside the pin deck instead (same left/right side as before)
+function boxY(){ return (CW>CH) ? BW_TOP_LANE+0.052 : BOX_Y; }
+// the "Qu33ph Bowling" marquee, cut from the cabinet art for the side bar
+const LOGO_CROP={ x0:0.085, x1:0.915, y0:0.025, y1:0.228 };
 let bwTop=BW_TOP_LANE;
 function bowlCam(){
   if(!(CW>CH)) return;
@@ -857,10 +862,13 @@ function drawHUDLand(){
   if(T.glow){ ctx.shadowColor=T.glow; ctx.shadowBlur=CH*0.02; }
   mtext(ctx,String(high), rx, CH*0.17+f*0.9);
   ctx.shadowBlur=0;
-  if(ready(MEGACARD)){                     // the speaker-box mega card, repeated where you can see it
-    const armed=(frame===9&&!megaWon), w=Math.min((CW-AX-AW)*0.55, CH*0.30), h=w*(MEGACARD.naturalHeight/MEGACARD.naturalWidth);
-    ctx.globalAlpha = megaWon?1 : (armed? 0.92+0.08*Math.sin(performance.now()*0.007) : 0.34);
-    ctx.drawImage(MEGACARD, rx-w/2, CH*0.45, w, h); ctx.globalAlpha=1;
+  // the cabinet's own marquee logo, where the mega card used to sit
+  const bg=document.getElementById('bg');
+  if(bg && bg.complete && bg.naturalWidth){
+    const iw=bg.naturalWidth, ih=bg.naturalHeight;
+    const sx=LOGO_CROP.x0*iw, sy=LOGO_CROP.y0*ih, sw=(LOGO_CROP.x1-LOGO_CROP.x0)*iw, sh=(LOGO_CROP.y1-LOGO_CROP.y0)*ih;
+    const barW=CW-AX-AW, w=Math.min(barW*0.90, CH*0.62), h=w*sh/sw;
+    ctx.drawImage(bg, sx,sy,sw,sh, rx-w/2, CH*0.42, w, h);
   }
   ctx.restore();
 }
@@ -941,7 +949,7 @@ function drawChair(){
 function drawMegaCard(){
   if(!ready(MEGACARD)) return;
   const armed=(frame===9&&!megaWon);
-  const cx=ax(megaBox==='left'?BOX_L:BOX_R), cy=ay(BOX_Y);
+  const cx=ax(megaBox==='left'?BOX_L:BOX_R), cy=ay(boxY());
   const w=AW*BOX_W, h=w*(MEGACARD.naturalHeight/MEGACARD.naturalWidth);
   ctx.save();
   ctx.globalAlpha = megaWon?1 : (armed? 0.92+0.08*Math.sin(performance.now()*0.007) : 0.34);
@@ -952,7 +960,7 @@ function drawMegaCard(){
 function drawMegaFly(){
   if(!megaFly) return;
   const t=Math.min(1,megaFly.t/1.05), e=t*t*(3-2*t);
-  const tx=ax(megaBox==='left'?BOX_L:BOX_R), ty=ay(BOX_Y);
+  const tx=ax(megaBox==='left'?BOX_L:BOX_R), ty=ay(boxY());
   const x=megaFly.x0+(tx-megaFly.x0)*e;
   const arc=Math.sin(t*Math.PI)*AH*0.10;                 // lobs up on the way
   const y=megaFly.y0+(ty-megaFly.y0)*e-arc;

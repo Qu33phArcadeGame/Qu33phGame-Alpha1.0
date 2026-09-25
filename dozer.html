@@ -42,7 +42,7 @@
    coin slot down to the ledge — fills the height (see sz), and the HUD and
    buy button move into the side bars. */
 @media (orientation:landscape){
-  #buyBtn{ left:auto; right:3vw; transform:none; bottom:18px; width:min(230px,24vw); font-size:11px; padding:10px 12px; }
+  #buyBtn{ left:auto; right:3vw; transform:none; bottom:12px; width:min(230px,24vw); font-size:11px; padding:9px 12px; }
 }
 
 /* ── LANDSCAPE MENUS ─────────────────────────────────────────────────────
@@ -634,19 +634,33 @@ function drawSlot(c){
     c.restore();
   }
 }
+// landscape side bars. Left: the machine's own marquee logo (cropped off the
+// top of the view) with coins & markers under it. Right: the clock, the theme,
+// and the rules — always on screen while you play.
+const DZ_LOGO={ x0:0.07, x1:0.93, y0:0.015, y1:0.148 };     // marquee, as fractions of dozerfield.png
+const DZ_RULES=['DRAG ACROSS THE SLOT','RELEASE TO DROP A MARKER','','COIN OFF THE LEDGE = +1','MARKER OFF THE LEDGE','COMES BACK TO YOU','','A CHAIR DROPS IN PART-WAY','OUT? +3 MARKERS FOR 10'];
 function drawHUDLand(){
-  // landscape: coins & markers in the left bar, the clock & theme in the right
-  const U=CW, lx=cabX/2, rx=cabX+cabW+(CW-cabX-cabW)/2, y=CH*0.30;
+  const lw=cabX, lx=lw/2, rx=cabX+cabW+(CW-cabX-cabW)/2, U=CH;
   ctx.textBaseline='top'; ctx.textAlign='center';
-  ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(U*0.034)+'px Helvetica';
+  let y=U*0.14;                        // clear of the arcade's BACK button
+  if(ready(CAB)){
+    const iw=CAB.naturalWidth, ih=CAB.naturalHeight;
+    const sx=DZ_LOGO.x0*iw, sy=DZ_LOGO.y0*ih, sw=(DZ_LOGO.x1-DZ_LOGO.x0)*iw, sh=(DZ_LOGO.y1-DZ_LOGO.y0)*ih;
+    const w=Math.min(lw*0.80, U*0.90), h=w*sh/sw;
+    ctx.drawImage(CAB, sx,sy,sw,sh, lx-w/2, y, w, h); y+=h+U*0.08;
+  } else y=U*0.34;
+  ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(U*0.075)+'px Helvetica';
   ctx.fillText(coins+'  COINS', lx, y);
-  ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(U*0.018)+'px Helvetica';
-  ctx.fillText('MARKERS '+queue.length, lx, y+U*0.045);
+  ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold '+Math.round(U*0.040)+'px Helvetica';
+  ctx.fillText('MARKERS '+queue.length, lx, y+U*0.10);
   const t=Math.max(0,tLeft);
-  ctx.fillStyle=t<=10?'#ff5a5a':'#fff'; ctx.font='bold '+Math.round(U*0.034)+'px Helvetica';
-  ctx.fillText(t.toFixed(1), rx, y);
-  ctx.fillStyle=ACC; ctx.font='bold '+Math.round(U*0.015)+'px Helvetica';
-  ctx.fillText(TH.name, rx, y+U*0.047);
+  ctx.fillStyle=t<=10?'#ff5a5a':'#fff'; ctx.font='bold '+Math.round(U*0.080)+'px Helvetica';
+  ctx.fillText(t.toFixed(1), rx, U*0.07);
+  ctx.fillStyle=ACC; ctx.font='bold '+Math.round(U*0.034)+'px Helvetica';
+  ctx.fillText(TH.name, rx, U*0.07+U*0.10);
+  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold '+Math.round(U*0.029)+'px Helvetica';
+  let ry=U*0.32;
+  for(const line of DZ_RULES){ if(line) ctx.fillText(line, rx, ry); ry+=U*(line?0.045:0.025); }
 }
 function drawHUD(){
   const LAND=CW>CH;

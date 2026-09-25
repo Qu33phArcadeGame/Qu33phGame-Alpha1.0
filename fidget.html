@@ -292,9 +292,53 @@ function drawSpinner(sp,color){
   else { ctx.fillStyle=color==='green'?'#3ad24a':'#3a8bff'; ctx.beginPath(); ctx.arc(0,0,R_SPIN,0,7); ctx.fill(); }
   ctx.restore();
 }
+// ── LANDSCAPE FIELD ─────────────────────────────────────────────────────
+// Landscape turns the field sideways, which puts its drawn divider exactly
+// where the gameplay needs it — but it also turns the logo on its side. So in
+// landscape the field is built once into an offscreen canvas: the sideways
+// logo is painted out with plain cardboard from the same art (stretched along
+// the grain, so it doesn't show), and the logo is drawn back upright in the
+// middle with soft edges. Measurements are fractions of the art's HEIGHT so
+// they hold whatever the file's width is.
+const BADGE={ 'default':{ cx:0.0057, cy:0.5314, hw:0.158, hh:0.180, srcY0:0.08, srcY1:0.34 } };
+let landField=null, landFieldKey='';
+function softEllipse(src, sx,sy,sw,sh, w,h, solid){
+  // copy a region of an image into a new canvas, faded to nothing at an elliptical edge
+  const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(w)); c.height=Math.max(1,Math.round(h));
+  const g=c.getContext('2d'); g.drawImage(src,sx,sy,sw,sh,0,0,c.width,c.height);
+  g.globalCompositeOperation='destination-in';
+  g.save(); g.translate(c.width/2,c.height/2); g.scale(c.width/2,c.height/2);
+  const rg=g.createRadialGradient(0,0,0,0,0,1); rg.addColorStop(0,'#000'); rg.addColorStop(solid||0.80,'#000'); rg.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=rg; g.beginPath(); g.arc(0,0,1,0,7); g.fill(); g.restore();
+  return c;
+}
+function buildLandField(){
+  const B=BADGE[THEME]; if(!B || !ready(FIELD)) return null;
+  const key=SW+'x'+SH+'|'+FIELD.src; if(landField && landFieldKey===key) return landField;
+  const c=document.createElement('canvas'); c.width=SW; c.height=SH; const g=c.getContext('2d');
+  const iw=FIELD.naturalWidth, ih=FIELD.naturalHeight;
+  let ar=iw/ih, car=CW/CH, sw,sh; if(ar>car){ sh=ih; sw=sh*car; } else { sw=iw; sh=sw/car; }
+  const ox=(iw-sw)/2, oy=(ih-sh)/2, k=CW/sw;                 // art px -> logical px
+  // 1. the field, turned sideways (same as the plain landscape draw)
+  g.setTransform(0,1,-1,0,CH,0);
+  g.drawImage(FIELD,ox,oy,sw,sh,0,0,CW,CH);
+  // 2. paint out the sideways logo with cardboard from above it, stretched along the grain
+  const bx=iw/2+B.cx*ih, by=B.cy*ih, hw=B.hw*ih, hh=B.hh*ih;
+  const pw=hw*2*1.34, ph=hh*2*1.30;
+  const patch=softEllipse(FIELD, bx-pw/2, B.srcY0*ih, pw, (B.srcY1-B.srcY0)*ih, pw*k, ph*k, 0.84);
+  g.drawImage(patch, (bx-pw/2-ox)*k, (by-ph/2-oy)*k, pw*k, ph*k);
+  // 3. the logo, upright, centred on the divider
+  g.setTransform(1,0,0,1,0,0);
+  const bh=Math.min(SH*0.80, SW*0.40), bw=bh*hw/hh;
+  const badge=softEllipse(FIELD, bx-hw, by-hh, hw*2, hh*2, bw, bh);
+  g.drawImage(badge, (SW-centerY)-bw/2, SH/2-bh/2, bw, bh);
+  landField=c; landFieldKey=key; return c;
+}
 function draw(){
   baseT();
-  if(ready(FIELD)){ let ar=FIELD.naturalWidth/FIELD.naturalHeight, car=CW/CH, sw,sh;
+  const LF = LAND ? buildLandField() : null;
+  if(LF){ ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(LF,0,0); baseT(); }
+  else if(ready(FIELD)){ let ar=FIELD.naturalWidth/FIELD.naturalHeight, car=CW/CH, sw,sh;
     if(ar>car){ sh=FIELD.naturalHeight; sw=sh*car; } else { sw=FIELD.naturalWidth; sh=sw/car; }
     ctx.drawImage(FIELD,(FIELD.naturalWidth-sw)/2,(FIELD.naturalHeight-sh)/2,sw,sh,0,0,CW,CH);
   } else { ctx.fillStyle='#c8b89a'; ctx.fillRect(0,0,CW,CH); }
