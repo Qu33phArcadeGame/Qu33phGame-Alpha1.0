@@ -637,7 +637,8 @@ function drawSlot(c){
 // landscape side bars. Left: the machine's own marquee logo (cropped off the
 // top of the view) with coins & markers under it. Right: the clock, the theme,
 // and the rules — always on screen while you play.
-const DZ_LOGO={ x0:0.07, x1:0.93, y0:0.015, y1:0.148 };     // marquee, as fractions of dozerfield.png
+const DZ_LOGO={ x0:0.03, x1:0.97, y0:0.004, y1:0.172 };     // marquee incl. the whole 'Dozer' sign, as fractions of dozerfield.png
+let DZ_LOGOC=null;                                          // cached crop, bottom edge faded
 const DZ_RULES=['DRAG ACROSS THE SLOT','RELEASE TO DROP A MARKER','','COIN OFF THE LEDGE = +1','MARKER OFF THE LEDGE','COMES BACK TO YOU','','A CHAIR DROPS IN PART-WAY','OUT? +3 MARKERS FOR 10'];
 function drawHUDLand(){
   const lw=cabX, lx=lw/2, rx=cabX+cabW+(CW-cabX-cabW)/2, U=CH;
@@ -646,8 +647,16 @@ function drawHUDLand(){
   if(ready(CAB)){
     const iw=CAB.naturalWidth, ih=CAB.naturalHeight;
     const sx=DZ_LOGO.x0*iw, sy=DZ_LOGO.y0*ih, sw=(DZ_LOGO.x1-DZ_LOGO.x0)*iw, sh=(DZ_LOGO.y1-DZ_LOGO.y0)*ih;
-    const w=Math.min(lw*0.80, U*0.90), h=w*sh/sw;
-    ctx.drawImage(CAB, sx,sy,sw,sh, lx-w/2, y, w, h); y+=h+U*0.08;
+    if(!DZ_LOGOC || DZ_LOGOC._src!==CAB.src){
+      // crop once; fade the bottom so the coin-slot bar under the sign doesn't show as a hard edge
+      const c=document.createElement('canvas'); c.width=Math.round(sw); c.height=Math.round(sh);
+      const g=c.getContext('2d'); g.drawImage(CAB,sx,sy,sw,sh,0,0,c.width,c.height);
+      g.globalCompositeOperation='destination-in';
+      const gr=g.createLinearGradient(0,0,0,c.height); gr.addColorStop(0,'#000'); gr.addColorStop(0.86,'#000'); gr.addColorStop(1,'rgba(0,0,0,0)');
+      g.fillStyle=gr; g.fillRect(0,0,c.width,c.height); c._src=CAB.src; DZ_LOGOC=c;
+    }
+    const w=Math.min(lw*0.86, U*1.0), h=w*sh/sw;
+    ctx.drawImage(DZ_LOGOC, lx-w/2, y, w, h); y+=h+U*0.07;
   } else y=U*0.34;
   ctx.fillStyle='#ffd700'; ctx.font='bold '+Math.round(U*0.075)+'px Helvetica';
   ctx.fillText(coins+'  COINS', lx, y);

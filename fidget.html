@@ -139,13 +139,12 @@ function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 function lineColor(c){ return c==='green' ? '#46e05a' : '#4a90ff'; }
 
 // ── LANDSCAPE ────────────────────────────────────────────────────────────
-// The game itself still thinks in portrait (CW across, CH end to end, you at
-// the bottom). In landscape the canvas fills the screen and the whole field is
-// drawn turned a quarter-turn: your end is on the LEFT, theirs on the RIGHT.
-// baseT() applies that turn, pt() undoes it for touches, and mtext() keeps
-// every bit of text upright. SW/SH are the real canvas pixels on screen.
-let CW=0, CH=0, DPR=1, centerY=0, LAND=false, SW=0, SH=0;
-function baseT(){ if(LAND) ctx.setTransform(0,1,-1,0,CH,0); else ctx.setTransform(1,0,0,1,0,0); }
+// Landscape fills the screen and plays top vs bottom, same as portrait: the
+// centre line runs straight across the wide screen, lined up with the black
+// line through the logo. The field is just short and wide, so every size and
+// speed uses UN (a unit taken from the height) instead of the width.
+let CW=0, CH=0, DPR=1, centerY=0, LAND=false, SW=0, SH=0, UN=0;
+function baseT(){ ctx.setTransform(1,0,0,1,0,0); }
 function resize(){
   const r=document.getElementById('wrap').getBoundingClientRect();
   DPR=Math.min(2, window.devicePixelRatio||1);
@@ -155,8 +154,8 @@ function resize(){
   if(LAND){ w=aw; h=ah; }
   cv.style.width=w+'px'; cv.style.height=h+'px';
   SW=Math.round(w*DPR); SH=Math.round(h*DPR); cv.width=SW; cv.height=SH;
-  if(LAND){ CW=SH; CH=SW; } else { CW=SW; CH=SH; }
-  centerY=CH*(LINE_FRAC[THEME]||0.49); layout();
+  CW=SW; CH=SH; UN = LAND ? CH*0.75 : CW;
+  centerY = LAND ? CH*0.5 : CH*(LINE_FRAC[THEME]||0.49); layout();
 }
 window.addEventListener('resize',resize);
 
@@ -185,7 +184,7 @@ function sfxOOB(){ sfxPickPlay(OOB_POOL); }
 let R_BALL, R_SPIN, GOAL_HALF;
 
 function layout(){
-  R_BALL=CW*0.052; R_SPIN=CW*0.13; GOAL_HALF=CW*0.24;
+  R_BALL=UN*0.052; R_SPIN=UN*0.13; GOAL_HALF= LAND ? UN*0.36 : CW*0.24;
   if(!ball) ball={x:CW/2,y:centerY,vx:0,vy:0,rot:0};
   resetPositions();
 }
@@ -198,7 +197,7 @@ function resetPositions(){
 // ---- input (multitouch) ----
 function pt(e){ const r=cv.getBoundingClientRect();
   const sx=(e.clientX-r.left)/r.width*SW, sy=(e.clientY-r.top)/r.height*SH;
-  return LAND ? {x:sy, y:CH-sx, sx:sx, sy:sy} : {x:sx, y:sy, sx:sx, sy:sy}; }
+  return {x:sx, y:sy, sx:sx, sy:sy}; }
 cv.addEventListener('pointerdown',e=>{
   startMusicOnce();
   const p=pt(e);
@@ -249,9 +248,9 @@ function collide(sp, isClose){
   if(d<rr && d>0.001){
     if(!sp.touching){ sp.touching=true; if(isClose) sfxHitClose(); else sfxHitFar(); }
     let nx=dx/d, ny=dy/d; ball.x=sp.x+nx*rr; ball.y=sp.y+ny*rr;
-    let relv=Math.max(0, sp.vx*nx+sp.vy*ny), kick=relv+CW*0.010;
+    let relv=Math.max(0, sp.vx*nx+sp.vy*ny), kick=relv+UN*0.010;
     ball.vx=nx*kick+sp.vx*0.6; ball.vy=ny*kick+sp.vy*0.6;
-    let s=Math.hypot(ball.vx,ball.vy), MX=CW*0.075; if(s>MX){ ball.vx*=MX/s; ball.vy*=MX/s; }
+    let s=Math.hypot(ball.vx,ball.vy), MX=UN*0.075; if(s>MX){ ball.vx*=MX/s; ball.vy*=MX/s; }
   } else { sp.touching=false; }
 }
 function update(){
@@ -263,7 +262,7 @@ function update(){
   else {
     let tx,ty;
     if(ball.y<centerY){ tx=ball.x; ty=ball.y-R_SPIN*0.7; } else { tx=CW/2+(ball.x-CW/2)*0.5; ty=CH*0.14; }
-    let adx=tx-s2.x, ady=ty-s2.y, ad=Math.hypot(adx,ady)||1, step=Math.min(CW*0.0105,ad);
+    let adx=tx-s2.x, ady=ty-s2.y, ad=Math.hypot(adx,ady)||1, step=Math.min(UN*0.0105,ad);
     s2.px=s2.x; s2.py=s2.y; s2.x+=adx/ad*step; s2.y+=ady/ad*step;
     s2.x=Math.max(R_SPIN,Math.min(CW-R_SPIN,s2.x)); s2.y=Math.max(R_SPIN,Math.min(centerY-R_SPIN*0.6,s2.y));
     s2.vx=s2.x-s2.px; s2.vy=s2.y-s2.py;
@@ -293,17 +292,15 @@ function drawSpinner(sp,color){
   ctx.restore();
 }
 // ── LANDSCAPE FIELD ─────────────────────────────────────────────────────
-// Landscape turns the field sideways, which puts its drawn divider exactly
-// where the gameplay needs it — but it also turns the logo on its side. So in
-// landscape the field is built once into an offscreen canvas: the sideways
-// logo is painted out with plain cardboard from the same art (stretched along
-// the grain, so it doesn't show), and the logo is drawn back upright in the
-// middle with soft edges. Measurements are fractions of the art's HEIGHT so
-// they hold whatever the file's width is.
-const BADGE={ 'default':{ cx:0.0057, cy:0.5314, hw:0.158, hh:0.180, srcY0:0.08, srcY1:0.34 } };
+// Built once into an offscreen canvas. Plain cardboard (from above the logo in
+// the art) fills the screen; the art's own black line is stretched across the
+// full width at the centre line; the logo sits upright on top, scaled so its
+// line lands exactly on that line. Measurements are fractions of the art's
+// HEIGHT, so they hold whatever the file's width is.
+const BADGE={ 'default':{ cx:0.0057, cy:0.5314, line:0.509, hw:0.195, hh:0.205, srcY0:0.06, srcY1:0.32 } };
 let landField=null, landFieldKey='';
 function softEllipse(src, sx,sy,sw,sh, w,h, solid){
-  // copy a region of an image into a new canvas, faded to nothing at an elliptical edge
+  // copy a region of an image into a new canvas, faded out only past its edge
   const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(w)); c.height=Math.max(1,Math.round(h));
   const g=c.getContext('2d'); g.drawImage(src,sx,sy,sw,sh,0,0,c.width,c.height);
   g.globalCompositeOperation='destination-in';
@@ -314,24 +311,28 @@ function softEllipse(src, sx,sy,sw,sh, w,h, solid){
 }
 function buildLandField(){
   const B=BADGE[THEME]; if(!B || !ready(FIELD)) return null;
-  const key=SW+'x'+SH+'|'+FIELD.src; if(landField && landFieldKey===key) return landField;
+  const key=SW+'x'+SH+'|'+FIELD.src+'|'+centerY; if(landField && landFieldKey===key) return landField;
   const c=document.createElement('canvas'); c.width=SW; c.height=SH; const g=c.getContext('2d');
   const iw=FIELD.naturalWidth, ih=FIELD.naturalHeight;
-  let ar=iw/ih, car=CW/CH, sw,sh; if(ar>car){ sh=ih; sw=sh*car; } else { sw=iw; sh=sw/car; }
-  const ox=(iw-sw)/2, oy=(ih-sh)/2, k=CW/sw;                 // art px -> logical px
-  // 1. the field, turned sideways (same as the plain landscape draw)
-  g.setTransform(0,1,-1,0,CH,0);
-  g.drawImage(FIELD,ox,oy,sw,sh,0,0,CW,CH);
-  // 2. paint out the sideways logo with cardboard from above it, stretched along the grain
-  const bx=iw/2+B.cx*ih, by=B.cy*ih, hw=B.hw*ih, hh=B.hh*ih;
-  const pw=hw*2*1.34, ph=hh*2*1.30;
-  const patch=softEllipse(FIELD, bx-pw/2, B.srcY0*ih, pw, (B.srcY1-B.srcY0)*ih, pw*k, ph*k, 0.84);
-  g.drawImage(patch, (bx-pw/2-ox)*k, (by-ph/2-oy)*k, pw*k, ph*k);
-  // 3. the logo, upright, centred on the divider
-  g.setTransform(1,0,0,1,0,0);
-  const bh=Math.min(SH*0.80, SW*0.40), bw=bh*hw/hh;
-  const badge=softEllipse(FIELD, bx-hw, by-hh, hw*2, hh*2, bw, bh);
-  g.drawImage(badge, (SW-centerY)-bw/2, SH/2-bh/2, bw, bh);
+  // 1. plain cardboard over the whole screen
+  const py0=B.srcY0*ih, ph=(B.srcY1-B.srcY0)*ih;
+  const cs=Math.max(SW/iw, SH/ph);
+  g.drawImage(FIELD, (iw-SW/cs)/2, py0+(ph-SH/cs)/2, SW/cs, SH/cs, 0,0,SW,SH);
+  // logo scale: the logo fills ~92% of the height
+  const s=SH*0.92/(2*B.hh*ih);
+  // 2. the art's black line, stretched edge to edge at the centre line
+  const band=0.022*ih, ly=B.line*ih;
+  const strip=document.createElement('canvas'); strip.width=Math.round(SW); strip.height=Math.max(2,Math.round(band*2*s));
+  const sg=strip.getContext('2d'); sg.drawImage(FIELD, 0, ly-band, iw, band*2, 0,0,strip.width,strip.height);
+  sg.globalCompositeOperation='destination-in';           // keep the ink, fade the cardboard edges of the strip
+  const lg=sg.createLinearGradient(0,0,0,strip.height); lg.addColorStop(0,'rgba(0,0,0,0)'); lg.addColorStop(0.3,'#000'); lg.addColorStop(0.7,'#000'); lg.addColorStop(1,'rgba(0,0,0,0)');
+  sg.fillStyle=lg; sg.fillRect(0,0,strip.width,strip.height);
+  g.drawImage(strip, 0, centerY-strip.height/2);
+  // 3. the logo, upright, its own line sitting on the centre line
+  const hw=B.hw*ih, hh=B.hh*ih, bx=iw/2+B.cx*ih, by=B.cy*ih;
+  const bw=hw*2*s, bh=hh*2*s;
+  const badge=softEllipse(FIELD, bx-hw, by-hh, hw*2, hh*2, bw, bh, 0.90);
+  g.drawImage(badge, CW/2-bw/2, centerY+(B.cy-B.line)*ih*s-bh/2, bw, bh);
   landField=c; landFieldKey=key; return c;
 }
 function draw(){
@@ -342,12 +343,12 @@ function draw(){
     if(ar>car){ sh=FIELD.naturalHeight; sw=sh*car; } else { sw=FIELD.naturalWidth; sh=sw/car; }
     ctx.drawImage(FIELD,(FIELD.naturalWidth-sw)/2,(FIELD.naturalHeight-sh)/2,sw,sh,0,0,CW,CH);
   } else { ctx.fillStyle='#c8b89a'; ctx.fillRect(0,0,CW,CH); }
-  ctx.lineWidth=CW*0.02;
-  ctx.strokeStyle=lineColor(c2); ctx.beginPath(); ctx.moveTo(0,CW*0.01); ctx.lineTo(CW,CW*0.01); ctx.stroke();          // top end = top spinner's color
-  ctx.strokeStyle=lineColor(c1); ctx.beginPath(); ctx.moveTo(0,CH-CW*0.01); ctx.lineTo(CW,CH-CW*0.01); ctx.stroke();    // bottom end = bottom spinner's color
-  ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=CW*0.006; ctx.setLineDash([CW*0.03,CW*0.02]);
+  ctx.lineWidth=UN*0.02;
+  ctx.strokeStyle=lineColor(c2); ctx.beginPath(); ctx.moveTo(0,UN*0.01); ctx.lineTo(CW,UN*0.01); ctx.stroke();          // top end = top spinner's color
+  ctx.strokeStyle=lineColor(c1); ctx.beginPath(); ctx.moveTo(0,CH-UN*0.01); ctx.lineTo(CW,CH-UN*0.01); ctx.stroke();    // bottom end = bottom spinner's color
+  ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=UN*0.006; ctx.setLineDash([UN*0.03,UN*0.02]);
   ctx.beginPath(); ctx.moveTo(0,centerY); ctx.lineTo(CW,centerY); ctx.stroke(); ctx.setLineDash([]);
-  ctx.beginPath(); ctx.arc(CW/2,centerY,CW*0.12,0,7); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CW/2,centerY,UN*0.12,0,7); ctx.stroke();
 
   if(state==='pick'){ if(LAND){ ctx.setTransform(1,0,0,1,0,0); drawPickLand(); } else drawPick(); return; }
   ctx.save(); ctx.translate(ball.x,ball.y); ctx.rotate(ball.rot);
@@ -355,22 +356,24 @@ function draw(){
   ctx.restore();
   drawSpinner(s2,c2); drawSpinner(s1,c1);
   if(LAND){
-    ctx.save(); ctx.setTransform(1,0,0,1,0,0);
-    const mx=SW-centerY, ty=SH*0.10;          // the centre line, on screen
-    ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(SH*0.08)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
-    ctx.fillText(score1+'  –  '+score2, mx, ty+SH*0.03);
-    ctx.font='bold '+Math.round(SH*0.035)+'px Helvetica';
-    ctx.textAlign='right'; ctx.fillStyle='#cfe'; ctx.fillText(mode==='2p'?'P1':'YOU', mx-SH*0.16, ty+SH*0.02);
-    ctx.textAlign='left';  ctx.fillStyle='#fcc'; ctx.fillText(mode==='2p'?'P2':'CPU', mx+SH*0.16, ty+SH*0.02);
-    ctx.shadowBlur=0; ctx.restore(); ctx.textAlign='center';
+    const x=CW*0.075;
+    ctx.save(); ctx.textAlign='center'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
+    ctx.fillStyle='#fcc'; ctx.font='bold '+Math.round(UN*0.035)+'px Helvetica'; ctx.textBaseline='alphabetic';
+    ctx.fillText(mode==='2p'?'P2':'CPU', x, centerY-UN*0.13);
+    ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(UN*0.085)+'px Helvetica';
+    ctx.fillText(String(score2), x, centerY-UN*0.03);
+    ctx.textBaseline='top'; ctx.fillText(String(score1), x, centerY+UN*0.03);
+    ctx.fillStyle='#cfe'; ctx.font='bold '+Math.round(UN*0.035)+'px Helvetica';
+    ctx.fillText(mode==='2p'?'P1':'YOU', x, centerY+UN*0.14);
+    ctx.shadowBlur=0; ctx.restore(); ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   } else {
   ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.07)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=8;
   mtext(ctx,score1+'  –  '+score2, CW/2, centerY-CW*0.03);
   ctx.font='bold '+Math.round(CW*0.03)+'px Helvetica'; ctx.fillStyle='#cfe'; mtext(ctx,mode==='2p'?'P1':'YOU', CW/2-CW*0.14, centerY-CW*0.02);
   ctx.fillStyle='#fcc'; mtext(ctx,mode==='2p'?'P2':'CPU', CW/2+CW*0.14, centerY-CW*0.02); ctx.shadowBlur=0;
   }
-  if(state==='goal'){ ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.12)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=12; mtext(ctx,msg,CW/2,CH*0.5); ctx.shadowBlur=0; }
-  if(state==='win'){ ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,CW,CH); ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(CW*0.11)+'px Helvetica'; mtext(ctx,winner,CW/2,CH*0.46); ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; mtext(ctx,score1+' – '+score2,CW/2,CH*0.54); ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; mtext(ctx,'tap to play again',CW/2,CH*0.62); }
+  if(state==='goal'){ ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(UN*0.12)+'px Helvetica'; ctx.shadowColor='#000'; ctx.shadowBlur=12; mtext(ctx,msg,CW/2,CH*0.5); ctx.shadowBlur=0; }
+  if(state==='win'){ ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,CW,CH); ctx.fillStyle='#ffd54a'; ctx.font='bold '+Math.round(UN*0.11)+'px Helvetica'; mtext(ctx,winner,CW/2,CH*0.46); ctx.fillStyle='#fff'; ctx.font='bold '+Math.round(CW*0.05)+'px Helvetica'; mtext(ctx,score1+' – '+score2,CW/2,CH*0.54); ctx.font='bold '+Math.round(CW*0.045)+'px Helvetica'; mtext(ctx,'tap to play again',CW/2,CH*0.62); }
 }
 function drawPickLand(){
   const W=SW, H=SH, u=H;                    // sizes follow the short side, like portrait's width
@@ -398,7 +401,7 @@ function drawPickLand(){
     ctx.lineWidth=2; ctx.strokeStyle=on?'#ffd54a':'#666'; ctx.stroke();
     ctx.fillStyle=on?'#111':'#ccc'; ctx.font='bold '+Math.round(u*0.05)+'px Helvetica'; ctx.fillText(n,fx,y+u*0.018); });
   ctx.fillStyle='#999'; ctx.font='bold '+Math.round(u*0.032)+'px Helvetica';
-  ctx.fillText(mode==='2p'?'P1 left · P2 right · tap a spinner to start':'you play from the left · tap a spinner to start',W/2,H*0.955);
+  ctx.fillText(mode==='2p'?'P1 bottom · P2 top · tap a spinner to start':'you play from the bottom · tap a spinner to start',W/2,H*0.955);
 }
 function drawPick(){
   ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,CW,CH); ctx.textAlign='center';
