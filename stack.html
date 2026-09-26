@@ -125,6 +125,19 @@ function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); 
 sz();
 
 let M, engine, world, plate, cur=null, placed=[], camY=0, camScale=1, score=0, best=0, state='loading', overT=0;
+// ── plates: one in portrait; landscape adds one to the LEFT and one to the
+// RIGHT so you can build three towers. Every marker on any tower counts. ──
+let plates=[];
+function sideGap(){ return WW()*1.10; }                       // centre-to-centre distance between plates
+function plateSpanX(){                                        // leftmost / rightmost plate centre
+  if(!plates.length) return [CW/2,CW/2];
+  let lo=1e9, hi=-1e9; for(const p of plates){ lo=Math.min(lo,p.position.x); hi=Math.max(hi,p.position.x); } return [lo,hi];
+}
+function clampDragX(x){ const [lo,hi]=plateSpanX(); return Math.max(lo-WW()/2+halfSpan(), Math.min(hi+WW()/2-halfSpan(), x)); }
+function makePlate(x){ const p=M.Bodies.rectangle(x, PLATE_Y+MW*0.4, PLATE_W, MW*0.8, { isStatic:true, friction:1, label:'plate' }); M.Composite.add(world,p); plates.push(p); return p; }
+function addSidePlates(){ if(plates.length>1) return; makePlate(CW/2-sideGap()); makePlate(CW/2+sideGap()); }
+// zoom needed so every plate fits across the screen (1 = no zoom)
+function fitScale(){ const [lo,hi]=plateSpanX(); const span=(hi-lo)+PLATE_W+ML*1.2; return Math.min(1, CW/span); }
 // ── sound: Plop.m4a is the one generic sound — a marker settling into place
 // plays a single plop; a collapse plays one per marker that was on the tower,
 // staggered so it reads as a cascade instead of one simultaneous thud ──────
@@ -187,8 +200,8 @@ boot();
 
 function startGame(){
   M.Composite.clear(world,false);
-  plate=M.Bodies.rectangle(CW/2, PLATE_Y+MW*0.4, PLATE_W, MW*0.8, { isStatic:true, friction:1, label:'plate' });
-  M.Composite.add(world, plate);
+  plates=[]; plate=makePlate(CW/2);
+  if(CW>CH) addSidePlates();                                  // landscape: left + right plates too
   placed=[]; score=0; camY=0; camScale=1; state='play'; overT=0;
   spawn();
 }
@@ -219,9 +232,9 @@ cv.addEventListener('pointerdown',e=>{
   startMusicOnce();
   if(state==='title'){ startGame(); return; }
   if(state==='over'){ if(overT<=0){ state='title'; } return; }
-  if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); dragTarget={x:Math.max(CW/2-WW()/2+halfSpan(),Math.min(CW/2+WW()/2-halfSpan(),p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; }
+  if(state==='play' && cur && !cur.dropped){ cur.held=true; const p=pt(e); dragTarget={x:clampDragX(p.x), y:Math.min(p.y, PLATE_Y-ML*0.42)}; }
 });
-cv.addEventListener('pointermove',e=>{ if(state==='play'&&cur&&cur.held){ const p=pt(e); dragTarget={x:Math.max(CW/2-WW()/2+halfSpan(),Math.min(CW/2+WW()/2-halfSpan(),p.x)), y:Math.min(p.y, PLATE_Y-ML*0.42)}; } });
+cv.addEventListener('pointermove',e=>{ if(state==='play'&&cur&&cur.held){ const p=pt(e); dragTarget={x:clampDragX(p.x), y:Math.min(p.y, PLATE_Y-ML*0.42)}; } });
 function release(){ if(state==='play'&&cur&&cur.held&&!cur.dropped){ cur.held=false; cur.dropped=true; M.Body.setStatic(cur,false); M.Body.setVelocity(cur,{x:0,y:0}); } }
 window.addEventListener('pointerup',release); window.addEventListener('pointercancel',release);
 
@@ -244,7 +257,7 @@ function update(){
     }
   }
   // any previously-placed marker fell off -> topple
-  if(state==='play'){ for(const b of placed){ if(b.position.y > PLATE_Y+ML*1.1 || b.position.x<-ML || b.position.x>CW+ML){ gameOver(); break; } } }
+  if(state==='play'){ for(const b of placed){ const [lo,hi]=plateSpanX(); if(b.position.y > PLATE_Y+ML*1.1 || b.position.x<lo-PLATE_W-ML || b.position.x>hi+PLATE_W+ML){ gameOver(); break; } } }
   // camera
   let topY = PLATE_Y; if(placed.length) topY=Math.min(topY, ...placed.map(b=>b.position.y)); if(cur&&cur.dropped) topY=Math.min(topY,cur.position.y);
   if(state==='over'){
@@ -256,8 +269,10 @@ function update(){
     camScale += (tScale-camScale)*0.09;
     camY += ((CH*0.5 - cY*camScale)-camY)*0.09;
   } else {
-    const followLine = CH*0.28, target = Math.max(0, followLine - topY);
-    camScale += (1-camScale)*0.12; camY += (target-camY)*0.12;
+    // follow the top of the tallest tower; if the plates don't all fit across
+    // the screen (portrait after building on the side plates) zoom out to fit
+    const s=fitScale(), followLine = CH*0.28, target = Math.max(PLATE_Y*(1-s), followLine - topY*s);
+    camScale += (s-camScale)*0.12; camY += (target-camY)*0.12;
   }
   if(state==='over' && overT>0) overT--;
 }
@@ -289,7 +304,7 @@ function drawSpiral(cx,cy,R,col){ ctx.save();
   for(let a=0;a<Math.PI*5;a+=0.22){ const r=R*a/(Math.PI*5); for(const ph of [0,Math.PI]){ const x=cx+Math.cos(a+ph)*r, y=cy+Math.sin(a+ph)*r; ctx.globalAlpha=0.7*(1-r/R); ctx.beginPath(); ctx.arc(x,y,1.6,0,7); ctx.fill(); } }
   ctx.globalAlpha=1; ctx.restore();
 }
-function drawPlate(){
+function drawOnePlate(plate){
   const px=plate.position.x, py=plate.position.y, rx=PLATE_W/2, ry=MW*0.55;
   let fill='#cfd6e0', stroke=null, glow=null;
   if(THEME==='neon'){ fill='#2a0620'; stroke='#ff2db4'; glow='#ff2db4'; }
@@ -302,6 +317,7 @@ function drawPlate(){
   if(stroke){ ctx.shadowBlur=0; ctx.strokeStyle=stroke; ctx.lineWidth=Math.max(2,WW()*0.008); ctx.stroke(); }
   ctx.restore();
 }
+function drawPlate(){ for(const p of plates) drawOnePlate(p); }
 // ---- infinite vertical backdrop: windows tile forever, trees drift past at depth ----
 function tileWindowsV(img,alpha,par){
   if(!ready(img)||alpha<=0.01) return;
@@ -421,7 +437,26 @@ function loop(){ update(); draw();
   const showB=(state==='play');
   if(showB!==obShown){ obShown=showB; document.getElementById('orientBtn').style.display=showB?'flex':'none'; }
   requestAnimationFrame(loop); }
-window.addEventListener('resize',()=>{ sz(); });
+// ── ROTATION MID-RUN ───────────────────────────────────────────────────
+// The tower is real physics, so on a resize every body (plates, placed
+// markers, the one in hand) is moved and scaled about the plate by the change
+// in the tower-width unit — the stack stays standing, just drawn at the new
+// size. Turning to landscape adds the side plates; turning back to portrait
+// keeps them (the camera zooms out to show them) so nothing you built vanishes.
+window.addEventListener('resize',()=>{
+  const oCW=CW, oPY=PLATE_Y, oWW=WW();
+  sz();
+  if(!engine || !plates.length || (state!=='play' && state!=='over')) return;
+  const k=WW()/oWW;
+  for(const b of M.Composite.allBodies(world)){
+    const wasStatic=b.isStatic;
+    M.Body.setPosition(b,{ x:CW/2+(b.position.x-oCW/2)*k, y:PLATE_Y+(b.position.y-oPY)*k });
+    if(Math.abs(k-1)>0.001){ M.Body.scale(b,k,k); if(b.bw){ b.bw*=k; b.bh*=k; } }
+    if(wasStatic) M.Body.setStatic(b,true);
+  }
+  if(CW>CH) addSidePlates();
+  camY*=k; dragTarget=null;
+});
 loop();
 </script>
 </body>

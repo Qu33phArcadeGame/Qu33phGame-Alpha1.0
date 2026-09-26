@@ -188,6 +188,32 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
 .rail-svg{ position:absolute; left:0; top:0; z-index:5; pointer-events:none; overflow:visible;
   filter:drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
 
+/* ── MEGA card (last area) + TOTAL SCORE screen ── */
+.mega-card{position:absolute;z-index:7;width:min(74px,15vw);height:auto;transform:translate(-50%,-50%) rotate(-6deg);
+  pointer-events:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.7));animation:megaPulse 1.1s ease-in-out infinite;}
+@keyframes megaPulse{0%,100%{transform:translate(-50%,-50%) rotate(-6deg) scale(1);}50%{transform:translate(-50%,-50%) rotate(-6deg) scale(1.08);}}
+.mega-card.hidden{display:none;}
+.total-screen{position:absolute;inset:0;z-index:40;background:rgba(0,0,0,.92);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;padding:48px 16px 14px;box-sizing:border-box;
+  font-family:Helvetica,Arial,sans-serif;color:#fff;text-align:center;}
+.total-screen.hidden{display:none;}
+.total-screen h2{margin:0;font-size:clamp(18px,5.5vw,30px);letter-spacing:6px;}
+.total-rows{display:grid;grid-template-columns:1fr;gap:4px 18px;width:min(420px,92vw);}
+.total-row{display:flex;justify-content:space-between;padding:5px 12px;background:#101010;border:1px solid #1d1d1d;
+  border-radius:6px;font-size:12px;letter-spacing:1.5px;color:#bbb;}
+.total-row b{color:#ffd24a;font-weight:bold;}
+.total-sum{font-size:clamp(28px,8vw,46px);font-weight:bold;color:#ffd24a;letter-spacing:2px;line-height:1.05;}
+.total-best{font-size:12px;letter-spacing:3px;color:#aaa;}
+.total-best.new{color:#7bff9a;}
+.total-btns{display:flex;gap:26px;margin-top:6px;}
+.total-btns .mk{position:static !important;}
+@media (orientation:landscape){
+  .total-screen{flex-direction:row;flex-wrap:wrap;align-content:center;gap:10px 5vw;padding:44px 4vw 10px;}
+  .total-head{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .total-rows{grid-template-columns:1fr 1fr 1fr;width:min(640px,58vw);}
+  .total-row{padding:4px 10px;font-size:11px;}
+}
+
 /* ══ LANDSCAPE — laid out like the Season 1 arcade menu ═══════════════════
    Big logo + "SEASON 2" parked in a left column; the nine tiles become true
    circles in a 3x3 grid on the right, sized from the screen height so the
@@ -310,6 +336,19 @@ document.addEventListener('dragstart', function(e){
   <div class="trick-label" id="trickLabel"></div>
   <div class="peef-label" id="peefLabel">PEEF</div>
   <div class="board-stage"><img id="playerBoard" class="board" src="season2-green.png"></div>
+  <img class="mega-card hidden" id="megaCard" src="megacard.png" alt="MEGA">
+  <div class="total-screen hidden" id="totalScreen">
+    <div class="total-head">
+      <h2>TOTAL SCORE</h2>
+      <div class="total-sum" id="totalSum">0</div>
+      <div class="total-best" id="totalBest">HIGH SCORE 0</div>
+      <div class="total-btns">
+        <button class="marker-btn mk" onclick="closeTotal(true)">PLAY AGAIN</button>
+        <button class="marker-btn mk" onclick="closeTotal(false)">MENU</button>
+      </div>
+    </div>
+    <div class="total-rows" id="totalRows"></div>
+  </div>
 </div>
 
 <script>
@@ -332,7 +371,7 @@ applyTheme();
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');}
 function startGame(color){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden'); boardEl.src=boards[color]; applyTheme(); restartGame();}
-function quitGame(){running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();clearFidgetEls();fidgetSpinners=null;clearRailEls();grinding=null;clearPins();$('gameScreen').classList.add('hidden');openSelect();}
+function quitGame(){$('megaCard').classList.add('hidden');$('totalScreen').classList.add('hidden');running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();clearFidgetEls();fidgetSpinners=null;clearRailEls();grinding=null;clearPins();$('gameScreen').classList.add('hidden');openSelect();}
 
 // ── nine areas, in order: original field → Mini (near, far) → Flip crossing →
 // Bowling → Pinball → Qu33ph Jump → Stack crossing → Fidget Qu33ph (terminal).
@@ -428,6 +467,10 @@ let fidgetSpinners=null, fidgetEls=[], airborne=0;
 // swipe as you come off the end to pop a trick (same "free flick" window as
 // launching off a Fidget spinner). ──────────────────────────────────────────
 let grinding=null, railEls=[], grindExit=0, hpWasIn=false;
+let railCD=0;              // after you jump off a rail, rails can't grab you again for a moment — that's what lets you escape a loop
+// ── per-area score + the MEGA card that ends the run ──
+let areaScores=[], megaPos=null, megaDone=false;
+const SKATE_HIGH_KEY='qu33phSkateHigh';
 // ── Bowling pins: real collectible markers standing in as pins — skate into
 // one to knock it down. ─────────────────────────────────────────────────────
 let pinEls=[], pinsState=null, pinsCleared=false;
@@ -466,8 +509,99 @@ function bounds(){
   return { left:r.width*a.left, right:r.width*a.right, top:r.height*a.top, bottom:r.height*a.bottom };
 }
 
-function addScore(n){ score=Math.max(0,score+n); $('scoreHud').textContent=score; }
+function addScore(n){
+  const before=score; score=Math.max(0,score+n); $('scoreHud').textContent=score;
+  areaScores[areaIdx]=(areaScores[areaIdx]||0)+(score-before);      // what this area actually added (PEEFs included)
+}
 
+// the MEGA card sits in one random corner of the last area, a new corner every run
+function placeMega(){
+  const el=$('megaCard');
+  if(areaIdx!==AREA_COUNT-1 || megaDone){ el.classList.add('hidden'); megaPos=null; return; }
+  const b=bounds(), r=fieldRect(), pad=0.07;
+  const corners=[[pad,pad],[1-pad,pad],[pad,1-pad],[1-pad,1-pad]];
+  const c=corners[Math.floor(Math.random()*4)];
+  // stored as fractions of the play area, so it stays in its corner through a rotation
+  megaPos={fx:c[0], fy:c[1]};
+  positionMega();
+  el.classList.remove('hidden');
+}
+function positionMega(){
+  if(!megaPos) return;
+  const b=bounds(), el=$('megaCard');
+  el.style.left=(b.left+(b.right-b.left)*megaPos.fx)+'px';
+  el.style.top=(b.top+(b.bottom-b.top)*megaPos.fy)+'px';
+}
+function megaXY(){ const b=bounds(); return {x:b.left+(b.right-b.left)*megaPos.fx, y:b.top+(b.bottom-b.top)*megaPos.fy}; }
+// ── TOTAL SCORE: every area's points added up; the total becomes the high score if it beats it
+function areaLabel(i){
+  const a=AREAS[i];
+  if(a.obstacle) return a.obstacle.sky==='stack' ? 'STACK CROSSING' : 'FLIP CROSSING';
+  return 'AREA '+(i+1);
+}
+function finishRun(){
+  megaDone=true; running=false;
+  $('megaCard').classList.add('hidden');
+  let total=0; const rows=[];
+  for(let i=0;i<AREA_COUNT;i++){ const v=areaScores[i]||0; total+=v; rows.push('<div class="total-row"><span>'+areaLabel(i)+'</span><b>'+v+'</b></div>'); }
+  $('totalRows').innerHTML=rows.join('');
+  $('totalSum').textContent=total;
+  let best=0; try{ best=parseInt(localStorage.getItem(SKATE_HIGH_KEY)||'0',10)||0; }catch(e){}
+  const bestEl=$('totalBest');
+  if(total>best){ best=total; try{ localStorage.setItem(SKATE_HIGH_KEY,String(best)); }catch(e){} bestEl.textContent='NEW HIGH SCORE!'; bestEl.classList.add('new'); }
+  else { bestEl.textContent='HIGH SCORE '+best; bestEl.classList.remove('new'); }
+  $('totalScreen').classList.remove('hidden');
+  try{ if(navigator.vibrate) navigator.vibrate([30,40,30,40,60]); }catch(e){}
+}
+// ── ROTATION / RESIZE ─────────────────────────────────────────────────────
+// Everything in the run is laid out as fractions of the play field, so a
+// rotation just rescales: positions and speeds are multiplied by the change
+// in width/height (keeping every piece at the same fraction of the field),
+// and all the drawn pieces — rails, half-pipe, chute, chair, pins, spinners,
+// platforms, the MEGA card — are rebuilt at the new size. Same run, same
+// moment, new layout.
+let lastFW=0, lastFH=0;
+function onFieldResize(){
+  if($('gameScreen').classList.contains('hidden')) { lastFW=0; return; }
+  const r=fieldRect(); if(!r.width || !r.height) return;
+  if(!lastFW){ lastFW=r.width; lastFH=r.height; return; }
+  if(Math.abs(r.width-lastFW)<1 && Math.abs(r.height-lastFH)<1) return;
+  const sx=r.width/lastFW, sy=r.height/lastFH;
+  lastFW=r.width; lastFH=r.height;
+  const a=AREAS[areaIdx];
+  bx*=sx; by*=sy; vx*=sx; vy*=sy;
+  if(crossing){ crossing.fromX*=sx; crossing.fromY*=sy; }
+  if(flipMode){
+    fx*=sx; fy*=sy; fvx*=sx; fvy*=sy;
+    a.obstacle.platforms.forEach((p,i)=>{ const w=flipPlatformEls[i]; if(!w) return;
+      w.style.left=(r.width*p.l)+'px'; w.style.top=(r.height*p.t-4)+'px'; w.style.width=(r.width*p.w)+'px'; });
+  }
+  if(a.halfpipe){ hpX*=sx; hpY*=sy; hpVX*=sx; hpVY*=sy; }
+  if(a.fidget && fidgetSpinners){
+    const old=fidgetSpinners; buildFidgetSpinners();
+    fidgetSpinners.forEach((s2,i)=>{ if(old[i]){ s2.rot=old[i].rot; s2.spin=old[i].spin; s2.cooldown=old[i].cooldown; } });
+  }
+  if(pinsState){ const b=bounds(); pinsState.forEach(p=>{ if(p.el){ p.el.style.left=(b.left+(b.right-b.left)*p.x)+'px'; p.el.style.top=(b.top+(b.bottom-b.top)*p.y)+'px'; } }); }
+  placeChair();
+  buildRailEls();
+  buildHalfpipeEl();
+  if(grinding && grinding.rl){                    // mid-grind: same rail, same point along it
+    const {p1,p2}=railPoints(grinding.rl);
+    grinding.p1=p1; grinding.p2=p2; grinding.len=Math.hypot(p2.x-p1.x,p2.y-p1.y);
+    bx=p1.x+(p2.x-p1.x)*grinding.t; by=p1.y+(p2.y-p1.y)*grinding.t;
+  }
+  if(a.halfpipe) hpSyncBoard(halfpipePoints(a.halfpipe));
+  positionMega();
+  render();
+}
+let resizeRAF=0;
+function queueResize(){ cancelAnimationFrame(resizeRAF); resizeRAF=requestAnimationFrame(onFieldResize); }
+window.addEventListener('resize', queueResize);
+window.addEventListener('orientationchange', ()=>{ queueResize(); setTimeout(queueResize,250); setTimeout(queueResize,600); });
+function closeTotal(again){
+  $('totalScreen').classList.add('hidden');
+  if(again) restartGame(); else quitGame();
+}
 function placeChair(){
   const a=AREAS[areaIdx];
   if(a.obstacle){
@@ -519,6 +653,7 @@ function loadArea(idx){
   else if(prev && prev.fidget){ clearFidgetEls(); fidgetSpinners=null; }
   if(a.pins) buildPins(); else clearPins();
   grinding=null; grindExit=0;
+  placeMega();
   placeChair();                  // before the pipe is drawn: the chute runs into the chair, so it needs its spot
   buildRailEls();
   buildHalfpipeEl();
@@ -980,7 +1115,8 @@ function updateFidget(dt){
 }
 
 function restartGame(){
-  score=0;
+  score=0; areaScores=new Array(AREA_COUNT).fill(0); megaDone=false; railCD=0;
+  $('totalScreen').classList.add('hidden');
   loadArea(0);
   const b=bounds();
   bx=b.left+18; by=(b.top+b.bottom)/2;
@@ -988,6 +1124,7 @@ function restartGame(){
   pointers.clear(); dragId=null; dragStart=null; dragNow=null;
   lastTapTime=-9999; lastTapPos=null;
   running=true; last=performance.now();
+  lastFW=0; onFieldResize();       // baseline for rotation rescaling
   $('trickLabel').classList.remove('show');
   $('peefLabel').classList.remove('show');
   $('scoreHud').textContent='0';
@@ -1036,6 +1173,13 @@ function doTap(x,y){
   lastTapTime=performance.now();
   lastTapPos={x,y};
   ollieHop=1;
+  if(grinding){
+    // tap while grinding = ollie off the rail, straight on in the direction you're riding
+    const g=grinding, ux=(g.p2.x-g.p1.x)/g.len, uy=(g.p2.y-g.p1.y)/g.len;
+    grinding=null; railCD=0.6; airborne=Math.max(airborne,1.0);
+    vx=ux*340; vy=uy*340;
+    return;
+  }
 
   const hpA = AREAS[areaIdx].halfpipe;
   if(hpA && !hpAir && !flipMode){ hpAir=true; hpY=hpCurSurf(halfpipePoints(hpA),hpX); hpVY=-300; }   // ollie
@@ -1076,7 +1220,14 @@ function applyFlick(dx,dy){
     boardAngle=Math.atan2(dy,dx)*180/Math.PI+90;
     return; // no tricks in the platformer sections — flicks are purely movement here
   }
-  if(grinding) return; // the rail rides itself — flicks kick in again once you pop off the end
+  if(grinding){
+    // flick while grinding = jump off the rail, carrying its speed, in the
+    // flicked direction — and it counts as airborne, so the flick's trick fires
+    const g=grinding, ux=(g.p2.x-g.p1.x)/g.len, uy=(g.p2.y-g.p1.y)/g.len;
+    grinding=null; railCD=0.6; airborne=Math.max(airborne,1.2);
+    vx=ux*260; vy=uy*260;
+    vx+=dx*FLICK_POWER/10*1.6; vy+=dy*FLICK_POWER/10*1.6;   // (the regular push below adds on top)
+  }
 
   vx+=dx*FLICK_POWER/10; vy+=dy*FLICK_POWER/10;
   const sp=Math.hypot(vx,vy);
@@ -1202,9 +1353,9 @@ function frame(t){
     if(a.rails){
       a.rails.forEach(rl=>{
         const {p1,p2}=railPoints(rl);
-        if(Math.hypot(bx-p1.x,by-p1.y) < 40){
+        if(railCD<=0 && !grinding && Math.hypot(bx-p1.x,by-p1.y) < 40){
           const len=Math.hypot(p2.x-p1.x,p2.y-p1.y);
-          grinding={p1,p2,len,t:0,dur:Math.max(0.35,len/460)};
+          grinding={p1,p2,len,t:0,dur:Math.max(0.35,len/460),rl};
           addScore(15);
           try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){}
         }
@@ -1212,6 +1363,12 @@ function frame(t){
     }
   }
   if(grindExit>0) grindExit=Math.max(0, grindExit-dt);
+  if(railCD>0) railCD=Math.max(0, railCD-dt);
+  // land on the MEGA card → run over, off to the total score
+  if(megaPos && !megaDone && !crossing && !peefAnim && areaIdx===AREA_COUNT-1){
+    const m=megaXY(), rad=Math.max(34, $('megaCard').offsetWidth*0.55);
+    if(Math.hypot(bx-m.x, by-m.y)<rad){ render(); finishRun(); return; }
+  }
 
   render();
   raf=requestAnimationFrame(frame);

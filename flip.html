@@ -989,11 +989,21 @@ function updateChrome(){                                    // orientation butto
   if(play!==chromeOn){ chromeOn=play; $('orientBtn').style.display = play?'flex':'none'; }
 }
 function loop(){ step(); draw(); updateChrome(); requestAnimationFrame(loop); }
+// ── ROTATION MID-RUN ───────────────────────────────────────────────────
+// The course is measured in world-width units (x) and screen height (y), so
+// on a resize the whole run — every platform, the marker mid-flight, the
+// camera — is rescaled to the new size and play carries straight on. Same
+// run, same score, same spot; landscape just shows more course ahead (the
+// endless course tops itself up to fill it).
 window.addEventListener('resize',()=>{
-  const ow=CW,oh=CH; sz();
-  if(Math.abs(CW-ow)>ow*0.12||Math.abs(CH-oh)>oh*0.12){
-    if(state!=='menu'){ if(mode==='levels') buildLevel(levelIdx); else buildEndless(); startRun(); }
-  }
+  const oWW=WW(), oCH=CH; sz();
+  const kx=WW()/oWW, ky=CH/oCH;
+  if(!isFinite(kx)||!isFinite(ky)||(Math.abs(kx-1)<0.001&&Math.abs(ky-1)<0.001)) return;
+  for(const p of plats){ p.x*=kx; p.w*=kx; p.y*=ky; }
+  if(marker){ marker.x*=kx; marker.y*=ky; marker.vx*=kx; marker.vy*=ky; }
+  camX*=kx;
+  if(marker && state!=='flying'){ camX=marker.x-(CW*HOLD)/Z; }
+  if(mode!=='levels' && marker){ while(plats.length<marker.pIdx+(CW>CH?17:11)) addPlatform(); }
 });
 mode='endless'; levelIdx=0; buildEndless(); startRun(); toMenu();
 loop();
