@@ -477,12 +477,15 @@ cv.addEventListener('pointerdown',e=>{
 cv.addEventListener('pointermove',e=>{ if(pointing&&state==='play') dragU=slotU(e.clientX); });
 window.addEventListener('pointerup',()=>{
   if(!pointing) return; pointing=false;
+  doDrop();
+});
+function doDrop(){                                  // shared by release, the DROP key and a phone flick
   if(state!=='play'||queue.length<=0||dropping) return;
   const col=queue.shift(); markers=queue.length;
   dropping={u:dragU,t:0,col:col,rot:dropRot()};
   sfxDrop();
   updateBuy();
-});
+}
 function wallet(){ try{ return parseInt(localStorage.getItem('qu33phCoins')||'0',10)||0; }catch(e){ return 0; } }
 function spendWallet(n){                                   // the +3 markers come out of your main coin wallet
   try{ localStorage.setItem('qu33phCoins', Math.max(0, wallet()-n)); }catch(e){}
@@ -841,6 +844,20 @@ window.addEventListener('resize',()=>{ sz(); CABC=null; });
 reset(60);
 updateBuy();
 requestAnimationFrame(loop);
+</script>
+<script src="qu33ph-controls.js?v=1"></script>
+<script>
+
+QC.bind('dozer',{
+  onAction:(a,d)=>{ if(!d) return;
+    if(a==='drop') doDrop();
+    if(a==='buy'){ const b=document.getElementById('buyBtn'); if(b && b.style.display!=='none') b.click(); } },
+  frame:(dt,h)=>{ if(state!=='play') return;
+    if(h.moveLeft)  dragU=Math.max(0,dragU-0.8*dt);
+    if(h.moveRight) dragU=Math.min(1,dragU+0.8*dt); },
+  motion:{ tilt:(x)=>{ if(state==='play' && !pointing) dragU=Math.max(0,Math.min(1,0.5+x*0.5)); }, flick:()=>doDrop() },
+  onBack:()=>{ try{ parent.dozerBack(); }catch(e){} }
+});
 </script>
 </body>
 </html>

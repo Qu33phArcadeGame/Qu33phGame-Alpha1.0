@@ -1067,5 +1067,21 @@ resize(); newGame(); requestAnimationFrame(frameLoop);
   b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); location.replace(url); }, true);
 })();
 </script>
+<script src="qu33ph-controls.js?v=1"></script>
+<script>
+
+QC.bind('bowling',{
+  aim:{ base:-Math.PI/2, range:Math.PI/6, lead:70,
+    can:()=>phase==='aim' && !gameOver,
+    anchor:()=>{ const q=proj(aimX,0.012), r=cv.getBoundingClientRect(); return {x:r.left+q.x*r.width/CW, y:r.top+q.y*r.height/CH}; },
+    onThrow:(off,p)=>{ if(phase!=='aim'||gameOver) return; throwBall(Math.sin(off)*0.9, 0.35+p*1.0); } },
+  onAction:(a,d)=>{ if(!d) return;
+    if(a==='orient' && phase==='aim'){ orientIdx=(orientIdx+1)%ORIENTS.length; }
+    if(a==='throw' && gameOver) newGame(); },
+  frame:(dt,h)=>{ if(phase!=='aim'||gameOver) return;
+    if(h.moveLeft)  aimX=Math.max(-0.72,aimX-1.1*dt);
+    if(h.moveRight) aimX=Math.min( 0.72,aimX+1.1*dt); }
+});
+</script>
 </body>
 </html>

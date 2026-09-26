@@ -823,5 +823,17 @@ loop();
   b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); location.replace(url); }, true);
 })();
 </script>
+<script src="qu33ph-controls.js?v=1"></script>
+<script>
+
+QC.bind('skee',{
+  aim:{ base:-Math.PI/2, range:Math.PI/5, lead:70,
+    can:()=>state==='ready',
+    anchor:()=>{ const f=F(), r=cv.getBoundingClientRect(); return {x:r.left+f.start.x*r.width, y:r.top+f.start.y*r.height}; },
+    onThrow:(off,p)=>{ if(state!=='ready') return; const f=F(); roll(Math.max(0.05,p)*f.pullDiv, (Math.sin(off)/Math.sin(Math.PI/5))*f.aimDiv); } },
+  onAction:(a,d)=>{ if(a==='lane' && d){ const b=document.getElementById('laneBtn'); if(b) b.click(); } },
+  frame:(dt,h)=>{ if(state==='over' && h.throw) reset(); }            // throw key also starts the next game
+});
+</script>
 </body>
 </html>

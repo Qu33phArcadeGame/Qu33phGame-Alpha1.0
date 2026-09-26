@@ -456,5 +456,20 @@ resize(); loop();
   b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); location.replace(url); }, true);
 })();
 </script>
+<script src="qu33ph-controls.js?v=1"></script>
+<script>
+
+let qcTX=0, qcTY=0;
+QC.bind('fidget',{
+  frame:(dt,h)=>{ if(state!=='play' || !s1) return;
+    const v=UN*1.15*dt;
+    let dx=(h.right?1:0)-(h.left?1:0), dy=(h.down?1:0)-(h.up?1:0);
+    if(!dx && !dy && QC.motionPct()>0){ dx=qcTX; dy=qcTY; }                 // phone tilt steers your spinner
+    if(dx||dy) moveSpinner(s1,{x:s1.x+dx*v, y:s1.y+dy*v}, true);
+    if(mode==='2p' && s2){ const ex=(h.p2right?1:0)-(h.p2left?1:0), ey=(h.p2down?1:0)-(h.p2up?1:0);
+      if(ex||ey) moveSpinner(s2,{x:s2.x+ex*v, y:s2.y+ey*v}, false); } },
+  motion:{ tilt:(x,y)=>{ qcTX=Math.abs(x)<0.08?0:x; qcTY=Math.abs(y)<0.08?0:y; } }
+});
+</script>
 </body>
 </html>

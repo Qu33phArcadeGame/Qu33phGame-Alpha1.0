@@ -1061,5 +1061,15 @@ loop();
   b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); location.replace(url); }, true);
 })();
 </script>
+<script src="qu33ph-controls.js?v=1"></script>
+<script>
+
+QC.bind('flip',{
+  aim:{ base:-Math.PI/2+0.45, range:Math.PI/4, lead:62,
+    can:()=>state==='ready' && !!marker,
+    anchor:()=>{ if(!marker) return null; const r=cv.getBoundingClientRect(); const x=SX(marker.x), y=SY(marker.y)-MH()*0.5*Z; return {x:r.left+x*r.width/CW, y:r.top+y*r.height/CH}; },
+    onThrow:(off,p)=>{ if(state!=='ready') return; flip(Math.max(0.1,p), Math.max(-1,Math.min(1,Math.sin(off)/Math.sin(Math.PI/4))), 0.9); } }
+});
+</script>
 </body>
 </html>

@@ -472,5 +472,24 @@ window.addEventListener('resize',()=>{
 });
 loop();
 </script>
+<script src="qu33ph-controls.js?v=1"></script>
+<script>
+
+let qcTilt=null;
+QC.bind('stack',{
+  onAction:(a,d)=>{ if(!d || a!=='drop') return;
+    if(state==='title'){ startGame(); return; }
+    if(state==='over'){ if(overT<=0) state='title'; return; }
+    if(state==='play' && cur && !cur.dropped){ cur.held=true; release(); } },
+  frame:(dt,h)=>{ if(state!=='play' || !cur || cur.dropped) return;
+    const dir=(h.moveRight?1:0)-(h.moveLeft?1:0);
+    if(dir){ cur.held=true; const x=(dragTarget?dragTarget.x:cur.position.x)+dir*WW()*0.9*dt;
+      dragTarget={x:clampDragX(x), y:dragTarget?dragTarget.y:cur.position.y}; }
+    else if(qcTilt!==null && QC.motionPct()>0){ const [lo,hi]=plateSpanX(); cur.held=true;
+      dragTarget={x:clampDragX((lo+hi)/2+qcTilt*((hi-lo)/2+WW()*0.5)), y:dragTarget?dragTarget.y:cur.position.y}; } },
+  motion:{ tilt:(x)=>{ qcTilt=x; }, flick:()=>{ if(state==='play' && cur && !cur.dropped){ cur.held=true; release(); } } },
+  onBack:()=>{ try{ parent.stackBack(); }catch(e){} }
+});
+</script>
 </body>
 </html>

@@ -798,5 +798,19 @@ requestAnimationFrame(loop);
   b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); location.replace(url); }, true);
 })();
 </script>
+<script src="qu33ph-controls.js?v=1"></script>
+<script>
+
+// ── controls: keys, aim marker, motion (see qu33ph-controls.js) ──
+QC.bind('mini',{
+  aim:{ base:-Math.PI/2, range:Math.PI/4, lead:78,
+    can:()=>state==='play' && !live && !!nextColor() && turnPause<=0,
+    anchor:()=>{ if(!ready(NEAR)) return null; const p=proj(aimU,0.02), r=cv.getBoundingClientRect(); return {x:r.left+p.x*r.width/CW, y:r.top+p.y*r.height/CH}; },
+    onThrow:(off,p)=>{ if(state==='play' && !live && nextColor() && turnPause<=0) launch(p, Math.sin(off)/Math.sin(Math.PI/4)); } },
+  frame:(dt,h)=>{ if(state!=='play'||live) return;                     // A/D walk the throw spot along the near edge
+    if(h.moveLeft)  aimU=Math.max(0.06,aimU-0.45*dt);
+    if(h.moveRight) aimU=Math.min(0.94,aimU+0.45*dt); }
+});
+</script>
 </body>
 </html>
