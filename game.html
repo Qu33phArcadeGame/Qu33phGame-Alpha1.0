@@ -2383,7 +2383,7 @@ function applyThemeOverlay(){
   let cw=canvas.width, ch=canvas.height;
   let t=Date.now()/1000;
   if(isRZ()){
-    if(realisticImg.complete && realisticImg.naturalWidth){ ctx.drawImage(realisticImg,0,0,cw,ch); }
+    if(realisticImg.complete && realisticImg.naturalWidth){ withTiltParallax(0,0,cw,ch,0.8,function(){ ctx.drawImage(realisticImg,0,0,cw,ch); }); }
     else { ctx.fillStyle="#141414"; ctx.fillRect(0,0,cw,ch); ctx.fillStyle="#666"; ctx.font="13px Helvetica, Arial, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("upload originalfield.png to GitHub", cw/2, ch/2); }
     applyStyleWash(styleOf(), cw, ch, t);
     return;
@@ -3908,7 +3908,62 @@ function lerpRGB(a,b,t){
   ];
 }
 
+// ─── TILT PARALLAX (Settings → 3D) ───────────────────────────────────────
+// The view out of the window pans against the fixed window frame as you tilt
+// the phone — like looking through real glass. Same maths as the standalone
+// tilt-parallax module: 45° natural holding angle, ±30° clamp, small dead zone,
+// normalized to -1..1, then eased with a frame-rate-independent lerp.
+var tiltParallaxPct = parseInt(localStorage.getItem("qu33phTiltParallax")||"0",10)||0, tiltParallaxPrev = 60;
+var tiltPx = { tx:0, ty:0, x:0, y:0, base:{x:0,y:45}, live:false, listening:false, last:0, status:"" };
+function _tpWrap(d){ return ((((d+180)%360)+360)%360)-180; }
+function _tpMap(d){                       // degrees from baseline -> -1..1
+  d=_tpWrap(d); var m=Math.abs(d); if(m<=0.6) return 0;
+  d=Math.sign(d)*(m-0.6); return Math.max(-30,Math.min(30,d))/30;
+}
+function _tpOnOrient(e){
+  if(e.beta==null || e.gamma==null) return;
+  var a=((screen.orientation&&typeof screen.orientation.angle==="number")?screen.orientation.angle:(window.orientation||0));
+  a=((a%360)+360)%360;
+  // device axes -> what the player sees as left/right and toward/away
+  var x = a===90? -e.beta : a===180? -e.gamma : a===270? e.beta : e.gamma;
+  var y = a===90?  e.gamma: a===180? -e.beta  : a===270? -e.gamma: e.beta;
+  tiltPx.live=true; tiltPx.raw={x:x,y:y};
+  tiltPx.tx=_tpMap(x-tiltPx.base.x); tiltPx.ty=_tpMap(y-tiltPx.base.y);
+}
+function tiltParallaxListen(){
+  if(tiltPx.listening) return; tiltPx.listening=true;
+  window.addEventListener("deviceorientation", _tpOnOrient, {passive:true});
+  // desktops have the API but never send readings — detect that and switch off
+  setTimeout(function(){ if(!tiltPx.live && tiltParallaxPct>0){ tiltPx.status="no tilt sensor on this device"; setTiltParallaxPct(0); try{renderSettings();}catch(e){} } }, 1500);
+}
+function tiltParallaxRecenter(){ if(tiltPx.raw) tiltPx.base={x:tiltPx.raw.x, y:tiltPx.raw.y}; }
+// once per frame (from draw): ease toward the target — 0.08 of the gap per
+// frame at 60fps, corrected for the real frame time so 120Hz looks the same
+function tiltParallaxUpdate(){
+  var now=performance.now(), dt=Math.min(0.1,(now-(tiltPx.last||now))/1000); tiltPx.last=now;
+  if(tiltParallaxPct<=0){ tiltPx.x=tiltPx.y=0; return; }
+  var k=1-Math.pow(1-0.08, dt*60);
+  tiltPx.x+=(tiltPx.tx-tiltPx.x)*k; tiltPx.y+=(tiltPx.ty-tiltPx.y)*k;
+}
+// draw a background layer panned against the tilt, enlarged just enough that
+// its edges never show at full tilt; `depth` scales the pan (1 = full)
+function withTiltParallax(x,y,w,h,depth,drawFn){
+  if(tiltParallaxPct<=0){ drawFn(); return; }
+  var amt=0.05*(tiltParallaxPct/100)*depth, zoom=1+amt*2.2, cx=x+w/2, cy=y+h/2;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+  ctx.translate(cx - tiltPx.x*amt*w, cy - tiltPx.y*amt*h);   // opposite the tilt, like real glass
+  ctx.scale(zoom,zoom); ctx.translate(-cx,-cy);
+  drawFn();
+  ctx.restore();
+}
 function drawWindowScene(elapsed){
+  if(tiltParallaxPct<=0){ return drawWindowSceneInner(elapsed); }
+  var wx=RIGHT_WALL+10, ww=canvas.width-wx;
+  if(ww<=2){ return drawWindowSceneInner(elapsed); }
+  withTiltParallax(wx,0,ww,canvas.height,1,function(){ drawWindowSceneInner(elapsed); });
+}
+function drawWindowSceneInner(elapsed){
   let t = Math.min(elapsed/TOTAL_TIME, 1);
   let wx = RIGHT_WALL + 10;
   let ww = canvas.width - wx;
@@ -4561,6 +4616,7 @@ function draw(){
   }
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  tiltParallaxUpdate();
   let elapsed=gameElapsed();
   setBase();
   let shakeX=(Math.random()-0.5)*shake;
@@ -9247,7 +9303,7 @@ function renderSettings(){
       +'<span id="volNum_'+id+'" style="font-family:Helvetica,Arial,sans-serif;font-size:var(--sLbl);color:#aaa;min-width:30px;text-align:right;">'+pct+'</span>'
       +'</div></div>';
   }
-  window.VOL_ROW_FNS = { music:{ set:function(v){ setMusicVolPct(v); } }, sfx:{ set:function(v){ setSfxVolPct(v); } }, sbs:{ set:function(v){ setSbs3dPct(v); } }, ana:{ set:function(v){ setAnaglyphPct(v); } }, motion:{ set:function(v){ setMotionPct(v); } }, amotion:{ set:function(v){ setArcadeMotionPct(v); } } };
+  window.VOL_ROW_FNS = { music:{ set:function(v){ setMusicVolPct(v); } }, sfx:{ set:function(v){ setSfxVolPct(v); } }, sbs:{ set:function(v){ setSbs3dPct(v); } }, ana:{ set:function(v){ setAnaglyphPct(v); } }, motion:{ set:function(v){ setMotionPct(v); } }, amotion:{ set:function(v){ setArcadeMotionPct(v); } }, tilt:{ set:function(v){ setTiltParallaxPct(v); } } };
   window.volPctFromEvent = function(el, clientX){
     var r = el.getBoundingClientRect();
     var x = Math.max(0, Math.min(r.width, clientX - r.left));
@@ -9329,9 +9385,10 @@ function renderSettings(){
       { id:'sound', t:'Sound', sum:'music '+musicVolPct+' &middot; effects '+sfxVolPct, body:function(){
           return volRow("Music","background music, where a game has it",musicVolPct,"toggleMusicVol","slideMusicVol","music")
             +volRow("Sound effects","every sound effect across the arcade",sfxVolPct,"toggleSfxVol","slideSfxVol","sfx"); } },
-      { id:'3d', t:'3D', sum:(anaglyphPct>0?'red/cyan '+anaglyphPct:sbs3dPct>0?'side-by-side '+sbs3dPct:'off'), body:function(){
+      { id:'3d', t:'3D', sum:[anaglyphPct>0?'red/cyan '+anaglyphPct:'', sbs3dPct>0?'side-by-side '+sbs3dPct:'', tiltParallaxPct>0?'tilt '+tiltParallaxPct:''].filter(Boolean).join(' &middot; ')||'off', body:function(){
           return volRow("Red/cyan 3D","for red-blue anaglyph glasses &middot; slider sets depth",anaglyphPct,"toggleAnaglyph","slideAnaglyph","ana")
-            +volRow("Side-by-side 3D","split screen for a VR headset &middot; slider sets eye separation",sbs3dPct,"toggleSbs3d","slideSbs3d","sbs"); } },
+            +volRow("Side-by-side 3D","split screen for a VR headset &middot; slider sets eye separation",sbs3dPct,"toggleSbs3d","slideSbs3d","sbs")
+            +volRow("Tilt parallax", tiltPx.status ? '<span style="color:#ffb020;">'+tiltPx.status+'</span>' : "tilt your phone to look through the window &middot; slider sets depth &middot; "+'<span onclick="event.stopPropagation();tiltParallaxRecenter();" style="color:#3fa34d;cursor:pointer;">re-centre</span>',tiltParallaxPct,"toggleTiltParallax","slideTiltParallax","tilt"); } },
       { id:'display', t:'Display', sum:'mirror '+onOff(mirrorMode)+' &middot; flag codes '+onOff(colorblind), body:function(){
           return toggleRow("Mirror mode","flip the entire app left-to-right",mirrorMode,"toggleMirror()",true)
             +toggleRow("Colorblind flags","country codes on flags",colorblind,"toggleColorblind()"); } },
@@ -9383,6 +9440,42 @@ function renderSettings(){
     groups.forEach(function(g){ h+='<div style="grid-column:1/-1;">'+header(g)+'</div>'; if(g.id===openId) h+='<div style="grid-column:1/-1;">'+content(g)+'</div>'; });
   }
   body.innerHTML=h;
+}
+// ── tilt parallax switch ──
+function _tpNeedsAsk(){ return typeof DeviceOrientationEvent!=="undefined" && typeof DeviceOrientationEvent.requestPermission==="function" && !tiltPx.granted; }
+// iOS: ask inside the current tap, then start listening once allowed
+function _tpAsk(then){
+  DeviceOrientationEvent.requestPermission().then(function(r){
+    tiltPx.granted = (r==="granted");
+    if(!tiltPx.granted){ tiltPx.status="motion access denied &middot; reload, then allow it"; tiltParallaxPct=0; try{localStorage.setItem("qu33phTiltParallax","0");}catch(e){} }
+    else tiltParallaxListen();
+    if(then) then(tiltPx.granted);
+  }).catch(function(){ tiltPx.status="motion access denied &middot; reload, then allow it"; if(then) then(false); });
+}
+function setTiltParallaxPct(v){ v=Math.max(0,Math.min(100,parseInt(v,10)||0)); if(v>0) tiltParallaxPrev=v;
+  var wasOff=tiltParallaxPct<=0;
+  tiltParallaxPct=v; try{ localStorage.setItem("qu33phTiltParallax",String(v)); }catch(e){}
+  if(v>0){
+    if(_tpNeedsAsk()){ if(wasOff) _tpAsk(function(){ try{renderSettings();}catch(e){} }); }   // slider drag counts as the tap
+    else tiltParallaxListen();
+  } }
+function toggleTiltParallax(){
+  if(tiltParallaxPct>0){ setTiltParallaxPct(0); renderSettings(); return; }
+  tiltPx.status="";
+  if(!window.isSecureContext){ tiltPx.status="tilt needs the https version of the site"; renderSettings(); return; }
+  if(!("DeviceOrientationEvent" in window)){ tiltPx.status="this browser has no tilt sensor support"; renderSettings(); return; }
+  // iOS 13+: ask right here, inside the tap — asking any later is refused
+  if(_tpNeedsAsk()){ _tpAsk(function(ok){ if(ok) setTiltParallaxPct(tiltParallaxPrev); renderSettings(); }); return; }
+  setTiltParallaxPct(tiltParallaxPrev); renderSettings();
+}
+function slideTiltParallax(v){ setTiltParallaxPct(v); renderSettings(); }
+// already on from last time: Android just starts; iOS needs a fresh grant each
+// visit, so it asks on your first tap anywhere in the app
+if(tiltParallaxPct>0){
+  if(typeof DeviceOrientationEvent!=="undefined" && typeof DeviceOrientationEvent.requestPermission==="function"){
+    var _tpFirst=function(){ window.removeEventListener("pointerdown",_tpFirst,true); if(tiltParallaxPct>0 && _tpNeedsAsk()) _tpAsk(); };
+    window.addEventListener("pointerdown",_tpFirst,true);
+  } else { try{ tiltParallaxListen(); }catch(e){} }
 }
 // ── settings navigation ──
 function setSettingsTab(t){ window.settingsTab=t; window.settingsCapture=null; try{haptic(6);}catch(e){} renderSettings(); }
