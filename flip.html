@@ -180,7 +180,7 @@ document.addEventListener('dragstart', function(e){
       <div class="row"><i style="background:#4d9bff"></i><span><b style="color:#4d9bff">BLUE</b> &mdash; 90%+ of the level&rsquo;s points</span></div>
       <div class="row"><i style="background:#7bff9a"></i><span><b style="color:#7bff9a">GREEN</b> &mdash; 60%+ of the points</span></div>
       <div class="row"><i style="background:#ff5a5a"></i><span><b style="color:#ff5a5a">RED</b> &mdash; cleared with less</span></div>
-      <div class="note">every platform pays its colour: red 1 &middot; green 2 &middot; blue 3<br>skip platforms (big jumps, chair launches) and you lose their points</div>
+      <div class="note">each platform pays its colour once: red 1 &middot; green 2 &middot; blue 3<br>land on every one for 100% &mdash; jagged ground doesn&rsquo;t count<br>skip platforms (big jumps, chair launches) and you lose their points</div>
     </div>
     <button class="lvl-back" id="bLvlBack">&lsaquo; MODES</button>
   </div>
@@ -425,6 +425,7 @@ function setLevelsDone(n){ try{ localStorage.setItem('qu33phFlipLvl', n); }catch
 const TIER_BLUE=0.90, TIER_GREEN=0.60;              // share of the level's points needed
 function levelTiers(){ try{ return JSON.parse(localStorage.getItem('qu33phFlipTiers')||'[]')||[]; }catch(e){ return []; } }
 function setLevelTier(i,t){ const a=levelTiers(); if(!(a[i]>=t)){ a[i]=t; try{ localStorage.setItem('qu33phFlipTiers',JSON.stringify(a)); }catch(e){} } }
+let gradePts=0;
 function padPts(p){ return p.color==='R'?1 : p.color==='B'?3 : 2; }
 function tierFor(score, max){ const r=max>0? score/max : 1; return r>=TIER_BLUE?3 : r>=TIER_GREEN?2 : 1; }
 const TIER_NAME=['','RED','GREEN','BLUE'], TIER_COL=['','#ff5a5a','#7bff9a','#4d9bff'];
@@ -439,6 +440,7 @@ try{ bestScore=parseInt(localStorage.getItem('qu33phFlipBestScore')||'0',10)||0;
 function pad(o){
   const p=Object.assign({x:0,y:0,w:WW()*0.32,uneven:false,chair:false,chairHit:false,
                   obs:null,got:false,seed:Math.random(),seed2:Math.random()}, o);
+  p.hazard=!!p.uneven;          // built as jagged ground: can't be stood on, so it never counts toward a level's max
   // every platform is a marker now — red/green/blue, picked from its own seed so it's
   // consistent for that pad (no separate RNG call needed at every build site)
   if(!p.color) p.color = p.seed<0.3334 ? 'R' : p.seed<0.6667 ? 'G' : 'B';
@@ -519,7 +521,7 @@ function buildEndless(){
   for(let i=0;i<(CW>CH?16:10);i++) addPlatform();
 }
 function startRun(){
-  camX=0; score=0; combo=0; popups=[]; settle=0; won=false;
+  camX=0; score=0; combo=0; popups=[]; settle=0; won=false; gradePts=0;
   marker={x:plats[0].x+plats[0].w*0.5, y:plats[0].y, vx:0, vy:0, rot:0, spin:0, pIdx:0, skipTo:-1};
   state='ready'; charge=0; charging=false;
   camX=marker.x-(CW*HOLD)/Z;
@@ -657,6 +659,7 @@ function land(p){
   marker.pIdx=idx; combo++;
   // touch a marker, bank its colour's points — red=1, green=2, blue=3, same idea as the original game
   const pts = p.color==='R'?1 : p.color==='B'?3 : 2;
+  if(!p.graded){ p.graded=true; gradePts+=pts; }        // level grade: once per platform (no farming by hopping in place)
   const col = p.color==='R'?'#ff5a5a' : p.color==='B'?'#4d9bff' : '#7bff9a';
   score+=pts;
   popups.push({x:marker.x,y:p.y-MH()*1.3,txt:'+'+pts,life:44,col:col});
@@ -668,11 +671,13 @@ function land(p){
 function finishLevel(){
   won=true; state='over'; timerOn=false;
   if(levelIdx+1>levelsDone()) setLevelsDone(levelIdx+1);
-  let maxPts=0; for(let k=1;k<plats.length;k++) maxPts+=padPts(plats[k]);   // one landing on every platform
-  const tier=tierFor(score,maxPts); setLevelTier(levelIdx,tier);
+  // the most a level can pay: one landing on every platform you can stand on
+  // (jagged ground tips you over, so it's left out) — a perfect run is exactly 100%
+  let maxPts=0; for(let k=1;k<plats.length;k++){ if(!plats[k].hazard) maxPts+=padPts(plats[k]); }
+  const tier=tierFor(Math.min(gradePts,maxPts),maxPts); setLevelTier(levelIdx,tier);
   if(score>bestScore){ bestScore=score; try{ localStorage.setItem('qu33phFlipBestScore',bestScore); }catch(e){} }
   $('ovTitle').textContent='LEVEL CLEAR'; $('ovTitle').style.color='#7bff9a';
-  $('ovSub').innerHTML=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+score+' / '+maxPts+' PTS'
+  $('ovSub').innerHTML=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+Math.min(gradePts,maxPts)+' / '+maxPts+' PTS'
     +'<br><span style="color:'+TIER_COL[tier]+';letter-spacing:3px;">'+TIER_NAME[tier]+' MARKER</span>';
   showNextBtn(levelIdx < LEVEL_COUNT-1);        // straight into the next one
   show('overOvl',true);
