@@ -189,6 +189,7 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
   filter:drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
 
 /* ── MEGA card (last area) + TOTAL SCORE screen ── */
+button,a{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .mega-card{position:absolute;z-index:7;width:min(74px,15vw);height:auto;transform:translate(-50%,-50%) rotate(-6deg);
   pointer-events:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.7));animation:megaPulse 1.1s ease-in-out infinite;}
 @keyframes megaPulse{0%,100%{transform:translate(-50%,-50%) rotate(-6deg) scale(1);}50%{transform:translate(-50%,-50%) rotate(-6deg) scale(1.08);}}
@@ -205,13 +206,24 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
 .total-sum{font-size:clamp(28px,8vw,46px);font-weight:bold;color:#ffd24a;letter-spacing:2px;line-height:1.05;}
 .total-best{font-size:12px;letter-spacing:3px;color:#aaa;}
 .total-best.new{color:#7bff9a;}
-.total-btns{display:flex;gap:26px;margin-top:6px;}
-.total-btns .mk{position:static !important;}
+.total-btns{display:flex;flex-direction:column;align-items:center;margin-top:4px;}
+/* the same big marker buttons used across the arcade (game.html .pause-mk):
+   flat black body, 3px white border, cap on one end, alternating sides */
+.s2mk{position:relative;display:inline-flex;align-items:center;justify-content:center;width:min(250px,70vw);min-height:50px;
+  margin:6px 0 6px 30px;padding:12px 18px;box-sizing:border-box;background:#000;color:#fff;border:3px solid #fff;
+  border-radius:4px 10px 10px 4px;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:15px;letter-spacing:3px;
+  cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.s2mk::before{content:"";position:absolute;left:-30px;top:2px;bottom:2px;width:30px;background:#000;border:3px solid #fff;border-radius:8px 2px 2px 8px;}
+.s2mk:active{background:#141414;}
+.s2mk.flip{margin-left:0;margin-right:30px;border-radius:10px 4px 4px 10px;}
+.s2mk.flip::before{left:auto;right:-30px;border-radius:2px 8px 8px 2px;}
 @media (orientation:landscape){
   .total-screen{flex-direction:row;flex-wrap:wrap;align-content:center;gap:10px 5vw;padding:44px 4vw 10px;}
   .total-head{display:flex;flex-direction:column;align-items:center;gap:8px;}
   .total-rows{grid-template-columns:1fr 1fr 1fr;width:min(640px,58vw);}
   .total-row{padding:4px 10px;font-size:11px;}
+  .total-screen .s2mk{min-height:44px;padding:9px 16px;margin-top:4px;margin-bottom:4px;}
+  .total-head{gap:4px;}
 }
 
 /* ══ LANDSCAPE — laid out like the Season 1 arcade menu ═══════════════════
@@ -259,7 +271,7 @@ document.addEventListener('dragstart', function(e){
 </script>
 
 <div id="menuScreen" class="screen">
-  <button class="marker-btn pos-right" onclick="location.href='game.html'">&larr; SEASON 1</button>
+  <button class="marker-btn pos-right" onclick="backToSeason1()">&larr; SEASON 1</button>
   <div class="menu">
     <img class="s2logo" src="arcadelogo.png?v=377" alt="Qu33ph Arcade" onerror="this.style.display='none'">
     <div class="s2tag">SEASON 2</div>
@@ -343,8 +355,8 @@ document.addEventListener('dragstart', function(e){
       <div class="total-sum" id="totalSum">0</div>
       <div class="total-best" id="totalBest">HIGH SCORE 0</div>
       <div class="total-btns">
-        <button class="marker-btn mk" onclick="closeTotal(true)">PLAY AGAIN</button>
-        <button class="marker-btn mk" onclick="closeTotal(false)">MENU</button>
+        <button class="s2mk" onclick="closeTotal(true)">PLAY AGAIN</button>
+        <button class="s2mk flip" onclick="closeTotal(false)">MENU</button>
       </div>
     </div>
     <div class="total-rows" id="totalRows"></div>
@@ -352,6 +364,11 @@ document.addEventListener('dragstart', function(e){
 </div>
 
 <script>
+// SEASON 1 → straight to the Season 1 arcade menu (same cached game.html)
+function backToSeason1(){
+  var gv=new URLSearchParams(location.search).get('gv');
+  location.replace('game.html?'+(gv?('v='+encodeURIComponent(gv)+'&'):'')+'openArcade=1');
+}
 const boards={blue:'season2-green.png',green:'season2-blue.png',red:'season2-red.png'};
 const $=id=>document.getElementById(id);
 const boardEl=$('playerBoard'), gameEl=$('gameScreen'), chairEl=$('chairImg'), fieldImgEl=$('fieldImg');

@@ -1034,6 +1034,9 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
     /* 1 PLAYER / 2 PLAYER: identical boxes. 2 PLAYER is the 2nd button in its row,
        so the "every other button" rule gave it wider padding and it grew. */
     #titleScreen .mode-btn-split .mode-btn-half{ box-sizing:border-box; padding-left:12px !important; padding-right:12px !important; }
+    /* every button/link reacts on the first tap (no double-tap-zoom wait) */
+    a, button, .mk-btn, .corner-back, [onclick]{ touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .corner-back{ z-index:20 !important; }
     #slotPayInline{ display:none; width:min(430px,48vw); margin-top:8px; border:1px solid #1a1a1a; border-radius:6px; overflow:hidden; }
     #slotPayInline .pt-head{ font-family:Helvetica,Arial,sans-serif; font-size:8px; color:#777; letter-spacing:2px; text-align:center; padding:4px 0 3px; border-bottom:1px solid #151515; }
     #paytableInline{ display:grid; grid-template-columns:1fr 1fr; }
@@ -5570,7 +5573,7 @@ function showArcadeMenu(){
   try{ applyThemeFilters(); }catch(e){}
 }
 function arcadeBack(){ document.getElementById("arcadeMenu").style.display="none"; showTitle(); }
-function openSeason2(){ var _t=(typeof styleOf==="function"?styleOf():currentTheme); window.location.href="season2.html?theme="+encodeURIComponent(_t); }
+function openSeason2(){ var _t=(typeof styleOf==="function"?styleOf():currentTheme); window.location.href="season2.html?gv="+gameVer()+"&theme="+encodeURIComponent(_t); }
 function arcadeComingSoon(){ try{ haptic([20,30,20]); }catch(e){} }
 function launchPfGame(){ document.getElementById("arcadeMenu").style.display="none"; showCharSelect(); }
 function forceIframeMirror(f){
@@ -5594,11 +5597,11 @@ function forceIframeMirror(f){
     }
   };
 }
-function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=459&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchBowling(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="bowling.html?v=459&gv="+gameVer()+"&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function bowlingBack(){ var f=document.getElementById("bowlingFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("bowlingScreen").style.display="none"; showArcadeMenu(); }
-function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=459&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFidget(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="fidget.html?v=459&gv="+gameVer()+"&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function fidgetBack(){ var f=document.getElementById("fidgetFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("fidgetScreen").style.display="none"; showArcadeMenu(); }
-function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=459&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchMini(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="mini.html?v=459&gv="+gameVer()+"&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function miniBack(){ var f=document.getElementById("miniFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("miniScreen").style.display="none"; showArcadeMenu(); }
 function launchStack(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("stackScreen"); sc.style.display="block"; var f=document.getElementById("stackFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","stack.html?v=388&_="+Date.now()+"&theme="+encodeURIComponent(_t)); arcadeGame="stack"; try{ haptic(10); }catch(e){} }
 function stackBack(){ var f=document.getElementById("stackFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("stackScreen").style.display="none"; showArcadeMenu(); }
@@ -5626,7 +5629,7 @@ function cycleSkee(d){
   try{ localStorage.setItem("qu33phSkeeField", SKEE_MACHINES[skeeIdx].id); }catch(e){}
   updSkeeCard(); try{ haptic(8); }catch(e){}
 }
-function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=459&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
+function launchSkee(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="qu33phball.html?v=459&gv="+gameVer()+"&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&lane="+SKEE_MACHINES[skeeIdx].id+"&theme="+encodeURIComponent(_t); }
 function skeeBack(){ var f=document.getElementById("skeeFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("skeeScreen").style.display="none"; showArcadeMenu(); }
 function orientFlipIcon(im){
   im = im || document.querySelector("#cabFlip img"); if(!im) return;
@@ -5637,7 +5640,7 @@ function orientFlipIcon(im){
   };
   if(im.complete && im.naturalWidth) set(); else im.onload=set;
 }
-function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=459&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
+function launchFlip(){ try{pfMusicStop();}catch(e){} var _t=(typeof styleOf==="function"?styleOf():currentTheme); location.href="flip.html?v=459&gv="+gameVer()+"&_="+Date.now()+"&mirror="+(mirrorMode?"on":"off")+"&theme="+encodeURIComponent(_t); }
 function flipBack(){ var f=document.getElementById("flipFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("flipScreen").style.display="none"; showArcadeMenu(); }
 function launchDozer(){ try{pfMusicStop();}catch(e){} document.getElementById("arcadeMenu").style.display="none"; var sc=document.getElementById("dozerScreen"); sc.style.display="block"; var f=document.getElementById("dozerFrame"); var _t=(typeof styleOf==="function"?styleOf():currentTheme); f.setAttribute("src","dozer.html?v=388&_="+Date.now()+"&theme="+encodeURIComponent(_t)); arcadeGame="dozer"; try{ haptic(10); }catch(e){} }
 function dozerBack(){ var f=document.getElementById("dozerFrame"); try{ f.setAttribute("src","about:blank"); }catch(e){} document.getElementById("dozerScreen").style.display="none"; showArcadeMenu(); }
@@ -8415,6 +8418,10 @@ try{
   if(sessionStorage.getItem("qu33phArcadePaid")==="1"){ showArcadeMenu(); }
   else { showTitle(); }
 }catch(e){ showTitle(); }
+// the version this copy of game.html was loaded as (the shell's ?v=). Games
+// launched as their own pages carry it along and hand it back on BACK, so the
+// return trip reuses this exact cached copy instead of re-downloading it.
+function gameVer(){ try{ return new URLSearchParams(location.search).get('v')||''; }catch(e){ return ''; } }
 // returning from a game (bowling/fidget/mini/flip/qu33phball are now real
 // pages, not iframes) lands back here — jump straight to the arcade menu
 // instead of making them tap through the title screen again
@@ -8711,39 +8718,33 @@ function drawAimArrow(){
   // top one reaches about LAUNCH_Y-147 — park the indicator above that.
   var ax=FIELD_CX, ay=LAUNCH_Y-190;
 
-  // The indicator IS a marker button (.mk-btn): same gradient, 3px white
-  // border, radii, top highlight and drop shadow — drawn lying along the aim
-  // with its cap end leading, so the cap points where the throw will go.
-  var BL=62, BH=28, CL=22, B=3;       // body length, body height, cap length, border
+  // The indicator IS the marker button — the exact .pause-mk geometry (the
+  // RESUME / FORFEIT buttons), measured from the live CSS: flat black body,
+  // 3px white border, corners 4px at the cap end / 10px at the far end; a
+  // 36x40 cap with 8px/2px corners, inset 5px top and bottom and overlapping
+  // the body by 9px. Everything is scaled together from the button's 50px
+  // height, and borders are drawn the way CSS does (white outer shape, black
+  // inner shape inset by the border) so the corners come out identical.
+  var S=0.64;                                   // 50px-tall button -> 32px
+  var BH=50*S, BL=150*S, B=3*S;                 // body height, body length, border
+  var CWd=36*S, CHt=40*S, CIN=9*S, CY0=5*S;     // cap outer w/h, overlap into body, inset top/bottom
   ctx.save();
   ctx.translate(ax, ay);
-  ctx.rotate(aimAngle - Math.PI);     // local -X (the cap end) points along the aim
-  ctx.globalAlpha = aimDragging ? 1 : 0.9;
-  var tot=BL+CL, x0=-tot/2+CL;        // body spans x0..x0+BL, cap sits in front of it
-  function rr(x,y,w,h,tl,tr,br,bl){   // rounded rect, per-corner radii
+  ctx.rotate(aimAngle - Math.PI);               // local -X (the cap end) points along the aim
+  ctx.globalAlpha = aimDragging ? 1 : 0.92;
+  var span=BL+CWd-CIN, x0=-span/2+(CWd-CIN);    // body from x0 to x0+BL, cap sticks out in front of it
+  function rrect(x,y,w,h,r){                    // r = [tl,tr,br,bl], circular corners like CSS
     ctx.beginPath();
-    ctx.moveTo(x+tl,y); ctx.lineTo(x+w-tr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+tr);
-    ctx.lineTo(x+w,y+h-br); ctx.quadraticCurveTo(x+w,y+h,x+w-br,y+h);
-    ctx.lineTo(x+bl,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-bl);
-    ctx.lineTo(x,y+tl); ctx.quadraticCurveTo(x,y,x+tl,y); ctx.closePath();
+    if(ctx.roundRect){ ctx.roundRect(x,y,w,h,r); return; }
+    ctx.moveTo(x+r[0],y); ctx.arcTo(x+w,y,x+w,y+h,r[1]); ctx.arcTo(x+w,y+h,x,y+h,r[2]);
+    ctx.arcTo(x,y+h,x,y,r[3]); ctx.arcTo(x,y,x+w,y,r[0]); ctx.closePath();
   }
-  function grad(y,h){ var g=ctx.createLinearGradient(0,y,0,y+h);
-    g.addColorStop(0,"#3c3c3c"); g.addColorStop(0.46,"#161616"); g.addColorStop(1,"#000"); return g; }
-  // drop shadow (0 3px 0 rgba(0,0,0,0.55), like the buttons)
-  ctx.save(); ctx.globalAlpha*=0.55; ctx.fillStyle="#000";
-  rr(x0-CL, -BH/2+2+3, CL, BH-4, 8,2,2,8); ctx.fill();
-  rr(x0, -BH/2+3, BL, BH, 4,10,10,4); ctx.fill(); ctx.restore();
-  // body — 4px corners at the cap end, 10px at the far end
-  rr(x0, -BH/2, BL, BH, 4,10,10,4); ctx.fillStyle=grad(-BH/2,BH); ctx.fill();
-  ctx.lineWidth=B; ctx.strokeStyle="#fff"; ctx.stroke();
-  // cap (::before) — painted over the body's edge, as in the CSS; — 2px shorter top and bottom, rounded on its outer end
-  var cy=-BH/2+2, ch=BH-4;
-  rr(x0-CL, cy, CL, ch, 8,2,2,8); ctx.fillStyle=grad(cy,ch); ctx.fill();
-  ctx.lineWidth=B; ctx.strokeStyle="#fff"; ctx.stroke();
-  // inset highlight along the top edge (inset 0 1.5px 0 rgba(255,255,255,0.4))
-  ctx.beginPath(); ctx.moveTo(x0+5, -BH/2+B+0.8); ctx.lineTo(x0+BL-9, -BH/2+B+0.8);
-  ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.stroke();
-  // (highlight drawn last on the body only, clear of the cap)
+  function box(x,y,w,h,r){                      // white border + black fill, CSS-style
+    rrect(x,y,w,h,r); ctx.fillStyle="#fff"; ctx.fill();
+    rrect(x+B,y+B,w-2*B,h-2*B,r.map(function(v){return Math.max(0,v-B);})); ctx.fillStyle="#000"; ctx.fill();
+  }
+  box(x0, -BH/2, BL, BH, [4*S,10*S,10*S,4*S]);                         // body
+  box(x0-CWd+CIN, -BH/2+CY0, CWd, CHt, [8*S,2*S,2*S,8*S]);            // cap, painted over the body's end like ::before
   ctx.restore();
 }
 

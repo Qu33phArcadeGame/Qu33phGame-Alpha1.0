@@ -808,5 +808,20 @@ function loop(){ step(); draw(); skeeCam(); requestAnimationFrame(loop); }
 window.addEventListener('resize',()=>{ sz(); });
 loop();
 </script>
+<script>
+// ── BACK → the arcade. Inside the app this page sits in the shell's frame in
+// place of game.html, so BACK loads game.html right back into that frame (the
+// version it was launched from, so it's the cached copy) and opens the arcade.
+// Only when this page was opened on its own does it go through index.html.
+(function(){
+  var b=document.getElementById('gameBackBtn'); if(!b) return;
+  var q=new URLSearchParams(location.search), gv=q.get('gv');
+  var framed=false; try{ framed = window.self!==window.top; }catch(e){ framed=true; }
+  var url = framed ? ('game.html?'+(gv?('v='+encodeURIComponent(gv)+'&'):'')+'openArcade=1') : 'index.html?openArcade=1';
+  b.setAttribute('href', url);
+  b.style.touchAction='manipulation';
+  b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); location.replace(url); }, true);
+})();
+</script>
 </body>
 </html>
