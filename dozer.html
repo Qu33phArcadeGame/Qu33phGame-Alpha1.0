@@ -193,7 +193,7 @@ const CANFILTER=(function(){ try{ const t=document.createElement('canvas').getCo
 //     HUD can sit in the bar above the machine instead of over the marquee ──
 let CW=0,CH=0,DPR=1, cabX=0,cabY=0,cabW=0,cabH=0;
 const AR=1024/1536;
-const DZ_TOP=0.168, DZ_BOT=0.890;     // landscape crop, as fractions of the cabinet art — top edge = the coin-slot bar you drop through
+const DZ_TOP=0.1739, DZ_BOT=0.890;     // landscape crop, as fractions of the cabinet art — top edge = the coin-slot bar you drop through
 function sz(){
   const r=$('wrap').getBoundingClientRect();
   DPR=Math.min(2,window.devicePixelRatio||1);

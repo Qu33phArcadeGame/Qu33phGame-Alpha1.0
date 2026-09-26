@@ -455,7 +455,20 @@ window.addEventListener('resize',()=>{
     if(wasStatic) M.Body.setStatic(b,true);
   }
   if(CW>CH) addSidePlates();
-  camY*=k; dragTarget=null;
+  else if(plates.length>1){
+    // portrait is always the classic single-plate game: the side plates go,
+    // and so does anything built on them (the score is recounted); the centre
+    // tower and the marker in your hand carry straight on at normal zoom
+    const keep=plates[0], colHalf=WW()*0.55;
+    for(const p of plates.slice(1)) M.Composite.remove(world,p);
+    plates=[keep]; plate=keep;
+    placed=placed.filter(b=>{ const onCentre=Math.abs(b.position.x-keep.position.x)<=colHalf; if(!onCentre) M.Composite.remove(world,b); return onCentre; });
+    score=placed.length;
+    if(cur && Math.abs(cur.position.x-keep.position.x)>colHalf){ M.Body.setPosition(cur,{x:keep.position.x, y:cur.position.y}); if(cur.dropped) M.Body.setVelocity(cur,{x:0,y:0}); }
+  }
+  camScale=fitScale();
+  camY=Math.max(PLATE_Y*(1-camScale), camY*k);
+  dragTarget=null;
 });
 loop();
 </script>

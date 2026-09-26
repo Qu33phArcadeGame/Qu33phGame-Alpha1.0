@@ -50,6 +50,16 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
   .lvl span{ position:relative; z-index:2; font-size:11px; font-weight:bold; color:#fff; text-shadow:0 0 5px #000,0 0 3px #000; padding-bottom:3px; }
   .lvl.locked{ filter:grayscale(1) brightness(0.35); cursor:default; }
   .lvl.locked span{ color:#777; }
+  .lvl.open img{ filter:grayscale(1) brightness(1.15); opacity:0.75; }
+  .lvl-legend{ display:none; }
+  @media (orientation:landscape){
+    .lvl-legend{ display:block; margin-top:10px; font-family:Helvetica,Arial,sans-serif; color:#aaa; font-size:10px;
+                 letter-spacing:1.5px; line-height:1.55; text-align:left; max-width:40vw; }
+    .lvl-legend .t{ color:#fff; letter-spacing:3px; font-size:10.5px; margin-bottom:4px; text-align:center; }
+    .lvl-legend .row{ display:flex; align-items:center; gap:8px; }
+    .lvl-legend .row i{ display:inline-block; width:26px; height:7px; border-radius:3px; flex:none; }
+    .lvl-legend .note{ margin-top:5px; color:#777; font-size:9px; text-align:center; }
+  }
   .tut-row{ display:flex; align-items:center; gap:14px; width:min(320px,88vw); margin:7px 0;
     font-size:12px; line-height:1.5; color:#ccc; letter-spacing:1px; }
   .tut-icon{ position:relative; width:42px; height:24px; flex:0 0 42px; }
@@ -165,6 +175,13 @@ document.addEventListener('dragstart', function(e){
   <div id="levelSel" class="ovl">
     <h1 style="font-size:22px;">SELECT LEVEL</h1><div class="sub" id="lvlSub"></div>
     <div id="levelGrid"></div>
+    <div class="lvl-legend">
+      <div class="t">LEVEL MARKERS</div>
+      <div class="row"><i style="background:#4d9bff"></i><span><b style="color:#4d9bff">BLUE</b> &mdash; 90%+ of the level&rsquo;s points</span></div>
+      <div class="row"><i style="background:#7bff9a"></i><span><b style="color:#7bff9a">GREEN</b> &mdash; 60%+ of the points</span></div>
+      <div class="row"><i style="background:#ff5a5a"></i><span><b style="color:#ff5a5a">RED</b> &mdash; cleared with less</span></div>
+      <div class="note">every platform pays its colour: red 1 &middot; green 2 &middot; blue 3<br>skip platforms (big jumps, chair launches) and you lose their points</div>
+    </div>
     <button class="lvl-back" id="bLvlBack">&lsaquo; MODES</button>
   </div>
   <div id="tutOvl" class="ovl">
@@ -402,6 +419,15 @@ const LEVELS=[
 const LEVEL_COUNT=33;
 function levelsDone(){ try{ return parseInt(localStorage.getItem('qu33phFlipLvl')||'0',10)||0; }catch(e){ return 0; } }
 function setLevelsDone(n){ try{ localStorage.setItem('qu33phFlipLvl', n); }catch(e){} }
+// ── level grades: every clear is graded on the share of the level's points you
+// banked (each platform pays its colour: red 1, green 2, blue 3). The best
+// grade per level is kept and shown on the level grid as that marker colour.
+const TIER_BLUE=0.90, TIER_GREEN=0.60;              // share of the level's points needed
+function levelTiers(){ try{ return JSON.parse(localStorage.getItem('qu33phFlipTiers')||'[]')||[]; }catch(e){ return []; } }
+function setLevelTier(i,t){ const a=levelTiers(); if(!(a[i]>=t)){ a[i]=t; try{ localStorage.setItem('qu33phFlipTiers',JSON.stringify(a)); }catch(e){} } }
+function padPts(p){ return p.color==='R'?1 : p.color==='B'?3 : 2; }
+function tierFor(score, max){ const r=max>0? score/max : 1; return r>=TIER_BLUE?3 : r>=TIER_GREEN?2 : 1; }
+const TIER_NAME=['','RED','GREEN','BLUE'], TIER_COL=['','#ff5a5a','#7bff9a','#4d9bff'];
 function unlocked(i){ return i<=levelsDone(); }        // level index 0-based; 0 always open
 
 // ─── world state ──────────────────────────────────────────────────────────
@@ -521,12 +547,16 @@ $('bTut').onclick=(e)=>{ e.stopPropagation(); try{ localStorage.setItem('qu33phF
 $('tutOvl').addEventListener('click',()=>{ try{ localStorage.setItem('qu33phFlipTut','1'); }catch(e){} reallyStart('levels'); });
 function buildGrid(){
   const g=$('levelGrid'); g.innerHTML='';
-  const done=levelsDone();
+  const done=levelsDone(), tiers=levelTiers();
   $('lvlSub').textContent = done+' / '+LEVEL_COUNT+' CLEARED';
   for(let i=0;i<LEVEL_COUNT;i++){
     const d=document.createElement('div');
-    d.className='lvl'+(unlocked(i)?'':' locked');
-    d.innerHTML='<img src="'+(THEME==='cartoon'?'blueC.png':'blue.png')+'"><span>'+(i+1)+'</span>';
+    // cleared: the marker of your best grade; open but not cleared yet: a plain
+    // grey marker; locked: dark (as before). Clears from before grading = green.
+    const t=tiers[i]||(i<done?2:0);
+    const C=(THEME==='cartoon'?'C':''), img = (t===1?'red':t===2?'green':'blue')+C+'.png';
+    d.className='lvl'+(unlocked(i)?'':' locked')+(unlocked(i)&&!t?' open':'');
+    d.innerHTML='<img src="'+img+'"><span>'+(i+1)+'</span>';
     if(unlocked(i)) d.onclick=()=>{ levelIdx=i; startMode('levels'); };
     g.appendChild(d);
   }
@@ -638,9 +668,12 @@ function land(p){
 function finishLevel(){
   won=true; state='over'; timerOn=false;
   if(levelIdx+1>levelsDone()) setLevelsDone(levelIdx+1);
+  let maxPts=0; for(let k=1;k<plats.length;k++) maxPts+=padPts(plats[k]);   // one landing on every platform
+  const tier=tierFor(score,maxPts); setLevelTier(levelIdx,tier);
   if(score>bestScore){ bestScore=score; try{ localStorage.setItem('qu33phFlipBestScore',bestScore); }catch(e){} }
   $('ovTitle').textContent='LEVEL CLEAR'; $('ovTitle').style.color='#7bff9a';
-  $('ovSub').textContent=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+score+' PTS';
+  $('ovSub').innerHTML=(LEVELS[levelIdx]?LEVELS[levelIdx].name:'LEVEL '+(levelIdx+1))+' \u00b7 '+score+' / '+maxPts+' PTS'
+    +'<br><span style="color:'+TIER_COL[tier]+';letter-spacing:3px;">'+TIER_NAME[tier]+' MARKER</span>';
   showNextBtn(levelIdx < LEVEL_COUNT-1);        // straight into the next one
   show('overOvl',true);
 }
