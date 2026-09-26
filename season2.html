@@ -519,11 +519,11 @@ function loadArea(idx){
   else if(prev && prev.fidget){ clearFidgetEls(); fidgetSpinners=null; }
   if(a.pins) buildPins(); else clearPins();
   grinding=null; grindExit=0;
+  placeChair();                  // before the pipe is drawn: the chute runs into the chair, so it needs its spot
   buildRailEls();
   buildHalfpipeEl();
   if(a.halfpipe) hpPlaceStart(halfpipePoints(a.halfpipe));   // every way into the half-pipe starts on the right ledge
   $('areaHud').textContent = a.obstacle ? (a.obstacle.sky==='stack'?'QU33PH STACK CROSSING':'QU33PH FLIP CROSSING') : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
-  placeChair();
 }
 
 // ── Rails ────────────────────────────────────────────────────────────────
@@ -668,6 +668,44 @@ function hpSurfY(hp,x){
   const m=hpSlope(hp,x);
   return halfpipeCurveY(hp,x)-HP_SURF*Math.sqrt(1+m*m);
 }
+// ── the drop chute: the LEFT ledge now stops short, leaving an opening; below
+// it a quarter-pipe hugs the left wall and curves into a floor that runs
+// straight into the chair. Same wood, same "top of the wood is the floor" rule.
+const HP_LEDGE_KEEP=0.35;      // how much of the left ledge is left beside the lip (the rest is the opening)
+function hpGeo(hp){
+  const L=hpLedgeW(), lipY=halfpipeLipY(hp), gr=fieldRect();
+  let chairX=(hp.x1+hp.x2)/2, seatY=gr.height*0.80, chairW=40;
+  if(!chairEl.classList.contains('hidden')){
+    const cr=chairEl.getBoundingClientRect();
+    if(cr.width>0){ chairX=cr.left-gr.left+cr.width/2; seatY=cr.top-gr.top+cr.height*0.55; chairW=cr.width; }
+  }
+  // the floor passes under the half-pipe on its way to the chair — keep a
+  // board's height of clearance below the pipe's underside, and stay on screen
+  const pipeUnder=halfpipeCurveY(hp,(hp.x1+hp.x2)/2)+HP_SURF;
+  const boardH=(boardEl.offsetWidth||60)*0.5;
+  seatY=Math.min(gr.height-14, Math.max(seatY, pipeUnder+HP_SURF+boardH+8));
+  const wallX=hp.x1-L;                                  // where the ledge used to end — against the cabinet wall
+  const floorY=seatY;                                   // floor runs level into the chair seat
+  const R=Math.max(40, Math.min(150, (floorY-lipY)*0.80));
+  return { L, lipY, ledgeL:hp.x1-L*HP_LEDGE_KEEP, wallX, floorY, R, cx:wallX+R, cy:floorY-R,
+           endX:chairX-chairW*0.30, chairX };
+}
+function hpLowSurf(g,x){
+  const r=g.R-HP_SURF;                                  // inner (riding) face of the curved wall
+  if(x<g.cx){ const dx=Math.max(-r+0.5, x-g.cx); return g.cy+Math.sqrt(r*r-dx*dx); }
+  return g.floorY-HP_SURF;
+}
+function hpLowSlope(g,x){
+  const r=g.R-HP_SURF;
+  if(x<g.cx){ const dx=Math.max(-r+0.5, x-g.cx); return -dx/Math.sqrt(r*r-dx*dx); }
+  return 0;
+}
+let hpLower=false;              // true once you've dropped through the opening
+// the chair's height is only known once its image loads — redraw the pipe then,
+// so the drawn floor and the one the board rides can never disagree
+chairEl.addEventListener('load', function(){ try{ if(AREAS[areaIdx].halfpipe){ buildRailEls(); buildHalfpipeEl(); } }catch(e){} });
+function hpCurSurf(hp,x){ return hpLower ? hpLowSurf(hpGeo(hp),x) : hpSurfY(hp,x); }
+function hpCurSlope(hp,x){ return hpLower ? hpLowSlope(hpGeo(hp),x) : hpSlope(hp,x); }
 // ── side-on board physics for the half-pipe area ──
 // contact point (hpX, surface or hpY when airborne), rolling under gravity
 // along the real slope; the board image is drawn sitting ON that point.
@@ -675,22 +713,28 @@ let hpX=0, hpY=0, hpVX=0, hpVY=0, hpAir=false, hpInPipe=false;
 const HP_G=1400;
 function hpPlaceStart(hp){
   hpX=hp.x2+hpLedgeW()*0.55;          // resting on the flat of the RIGHT ledge
-  hpVX=0; hpVY=0; hpAir=false; hpInPipe=false; hpY=hpSurfY(hp,hpX);
+  hpVX=0; hpVY=0; hpAir=false; hpInPipe=false; hpLower=false; hpY=hpSurfY(hp,hpX);
   vx=0; vy=0; hpSyncBoard(hp);
 }
 function hpSyncBoard(hp){
   // board is a top-down image turned sideways, so its thickness on screen is its width
-  let h=(boardEl.offsetWidth||60)*0.40;
+  let h=(boardEl.offsetWidth||60)*0.25;          // the visible deck+wheels are about half the image width
   // a straight board on a curved floor only touches in its middle — lift it by
   // the curve's sag over the board's length so the ends don't dip into the wood
-  if(!hpAir && hpX>hp.x1 && hpX<hp.x2){
+  if(!hpAir && !hpLower && hpX>hp.x1 && hpX<hp.x2){
     const halfW=(hp.x2-hp.x1)/2, m=hpSlope(hp,hpX);
     const k=(2*curveDepthPx()/(halfW*halfW))/Math.pow(1+m*m,1.5);   // curvature at this point
     const Lb=(boardEl.offsetHeight||200)*0.92;
     h+=Lb*Lb*k/8;
   }
-  const y=hpAir? hpY : hpSurfY(hp,hpX);
-  const th=hpAir? 0 : Math.atan(hpSlope(hp,hpX));
+  if(!hpAir && hpLower){                                    // same on the wall curve of the chute (a circle, so k = 1/r)
+    const g=hpGeo(hp);
+    if(hpX<g.cx){ const Lb=(boardEl.offsetHeight||200)*0.92; h+=Lb*Lb/(8*Math.max(20,g.R-HP_SURF)); }
+  }
+  const y=hpAir? hpY : hpCurSurf(hp,hpX);
+  // in the air the board stays level — except falling down the chute, where it
+  // tips nose-first to follow the wall like a real drop-in
+  const th=hpAir? (hpLower ? Math.atan(hpLowSlope(hpGeo(hp),hpX)) : 0) : Math.atan(hpCurSlope(hp,hpX));
   bx=hpX+h*Math.sin(th); by=y-h*Math.cos(th);
   boardAngle=th*180/Math.PI+90;
 }
@@ -698,40 +742,50 @@ function hpStep(dt,hp){
   // flicks arrive through vx/vy (applyFlick) — turn them into a push along
   // the ramp, or a jump if they're aimed up and you're on the surface
   if(vx||vy){
-    const onLedge=!hpAir && (hpX>=hp.x2 || hpX<=hp.x1);
+    const onLedge=!hpAir && !hpLower && (hpX>=hp.x2 || hpX<=hp.x1);
     let push=vx*2.2;                                          // the pipe's own gravity does most of the work — flicks just need to feel punchy
     // from a ledge, a flick toward the pipe is a proper drop-in, not a creep
     if(onLedge && hpX>=hp.x2 && push<0) push=Math.min(push,-190);
     if(onLedge && hpX<=hp.x1 && push>0) push=Math.max(push, 190);
     hpVX+=push;
-    if(!hpAir && vy<-35){ hpAir=true; hpY=hpSurfY(hp,hpX); hpVY=-Math.min(900, 380+Math.abs(vy)*2.2); airborne=Math.max(airborne,1.2); }   // flick up = jump
+    if(!hpAir && vy<-35){ hpAir=true; hpY=hpCurSurf(hp,hpX); hpVY=-Math.min(900, 380+Math.abs(vy)*2.2); airborne=Math.max(airborne,1.2); }   // flick up = jump
     vx=0; vy=0;
   }
-  const L=hpLedgeW(), xmin=hp.x1-L+14, xmax=hp.x2+L-14;
+  const g=hpGeo(hp), L=g.L, xmax=hp.x2+L-14, lowMin=g.wallX+HP_SURF+3;
   if(hpAir){
     hpVY+=HP_G*dt; hpX+=hpVX*dt; hpY+=hpVY*dt;
-    if(hpX<xmin){ hpX=xmin; hpVX=Math.abs(hpVX)*0.3; }
+    if(!hpLower && hpX<g.ledgeL && hpY>g.lipY-HP_SURF-4) hpLower=true;    // past the ledge's end and below it: you're in the opening
+    if(!hpLower && hpX<g.ledgeL-2 && hpVY>0) hpLower=true;
+    if(hpLower && hpX<lowMin){ hpX=lowMin; hpVX=Math.abs(hpVX)*0.3; }
     if(hpX>xmax){ hpX=xmax; hpVX=-Math.abs(hpVX)*0.3; }
-    const sy=hpSurfY(hp,hpX);
-    if(hpVY>0 && hpY>=sy){ hpAir=false; hpVY=0; }           // land ON the surface, never through it
+    const sy=hpCurSurf(hp,hpX);
+    if(hpVY>0 && hpY>=sy){ hpAir=false; hpVY=0;                             // land ON the surface, never through it
+      if(hpLower){ const m=hpLowSlope(g,hpX); hpVX=Math.max(hpVX, 120+60*Math.min(3,Math.abs(m))); }   // the curve carries the fall into forward speed
+    }
   } else {
-    const m=hpSlope(hp,hpX);
+    const m=hpCurSlope(hp,hpX);
     hpVX+=HP_G*m/(1+m*m)*dt;                                 // gravity along the slope
     hpVX*=(1-0.30*dt);
     hpVX=Math.max(-900,Math.min(900,hpVX));
     const was=hpInPipe;
     hpX+=hpVX*dt;
-    hpInPipe = hpX>hp.x1 && hpX<hp.x2;
-    if(was && !hpInPipe && Math.abs(hpVX)>260){
-      // came up a wall fast — pop out over the lip for a trick window
-      const lip=hpSlope(hp, hpX<hp.x1? hp.x1+0.5 : hp.x2-0.5);
-      hpAir=true; hpY=hpSurfY(hp,hpX); hpVY=-Math.abs(hpVX*lip)*0.9; hpVX*=0.55;
-      airborne=Math.max(airborne,1.6); addScore(25);
-      try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
+    if(!hpLower){
+      hpInPipe = hpX>hp.x1 && hpX<hp.x2;
+      if(was && !hpInPipe && Math.abs(hpVX)>260){
+        // came up a wall fast — pop out over the lip for a trick window
+        const lip=hpSlope(hp, hpX<hp.x1? hp.x1+0.5 : hp.x2-0.5);
+        hpAir=true; hpY=hpSurfY(hp,hpX); hpVY=-Math.abs(hpVX*lip)*0.9; hpVX*=0.55;
+        airborne=Math.max(airborne,1.6); addScore(25);
+        try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
+      }
+      if(!hpAir && hpX<g.ledgeL){ hpAir=true; hpY=g.lipY-HP_SURF; hpVY=0; hpLower=true; }   // rolled off the end of the short ledge — drop
+      if(hpX>xmax){ hpX=xmax; hpVX=-Math.abs(hpVX)*0.3; }
+      if(Math.abs(hpVX)<3 && Math.abs(m)<0.02) hpVX=0;
+    } else {
+      if(hpX<lowMin){ hpX=lowMin; hpVX=Math.abs(hpVX)*0.3; }
+      if(hpX>=g.cx) hpVX=Math.max(hpVX,110);                // the floor keeps you rolling into the chair
+      if(hpX>=g.endX){ hpX=g.endX; hpSyncBoard(hp); crossToNextArea(); return; }   // into the chair — on to the next area
     }
-    if(hpX<xmin){ hpX=xmin; hpVX=Math.abs(hpVX)*0.3; }
-    if(hpX>xmax){ hpX=xmax; hpVX=-Math.abs(hpVX)*0.3; }
-    if(Math.abs(hpVX)<3 && Math.abs(m)<0.02) hpVX=0;
   }
   if(airborne>0) airborne=Math.max(0,airborne-dt);
   hpSyncBoard(hp);
@@ -765,7 +819,8 @@ function buildHalfpipeEl(){
   // flat ledges at the top of each wall — like real coping, and where you pop
   // out onto if you carry enough speed up either side
   const ledgeW=hpLedgeW();
-  [[hp.x1-ledgeW, hp.x1],[hp.x2, hp.x2+ledgeW]].forEach(([lx1,lx2])=>{
+  // left ledge stops short of the wall — that gap is the drop opening
+  [[hp.x1-ledgeW*HP_LEDGE_KEEP, hp.x1],[hp.x2, hp.x2+ledgeW]].forEach(([lx1,lx2])=>{
     [[8,'#5a3a1c'],[4,'#8a5c30']].forEach(([h,c],i)=>{
       const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
       rect.setAttribute('x',lx1); rect.setAttribute('y',topY-HP_SURF+ (i? -1:0));   // top = the surface you ride
@@ -773,6 +828,21 @@ function buildHalfpipeEl(){
       rect.setAttribute('rx', 3); rect.setAttribute('fill', c);
       svg.appendChild(rect);
     });
+  });
+  // the chute: down the left wall, round the curve, along the floor into the chair
+  const g=hpGeo(hp);
+  const cd='M '+g.wallX+' '+(g.lipY+2)+' L '+g.wallX+' '+g.cy+
+           ' A '+g.R+' '+g.R+' 0 0 0 '+g.cx+' '+g.floorY+' L '+g.endX+' '+g.floorY;
+  [
+    {w:26,c:'#2a1608'}, {w:20,c:'#4a2c12'}, {w:14,c:'#7a4a22'},
+    {w:9, c:'#a8703c'}, {w:5, c:'#d19a5e'}, {w:2, c:'#f3d9ab', o:0.9}
+  ].forEach(Ls=>{
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',cd); p.setAttribute('fill','none');
+    p.setAttribute('stroke',Ls.c); p.setAttribute('stroke-width',Ls.w);
+    p.setAttribute('stroke-linecap','round'); p.setAttribute('stroke-linejoin','round');
+    if(Ls.o!==undefined) p.setAttribute('opacity',Ls.o);
+    svg.appendChild(p);
   });
   const dropTxt=document.createElementNS('http://www.w3.org/2000/svg','text');
   dropTxt.setAttribute('x', hp.x2+ledgeW*0.5);                  // over the right ledge, where you start
@@ -968,7 +1038,7 @@ function doTap(x,y){
   ollieHop=1;
 
   const hpA = AREAS[areaIdx].halfpipe;
-  if(hpA && !hpAir && !flipMode){ hpAir=true; hpY=hpSurfY(halfpipePoints(hpA),hpX); hpVY=-300; }   // ollie
+  if(hpA && !hpAir && !flipMode){ hpAir=true; hpY=hpCurSurf(halfpipePoints(hpA),hpX); hpVY=-300; }   // ollie
   if(!chairEl.classList.contains('hidden')){
     const cr=chairEl.getBoundingClientRect(), gr=fieldRect();
     const cx=cr.left-gr.left+cr.width/2, cy=cr.top-gr.top+cr.height/2;
