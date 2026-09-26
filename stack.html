@@ -398,9 +398,17 @@ function drawBackground(){
     const rg=ctx.createRadialGradient(CW/2,CH*0.16,0,CW/2,CH*0.16,CW*1.15); rg.addColorStop(0,'rgba(255,205,90,0.4)'); rg.addColorStop(0.5,'rgba(255,150,50,0.15)'); rg.addColorStop(1,'rgba(255,140,40,0)'); ctx.fillStyle=rg; ctx.fillRect(0,0,CW,CH);
   }
 }
+// tilt parallax: the window backdrop pans against the tilt behind the tower
+// (the tower, plates and your marker never move, so dropping stays exact)
+function drawBackgroundTilted(){
+  if(!(window.QTilt && QTilt.pct>0)){ drawBackground(); return; }
+  const m=Math.min(CW,CH), sh=QTilt.depth()*0.9*m, z=1+2.2*sh/m;
+  ctx.save(); ctx.translate(CW/2-QTilt.x*sh, CH/2-QTilt.y*sh); ctx.scale(z,z); ctx.translate(-CW/2,-CH/2);
+  drawBackground(); ctx.restore();
+}
 function draw(){
   ctx.setTransform(1,0,0,1,0,0);
-  drawBackground();
+  drawBackgroundTilted();
   const txt=TXT[THEME]||'#fff';
   if(state==='title'){ drawTitle(txt); return; }
   if(state==='loading' || !plate){ ctx.fillStyle=txt; ctx.textAlign='center'; ctx.font='bold '+Math.round(FT()*0.05)+'px Helvetica'; ctx.fillText('loading…',CW/2,CH/2); return; }
@@ -491,5 +499,7 @@ QC.bind('stack',{
   onBack:()=>{ try{ parent.stackBack(); }catch(e){} }
 });
 </script>
+<script src="qu33ph-tilt.js?v=1"></script>
+<script>QTilt.layers({nearBL:['#orientBtn']});</script>
 </body>
 </html>

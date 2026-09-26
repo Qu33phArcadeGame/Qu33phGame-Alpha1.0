@@ -410,7 +410,10 @@ function say(text,col){ msg={t:text,c:col||T.accent}; msgT=95; }
 let touchStart=null, touchLast=null, touchT=0;
 function localPt(e){
   const t=e.touches?e.touches[0]:e;
-  return {x:t.clientX, y:t.clientY};
+  // relative to the canvas's live on-screen box, so taps stay exact while tilt
+  // parallax slides the lane (the canvas's own pixels = CSS px here)
+  const r=cv.getBoundingClientRect();
+  return {x:t.clientX-r.left, y:t.clientY-r.top};
 }
 let aimAtDown=0;
 function inBtn(p){ const r=oriBtn(); return p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h; }
@@ -1083,5 +1086,7 @@ QC.bind('bowling',{
     if(h.moveRight) aimX=Math.min( 0.72,aimX+1.1*dt); }
 });
 </script>
+<script src="qu33ph-tilt.js?v=1"></script>
+<script>QTilt.layers({far:['#cv','#bg']});</script>
 </body>
 </html>

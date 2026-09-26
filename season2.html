@@ -1500,4 +1500,14 @@ function render(){
   }
 }
 </script>
+<script src="qu33ph-tilt.js?v=1"></script>
+<script>QTilt.layers({
+  // game: every play piece moves as one far layer (the container itself never
+  // moves — the game measures it to lay the field out); the art is zoomed so
+  // its edges stay hidden
+  far:['#gameScreen > :not(.hud):not(.marker-btn):not(.total-screen):not(#fieldImg)'],
+  farZoom:['#fieldImg'],
+  near:['#gameScreen > .hud','.select-title','.total-head'], nearL:['.s2logo','.s2tag'],
+  mid:['.cab-card','.choice']
+});</script>
 </body></html>
