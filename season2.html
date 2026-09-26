@@ -194,10 +194,12 @@ body.th-galaxy #gameScreen.flip2d{ background:linear-gradient(180deg,#160a2e 0%,
    whole grid fits with no scrolling. Portrait is untouched. */
 @media (orientation:landscape){
   .menu{ padding:46px 3vw 10px 30vw; justify-content:center; overflow:hidden; }
-  .s2logo{ position:absolute; left:4vw; top:50%; width:min(230px,22vw); margin:0;
-           transform:translateY(-66%); }
-  .s2tag{ position:absolute; left:4vw; top:50%; width:min(230px,22vw); margin:0;
-          transform:translateY(calc(min(230px,22vw) * 0.24)); font-size:clamp(18px,5vh,28px); letter-spacing:4px; }
+  /* logo + tag use Season 1's EXACT numbers (game.html #arcadeLogo / #arcadeSeasonTag),
+     so flipping between the two seasons the logo doesn't move or change size */
+  .s2logo{ position:absolute; left:3vw; top:50%; width:min(210px,21vw); margin:0;
+           transform:translateY(-68%); }
+  .s2tag{ position:absolute; left:3vw; top:50%; width:min(210px,21vw); margin:0;
+          transform:translateY(calc(min(210px,21vw) * 0.20)); font-size:clamp(18px,4.6vh,26px); letter-spacing:4px; }
   .cab-row{ --c:min(calc((100vh - 76px) / 3), calc((67vw - 40px) / 3));
             grid-template-columns:repeat(3,var(--c)); grid-template-rows:repeat(3,var(--c));
             width:auto; max-width:none; flex:none; gap:8px 3vw; place-content:center; }
@@ -519,6 +521,7 @@ function loadArea(idx){
   grinding=null; grindExit=0;
   buildRailEls();
   buildHalfpipeEl();
+  if(a.halfpipe) hpPlaceStart(halfpipePoints(a.halfpipe));   // every way into the half-pipe starts on the right ledge
   $('areaHud').textContent = a.obstacle ? (a.obstacle.sky==='stack'?'QU33PH STACK CROSSING':'QU33PH FLIP CROSSING') : ('AREA '+(areaIdx+1)+'/'+AREA_COUNT);
   placeChair();
 }
@@ -649,6 +652,90 @@ function halfpipeCurveY(hp,x){
   const t=Math.max(-1,Math.min(1,(x-cx)/halfW));
   return halfpipeLipY(hp) + curveDepthPx()*(1-t*t);
 }
+// The ramp is drawn as a 26px-thick stroke centred on the curve, so the part
+// you actually ride is 13px ABOVE the centre line (a bit more on the steep
+// walls). hpSurfY() is that top surface, for both the curve and the flat
+// ledges, and it's what the board rides on and lands on.
+const HP_SURF=13;
+function hpLedgeW(){ return fieldRect().width*0.15; }
+function hpSlope(hp,x){
+  if(x<hp.x1 || x>hp.x2) return 0;
+  const cx=(hp.x1+hp.x2)/2, halfW=(hp.x2-hp.x1)/2, t=(x-cx)/halfW;
+  return -2*curveDepthPx()*t/halfW;                          // dy/dx of the curve (screen y points down)
+}
+function hpSurfY(hp,x){
+  if(x<hp.x1 || x>hp.x2) return halfpipeLipY(hp)-HP_SURF;   // flat ledge
+  const m=hpSlope(hp,x);
+  return halfpipeCurveY(hp,x)-HP_SURF*Math.sqrt(1+m*m);
+}
+// ── side-on board physics for the half-pipe area ──
+// contact point (hpX, surface or hpY when airborne), rolling under gravity
+// along the real slope; the board image is drawn sitting ON that point.
+let hpX=0, hpY=0, hpVX=0, hpVY=0, hpAir=false, hpInPipe=false;
+const HP_G=1400;
+function hpPlaceStart(hp){
+  hpX=hp.x2+hpLedgeW()*0.55;          // resting on the flat of the RIGHT ledge
+  hpVX=0; hpVY=0; hpAir=false; hpInPipe=false; hpY=hpSurfY(hp,hpX);
+  vx=0; vy=0; hpSyncBoard(hp);
+}
+function hpSyncBoard(hp){
+  // board is a top-down image turned sideways, so its thickness on screen is its width
+  let h=(boardEl.offsetWidth||60)*0.40;
+  // a straight board on a curved floor only touches in its middle — lift it by
+  // the curve's sag over the board's length so the ends don't dip into the wood
+  if(!hpAir && hpX>hp.x1 && hpX<hp.x2){
+    const halfW=(hp.x2-hp.x1)/2, m=hpSlope(hp,hpX);
+    const k=(2*curveDepthPx()/(halfW*halfW))/Math.pow(1+m*m,1.5);   // curvature at this point
+    const Lb=(boardEl.offsetHeight||200)*0.92;
+    h+=Lb*Lb*k/8;
+  }
+  const y=hpAir? hpY : hpSurfY(hp,hpX);
+  const th=hpAir? 0 : Math.atan(hpSlope(hp,hpX));
+  bx=hpX+h*Math.sin(th); by=y-h*Math.cos(th);
+  boardAngle=th*180/Math.PI+90;
+}
+function hpStep(dt,hp){
+  // flicks arrive through vx/vy (applyFlick) — turn them into a push along
+  // the ramp, or a jump if they're aimed up and you're on the surface
+  if(vx||vy){
+    const onLedge=!hpAir && (hpX>=hp.x2 || hpX<=hp.x1);
+    let push=vx*2.2;                                          // the pipe's own gravity does most of the work — flicks just need to feel punchy
+    // from a ledge, a flick toward the pipe is a proper drop-in, not a creep
+    if(onLedge && hpX>=hp.x2 && push<0) push=Math.min(push,-190);
+    if(onLedge && hpX<=hp.x1 && push>0) push=Math.max(push, 190);
+    hpVX+=push;
+    if(!hpAir && vy<-35){ hpAir=true; hpY=hpSurfY(hp,hpX); hpVY=-Math.min(900, 380+Math.abs(vy)*2.2); airborne=Math.max(airborne,1.2); }   // flick up = jump
+    vx=0; vy=0;
+  }
+  const L=hpLedgeW(), xmin=hp.x1-L+14, xmax=hp.x2+L-14;
+  if(hpAir){
+    hpVY+=HP_G*dt; hpX+=hpVX*dt; hpY+=hpVY*dt;
+    if(hpX<xmin){ hpX=xmin; hpVX=Math.abs(hpVX)*0.3; }
+    if(hpX>xmax){ hpX=xmax; hpVX=-Math.abs(hpVX)*0.3; }
+    const sy=hpSurfY(hp,hpX);
+    if(hpVY>0 && hpY>=sy){ hpAir=false; hpVY=0; }           // land ON the surface, never through it
+  } else {
+    const m=hpSlope(hp,hpX);
+    hpVX+=HP_G*m/(1+m*m)*dt;                                 // gravity along the slope
+    hpVX*=(1-0.30*dt);
+    hpVX=Math.max(-900,Math.min(900,hpVX));
+    const was=hpInPipe;
+    hpX+=hpVX*dt;
+    hpInPipe = hpX>hp.x1 && hpX<hp.x2;
+    if(was && !hpInPipe && Math.abs(hpVX)>260){
+      // came up a wall fast — pop out over the lip for a trick window
+      const lip=hpSlope(hp, hpX<hp.x1? hp.x1+0.5 : hp.x2-0.5);
+      hpAir=true; hpY=hpSurfY(hp,hpX); hpVY=-Math.abs(hpVX*lip)*0.9; hpVX*=0.55;
+      airborne=Math.max(airborne,1.6); addScore(25);
+      try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
+    }
+    if(hpX<xmin){ hpX=xmin; hpVX=Math.abs(hpVX)*0.3; }
+    if(hpX>xmax){ hpX=xmax; hpVX=-Math.abs(hpVX)*0.3; }
+    if(Math.abs(hpVX)<3 && Math.abs(m)<0.02) hpVX=0;
+  }
+  if(airborne>0) airborne=Math.max(0,airborne-dt);
+  hpSyncBoard(hp);
+}
 function buildHalfpipeEl(){
   const a=AREAS[areaIdx];
   if(!a.halfpipe) return;
@@ -677,19 +764,19 @@ function buildHalfpipeEl(){
   });
   // flat ledges at the top of each wall — like real coping, and where you pop
   // out onto if you carry enough speed up either side
-  const ledgeW=r.width*0.15;
+  const ledgeW=hpLedgeW();
   [[hp.x1-ledgeW, hp.x1],[hp.x2, hp.x2+ledgeW]].forEach(([lx1,lx2])=>{
     [[8,'#5a3a1c'],[4,'#8a5c30']].forEach(([h,c],i)=>{
       const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
-      rect.setAttribute('x',lx1); rect.setAttribute('y',topY-10+ (i? -1:0));
+      rect.setAttribute('x',lx1); rect.setAttribute('y',topY-HP_SURF+ (i? -1:0));   // top = the surface you ride
       rect.setAttribute('width', lx2-lx1); rect.setAttribute('height', h);
       rect.setAttribute('rx', 3); rect.setAttribute('fill', c);
       svg.appendChild(rect);
     });
   });
   const dropTxt=document.createElementNS('http://www.w3.org/2000/svg','text');
-  dropTxt.setAttribute('x', hp.x1-ledgeW*0.5);
-  dropTxt.setAttribute('y', topY-16);
+  dropTxt.setAttribute('x', hp.x2+ledgeW*0.5);                  // over the right ledge, where you start
+  dropTxt.setAttribute('y', topY-HP_SURF-(boardEl.offsetWidth||60)*0.85-6);
   dropTxt.setAttribute('fill', '#ffd24a');
   dropTxt.setAttribute('font-size', '11');
   dropTxt.setAttribute('font-family', 'Arial,Helvetica,sans-serif');
@@ -880,10 +967,16 @@ function doTap(x,y){
   lastTapPos={x,y};
   ollieHop=1;
 
+  const hpA = AREAS[areaIdx].halfpipe;
+  if(hpA && !hpAir && !flipMode){ hpAir=true; hpY=hpSurfY(halfpipePoints(hpA),hpX); hpVY=-300; }   // ollie
   if(!chairEl.classList.contains('hidden')){
     const cr=chairEl.getBoundingClientRect(), gr=fieldRect();
     const cx=cr.left-gr.left+cr.width/2, cy=cr.top-gr.top+cr.height/2;
-    if(Math.hypot(bx-cx, by-cy) < 60){
+    // in the half-pipe the board rides ON the wood above the chair, so it's
+    // close enough when you're over it in the bottom of the pipe
+    const near = hpA ? (Math.abs(bx-cx)<70 && hpX>halfpipePoints(hpA).x1 && hpX<halfpipePoints(hpA).x2)
+                     : Math.hypot(bx-cx, by-cy) < 60;
+    if(near){
       crossToNextArea();
     }
   }
@@ -995,22 +1088,8 @@ function frame(t){
       by=grinding.p1.y+(grinding.p2.y-grinding.p1.y)*grinding.t;
       boardAngle=Math.atan2(grinding.p2.y-grinding.p1.y, grinding.p2.x-grinding.p1.x)*180/Math.PI+90;
     }
-  } else if(hp0 && !crossing && !peefAnim && bx>hp0.x1 && bx<hp0.x2){
-    // gravity-driven curve physics — rides the exact same parabola the ramp is
-    // drawn with, so the board visually sits right on the surface at all times.
-    // Tuned as a gentle pendulum (a small restoring accel + real per-second
-    // damping), not a stiff spring — the previous version's spring constant
-    // was wildly too strong and caused an out-of-control high-frequency
-    // shudder right at the bottom instead of a smooth back-and-forth roll.
-    const cx=(hp0.x1+hp0.x2)/2, halfW=(hp0.x2-hp0.x1)/2;
-    vx += -(bx-cx)*3.0*dt;         // gentle restoring pull toward the bottom of the valley
-    vx *= (1-0.35*dt);             // real per-second damping so it settles instead of ringing forever
-    vx = Math.max(-480,Math.min(480,vx));   // safety clamp — nothing should ever run away
-    bx += vx*dt;
-    const t=Math.max(-1,Math.min(1,(bx-cx)/halfW));
-    by = halfpipeCurveY(hp0,bx);
-    boardAngle = Math.atan2(-2*curveDepthPx()*t/halfW, 1)*180/Math.PI+90;  // tilts to match the local slope
-    hpWasIn=true;
+  } else if(hp0 && !crossing && !peefAnim){
+    hpStep(dt,hp0);                // side-on: rides the drawn pipe and ledges as the floor
   } else if(!crossing && !peefAnim){
     if(hpWasIn){
       // just carried past a wall — pop out onto the ledge; a short trick
@@ -1122,9 +1201,7 @@ function render(){
           bx=p1.x; by=p1.y+18;
         } else if(na.halfpipe){
           // lands you exactly at the drop-in point, right on the lip of the curve
-          const hp=halfpipePoints(na.halfpipe);
-          bx=hp.x1+6; by=halfpipeCurveY(hp,hp.x1+6);
-          vx=0; vy=0;
+          hpPlaceStart(halfpipePoints(na.halfpipe));   // on the flat of the right ledge
         } else {
           const nb=bounds();
           if(enterEdge==='top'){ bx=(nb.left+nb.right)/2; by=nb.top+20; }
