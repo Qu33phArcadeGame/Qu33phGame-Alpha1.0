@@ -2383,7 +2383,7 @@ function applyThemeOverlay(){
   let cw=canvas.width, ch=canvas.height;
   let t=Date.now()/1000;
   if(isRZ()){
-    if(realisticImg.complete && realisticImg.naturalWidth){ withTiltParallax(0,0,cw,ch,1,function(){ ctx.drawImage(realisticImg,0,0,cw,ch); }); }
+    if(realisticImg.complete && realisticImg.naturalWidth){ DepthPhoto.render(ctx,"originalfield.png","originalfield-depth.png",realisticImg,0,0,cw,ch); }
     else { ctx.fillStyle="#141414"; ctx.fillRect(0,0,cw,ch); ctx.fillStyle="#666"; ctx.font="13px Helvetica, Arial, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("upload originalfield.png to GitHub", cw/2, ch/2); }
     applyStyleWash(styleOf(), cw, ch, t);
     return;
@@ -9675,6 +9675,7 @@ QC.bind('jump',{ active:function(){ return typeof gameState!=='undefined' && gam
   onBack:function(){ pauseGame(); } });
 </script>
 <script src="qu33ph-tilt.js?v=1"></script>
+<script src="depth-photo.js?v=1"></script>
 <script>
 QTilt.onStatus=function(){ var sc=document.getElementById('settingsScreen'); if(sc && sc.style.display==='flex') try{ renderSettings(); }catch(e){} };
 QTilt.layers({
