@@ -783,14 +783,16 @@ function drawBenday(){
 }
 let CABC=null, cabcKey='';
 function ensureCabCache(){
-  const key=CW+'x'+CH+'|'+THEME+'|'+(ready(CAB)?1:0);
+  const key=CW+'x'+CH+'|'+THEME+'|'+(ready(CAB)?1:0)+'|'+(window.QDepth?QDepth.key():'');
   if(CABC && cabcKey===key) return;
-  CABC=document.createElement('canvas'); CABC.width=CW; CABC.height=CH;
-  const g=CABC.getContext('2d');
+  // reuse the cache canvas (with depth on it refreshes as the phone tilts)
+  if(!CABC || CABC.width!==CW || CABC.height!==CH){ CABC=document.createElement('canvas'); CABC.width=CW; CABC.height=CH; }
+  const g=CABC.getContext('2d'); g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,CW,CH);
   g.fillStyle='#05050a'; g.fillRect(0,0,CW,CH);
-  const tmp=document.createElement('canvas'); tmp.width=CW; tmp.height=CH;
-  const tg=tmp.getContext('2d');
-  if(ready(CAB)) tg.drawImage(CAB,cabX,cabY,cabW,cabH);
+  const tmp=(window._dzTmp=window._dzTmp||document.createElement('canvas'));   // reused scratch canvas
+  if(tmp.width!==CW||tmp.height!==CH){ tmp.width=CW; tmp.height=CH; }
+  const tg=tmp.getContext('2d'); tg.setTransform(1,0,0,1,0,0); tg.clearRect(0,0,CW,CH);
+  if(ready(CAB) && !(window.QDepth && QDepth.draw(tg,CAB,cabX,cabY,cabW,cabH,{strength:0.5, focus:0.6}))) tg.drawImage(CAB,cabX,cabY,cabW,cabH);   // coins sit on the bed
   if(CANFILTER&&TH.filter) g.filter=TH.filter;
   g.drawImage(tmp,0,0);
   g.filter='none';
@@ -861,5 +863,6 @@ QC.bind('dozer',{
 </script>
 <script src="qu33ph-tilt.js?v=1"></script>
 <script>QTilt.layers({farZoom:['#game'], nearBL:['#orientBtn']});</script>
+<script src="qu33ph-depth.js?v=2"></script>
 </body>
 </html>

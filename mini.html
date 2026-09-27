@@ -603,7 +603,9 @@ function drawNeonRoom(c){
 }
 function drawCover(c,img,alpha){
   if(!ready(img)||alpha<=0.004) return;
-  const r=coverRect(img); c.globalAlpha=alpha; c.drawImage(img,r.x,r.y,r.w,r.h); c.globalAlpha=1;
+  const r=coverRect(img); c.globalAlpha=alpha;
+  if(!(window.QDepth && QDepth.draw(c,img,r.x,r.y,r.w,r.h,{strength:0.5, focus:0.65}))) c.drawImage(img,r.x,r.y,r.w,r.h);
+  c.globalAlpha=1;
 }
 function drawMarkerAt(c,u,v,rot,col,capOff){
   const p=proj(u,v); const im=MK[col];
@@ -814,5 +816,6 @@ QC.bind('mini',{
 </script>
 <script src="qu33ph-tilt.js?v=1"></script>
 <script>QTilt.layers({farZoom:['#game']});</script>
+<script src="qu33ph-depth.js?v=2"></script>
 </body>
 </html>

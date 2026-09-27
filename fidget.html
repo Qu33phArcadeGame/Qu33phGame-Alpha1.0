@@ -354,7 +354,8 @@ function draw(){
   if(LF){ ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(LF,0,0); baseT(); }
   else if(ready(FIELD)){ let ar=FIELD.naturalWidth/FIELD.naturalHeight, car=CW/CH, sw,sh;
     if(ar>car){ sh=FIELD.naturalHeight; sw=sh*car; } else { sw=FIELD.naturalWidth; sh=sw/car; }
-    ctx.drawImage(FIELD,(FIELD.naturalWidth-sw)/2,(FIELD.naturalHeight-sh)/2,sw,sh,0,0,CW,CH);
+    const cr={sx:(FIELD.naturalWidth-sw)/2, sy:(FIELD.naturalHeight-sh)/2, sw:sw, sh:sh};
+    if(!(window.QDepth && QDepth.draw(ctx,FIELD,0,0,CW,CH,{strength:1, focus:0.5, crop:cr}))) ctx.drawImage(FIELD,cr.sx,cr.sy,sw,sh,0,0,CW,CH);
   } else { ctx.fillStyle='#c8b89a'; ctx.fillRect(0,0,CW,CH); }
   ctx.lineWidth=UN*0.02;
   ctx.strokeStyle=lineColor(c2); ctx.beginPath(); ctx.moveTo(0,UN*0.01); ctx.lineTo(CW,UN*0.01); ctx.stroke();          // top end = top spinner's color
@@ -473,5 +474,6 @@ QC.bind('fidget',{
 </script>
 <script src="qu33ph-tilt.js?v=1"></script>
 <script>QTilt.layers({farZoom:['#game'], nearTR:['#resetBtn']});</script>
+<script src="qu33ph-depth.js?v=2"></script>
 </body>
 </html>

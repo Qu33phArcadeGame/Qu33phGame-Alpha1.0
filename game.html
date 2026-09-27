@@ -2383,7 +2383,16 @@ function applyThemeOverlay(){
   let cw=canvas.width, ch=canvas.height;
   let t=Date.now()/1000;
   if(isRZ()){
-    if(realisticImg.complete && realisticImg.naturalWidth){ DepthPhoto.render(ctx,"originalfield.png","originalfield-depth.png",realisticImg,0,0,cw,ch); }
+    if(realisticImg.complete && realisticImg.naturalWidth){
+      // depth map: nearest parts of the room hold still behind the markers,
+      // the far wall and the view outside recede. No map: flat pan as before.
+      // the whole photo pans behind the markers (as before), and on top of that
+      // each pixel moves by its own depth: window & far wall vs the near wall
+      withTiltParallax(0,0,cw,ch,1,function(){
+        if(!(window.QDepth && QDepth.draw(ctx, realisticImg, 0,0,cw,ch, {strength:1, focus:0.5})))
+          ctx.drawImage(realisticImg,0,0,cw,ch);
+      });
+    }
     else { ctx.fillStyle="#141414"; ctx.fillRect(0,0,cw,ch); ctx.fillStyle="#666"; ctx.font="13px Helvetica, Arial, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("upload originalfield.png to GitHub", cw/2, ch/2); }
     applyStyleWash(styleOf(), cw, ch, t);
     return;
@@ -9675,7 +9684,6 @@ QC.bind('jump',{ active:function(){ return typeof gameState!=='undefined' && gam
   onBack:function(){ pauseGame(); } });
 </script>
 <script src="qu33ph-tilt.js?v=1"></script>
-<script src="depth-photo.js?v=1"></script>
 <script>
 QTilt.onStatus=function(){ var sc=document.getElementById('settingsScreen'); if(sc && sc.style.display==='flex') try{ renderSettings(); }catch(e){} };
 QTilt.layers({
@@ -9691,5 +9699,12 @@ QTilt.layers({
   far:['#pinballBg','#pinballCanvas','#pbLaunchBtn','#slotMachine','#plinkoCanvas']
   // the main Qu33ph game pans its photo inside the canvas (see withTiltParallax)
 });</script>
+<script src="qu33ph-depth.js?v=2"></script>
+<script>
+// per-pixel depth for the art on this page's screens (see qu33ph-depth.js)
+QDepth.attach(['#logoImg','#arcadeLogo','#arcadeMenu .cab-card > img'], {strength:1, focus:0.5});
+QDepth.attach('#slotMachineImg', {strength:0.6, focus:0.7});   // reels sit on top of it: keep them aligned
+QDepth.attach('#pinballBg',      {strength:0.5, focus:0.6});   // the ball rolls on this table
+</script>
 </body>
 </html>
