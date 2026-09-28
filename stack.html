@@ -441,43 +441,79 @@ function drawTitle(txt){
   ctx.fillStyle=txt; ctx.font='bold '+Math.round(FT()*0.05)+'px Helvetica'; ctx.fillText('▶ TAP TO START',CW/2,CH*0.91);
 }
 let obShown=null;
-function loop(){ update(); draw();
+function loop(){ relayout(); update(); snapshotWorld(); draw();
   const showB=(state==='play');
   if(showB!==obShown){ obShown=showB; document.getElementById('orientBtn').style.display=showB?'flex':'none'; }
   requestAnimationFrame(loop); }
-// ── ROTATION MID-RUN ───────────────────────────────────────────────────
-// The tower is real physics, so on a resize every body (plates, placed
-// markers, the one in hand) is moved and scaled about the plate by the change
-// in the tower-width unit — the stack stays standing, just drawn at the new
-// size. Turning to landscape adds the side plates; turning back to portrait
-// keeps them (the camera zooms out to show them) so nothing you built vanishes.
-window.addEventListener('resize',()=>{
-  const oCW=CW, oPY=PLATE_Y, oWW=WW();
-  sz();
-  if(!engine || !plates.length || (state!=='play' && state!=='over')) return;
-  const k=WW()/oWW;
+// ── ROTATION / RESIZE — drift-proof ─────────────────────────────────────
+// Every frame each body's position is recorded in screen-independent units
+// (plate-widths from the centre plate: _cx, _cy) plus the unit it was sized
+// at (_ww). On any size change the world is REBUILT from that record — the
+// plates go to their exact spots for the new orientation and every body is
+// resized absolutely — instead of rescaling from the previous layout, which
+// could drift when a rotation fires several resize events mid-change.
+// Portrait = the single plate; landscape = three. Markers on side plates
+// leave with them in portrait and the score is recounted, so rotating back
+// and forth can't hide towers or bring them back.
+let lastWrapW=0, lastWrapH=0;
+function snapshotWorld(){
+  if(!engine || !plates.length) return;
+  const U=WW();
   for(const b of M.Composite.allBodies(world)){
-    const wasStatic=b.isStatic;
-    M.Body.setPosition(b,{ x:CW/2+(b.position.x-oCW/2)*k, y:PLATE_Y+(b.position.y-oPY)*k });
-    if(Math.abs(k-1)>0.001){ M.Body.scale(b,k,k); if(b.bw){ b.bw*=k; b.bh*=k; } }
-    if(wasStatic) M.Body.setStatic(b,true);
+    if(!b._ww) b._ww=U;
+    b._cx=(b.position.x-CW/2)/U; b._cy=(b.position.y-PLATE_Y)/U;
   }
-  if(CW>CH) addSidePlates();
-  else if(plates.length>1){
-    // portrait is always the classic single-plate game: the side plates go,
-    // and so does anything built on them (the score is recounted); the centre
-    // tower and the marker in your hand carry straight on at normal zoom
-    const keep=plates[0], colHalf=WW()*0.55;
-    for(const p of plates.slice(1)) M.Composite.remove(world,p);
-    plates=[keep]; plate=keep;
-    placed=placed.filter(b=>{ const onCentre=Math.abs(b.position.x-keep.position.x)<=colHalf; if(!onCentre) M.Composite.remove(world,b); return onCentre; });
-    score=placed.length;
-    if(cur && Math.abs(cur.position.x-keep.position.x)>colHalf){ M.Body.setPosition(cur,{x:keep.position.x, y:cur.position.y}); if(cur.dropped) M.Body.setVelocity(cur,{x:0,y:0}); }
+}
+// a fresh marker body with the same shape/physics settings spawn() uses
+function makeMarkerBody(x,y,bw,bh,angle,src){
+  const b=M.Bodies.rectangle(x, y, bw, bh, { chamfer:{radius:Math.min(bw,bh)*0.14}, friction:1.0, frictionStatic:3, frictionAir:0.03, restitution:0, density:0.004, slop:0.02, label:'marker' });
+  b.bw=bw; b.bh=bh; b.color=src.color; b.held=src.held; b.dropped=src.dropped; b.settle=src.settle||0; b.baseAngle=src.baseAngle;
+  M.Body.setAngle(b, angle);
+  return b;
+}
+function relayout(force){
+  const r=document.getElementById('wrap').getBoundingClientRect();
+  if(!force && Math.abs(r.width-lastWrapW)<1 && Math.abs(r.height-lastWrapH)<1) return;
+  lastWrapW=r.width; lastWrapH=r.height;
+  snapshotWorld();                                  // record with the layout the bodies were built for
+  const oU=WW();
+  sz();
+  if(!engine || !plates.length){ return; }
+  const U=WW(), land=CW>CH;
+  // REBUILD the world from the record: brand-new bodies at their exact spots
+  // and sizes. Nothing is moved or rescaled in place — so no leftover
+  // velocity, sleeping state or stretched collision shape can drag anything
+  // out of position after a rotation.
+  const oldPlaced=placed, oldCur=cur;
+  M.Composite.clear(world,false);
+  plates=[]; plate=makePlate(CW/2);
+  if(land) addSidePlates();
+  for(const p of plates){ p._ww=U; }
+  const keep=b=>land || Math.abs(b._cx||0)<=0.6;   // portrait: only the centre tower stays
+  const rebuild=(b)=>{
+    const k=U/(b._ww||oU);
+    const nb=makeMarkerBody(CW/2+(b._cx||0)*U, PLATE_Y+(b._cy||0)*U, b.bw*k, b.bh*k, b.angle, b);
+    nb._ww=U; nb._cx=b._cx; nb._cy=b._cy;
+    if(b.isStatic) M.Body.setStatic(nb,true);
+    M.Composite.add(world,nb);
+    return nb;
+  };
+  placed=oldPlaced.filter(keep).map(rebuild);
+  score=placed.length;
+  cur=null;
+  if(oldCur){
+    const i=oldPlaced.indexOf(oldCur);
+    if(i>=0) cur=placed[oldPlaced.filter(keep).indexOf(oldCur)]||null;   // already part of the tower: same body, don't build it twice
+    else { if(!keep(oldCur)) oldCur._cx=0;          // a marker in hand comes back to the centre
+           cur=rebuild(oldCur); }
   }
   camScale=fitScale();
-  camY=Math.max(PLATE_Y*(1-camScale), camY*k);
+  camY=Math.max(PLATE_Y*(1-camScale), camY*(U/oU));
   dragTarget=null;
-});
+}
+window.addEventListener('resize',()=>relayout());
+window.addEventListener('orientationchange',()=>{ setTimeout(()=>relayout(),150); setTimeout(()=>relayout(),500); });
+
 loop();
 </script>
 <script src="qu33ph-controls.js?v=1"></script>
@@ -499,7 +535,7 @@ QC.bind('stack',{
   onBack:()=>{ try{ parent.stackBack(); }catch(e){} }
 });
 </script>
-<script src="qu33ph-tilt.js?v=1"></script>
+<script src="qu33ph-tilt.js?v=2"></script>
 <script>QTilt.layers({nearBL:['#orientBtn']});</script>
 </body>
 </html>
