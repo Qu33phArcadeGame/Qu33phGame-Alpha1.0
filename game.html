@@ -9434,7 +9434,11 @@ function toggleTiltParallax(){
   if(!window.QTilt) return;
   if(QTilt.pct>0){ QTilt.setPct(0); renderSettings(); return; }
   QTilt.status="";
-  QTilt.ask().then(function(ok){ if(ok) QTilt.setPct(tiltParallaxPrev); renderSettings(); });
+  QTilt.ask().then(function(ok){
+    if(ok){ QTilt.setPct(tiltParallaxPrev);
+      // no readings at all after a moment (e.g. a laptop): switch back off and say why
+      setTimeout(function(){ if(!QTilt.live && QTilt.pct>0){ QTilt.setPct(0); QTilt.status='no tilt sensor on this device'; try{renderSettings();}catch(e){} } }, 1800); }
+    renderSettings(); });
 }
 function slideTiltParallax(v){ setTiltParallaxPct(v); renderSettings(); }
 // ── settings navigation ──
@@ -9683,7 +9687,7 @@ QC.bind('jump',{ active:function(){ return typeof gameState!=='undefined' && gam
     onThrow:function(off,p){ var pw=70+p*160; throwMarker(Math.cos(aimAngle)*pw, Math.sin(aimAngle)*pw); } },
   onBack:function(){ pauseGame(); } });
 </script>
-<script src="qu33ph-tilt.js?v=1"></script>
+<script src="qu33ph-tilt.js?v=3"></script>
 <script>
 QTilt.onStatus=function(){ var sc=document.getElementById('settingsScreen'); if(sc && sc.style.display==='flex') try{ renderSettings(); }catch(e){} };
 QTilt.layers({
@@ -9691,15 +9695,17 @@ QTilt.layers({
   nearTR:['#pauseBtn'],
   nearL:['#arcadeLogo','#arcadeSeasonTag'],
   midL:['#slotBtn','#plinkoBtn','#platformerBtn'], midR:['#settingsBtn','#themesBtn','#titleCoins'],
-  near:['#logoContainer','#logoFallback','#coinRecordScreen > img',
-        '#settingsScreen > div:first-child','#achScreen > div:first-child','#careerScreen > div:first-child','#shopScreen > div:first-child'],
+  near:['#logoContainer','#logoFallback','#coinRecordScreen > img'],
+  // screen titles sit right on top of their content: they float up and
+  // sideways but never down, so they can't cover the tabs/grids beneath them
+  nearB:['#settingsScreen > div:first-child','#achScreen > div:first-child','#careerScreen > div:first-child','#shopScreen > div:first-child'],
   mid:['#titleBtns','#arcadeMenu .cab-card',
        '#achGrid','#shopBody','#careerBody','#coinRecordBody','#slotPayInline'],
   // arcade games drawn here: the table / machine / board sits deep
   far:['#pinballBg','#pinballCanvas','#pbLaunchBtn','#slotMachine','#plinkoCanvas']
   // the main Qu33ph game pans its photo inside the canvas (see withTiltParallax)
 });</script>
-<script src="qu33ph-depth.js?v=2"></script>
+<script src="qu33ph-depth.js?v=3"></script>
 <script>
 // per-pixel depth for the art on this page's screens (see qu33ph-depth.js)
 QDepth.attach(['#logoImg','#arcadeLogo','#arcadeMenu .cab-card > img'], {strength:1, focus:0.5});

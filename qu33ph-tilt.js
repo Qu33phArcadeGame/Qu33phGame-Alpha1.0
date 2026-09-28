@@ -52,20 +52,32 @@
   function wrap(d){ return ((((d+180)%360)+360)%360)-180; }
   function map(d){ d=wrap(d); var m=Math.abs(d); if(m<=0.6) return 0; d=Math.sign(d)*(m-0.6); return Math.max(-30,Math.min(30,d))/30; }
   function angle(){ var a=(screen.orientation&&typeof screen.orientation.angle==='number')?screen.orientation.angle:(window.orientation||0); return ((a%360)+360)%360; }
+  function forward(beta,gamma){
+    // pass readings down into any frames on this page (the Dozer / Stack
+    // screens): a frame only gets its own sensor data once it has been tapped
+    var fr=document.getElementsByTagName('iframe');
+    for(var i=0;i<fr.length;i++){ try{ fr[i].contentWindow.postMessage({qtilt:1,beta:beta,gamma:gamma},'*'); }catch(err){} }
+  }
   function onOrient(e){
     if(e.beta==null || e.gamma==null) return;
+    forward(e.beta,e.gamma);
     var a=angle();
     var x = a===90? -e.beta : a===180? -e.gamma : a===270? e.beta : e.gamma;
     var y = a===90?  e.gamma: a===180? -e.beta  : a===270? -e.gamma: e.beta;
     T.live=true; T.raw={x:x,y:y};
     T.tx=map(x-T.base.x); T.ty=map(y-T.base.y);
   }
+  // readings forwarded from the page this one sits inside (index.html's frame)
+  window.addEventListener('message', function(m){
+    var d=m.data; if(!d || d.qtilt!==1 || T.pct<=0) return;
+    onOrient({beta:d.beta, gamma:d.gamma});
+  });
   function setStatus(s){ T.status=s; if(T.onStatus) try{ T.onStatus(s); }catch(e){} }
   function listen(){
     if(T.listening) return; T.listening=true;
     window.addEventListener('deviceorientation', onOrient, {passive:true});
     // desktop browsers have the API but never send readings
-    setTimeout(function(){ if(!T.live && T.pct>0 && T.granted){ T.setPct(0); setStatus('no tilt sensor on this device'); } }, 1500);
+    setTimeout(function(){ if(!T.live && T.pct>0 && T.granted){ setStatus('no tilt sensor on this device'); } }, 1500);
   }
   // iOS: must be called inside a tap. Resolves true/false; never throws.
   T.ask = function(){
@@ -104,9 +116,14 @@
   function rule(list, key, s){
     var p=parseKey(key); if(!p || !list.length) return '';
     var px=(DEPTH[p.depth]*s).toFixed(2)+'px';
-    var X='calc(var(--tpx) * var(--tpd) * '+px+')', Y='calc(var(--tpy) * var(--tpd) * '+px+')';
+    // Menus and text (mid/near) keep their full sideways depth but move only
+    // 30% as much vertically: stacked things (a title over its buttons, a
+    // title over tabs) then can't slide onto each other and hide text.
+    // Scenes behind everything (far) keep full movement both ways.
+    var pyv=((p.depth==='far'||p.depth==='farZoom') ? DEPTH[p.depth]*s : DEPTH[p.depth]*s*0.3).toFixed(2)+'px';
+    var X='calc(var(--tpx) * var(--tpd) * '+px+')', Y='calc(var(--tpy) * var(--tpd) * '+pyv+')';
     if(p.h==='L') X='max(-2px, '+X+')'; if(p.h==='R') X='min(2px, '+X+')';
-    if(p.v==='T') Y='max(-2px, '+Y+')'; if(p.v==='B') Y='min(2px, '+Y+')';
+    if(p.v==='T') Y='max(-2px, '+Y+')'; if(p.v==='B') Y='min(0px, '+Y+')';
     // :where() has zero specificity, so the order below decides which layer
     // wins when an element matches two lists (pinned beats free, near beats mid)
     return 'html.tp-on :where('+list.join(',')+'){translate:'+X+' '+Y+';'+(p.depth==='farZoom'?'scale:var(--tpz);':'')+'}';
@@ -124,8 +141,27 @@
     });
     var css=':root{--tpx:0;--tpy:0;--tpz:1;--tpd:0}';
     names.forEach(function(n){ css+=rule(keys[n], n, s); });
+    css+=buttonRules();
     if(!sheet){ sheet=document.createElement('style'); sheet.id='qtilt-css'; document.head.appendChild(sheet); }
     sheet.textContent=css;
+  }
+  // ── 3D buttons ─────────────────────────────────────────────────────────
+  // Every button swivels with real perspective as the phone tilts (up to 9°
+  // at full strength), like a physical slab turning toward you, and on marker
+  // buttons the end cap sits at a slightly different depth from the body, so
+  // the two pieces shift against each other. GPU-only, driven by the same two
+  // variables as the layers.
+  // Zero-specificity :where() so any transform a page gives a button of its
+  // own (a press-down effect, a flipped icon) always wins over the tilt.
+  var BUTTONS=['button','.mk-btn','.s2mk','.pause-mk','.marker-btn','.corner-back','.game-back-tl','.mode-btn','.cab-card','.lvl','.choice'];
+  var CAPS=['.mk-btn','.s2mk','.pause-mk','.marker-btn','.corner-back','.game-back-tl'];
+  var TILT='perspective(700px) rotateX(calc(var(--tpy) * var(--tpd) * -9deg)) rotateY(calc(var(--tpx) * var(--tpd) * 9deg))';
+  function buttonRules(){
+    return ':where(html.tp-on) :where('+BUTTONS.join(',')+'){transform:'+TILT+';}'
+      // the arcade's corner BACK buttons force transform:none; they tilt too
+      + 'html.tp-on .back-tl{transform:'+TILT+' !important;}'
+      // the cap floats a little behind the body
+      + ':where(html.tp-on) :where('+CAPS.join(',')+')::before{translate:calc(var(--tpx) * var(--tpd) * -3px) calc(var(--tpy) * var(--tpd) * -1.5px);}';
   }
   T.layers = function(o){ for(var k in o){ if(parseKey(k)) sel[k]=(sel[k]||[]).concat(o[k]); } build(); };
   window.addEventListener('resize', function(){ if(sheet) build(); });

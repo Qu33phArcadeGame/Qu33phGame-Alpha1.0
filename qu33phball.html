@@ -676,12 +676,13 @@ function drawMarker(color, cx, cy, scale, rot){
 
 let FIELDC=null, fieldcKey='';
 function ensureFieldCache(){
-  const key=CW+'x'+CH+'|'+THEME+'|'+F().id+'|'+(ready(FIELD_IMG())?1:0);
+  const key=CW+'x'+CH+'|'+THEME+'|'+F().id+'|'+(ready(FIELD_IMG())?1:0)+'|'+(window.QDepth?QDepth.key():'');
   if(FIELDC && fieldcKey===key) return;
-  FIELDC=document.createElement('canvas'); FIELDC.width=CW; FIELDC.height=CH;
-  const g=FIELDC.getContext('2d');
+  // reuse the cache canvas (with depth on it refreshes as the phone tilts)
+  if(!FIELDC || FIELDC.width!==CW || FIELDC.height!==CH){ FIELDC=document.createElement('canvas'); FIELDC.width=CW; FIELDC.height=CH; }
+  const g=FIELDC.getContext('2d'); g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,CW,CH);
   s2.setTransform(1,0,0,1,0,0); s2.clearRect(0,0,CW,CH);
-  if(ready(FIELD_IMG())) s2.drawImage(FIELD_IMG(),0,0,CW,CH);
+  if(ready(FIELD_IMG()) && !(window.QDepth && QDepth.draw(s2,FIELD_IMG(),0,0,CW,CH,{strength:0.5, focus:0.6}))) s2.drawImage(FIELD_IMG(),0,0,CW,CH);   // the ball rolls on this lane
   else { s2.fillStyle='#111'; s2.fillRect(0,0,CW,CH); }   // plain placeholder while the real art loads — never the hitbox/pocket debug view
   if(CANFILTER && TH.filter) g.filter=TH.filter;
   g.drawImage(sc,0,0);
@@ -835,7 +836,8 @@ QC.bind('skee',{
   frame:(dt,h)=>{ if(state==='over' && h.throw) reset(); }            // throw key also starts the next game
 });
 </script>
-<script src="qu33ph-tilt.js?v=1"></script>
+<script src="qu33ph-tilt.js?v=3"></script>
 <script>QTilt.layers({far:['#stage'], nearR:['#lsHud'], nearBL:['#laneBtn']});</script>
+<script src="qu33ph-depth.js?v=3"></script>
 </body>
 </html>
