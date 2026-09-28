@@ -9687,7 +9687,7 @@ QC.bind('jump',{ active:function(){ return typeof gameState!=='undefined' && gam
     onThrow:function(off,p){ var pw=70+p*160; throwMarker(Math.cos(aimAngle)*pw, Math.sin(aimAngle)*pw); } },
   onBack:function(){ pauseGame(); } });
 </script>
-<script src="qu33ph-tilt.js?v=3"></script>
+<script src="qu33ph-tilt.js?v=4"></script>
 <script>
 QTilt.onStatus=function(){ var sc=document.getElementById('settingsScreen'); if(sc && sc.style.display==='flex') try{ renderSettings(); }catch(e){} };
 QTilt.layers({

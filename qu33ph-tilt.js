@@ -151,15 +151,16 @@
   // buttons the end cap sits at a slightly different depth from the body, so
   // the two pieces shift against each other. GPU-only, driven by the same two
   // variables as the layers.
-  // Zero-specificity :where() so any transform a page gives a button of its
-  // own (a press-down effect, a flipped icon) always wins over the tilt.
+  // Buttons across the app rest at transform:translateY(0) (the "unpressed"
+  // position of their press-down effect), so the tilt takes priority over the
+  // resting state — but steps aside while a button is being PRESSED (its own
+  // press-down effect plays as before), and never touches an element that is
+  // positioned with an inline transform (e.g. centred with translateX(-50%)).
   var BUTTONS=['button','.mk-btn','.s2mk','.pause-mk','.marker-btn','.corner-back','.game-back-tl','.mode-btn','.cab-card','.lvl','.choice'];
   var CAPS=['.mk-btn','.s2mk','.pause-mk','.marker-btn','.corner-back','.game-back-tl'];
   var TILT='perspective(700px) rotateX(calc(var(--tpy) * var(--tpd) * -9deg)) rotateY(calc(var(--tpx) * var(--tpd) * 9deg))';
   function buttonRules(){
-    return ':where(html.tp-on) :where('+BUTTONS.join(',')+'){transform:'+TILT+';}'
-      // the arcade's corner BACK buttons force transform:none; they tilt too
-      + 'html.tp-on .back-tl{transform:'+TILT+' !important;}'
+    return 'html.tp-on :is('+BUTTONS.join(',')+'):not(:active):not([style*="transform"]){transform:'+TILT+' !important;}'
       // the cap floats a little behind the body
       + ':where(html.tp-on) :where('+CAPS.join(',')+')::before{translate:calc(var(--tpx) * var(--tpd) * -3px) calc(var(--tpy) * var(--tpd) * -1.5px);}';
   }
