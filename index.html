@@ -2,139 +2,421 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Qu33ph</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dreamlings · Town 1</title>
 <style>
-/* nobody gets to long-press/right-click-save any image in this app — the
-   long-press "download/copy image" context menu on Android/iOS specifically
-   comes from -webkit-touch-callout, so that's the one that actually matters
-   on mobile; the rest are backup layers for desktop browsers. */
-img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
-  -webkit-user-drag:none;-khtml-user-drag:none;-moz-user-select:none;-ms-user-select:none;
-  pointer-events:auto;}
-
-  html,body{ margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden;
-    -webkit-user-select:none; user-select:none; touch-action:none; }
-  /* the real game lives in game.html, loaded here at a FIXED logical size —
-     the iframe gets its own independent viewport at exactly DESIGN_W x DESIGN_H,
-     so every vw/vh/dvh rule inside the whole app computes against that fixed
-     size no matter what device or window this page is actually sitting in.
-     We then just scale the iframe itself (as one solid block) to fit whatever
-     real screen is available, centered, with letterboxing on whichever sides
-     don't match — which is also what keeps it portrait-shaped automatically
-     even inside a wide desktop browser window. */
-  #stageOuter{ position:fixed; inset:0; overflow:hidden; background:#000; }
-  #gameFrame{ border:0; display:block; background:#000; position:absolute; left:0; top:0; transform-origin:0 0; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+  html,body{margin:0;height:100%;background:#07040f;overflow:hidden;font-family:Helvetica,Arial,sans-serif;}
+  #stage{position:fixed;inset:0;background:#0a0512;}
+  #cabImg{position:absolute;pointer-events:none;}
+  #screen{position:absolute;background:#000;touch-action:none;image-rendering:pixelated;filter:saturate(1.2) contrast(1.05);}
+  #fx{position:absolute;pointer-events:none;z-index:4;mix-blend-mode:multiply;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0.17) 0 1px, transparent 1px 3px),
+               repeating-linear-gradient(90deg, rgba(0,0,0,0.09) 0 1px, transparent 1px 3px),
+               radial-gradient(ellipse at center, transparent 46%, rgba(0,0,0,0.6) 100%);}
+  #fx2{position:absolute;pointer-events:none;z-index:5;mix-blend-mode:screen;opacity:.34;
+    background:radial-gradient(circle at 30% 25%, #6ae0ff 0%, transparent 55%), radial-gradient(circle at 75% 80%, #ff6ad5 0%, transparent 55%);}
+  #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#ffb3d1;background:#0d0a17;font-size:14px;padding:26px;text-align:center;line-height:1.6;z-index:9;}
+  #dpad{position:absolute;}
+  #dpad .dp{position:absolute;width:40%;height:40%;background:transparent;border:none;border-radius:12px;color:transparent;font-size:0;}
+  #dpad .dp:active{background:rgba(138,255,234,.22);}
+  #up{left:30%;top:0}#dn{left:30%;bottom:0}#lf{left:0;top:30%}#rt{right:0;top:30%}
+  .rbtn{position:absolute;border-radius:50%;background:transparent;border:none;color:transparent;}
+  .rbtn:active{background:rgba(255,255,255,.18);}
+  video{display:none;}
 </style>
 </head>
 <body>
-<script>
-// belt-and-suspenders against saving/copying images — the CSS touch-callout
-// rule above is what actually stops the mobile long-press menu; this catches
-// the desktop right-click case and any image the CSS somehow missed.
-document.addEventListener('contextmenu', function(e){
-  var t = e.target;
-  if(t && (t.tagName==='IMG' || t.tagName==='VIDEO')) e.preventDefault();
-});
-document.addEventListener('dragstart', function(e){
-  var t = e.target;
-  if(t && (t.tagName==='IMG' || t.tagName==='VIDEO')) e.preventDefault();
-});
-</script>
-
-<div id="stageOuter">
-  <iframe id="gameFrame" allow="autoplay"></iframe>
+<div id="stage">
+  <img id="cabImg" alt="">
+  <canvas id="screen"></canvas>
+  <div id="fx"></div>
+  <div id="fx2"></div>
+  <canvas id="uilayer" style="position:absolute;pointer-events:none;z-index:6;"></canvas>
+  <div id="dpad"><div class="dp" id="up">▲</div><div class="dp" id="dn">▼</div><div class="dp" id="lf">◀</div><div class="dp" id="rt">▶</div></div>
+  <div class="rbtn" id="aBtn"></div>
+  <div class="rbtn" id="bBtn"></div>
+  <div id="err"></div>
 </div>
+<video id="vU" muted playsinline preload="auto"></video>
+<video id="vD" muted playsinline preload="auto"></video>
+<video id="vL" muted playsinline preload="auto"></video>
+<video id="vR" muted playsinline preload="auto"></video>
+
 <script>
-// the one true "screen size" for the whole app — DESIGN_W is what every
-// vw/vh/dvh rule in the game actually computes against, so this is the
-// number that matters for layout. DESIGN_H is only a target for landscape/
-// desktop letterboxing (see below) — portrait screens ignore it entirely.
-var DESIGN_W = 420, DESIGN_H = 900;
+// ===== CABINET =====
+const CAB_SRC="dreamlingoverlay.png";
+const PF_PNG_W=1440, PF_PNG_H=2560;
+const PF_SCREEN=[0.15,0.30,0.85,0.515];
+const A_POS=[0.623,0.632], B_POS=[0.778,0.632];
+const DP_C=[0.248,0.646], DP_SZ=0.19;
 
-// bump this by one every time you upload a new game.html so players (and
-// you) actually get the update instead of a cached copy. Nobody ever sees
-// this number — it's only used internally to build the iframe's URL, never
-// shown in the address bar.
-var GAME_VERSION = 14;
-// ?openArcade=1 (only used if a game page was opened on its own, outside the
-// app, and then BACK was tapped) is passed through so you land on the arcade
-var OPEN_ARCADE = /[?&]openArcade=1/.test(location.search);
-document.getElementById('gameFrame').src = 'game.html?v=' + GAME_VERSION + (OPEN_ARCADE ? '&openArcade=1' : '');
-// Tilt parallax starts by itself on every screen: phones only send tilt
-// readings to a frame after it's been tapped, but this outer page always gets
-// them — so it reads the tilt and passes it into whatever page is showing.
-// Each new screen also gets focus the moment it loads.
-(function(){
-  var f=document.getElementById('gameFrame');
-  window.addEventListener('deviceorientation', function(e){
-    if(e.beta==null || e.gamma==null) return;
-    try{ f.contentWindow.postMessage({qtilt:1, beta:e.beta, gamma:e.gamma}, '*'); }catch(err){}
-  }, {passive:true});
-  f.addEventListener('load', function(){ try{ f.focus(); f.contentWindow.focus(); }catch(err){} });
-})();
-if(OPEN_ARCADE){ try{ history.replaceState(null,'',location.pathname); }catch(e){} }
+// ===== CONFIG =====
+const START_MAP="map", START_ENTRY="start";
+const ARCADE_FILE="deepdreamlings.html";     // real binder + cards + fuse animation
+// Per-area config: map filename -> dreamling range, encounter-video prefix, character-sprite prefix
+const AREAS={
+  "map":   { first:1,  last:11, vid:"encounter", guy:"dreamguy",  name:"DREAM CORE" },
+  "woods": { first:12, last:22, vid:"woods",     guy:"dreamwood", name:"WAKING WOODS" }
+};
+const DEFAULT_AREA=AREAS["map"];
+let area=AREAS[START_MAP]||DEFAULT_AREA;
 
-// game.html is loaded fresh every time, not from Chrome's cache — otherwise
-// updating game.html on the server and reloading the shell can still show
-// the old cached copy inside the iframe, even with a cache-buster on the
-// shell's own URL (that only busts the shell's cache, not the iframe's).
+// ===== RARITY (town-side, tiers) =====
+const TAG_VAL={red:15,green:35,blue:55};
+const TAG_COLOR={red:"#ff5555",green:"#5dff8f",blue:"#5db4ff"};
+function rollRarity(){ var r=Math.random()*100; return r<77?"red":(r<95?"green":"blue"); }   // 77 / 18 / 5
 
+// ===== SAVE: game-compatible + tier map =====
+if(localStorage.getItem("town_ver")!=="2"){ ["qu33phDLDex","qu33phDLHeld","qu33phDLFusions","qu33phDLRare","town_tier","town_companion","town2_col","town2_comp","town2_visited","town2_ver","dl_town1_boss","dl_town1_v1"].forEach(function(k){ try{localStorage.removeItem(k);}catch(e){} }); try{localStorage.setItem("town_ver","2");}catch(e){} }
+function load(k,d){ try{ return JSON.parse(localStorage.getItem(k)||d); }catch(e){ return JSON.parse(d); } }
+let retPos=null; try{ if(new URLSearchParams(location.search).get("ret")==="1") retPos=JSON.parse(localStorage.getItem("town_pos")||"null"); }catch(e){}
+let dmDex=load("qu33phDLDex","[]"), dmHeld=load("qu33phDLHeld","[]"), dmRare=load("qu33phDLRare","[]");
+let dmFusions=load("qu33phDLFusions","[]");   // shared w/ arcade binder — {comp,power,rare,tags,name}
+let tier=load("town_tier","{}");
+let tiers=load("town_tiers","{}");   // num -> [owned tiers]
+let companion=load("town_companion","-1");  // a dreamling num, or {comp:[...],t:tier} for a fusion companion, or -1
+let visited=load("town_visited","{}");
+let compImg=null; (function(){ try{ var d=localStorage.getItem("town_companion_img"); if(d && typeof companion!=="number"){ compImg=new Image(); compImg.onload=function(){ if(typeof draw==="function") draw(); }; compImg.src=d; } }catch(e){} })();
+function saveGame(){ try{ localStorage.setItem("qu33phDLDex",JSON.stringify(dmDex)); localStorage.setItem("qu33phDLHeld",JSON.stringify(dmHeld)); localStorage.setItem("qu33phDLRare",JSON.stringify(dmRare)); localStorage.setItem("qu33phDLFusions",JSON.stringify(dmFusions)); localStorage.setItem("town_tier",JSON.stringify(tier)); localStorage.setItem("town_tiers",JSON.stringify(tiers)); localStorage.setItem("town_companion",JSON.stringify(companion)); localStorage.setItem("town_visited",JSON.stringify(visited)); }catch(e){} }
+function areaCount(){ var n=0; for(var i=area.first;i<=area.last;i++) if(dmDex.indexOf(i)>=0) n++; return n; }
 
-// mobile browsers resize the REAL usable viewport as the URL bar shows/hides
-// (window.innerHeight can be stale right at load) — visualViewport is the
-// more reliable source when it's available, and we re-check a few times
-// after load/rotation to catch the browser chrome settling a moment later.
-function getVW(){ return document.documentElement.clientWidth || window.innerWidth; }
-function getVH(){ return document.documentElement.clientHeight || window.innerHeight; }
+// ===== ASSETS: PIXEL sprites (dreamlingP), photo fallback =====
+const sprP={}, sprPhoto={};
+function pixSpr(n){ if(sprP[n]) return sprP[n]; var im=new Image(); var rec={img:im,ok:false}; im.onload=function(){rec.ok=true; if(typeof draw==="function")draw();}; im.onerror=function(){rec.ok=false;}; im.src="dreamlingP"+n+".png"; return sprP[n]=rec; }
+function photoSpr(n){ if(sprPhoto[n]) return sprPhoto[n]; var im=new Image(); var rec={img:im,ok:false}; im.onload=function(){rec.ok=true; if(typeof draw==="function")draw();}; im.src="dreamling"+n+".png"; return sprPhoto[n]=rec; }
+const tileCache={};
+function tileImg(n){ return tileCache[n]||(tileCache[n]=(function(){const im=new Image();im.src=n;return im;})()); }
+const guy={}; let guyFace="F";
+function loadGuy(prefix){ ["F","B","L","R"].forEach(function(d){ var im=new Image(); im.onload=function(){if(typeof draw==="function")draw();}; im.src=prefix+d+".png"; guy[d]=im; }); }
+const bobImg=new Image(); bobImg.src="bob.png";
+const BOB={ map:"room1", x:2, y:2, text:"There's some crazy things in the water over there, go for a swim!" };
+let currentMap="map", bobShown=false, bobTalks=0, dialogue=null;
+let waterSaid = (localStorage.getItem("town_water_said")==="1");
+function say(t){ dialogue=t; }
 
-function fitStage(){
-  var vw = getVW(), vh = getVH();
-  var f = document.getElementById('gameFrame');
-  var w, h, scale;
-  if(vw <= vh){
-    // portrait / phone-like — fill the screen completely. Width is still
-    // locked to DESIGN_W internally (that's what fixes the layout bugs),
-    // but the iframe's height flexes to whatever this device's actual
-    // proportions are, so there's no wasted black space on ordinary phones.
-    scale = vw / DESIGN_W;
-    w = DESIGN_W;
-    h = vh / scale;
-  } else {
-    // landscape — the game now has a real landscape layout, so instead of
-    // letterboxing it into a portrait strip we lock the SHORT side (height)
-    // to the design size and let width flex. DESIGN_W doubles as "short
-    // side": portrait locks it as width, landscape locks it as height, so
-    // buttons and text come out the same physical size either way.
-    scale = vh / DESIGN_W;
-    h = DESIGN_W;
-    w = vw / scale;
+// ===== DREAM GENERATOR BUILDING (one per town) =====
+// Footprint in tiles: x,y = top-left tile, w/h = size. Bumping into it offers to enter generator.html.
+// A map .json can also define its own: "generator":{"x":8,"y":20,"w":3,"h":2}  (overrides this table)
+// Drop a generator.png next to index.html to replace the drawn building with your own art.
+const GENERATOR_FILE="generator.html";
+const GENERATORS={
+  "map":   { x:8, y:20, w:3, h:2 },
+  "woods": { x:5, y:22, w:3, h:2 }
+};
+let dialogueAction=null;
+const genImg=new Image(); let genImgOk=false; genImg.onload=function(){ genImgOk=true; }; genImg.src="generator.png";
+function genHere(){ return (M&&M.generator)||GENERATORS[currentMap]||null; }
+function genAt(c,r){ var g=genHere(); return !!(g && c>=g.x && c<g.x+(g.w||3) && r>=g.y && r<g.y+(g.h||2)); }
+function enterGenerator(){ try{ localStorage.setItem("town_pos",JSON.stringify({x:px,y:py,f:guyFace,map:currentMap})); }catch(e){} saveGame(); location.href=GENERATOR_FILE+"?town="+encodeURIComponent(currentMap); }
+function drawGenerator(camx,camy,s,sz,now){
+  var g=genHere(); if(!g) return; var gwT=g.w||3, ghT=g.h||2;
+  var gx=Math.round((g.x*T-camx)*s), gy=Math.round((g.y*T-camy)*s), gw=gwT*sz, gh=ghT*sz;
+  if(gx>W || gy-sz>H || gx+gw<0 || gy+gh<0) return;
+  x.save(); x.filter="none"; x.imageSmoothingEnabled=true;
+  shadow(gx+gw/2, gy+gh-sz*0.04, gw*0.56, sz*0.2);
+  if(genImgOk){ x.drawImage(genImg, gx, gy-sz*0.7, gw, gh+sz*0.7); x.restore(); return; }
+  var hue=(now/25)%360, pulse=0.5+0.5*Math.sin(now/380);
+  var wl=gx+sz*0.1, wr=gx+gw-sz*0.1, wallTop=gy+sz*0.35, base=gy+gh-sz*0.04;
+  // walls + bricks
+  var wg=x.createLinearGradient(0,wallTop,0,base); wg.addColorStop(0,"#3d2670"); wg.addColorStop(1,"#170d2e");
+  x.fillStyle=wg; x.fillRect(wl,wallTop,wr-wl,base-wallTop);
+  x.strokeStyle="rgba(0,0,0,0.28)"; x.lineWidth=Math.max(1,sz*0.02);
+  for(var yy=wallTop+sz*0.17, row=0; yy<base; yy+=sz*0.17, row++){ x.beginPath(); x.moveTo(wl,yy); x.lineTo(wr,yy); x.stroke();
+    for(var xx=wl+(row%2?sz*0.15:sz*0.3); xx<wr; xx+=sz*0.3){ x.beginPath(); x.moveTo(xx,yy-sz*0.17); x.lineTo(xx,yy); x.stroke(); } }
+  x.strokeStyle="#0a0614"; x.lineWidth=Math.max(1.5,sz*0.04); x.strokeRect(wl,wallTop,wr-wl,base-wallTop);
+  // side windows (pulsing)
+  for(var side=0; side<2; side++){ var wx=side?wr-sz*0.42:wl+sz*0.14, wy=wallTop+sz*0.35;
+    x.fillStyle="hsla("+((hue+side*120)%360)+",90%,"+(55+15*pulse)+"%,0.9)"; x.fillRect(wx,wy,sz*0.28,sz*0.28);
+    x.strokeStyle="#0a0614"; x.strokeRect(wx,wy,sz*0.28,sz*0.28); x.beginPath(); x.moveTo(wx+sz*0.14,wy); x.lineTo(wx+sz*0.14,wy+sz*0.28); x.moveTo(wx,wy+sz*0.14); x.lineTo(wx+sz*0.28,wy+sz*0.14); x.stroke(); }
+  // roof
+  var rt=gy-sz*0.25;
+  x.fillStyle="#140a24"; x.beginPath(); x.moveTo(gx-sz*0.06,wallTop+sz*0.06); x.lineTo(gx+gw*0.16,rt); x.lineTo(gx+gw*0.84,rt); x.lineTo(gx+gw+sz*0.06,wallTop+sz*0.06); x.closePath(); x.fill();
+  x.strokeStyle="#c9a0ff"; x.lineWidth=Math.max(1.5,sz*0.035); x.stroke();
+  // antenna + orb
+  var ax=gx+gw*0.78; x.strokeStyle="#8a7aa8"; x.lineWidth=Math.max(1,sz*0.03); x.beginPath(); x.moveTo(ax,rt); x.lineTo(ax,rt-sz*0.45); x.stroke();
+  var og=x.createRadialGradient(ax,rt-sz*0.5,0,ax,rt-sz*0.5,sz*(0.18+0.08*pulse)); og.addColorStop(0,"#fff"); og.addColorStop(0.35,"hsl("+hue+",100%,65%)"); og.addColorStop(1,"rgba(0,0,0,0)");
+  x.fillStyle=og; x.beginPath(); x.arc(ax,rt-sz*0.5,sz*(0.18+0.08*pulse),0,7); x.fill();
+  // sign
+  x.font="bold "+Math.max(7,Math.round(sz*0.2))+"px sans-serif"; x.textAlign="center"; x.textBaseline="middle";
+  x.shadowColor="#8affea"; x.shadowBlur=sz*0.2*pulse; x.fillStyle="#8affea"; x.fillText("DREAM GEN", gx+gw/2, (rt+wallTop)/2+sz*0.02); x.shadowBlur=0;
+  // the dreaming eye (swirly iris)
+  var ex=gx+gw/2, ey=wallTop+sz*0.5, er=sz*0.3;
+  var eg=x.createRadialGradient(ex,ey,0,ex,ey,er); eg.addColorStop(0,"#05020a"); eg.addColorStop(0.28,"#05020a"); eg.addColorStop(0.32,"hsl("+hue+",100%,60%)"); eg.addColorStop(0.62,"hsl("+((hue+90)%360)+",100%,55%)"); eg.addColorStop(0.9,"hsl("+((hue+200)%360)+",90%,45%)"); eg.addColorStop(1,"#0a0614");
+  x.fillStyle="#f4ecff"; x.beginPath(); x.ellipse(ex,ey,er*1.45,er,0,0,7); x.fill();
+  x.fillStyle=eg; x.beginPath(); x.arc(ex,ey,er*0.92,0,7); x.fill();
+  x.strokeStyle="rgba(255,255,255,0.35)"; x.lineWidth=Math.max(1,sz*0.02);
+  for(var k=0;k<6;k++){ var a0=now/700+k*Math.PI/3; x.beginPath(); x.arc(ex,ey,er*(0.4+0.08*k),a0,a0+1.4); x.stroke(); }
+  x.strokeStyle="#0a0614"; x.lineWidth=Math.max(1.5,sz*0.04); x.beginPath(); x.ellipse(ex,ey,er*1.45,er,0,0,7); x.stroke();
+  // door
+  var dw=sz*0.46, dh=sz*0.6, dx0=gx+gw/2-dw/2, dy0=base-dh;
+  var dg=x.createLinearGradient(0,dy0,0,base); dg.addColorStop(0,"hsla("+hue+",100%,70%,"+(0.55+0.4*pulse)+")"); dg.addColorStop(1,"#2a1850");
+  x.fillStyle=dg; x.beginPath(); x.moveTo(dx0,base); x.lineTo(dx0,dy0+dw/2); x.arc(dx0+dw/2,dy0+dw/2,dw/2,Math.PI,0); x.lineTo(dx0+dw,base); x.closePath(); x.fill();
+  x.strokeStyle="#0a0614"; x.stroke();
+  x.restore();
+}
+const encVid={ U:document.getElementById("vU"), D:document.getElementById("vD"), L:document.getElementById("vL"), R:document.getElementById("vR") };
+function loadVids(prefix){ encVid.U.src=prefix+"U.mp4"; encVid.D.src=prefix+"D.mp4"; encVid.L.src=prefix+"R.mp4"; encVid.R.src=prefix+"L.mp4"; }
+function setArea(name){ area=AREAS[name]||DEFAULT_AREA; loadGuy(area.guy); loadVids(area.vid); }
+let lastStepAt=0, leaves=[], motes=[];
+const LEAF_COLORS=["#6aa84c","#c9a04c","#4caf9a","#8fbf5a","#d98cff","#7ad6c0"];
+const MOTE_COLORS=["#8affea","#c9a0ff","#ffe08a"];
+function isWater(idx){ return M && M.tiles && M.tiles[idx] && /water/i.test(M.tiles[idx]); }
+function isTree(idx){ return M && M.tiles && M.tiles[idx] && /^tree[12]\.png$/i.test(M.tiles[idx]); }
+
+// ===== PIXEL CREATURE RENDER (rarity tint matches shiny idea) =====
+function rarityFilter(t){ var hue={green:40,blue:135,purple:215}[t]; if(hue==null) return "none"; return "invert(1) hue-rotate("+hue+"deg) saturate(165%)"; }
+function drawPix(num,cx,cy,size,t){ var rp=pixSpr(num); var rec=rp.ok?rp:photoSpr(num); x.save(); x.imageSmoothingEnabled=false; x.filter=rarityFilter(t);
+  if(rec&&rec.ok){ x.drawImage(rec.img,Math.round(cx-size/2),Math.round(cy-size/2),Math.round(size),Math.round(size)); }
+  else { x.filter="none"; x.fillStyle="#5a3a8a"; x.beginPath(); x.arc(cx,cy,size*0.4,0,7); x.fill(); x.fillStyle="#fff"; x.font="bold "+Math.floor(size*0.4)+"px sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(num,cx,cy); }
+  x.restore(); x.filter="none";
+  if(t!=="red"){ x.save(); x.globalCompositeOperation="overlay"; var o=(Date.now()/700)%1; var g=x.createLinearGradient(cx-size/2,cy-size/2,cx+size/2,cy+size/2); g.addColorStop(Math.max(0,o-0.2),"rgba(255,255,255,0)"); g.addColorStop(o,"rgba(255,255,255,"+(t==="blue"?0.4:0.22)+")"); g.addColorStop(Math.min(1,o+0.2),"rgba(255,255,255,0)"); x.fillStyle=g; x.fillRect(cx-size/2,cy-size/2,size,size); x.restore(); }
+}
+function drawDot(t,cx,cy){ x.fillStyle=TAG_COLOR[t]||"#fff"; x.beginPath(); x.arc(cx,cy,4,0,7); x.fill(); x.strokeStyle="rgba(0,0,0,.5)"; x.lineWidth=1; x.stroke(); }
+function compTier(){ if(typeof companion==="number") return tier[companion]||"red"; if(companion&&companion.t) return companion.t; return "red"; }
+function drawCompanionSprite(cx,cy,size){
+  if(typeof companion!=="number" && compImg && compImg.complete && compImg.naturalWidth){ x.imageSmoothingEnabled=false; var sc=size*1.9; x.drawImage(compImg,cx-sc/2,cy-sc*0.55,sc,sc); return; }
+  var num=(typeof companion==="number")?companion:((companion&&companion.comp&&companion.comp.length)?companion.comp[0]:null);
+  var t=(typeof companion==="number")?(tier[companion]||"red"):((companion&&companion.t)||"red");
+  if(num==null) return; drawPix(num,cx,cy,size,t); }
+
+// ===== CANVAS / LAYOUT =====
+const stage=document.getElementById("stage"), cabImg=document.getElementById("cabImg"), cv=document.getElementById("screen"), x=cv.getContext("2d");
+const ui=document.getElementById("uilayer"), ux=ui.getContext("2d");
+cabImg.onerror=()=>{ cabImg.style.display="none"; }; cabImg.src=CAB_SRC;
+let W,H,DPR;
+function place(el,cx,cy,d){ el.style.left=(cx-d/2)+"px"; el.style.top=(cy-d/2)+"px"; el.style.width=d+"px"; el.style.height=d+"px"; }
+function layout(){
+  const sw=stage.clientWidth, sh=stage.clientHeight;
+  const scale=Math.min(sw/PF_PNG_W, sh/PF_PNG_H), rw=PF_PNG_W*scale, rh=PF_PNG_H*scale, ox=(sw-rw)/2, oy=(sh-rh)/2;
+  cabImg.style.left=ox+"px"; cabImg.style.top=oy+"px"; cabImg.style.width=rw+"px"; cabImg.style.height=rh+"px";
+  const scX=PF_SCREEN[0],scY=PF_SCREEN[1],scW=PF_SCREEN[2]-PF_SCREEN[0],scH=PF_SCREEN[3]-PF_SCREEN[1];
+  const cl=ox+scX*rw, ct=oy+scY*rh, cw=scW*rw, ch=scH*rh;
+  cv.style.left=cl+"px"; cv.style.top=ct+"px"; cv.style.width=cw+"px"; cv.style.height=ch+"px";
+  var PIXEL=0.8;   // 1 = no pixelation, 0.4 = chunky. 0.8 = subtle retro softness
+  W=cw; H=ch; DPR=devicePixelRatio||1; cv.width=Math.max(64,Math.round(cw*PIXEL)); cv.height=Math.max(48,Math.round(ch*PIXEL)); x.setTransform(PIXEL,0,0,PIXEL,0,0);
+  ui.style.left=cl+"px"; ui.style.top=ct+"px"; ui.style.width=cw+"px"; ui.style.height=ch+"px";
+  ui.width=Math.round(cw*DPR); ui.height=Math.round(ch*DPR); ux.setTransform(DPR,0,0,DPR,0,0);
+  var fx=document.getElementById("fx"), fx2=document.getElementById("fx2");
+  [fx,fx2].forEach(function(el){ if(el){ el.style.left=cl+"px"; el.style.top=ct+"px"; el.style.width=cw+"px"; el.style.height=ch+"px"; } });
+  const dp=document.getElementById("dpad"), dsz=DP_SZ*rw;
+  dp.style.left=(ox+DP_C[0]*rw-dsz/2)+"px"; dp.style.top=(oy+DP_C[1]*rh-dsz/2)+"px"; dp.style.width=dsz+"px"; dp.style.height=dsz+"px";
+  const bd=0.15*rw; place(document.getElementById("aBtn"), ox+A_POS[0]*rw, oy+A_POS[1]*rh, bd); place(document.getElementById("bBtn"), ox+B_POS[0]*rw, oy+B_POS[1]*rh, bd);
+  draw();
+}
+addEventListener("resize",layout);
+
+// ===== MAP / WALK =====
+let M=null,T=64,px=0,py=0,mode="walk",inZone=false,orbit=0,tiles=[];
+function loadMap(name,entry){
+  fetch(name+".json").then(r=>{ if(!r.ok) throw new Error(name+".json ("+r.status+")"); return r.json(); })
+   .then(d=>{ M=d; T=d.tileSize||64; currentMap=name; setArea(name); if(name===BOB.map) bobShown=false; tiles=(d.tiles||[]).map(n=>{const im=tileImg(n); if(!im.complete)im.addEventListener("load",draw); return im;});
+     const sp=(d.spawns||[]).find(s=>s.name===entry)||(d.spawns||[]).find(s=>s.name==="start")||(d.spawns||[])[0];
+     px=sp?sp.x:Math.floor((d.cols||1)/2); py=sp?sp.y:Math.floor((d.rows||1)/2); if(retPos){ px=retPos.x; py=retPos.y; if(retPos.f) guyFace=retPos.f; retPos=null; } inZone=zoneAt(px,py); layout(); })
+   .catch(e=>{ const el=document.getElementById("err"); el.innerHTML="Couldn't load <b>"+name+".json</b>.<br>"+e.message; el.style.display="flex"; });
+}
+function solidAt(c,r){ if(!M) return true; if(c<0||r<0||c>=M.cols||r>=M.rows) return true; if(genAt(c,r)) return true; return !!(M.solid&&M.solid[r][c]); }
+function zoneAt(c,r){ if(!M) return false; const g=M.encounter||M.enc; return !!(g&&g[r]&&g[r][c]); }
+function walkStep(dx,dy){ if(!M||dialogue) return; if(dx<0)guyFace="L"; else if(dx>0)guyFace="R"; else if(dy<0)guyFace="B"; else if(dy>0)guyFace="F"; const nc=px+dx,nr=py+dy;
+  if(currentMap===BOB.map && nc===BOB.x && nr===BOB.y){ bobTalks++; say(bobTalks>=2?"Be careful though, I get lost sometimes":BOB.text); draw(); return; }
+  if(genAt(nc,nr)){ say("A Dream Generator hums inside. Step in?  A = yes, B = no"); dialogueAction=enterGenerator; draw(); return; }
+  if(solidAt(nc,nr)){ draw(); return; } px=nc; py=nr; lastStepAt=Date.now();
+  const w=(M.warps||[]).find(o=>o.x===px&&o.y===py); if(w){ loadMap(w.toMap,w.entry||"start"); return; }
+  if(!waterSaid && isWater(M.map[py][px])){ waterSaid=true; try{localStorage.setItem("town_water_said","1");}catch(e){} say("Am I dreaming? I'm walking on this water"); draw(); return; }
+  const nz=zoneAt(px,py); if(nz&&!inZone){ inZone=true; startEncounter(); return; } if(!nz) inZone=false; draw(); }
+
+// ===== DRAW ROUTER =====
+function draw(){ if(!W) return; x.clearRect(0,0,W,H); ux.clearRect(0,0,W,H); ux.filter="none"; ux.globalAlpha=1; x.filter="none"; x.globalAlpha=1; x.globalCompositeOperation="source-over";
+  if(mode==="walk"){ drawWalk(); if(dialogue) drawDialogue(); } else if(mode==="encounter") drawEncounter(); else if(mode==="prompt"){ drawEncounter(); drawPrompt(); } }
+function drawDialogue(){ var bh=Math.max(50,H*0.24); var by=H-bh-8; ux.fillStyle="rgba(8,5,18,0.94)"; roundRectC(ux,8,by,W-16,bh,10); ux.fill(); ux.strokeStyle="#c9a0ff"; ux.lineWidth=2; roundRectC(ux,8,by,W-16,bh,10); ux.stroke();
+  ux.fillStyle="#fff"; ux.font="bold 14px sans-serif"; ux.textAlign="left"; ux.textBaseline="top";
+  var words=dialogue.split(" "), line="", maxw=W-40, lines=[]; for(var i=0;i<words.length;i++){ var test=line+words[i]+" "; if(ux.measureText(test).width>maxw && line){ lines.push(line); line=words[i]+" "; } else line=test; } lines.push(line);
+  for(var j=0;j<lines.length;j++) ux.fillText(lines[j], 20, by+12+j*19);
+  ux.fillStyle="#8affea"; ux.font="12px sans-serif"; ux.textAlign="right"; ux.fillText("\u25B6 A", W-20, by+bh-18); }
+function roundRectC(cc,rx,ry,rw,rh,rad){ cc.beginPath(); cc.moveTo(rx+rad,ry); cc.arcTo(rx+rw,ry,rx+rw,ry+rh,rad); cc.arcTo(rx+rw,ry+rh,rx,ry+rh,rad); cc.arcTo(rx,ry+rh,rx,ry,rad); cc.arcTo(rx,ry,rx+rw,ry,rad); cc.closePath(); }
+function roundRect(rx,ry,rw,rh,rad){ roundRectC(x,rx,ry,rw,rh,rad); }
+function shadow(cx,cy,rw,rh){ x.save(); x.filter="none"; x.globalAlpha=0.32; x.fillStyle="#000"; x.beginPath(); x.ellipse(cx,cy,rw,rh,0,0,7); x.fill(); x.restore(); }
+
+function drawWalk(){
+  if(!M){ x.fillStyle="#0d0a17"; x.fillRect(0,0,W,H); return; }
+  const s=Math.max(0.45,Math.min(2.6,W/(22*T))), sz=T*s; let camx=(px+0.5)*T-W/(2*s), camy=(py+0.5)*T-H/(2*s);
+  const c0=Math.max(0,Math.floor(camx/T)),r0=Math.max(0,Math.floor(camy/T)),c1=Math.min(M.cols-1,Math.floor((camx+W/s)/T)),r1=Math.min(M.rows-1,Math.floor((camy+H/s)/T));
+  const now=Date.now(); const treeCells=[]; x.imageSmoothingEnabled=true;
+  for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++){ const idx=M.map[r][c]; if(idx<0||!tiles[idx]||!tiles[idx].complete||!tiles[idx].naturalWidth) continue;
+    const dx=Math.round((c*T-camx)*s),dy=Math.round((r*T-camy)*s); x.fillStyle="#241a34"; x.fillRect(dx,dy,Math.ceil(sz)+1,Math.ceil(sz)+1); x.drawImage(tiles[idx],dx,dy,Math.ceil(sz)+1,Math.ceil(sz)+1); if(isTree(idx)) treeCells.push({x:dx+sz/2,y:dy+sz*0.3});
+    if(isWater(idx)){ var wph=now/650+c*0.6+r*0.4; x.fillStyle="rgba(170,225,255,"+(0.05+0.05*Math.sin(wph))+")"; x.fillRect(dx,dy,sz,sz); x.strokeStyle="rgba(255,255,255,0.10)"; x.lineWidth=Math.max(1,sz*0.045); var wy=dy+(0.28+0.44*(0.5+0.5*Math.sin(wph)))*sz; x.beginPath(); x.moveTo(dx,wy); x.lineTo(dx+sz,wy+Math.sin(wph*1.3)*sz*0.08); x.stroke(); }
+    if(M.border>0){const lw=Math.max(1,M.border*s);x.strokeStyle="#000";x.lineWidth=lw;x.strokeRect(dx+lw/2,dy+lw/2,sz-lw,sz-lw);} }
+  for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++){ if(zoneAt(c,r)){ const dx=Math.round((c*T-camx)*s),dy=Math.round((r*T-camy)*s); x.fillStyle="rgba(150,90,255,"+(0.16+0.10*Math.sin(now/300+c+r))+")"; x.fillRect(dx,dy,sz,sz); } }
+  drawGenerator(camx,camy,s,sz,now);
+  if(currentMap===BOB.map && bobImg.complete && bobImg.naturalWidth){ var bbx=Math.round((BOB.x*T-camx)*s), bby=Math.round((BOB.y*T-camy)*s), bw=sz*1.0, bhh=sz*1.4; x.imageSmoothingEnabled=true; x.drawImage(bobImg, bbx+sz/2-bw/2, bby+sz-bhh+sz*0.1+Math.sin(now/500)*sz*0.03, bw, bhh); }
+  const ppx=Math.round((px*T-camx)*s),ppy=Math.round((py*T-camy)*s), pcx=ppx+sz/2, pcy=ppy+sz/2;
+  const bounce=Math.max(0,1-(now-lastStepAt)/240), bounceY=-Math.sin(bounce*Math.PI)*sz*0.16, idleY=Math.sin(now/500)*sz*0.05*(1-bounce);
+  orbit+=0.03;
+  var hasComp=(companion!=null && companion!==-1);
+  if(hasComp){ var oa=orbit, ox2=pcx+Math.cos(oa)*sz*0.9, oy2=pcy+Math.sin(oa)*sz*0.5-sz*0.1; if(Math.sin(oa)<0){ shadow(ox2,oy2+sz*0.42,sz*0.3,sz*0.1); drawCompanionSprite(ox2,oy2,sz*1.15); } }
+  const gim=guy[guyFace]; x.imageSmoothingEnabled=true;
+  shadow(pcx, ppy+sz-2, sz*0.36, sz*0.13);
+  if(gim&&gim.complete&&gim.naturalWidth){ const pw2=sz*1.05, ph2=sz*1.5; x.drawImage(gim, ppx+sz/2-pw2/2, ppy+sz-ph2+sz*0.12+bounceY+idleY, pw2, ph2); }
+  else { x.fillStyle="#8affea";x.strokeStyle="#0d0a17";x.lineWidth=Math.max(2,sz*0.06);x.beginPath();x.arc(pcx,pcy+bounceY+idleY,sz*0.3,0,7);x.fill();x.stroke(); }
+  if(hasComp){ var oa2=orbit, ox3=pcx+Math.cos(oa2)*sz*0.9, oy3=pcy+Math.sin(oa2)*sz*0.5-sz*0.1; if(Math.sin(oa2)>=0){ shadow(ox3,oy3+sz*0.42,sz*0.3,sz*0.1); drawCompanionSprite(ox3,oy3,sz*1.15); } }
+  updateLeaves(now,treeCells); drawLeaves(); updateMotes(now); drawMotes();
+  ux.fillStyle="rgba(13,10,23,.72)"; roundRectC(ux,6,6,226,24,7); ux.fill(); ux.fillStyle="#c9a0ff"; ux.font="bold 12px sans-serif"; ux.textAlign="left"; ux.textBaseline="middle"; ux.fillText(area.name+" · "+areaCount()+"/"+(area.last-area.first+1)+" · B=Binder",13,19);
+}
+function updateLeaves(now,treeCells){ if(treeCells&&treeCells.length&&leaves.length<22&&Math.random()<0.5){ var tc=treeCells[Math.floor(Math.random()*treeCells.length)]; leaves.push({x:tc.x+(Math.random()-0.5)*22,y:tc.y+(Math.random()-0.5)*16,vy:0.3+Math.random()*0.7,sway:0.5+Math.random()*1.1,ph:Math.random()*6,spin:(Math.random()-0.5)*0.12,rot:Math.random()*6,size:6+Math.random()*8,col:LEAF_COLORS[Math.floor(Math.random()*LEAF_COLORS.length)]}); }
+  for(var i=0;i<leaves.length;i++){ var l=leaves[i]; l.y+=l.vy; l.x+=Math.sin(l.ph)*l.sway*0.5; l.ph+=0.03; l.rot+=l.spin; } leaves=leaves.filter(function(l){return l.y<H+16;}); }
+function drawLeaves(){ x.filter="none"; x.imageSmoothingEnabled=true; for(var i=0;i<leaves.length;i++){ var l=leaves[i]; x.save(); x.translate(l.x,l.y); x.rotate(l.rot); x.globalAlpha=0.82; x.fillStyle=l.col; x.beginPath(); x.ellipse(0,0,l.size*0.5,l.size*0.28,0,0,7); x.fill(); x.strokeStyle="rgba(0,0,0,0.22)"; x.lineWidth=1; x.beginPath(); x.moveTo(-l.size*0.5,0); x.lineTo(l.size*0.5,0); x.stroke(); x.restore(); } x.globalAlpha=1; }
+function updateMotes(now){ if(motes.length<14&&Math.random()<0.12){ motes.push({x:Math.random()*W,y:H+8,vx:(Math.random()-0.5)*0.3,vy:-0.12-Math.random()*0.28,ph:Math.random()*6,r:2+Math.random()*3.2,col:MOTE_COLORS[Math.floor(Math.random()*MOTE_COLORS.length)]}); }
+  for(var i=0;i<motes.length;i++){ var m=motes[i]; m.ph+=0.02; m.x+=m.vx+Math.sin(m.ph)*0.25; m.y+=m.vy; } motes=motes.filter(function(m){return m.y>-12;}); }
+function drawMotes(){ x.filter="none"; for(var i=0;i<motes.length;i++){ var m=motes[i]; var a=0.25+0.25*Math.sin(m.ph*1.5); var g=x.createRadialGradient(m.x,m.y,0,m.x,m.y,m.r*4); g.addColorStop(0,m.col); g.addColorStop(1,"rgba(0,0,0,0)"); x.globalAlpha=a; x.fillStyle=g; x.beginPath(); x.arc(m.x,m.y,m.r*4,0,7); x.fill(); } x.globalAlpha=1; }
+
+// ===== ENCOUNTER (video + slot machine) =====
+const DIRV={U:[0,-1],D:[0,1],L:[-1,0],R:[1,0]};
+let enc=null;
+function randMonNum(){ return area.first+Math.floor(Math.random()*(area.last-area.first+1)); }
+function startEncounter(){
+  var dir={B:"U",F:"D",L:"L",R:"R"}[guyFace]||"U";
+  var slots=[]; for(var i=0;i<3;i++){ slots.push({num:randMonNum(), t:rollRarity(), show:randMonNum(), stopped:false, stopAt:(i+1)*38+18}); }
+  enc={ dir:dir, grow:0, holdT:0, vidStarted:false,
+        phase:"video",      // video -> ready -> spinning -> result
+        first:(dmDex.length===0),
+        slots:slots, spinT:0, msg:"", pendingPrompt:null };
+  mode="encounter";
+}
+function boxRect(){ var bs=Math.min(W,H)*0.8*(0.3+0.7*enc.grow); return {x:W/2-bs/2, y:H/2-bs/2, s:bs}; }
+function drawMapBg(){ if(!M){ x.fillStyle="#0d0a17"; x.fillRect(0,0,W,H); return; }
+  const s=Math.max(0.45,Math.min(2.6,W/(22*T))), sz=T*s; let camx=(px+0.5)*T-W/(2*s), camy=(py+0.5)*T-H/(2*s);
+  const c0=Math.max(0,Math.floor(camx/T)),r0=Math.max(0,Math.floor(camy/T)),c1=Math.min(M.cols-1,Math.floor((camx+W/s)/T)),r1=Math.min(M.rows-1,Math.floor((camy+H/s)/T));
+  x.imageSmoothingEnabled=true;
+  for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++){ const idx=M.map[r][c]; if(idx<0||!tiles[idx]||!tiles[idx].complete||!tiles[idx].naturalWidth) continue; const dx=Math.round((c*T-camx)*s),dy=Math.round((r*T-camy)*s); x.drawImage(tiles[idx],dx,dy,Math.ceil(sz)+1,Math.ceil(sz)+1); } }
+function encBg(b){ var g=x.createRadialGradient(W/2,H/2,10,W/2,H/2,b.s*0.7); g.addColorStop(0,"#3a1a66"); g.addColorStop(1,"#0a0518"); x.fillStyle=g; x.fillRect(b.x,b.y,b.s,b.s); }
+
+// ---- slot machine logic ----
+function startSpin(){ if(!enc || enc.phase!=="ready") return; enc.phase="spinning"; enc.spinT=0; }
+function stepSpin(){ if(!enc || enc.phase!=="spinning") return;
+  enc.spinT++;
+  var allStopped=true;
+  for(var i=0;i<enc.slots.length;i++){ var s=enc.slots[i];
+    if(!s.stopped){ if(enc.spinT%3===0) s.show=randMonNum(); if(enc.spinT>=s.stopAt){ s.stopped=true; s.show=s.num; } else allStopped=false; }
   }
-  f.width = w;
-  f.height = h;
-  f.style.width = w + 'px';
-  f.style.height = h + 'px';
-  // computed by hand instead of trusting flexbox to center a transformed
-  // element — flex centering operates on the PRE-scale layout box, which
-  // doesn't always line up pixel-exact with the POST-scale visual box,
-  // and that mismatch is exactly what was leaving faint bars behind
-  var renderedW = w * scale, renderedH = h * scale;
-  var offsetX = (vw - renderedW) / 2, offsetY = (vh - renderedH) / 2;
-  f.style.transform = 'translate(' + offsetX + 'px,' + offsetY + 'px) scale(' + scale + ')';
+  if(allStopped) resolveSpin();
 }
-fitStage();
-window.addEventListener('resize', fitStage);
-window.addEventListener('orientationchange', function(){ setTimeout(fitStage, 60); setTimeout(fitStage, 350); });
-if(window.visualViewport){
-  window.visualViewport.addEventListener('resize', fitStage);
-  window.visualViewport.addEventListener('scroll', fitStage);
+function fuseRareFromSlots(slots){ var allRare=true, anyRare=false; for(var i=0;i<slots.length;i++){ if(slots[i].t!=="red") anyRare=true; else allRare=false; } return allRare?"full":(anyRare?"half":""); }
+function fuseTagsFromSlots(slots){ var seen={}, out=[]; for(var i=0;i<slots.length;i++){ if(!seen[slots[i].t]){ seen[slots[i].t]=1; out.push(slots[i].t); } } return out; }
+function rareTierOf(f){ return f.rare==="full"?"blue":(f.rare==="half"?"green":"red"); }
+function resolveSpin(){
+  enc.phase="result";
+  if(enc.first){
+    var s=enc.slots, match=(s[0].num===s[1].num && s[1].num===s[2].num);
+    if(match){
+      var num=s[0].num, t=s[0].t;
+      var isNew=(dmDex.indexOf(num)<0); if(isNew) dmDex.push(num); dmHeld.push(num);
+      if(!tier[num] || TAG_VAL[t]>TAG_VAL[tier[num]]) tier[num]=t;
+      if(!tiers[num]) tiers[num]=[]; if(tiers[num].indexOf(t)<0) tiers[num].push(t);
+      if(t!=="red" && dmRare.indexOf(num)<0) dmRare.push(num);
+      companion=num; compImg=null; try{localStorage.removeItem("town_companion_img");}catch(e){}
+      saveGame();
+      enc.msg="Triple match — collected #"+num+"!";
+      if(!localStorage.getItem("town_tut")){ try{localStorage.setItem("town_tut","1");}catch(e){} setTimeout(function(){ say("Nice — that dreamling now circles you! Hold the RED button to run around faster."); },50); }
+    } else {
+      enc.msg="No match — the slots settle, nothing caught.";
+    }
+    return;
+  }
+  // fuse mode: always fuse the 3 rolled dreamlings
+  var comp=[enc.slots[0].num, enc.slots[1].num, enc.slots[2].num];
+  var power=comp[0]+comp[1]+comp[2];
+  var rare=fuseRareFromSlots(enc.slots), tags=fuseTagsFromSlots(enc.slots);
+  var best=null;
+  for(var i=0;i<dmFusions.length;i++){ var f=dmFusions[i]; var fp=(f.power!=null)?f.power:0; if(fp>power && (!best||fp>best.power)) best=f; }
+  if(!best){
+    enc.msg="Fused into power "+power+" — none of your fusions are strong enough to attempt a capture!";
+  } else {
+    var chance=TAG_VAL[rareTierOf(best)]/100;
+    if(Math.random()<chance){
+      var ent={comp:comp, power:power, rare:rare, tags:tags, name:"Fusion #"+power};
+      dmFusions.push(ent);
+      for(var k=0;k<comp.length;k++){ var n=comp[k], t=enc.slots[k].t; if(dmDex.indexOf(n)<0) dmDex.push(n); if(!tier[n]||TAG_VAL[t]>TAG_VAL[tier[n]]) tier[n]=t; if(!tiers[n])tiers[n]=[]; if(tiers[n].indexOf(t)<0) tiers[n].push(t); if(t!=="red" && dmRare.indexOf(n)<0) dmRare.push(n); }
+      saveGame();
+      enc.msg="Captured! New fusion — power "+power+"!";
+      enc.pendingPrompt={comp:comp, t:rareTierOf({rare:rare})};
+    } else {
+      enc.msg="Fused into power "+power+" — it broke free before you could catch it!";
+    }
+  }
 }
-// catch the mobile browser chrome (URL bar) settling a moment after load
-setTimeout(fitStage, 300);
-setTimeout(fitStage, 1000);
+function drawEncounter(){ if(!enc) return;
+  enc.holdT++; var HOLD=0;
+  if(enc.holdT>HOLD){ if(!enc.vidStarted){ enc.vidStarted=true; var vv=encVid[enc.dir]; if(vv){ try{ vv.currentTime=0; var pr=vv.play(); if(pr&&pr.catch)pr.catch(function(){}); }catch(e){} } } if(enc.grow<1){ enc.grow=Math.min(1,enc.grow+0.08); } else if(enc.phase==="video"){ enc.phase="ready"; } }
+  if(enc.phase==="spinning") stepSpin();
+  var b=boxRect();
+  drawMapBg(); x.fillStyle="rgba(5,3,12,0.6)"; x.fillRect(0,0,W,H); var v=encVid[enc.dir];
+  x.save(); roundRect(b.x,b.y,b.s,b.s,10); x.clip();
+  if(enc.vidStarted && v && v.readyState>=2){ try{ x.imageSmoothingEnabled=true; x.drawImage(v,b.x,b.y,b.s,b.s); }catch(e){ encBg(b); } } else encBg(b);
+  var pcx=b.x+0.5*b.s, pcy=b.y+0.78*b.s, psz=b.s*0.2, face=({U:"B",D:"F",L:"L",R:"R"})[enc.dir], gim=guy[face], bob=Math.sin(Date.now()/400)*psz*0.05;
+  x.imageSmoothingEnabled=true;
+  if(gim&&gim.complete&&gim.naturalWidth){ shadow(pcx,pcy+psz*0.5+bob,psz*0.4,psz*0.14); var pw=psz*1.05, ph=psz*1.5; x.drawImage(gim,pcx-pw/2,pcy-ph+psz*0.5+bob,pw,ph); } else { x.fillStyle="#8affea"; x.beginPath(); x.arc(pcx,pcy+bob,psz*0.4,0,7); x.fill(); }
+  if(enc.grow>=0.95 && enc.phase!=="video"){
+    var mw=b.s*0.82, mh=b.s*0.4, mx0=b.x+b.s/2-mw/2, my0=b.y+b.s*0.12;
+    x.fillStyle="rgba(20,8,36,0.88)"; roundRect(mx0,my0,mw,mh,10); x.fill();
+    x.strokeStyle="#c9a0ff"; x.lineWidth=2; roundRect(mx0,my0,mw,mh,10); x.stroke();
+    var rw=mw*0.27, gap=(mw-rw*3)/4, ry=my0+mh*0.12, rh=mh*0.76;
+    for(var i=0;i<3;i++){ var s=enc.slots[i], rx=mx0+gap+i*(rw+gap);
+      x.fillStyle="rgba(6,3,14,0.9)"; roundRect(rx,ry,rw,rh,7); x.fill();
+      x.save(); roundRect(rx,ry,rw,rh,7); x.clip();
+      var showNum=(enc.phase==="ready")?s.num:s.show, showT=s.stopped?s.t:(enc.phase==="ready"?s.t:"red");
+      drawPix(showNum,rx+rw/2,ry+rh/2,Math.min(rw,rh)*0.85,showT);
+      x.restore();
+      x.strokeStyle=s.stopped?TAG_COLOR[s.t]:"#5a4a7a"; x.lineWidth=2; roundRect(rx,ry,rw,rh,7); x.stroke();
+    }
+  }
+  x.restore();
+  ux.fillStyle="#c9a0ff"; ux.font="bold 13px sans-serif"; ux.textAlign="center"; ux.textBaseline="top";
+  var topMsg = enc.phase==="ready" ? (enc.first?"Press A to spin — match 3 to win it free!":"Press A to spin — one spin per encounter!")
+             : enc.phase==="spinning" ? "Spinning..."
+             : (enc.first?"Press A to continue":"Press A to continue");
+  ux.fillText(topMsg,W/2,6);
+  if(enc.msg && enc.phase==="result"){ ux.fillStyle="#8affea"; ux.font="bold 13px sans-serif"; ux.textBaseline="bottom"; var words=enc.msg.split(" "),line="",maxw=W-30,lines=[]; for(var wI=0;wI<words.length;wI++){ var test=line+words[wI]+" "; if(ux.measureText(test).width>maxw && line){ lines.push(line); line=words[wI]+" "; } else line=test; } lines.push(line); for(var lI=0;lI<lines.length;lI++) ux.fillText(lines[lI],W/2,H-8-(lines.length-1-lI)*16); }
+}
+function handleEncounterA(){ if(!enc) return;
+  if(enc.phase==="ready") startSpin();
+  else if(enc.phase==="result"){
+    if(enc.pendingPrompt){ var p=enc.pendingPrompt; enc.pendingPrompt=null; promptCompanion(p); }
+    else { enc=null; mode="walk"; inZone=true; draw(); }
+  }
+}
+// ===== COMPANION PROMPT (also used for fusion captures) =====
+let prompt=null;
+function promptCompanion(val){ prompt={val:val}; mode="prompt"; draw(); }
+function drawPrompt(){ ux.fillStyle="rgba(6,3,14,.85)"; ux.fillRect(0,0,W,H); ux.fillStyle="#fff"; ux.font="bold 15px sans-serif"; ux.textAlign="center"; ux.textBaseline="middle";
+  var label=(typeof prompt.val==="number")?("Collected #"+prompt.val+"!"):"New fusion captured!";
+  ux.fillText(label+"  Set as companion?",W/2,H/2-26);
+  ux.fillStyle="#3fe0b0"; roundRectC(ux,W/2-104,H/2,96,34,9); ux.fill(); ux.fillStyle="#ff8fbf"; roundRectC(ux,W/2+8,H/2,96,34,9); ux.fill();
+  ux.fillStyle="#08120e"; ux.font="bold 14px sans-serif"; ux.fillText("YES (A)",W/2-56,H/2+17); ux.fillText("NO (B)",W/2+56,H/2+17);
+  prompt._yes={x:W/2-104,y:H/2,w:96,h:34}; prompt._no={x:W/2+8,y:H/2,w:96,h:34}; }
+function promptYes(){ companion=prompt.val; compImg=null; try{localStorage.removeItem("town_companion_img");}catch(e){} saveGame(); prompt=null; mode="walk"; inZone=true; draw(); }
+function promptNo(){ prompt=null; mode="walk"; inZone=true; draw(); }
+
+// ===== INPUT =====
+function onDir(dx,dy){ if(mode==="walk") walkStep(dx,dy); }
+function onA(){ if(dialogue){ dialogue=null; var act=dialogueAction; dialogueAction=null; if(act){ act(); return; } draw(); return; } if(mode==="prompt") promptYes(); else if(mode==="encounter") handleEncounterA(); }
+function onB(){ if(dialogue && dialogueAction){ dialogue=null; dialogueAction=null; draw(); return; } if(mode==="walk"){ try{localStorage.setItem("town_pos",JSON.stringify({x:px,y:py,f:guyFace,map:currentMap}));}catch(e){} saveGame(); location.href=ARCADE_FILE+"?view=binder&town=1"; } else if(mode==="prompt") promptNo(); }
+let running=false;
+function bindHold(id,fn){ const el=document.getElementById(id); let t=null, held=false;
+  function step(){ if(!held) return; fn(); t=setTimeout(step, running?70:150); }
+  const on=e=>{ e.preventDefault(); if(held) return; held=true; fn(); t=setTimeout(step, running?70:150); };
+  const off=e=>{ if(e)e.preventDefault(); held=false; clearTimeout(t); };
+  el.addEventListener("touchstart",on,{passive:false}); el.addEventListener("touchend",off); el.addEventListener("touchcancel",off); el.addEventListener("mousedown",on); el.addEventListener("mouseup",off); el.addEventListener("mouseleave",off); }
+bindHold("up",()=>onDir(0,-1)); bindHold("dn",()=>onDir(0,1)); bindHold("lf",()=>onDir(-1,0)); bindHold("rt",()=>onDir(1,0));
+(function(){ var a=document.getElementById("aBtn"); function down(e){ e.preventDefault(); running=true; onA(); } function up(){ running=false; }
+  a.addEventListener("touchstart",down,{passive:false}); a.addEventListener("touchend",up); a.addEventListener("touchcancel",up); a.addEventListener("mousedown",down); a.addEventListener("mouseup",up); a.addEventListener("mouseleave",up); })();
+function tapBtn(id,fn){ const el=document.getElementById(id); el.addEventListener("touchstart",e=>{e.preventDefault();fn();},{passive:false}); el.addEventListener("mousedown",e=>{e.preventDefault();fn();}); }
+tapBtn("bBtn",onB);
+addEventListener("keydown",e=>{ const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key]; if(m){e.preventDefault();onDir(m[0],m[1]);} else if(e.key==="a"||e.key==="Enter"||e.key===" "){e.preventDefault();onA();} else if(e.key==="b"){onB();} });
+function loop(){ draw(); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+
+// ===== START =====
+var _startMap=(retPos&&retPos.map)?retPos.map:START_MAP; setArea(_startMap); layout(); loadMap(_startMap,START_ENTRY);
 </script>
 </body>
 </html>
