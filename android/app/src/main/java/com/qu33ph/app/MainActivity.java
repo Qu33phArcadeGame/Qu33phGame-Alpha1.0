@@ -1,6 +1,7 @@
 package com.qu33ph.app;
 
 import android.app.Activity;
+import android.os.Build;
 import android.os.Bundle;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -8,12 +9,14 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 /**
- * QU33PH app shell: a fullscreen WebView running the qu33ph.com mobile site.
+ * QU33PH app shell: a fullscreen WebView running the bundled Season 1 site.
+ * Fully offline - the arcade (HTML/JS/media) ships inside the APK under assets/,
+ * copied from the repo by the syncWwwAssets Gradle task.
  * Season 1 only - season 2 lives in a separate zip pack until Coby adds it back.
  */
 public class MainActivity extends Activity {
 
-    private static final String HOME_URL = "https://qu33ph.com/";
+    private static final String HOME_URL = "file:///android_asset/index.html";
     private WebView webView;
 
     @Override
@@ -32,6 +35,12 @@ public class MainActivity extends Activity {
         s.setUseWideViewPort(true);
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
+        // offline file:// asset loading (subresources, fetch/XHR inside the games)
+        s.setAllowFileAccess(true);
+        if (Build.VERSION.SDK_INT >= 16) {
+            s.setAllowFileAccessFromFileURLs(true);
+            s.setAllowUniversalAccessFromFileURLs(true);
+        }
 
         webView.setWebViewClient(new WebViewClient()); // keep navigation inside the app
         webView.setWebChromeClient(new WebChromeClient());
