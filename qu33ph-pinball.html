@@ -16,13 +16,13 @@
 <div id="wrap"><canvas id="game"></canvas></div>
 <script>
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
-const FIELD=new Image(); FIELD.src='pinfield.png';
-const CHAIRIMG=new Image(); CHAIRIMG.src='chair.png';
+const FIELD=new Image(); FIELD.src='pinball.jpg';
+const CHAIRIMG=new Image(); CHAIRIMG.src='Chair.png';
 const PTHEME=(new URLSearchParams(location.search).get('theme')||'default');
-const BLUEIMG=new Image(); BLUEIMG.src=(PTHEME==='cartoon')?'pinpaddleC.png':'pinpaddle.png';
+const BLUEIMG=new Image(); BLUEIMG.src='pinpaddleC.png';
 function ready(im){ return im&&im.complete&&im.naturalWidth>0; }
 
-// logical field matches the pinfield.png aspect (961x1637 ~ 100x170)
+// logical field matches the pinball.jpg art (1200x2600)
 const PW=100, PH=178;
 let CW=0,CH=0,DPR=1,SC=1;
 function sz(){ const r=document.getElementById('wrap').getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
