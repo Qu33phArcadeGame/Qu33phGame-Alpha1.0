@@ -8216,7 +8216,7 @@ function pbSetupControls(){ if(pbListenersSet) return; pbListenersSet=true;
   R.addEventListener("touchstart",function(e){e.preventDefault();pbFRtarget=1;pbSfxPaddle();},{passive:false}); R.addEventListener("touchend",function(e){e.preventDefault();pbFRtarget=0;},{passive:false}); R.addEventListener("mousedown",function(){pbFRtarget=1;pbSfxPaddle();}); R.addEventListener("mouseup",function(){pbFRtarget=0;});
   LB.addEventListener("touchstart",function(e){e.preventDefault();e.stopPropagation();pbDoLaunch();},{passive:false}); LB.addEventListener("click",function(e){e.stopPropagation();pbDoLaunch();});
 }
-function pbLoop(){ if(!pbActive)return; pbT++; pbUpdate(); pbDraw(); pbRAF=requestAnimationFrame(pbLoop); }
+function pbLoop(){ if(!pbActive)return; pbT++; if(pbT%3===0)pbUpdate(); pbDraw(); pbRAF=requestAnimationFrame(pbLoop); }
 // flipper collision: closest point on the flipper segment to the ball (pre-v320 behaviour)
 function pbFlipperCollide(px,py,ang,len,b,active){
   var tx=px+Math.cos(ang)*len, ty=py+Math.sin(ang)*len;
@@ -8289,7 +8289,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
   if(pbState!=="play")return;
   b.vy+=PB_G; b.x+=b.vx; b.y+=b.vy;
   b.vx*=0.99; b.vy*=0.996;                                    // friction so energy dissipates
-  var mv=b.inChute?0.05:0.042; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
+  var mv=b.inChute?0.036:0.03; if(b.vx>mv)b.vx=mv; if(b.vx<-mv)b.vx=-mv; if(b.vy>mv)b.vy=mv; if(b.vy<-mv)b.vy=-mv;
   var tw=0.02;
   b.spin=(b.spin||0)+(Math.abs(b.vx)+Math.abs(b.vy))*2.4;      // tumbles as it rolls, like a marker would
   if(b.inChute){
@@ -8329,7 +8329,7 @@ function pbUpdate(){ var W=pbW,H=pbH,b=pbBall; if(!b)return;
       var ddx=qx-bp.x, ddy=qy-bp.y, d=Math.hypot(ddx,ddy)||1;
       if(d<bp.r){ var nx=ddx/d,ny=ddy/d,push=(bp.r-d); b.x+=nx*push; b.y+=ny*push;
       if(bp.sling){ b.vx=(0.5-bp.x)*0.05; b.vy=0.03; }   // slingshot: shove the ball DOWN toward the flippers, never wedge it in the corner
-      else { var dot=b.vx*nx+b.vy*ny; b.vx-=2*dot*nx; b.vy-=2*dot*ny; b.vx=b.vx*0.5+nx*0.006; b.vy=b.vy*0.5+ny*0.006; }
+      else { var dot=b.vx*nx+b.vy*ny; b.vx-=2*dot*nx; b.vy-=2*dot*ny; b.vx=b.vx*0.45+nx*0.004; b.vy=b.vy*0.45+ny*0.004; }
       bp.hit=8; pbScore+=(bp.sling?25:100); try{haptic(6);}catch(e){} } }
   if(b.x>pbChair.x-PB_RX&&b.x<pbChair.x+pbChair.w+PB_RX&&b.y>pbChair.y-PB_RY&&b.y<pbChair.y+pbChair.h+PB_RY&&b.vy>-0.01&&pbChairCD<=0){ pbChairCD=22; b.y=pbChair.y-PB_RY; b.vx=0.026; b.vy=-0.078; b.toMega=true; b.megaT=0; pbScore+=250; pbMsg="TO MEGA!";pbMsgT=45; try{haptic([15,15]);}catch(e){} }
   if(b.toMega && b.y<0.11 && b.x>pbMega.x-0.05 && b.x<pbMega.x+pbMega.w+0.05){ pbScore+=1000;pbMega.flash=50;pbMsg="MEGA! +1000";pbMsgT=70; b.toMega=false; b.megaT=0; b.vy=0.014; b.vx=(0.5-b.x)*0.02; try{haptic([25,15,35]);}catch(e){} }
@@ -8377,6 +8377,7 @@ function pbDraw(){ var c=pbctx,b=pbBall; if(!c)return; c.clearRect(0,0,pbW,pbH);
   _gs(false);
   c.fillStyle="#8fe0ff";c.textBaseline="middle"; c.font="bold "+(pbImgRW*0.03)+"px Helvetica, Arial, sans-serif"; c.textAlign="right"; c.fillText(pbHigh||0, pbImgOX+0.63*pbImgRW, pbImgOY+0.315*pbImgRH);
   c.font="bold "+(pbImgRW*0.023)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.fillText("SCORE "+pbScore+"    BALLS "+pbBalls, pbImgOX+0.5*pbImgRW, pbImgOY+0.328*pbImgRH);
+  c.fillStyle="rgba(255,255,255,0.35)";c.font="bold "+(pbImgRW*0.014)+"px Helvetica, Arial, sans-serif";c.textAlign="left";c.fillText("SLOW v6", pbImgOX+0.02*pbImgRW, pbImgOY+0.985*pbImgRH);
   if(isLandscapeView()) pbDrawLandHud(c);
   if(pbState==="ready"){ var rp=pbProject(0.86,1.02); c.fillStyle="rgba(255,255,255,0.9)";c.font="bold "+(pbImgRW*0.022)+"px Helvetica, Arial, sans-serif";c.textAlign="center";c.textBaseline="middle";c.fillText("LAUNCH \u2192",rp[0],rp[1]); }
   if(typeof PB_SHOW_BOUNDS!=="undefined" && PB_SHOW_BOUNDS){
