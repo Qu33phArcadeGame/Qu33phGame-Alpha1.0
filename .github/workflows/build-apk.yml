@@ -1,13 +1,16 @@
 name: Build QU33PH APK
 
-# Builds the Android app on GitHub's servers on every push that touches
-# the app or this workflow. Download the APK from the run's Artifacts.
+# Builds the Android app on GitHub's servers. Every push that touches the app
+# or the site produces a debug APK; with the upload-keystore secrets set it
+# also produces the signed release AAB for Google Play.
 on:
   push:
     branches: [main]
     paths:
       - 'android/**'
       - '.github/workflows/build-apk.yml'
+      - '*.html'
+      - '*.js'
   workflow_dispatch:
 
 jobs:
@@ -31,9 +34,30 @@ jobs:
       - name: Build debug APK
         run: gradle :app:assembleDebug --project-dir android
 
-      - name: Upload APK
+      - name: Decode upload keystore
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/qu33ph-upload.keystore
+
+      - name: Build signed release AAB
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          QU33PH_STORE_FILE: ${{ github.workspace }}/android/app/qu33ph-upload.keystore
+          QU33PH_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          QU33PH_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          QU33PH_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: gradle :app:bundleRelease --project-dir android
+
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: qu33ph-app
+          name: qu33ph-app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload release AAB
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: qu33ph-aab-release
+          path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
