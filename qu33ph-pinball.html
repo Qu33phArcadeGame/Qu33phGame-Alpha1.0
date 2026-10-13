@@ -38,7 +38,7 @@ const MEGA=[75.7,47.3], CHAIR=[27,110];
 const L_PIVOT=[30,132], R_PIVOT=[66,132], FLIP_LEN=15;   // pivots anchored at the triangle tips
 const CHUTE_DIV=80, CHUTE_OUT=93, BALL_START=[86.5,162];
 const BALL_R=3;
-const MAXV_U=3.3;                                    // hard speed cap in units/step (kills the "Flash" bug)
+const MAXV_U=1.6;                                    // hard speed cap in units/step (kills the "Flash" bug)
 
 let M,engine,world,ball=null,flipL,flipR,balls=3,score=0,best=0,state='loading',launchP=0,charging=false,draining=false,overT=0,megaFlash=0,chairFlash=0,bumpFlash={};
 try{ best=parseInt(localStorage.getItem('qu33phPinBest')||'0',10)||0; }catch(e){}
@@ -50,7 +50,7 @@ function wall(x1,y1,x2,y2,thU){ const mx=(x1+x2)/2,my=(y1+y2)/2,dx=(x2-x1),dy=(y
   return M.Bodies.rectangle(X(mx),X(my),X(len),X(thU||2),{isStatic:true,angle:ang,friction:0.02,restitution:0.3,label:'wall'}); }
 
 function build(){
-  engine=M.Engine.create(); world=engine.world; engine.gravity.y=0.8; engine.positionIterations=12; engine.velocityIterations=12;
+  engine=M.Engine.create(); world=engine.world; engine.gravity.y=0.45; engine.positionIterations=12; engine.velocityIterations=12;
   const p=[];
   // outer walls (roughly follow the field art; fine-tune later)
   p.push(wall(14,44,14,156));                 // left wall
@@ -67,9 +67,9 @@ function build(){
   p.push(wall(13,156,L_PIVOT[0]-2,L_PIVOT[1]+3));
   p.push(wall(CHUTE_DIV,156,R_PIVOT[0]+2,R_PIVOT[1]+3));
   // bumpers
-  BUMPERS.forEach((b,i)=>{ p.push(M.Bodies.circle(X(b[0]),X(b[1]),X(b[2]),{isStatic:true,restitution:1.2,friction:0,label:'bumper',bidx:i})); });
+  BUMPERS.forEach((b,i)=>{ p.push(M.Bodies.circle(X(b[0]),X(b[1]),X(b[2]),{isStatic:true,restitution:1.0,friction:0,label:'bumper',bidx:i})); });
   // slingshots
-  SLINGS.forEach((s,i)=>{ p.push(M.Bodies.polygon(X(s[0]),X(s[1]),3,X(7),{isStatic:true,restitution:1.2,angle:i?Math.PI+0.4:-0.4,label:'sling'})); });
+  SLINGS.forEach((s,i)=>{ p.push(M.Bodies.polygon(X(s[0]),X(s[1]),3,X(7),{isStatic:true,restitution:1.0,angle:i?Math.PI+0.4:-0.4,label:'sling'})); });
   // chair target
   p.push(M.Bodies.rectangle(X(CHAIR[0]),X(CHAIR[1]),X(9),X(9),{isStatic:true,restitution:0.5,label:'chair'}));
   // flippers (pivoted, long enough to leave a ball-sized gap in the middle)
@@ -84,13 +84,13 @@ function build(){
   newBall();
 }
 function newBall(){ if(ball){ M.Composite.remove(world,ball); ball=null; }
-  ball=M.Bodies.circle(X(BALL_START[0]),X(BALL_START[1]),X(BALL_R),{restitution:0.3,friction:0.02,frictionAir:0.007,density:0.02,label:'ball'});
+  ball=M.Bodies.circle(X(BALL_START[0]),X(BALL_START[1]),X(BALL_R),{restitution:0.3,friction:0.02,frictionAir:0.014,density:0.02,label:'ball'});
   M.Composite.add(world,ball); draining=false; charging=false; launchP=0; state='ready'; }
 
 function onHit(ev){ for(const pr of ev.pairs){ const l=[pr.bodyA.label,pr.bodyB.label]; if(!l.includes('ball'))continue;
-  if(l.includes('bumper')){ const bd=pr.bodyA.label==='bumper'?pr.bodyA:pr.bodyB; score+=100; bumpFlash[bd.bidx]=10; const dx=ball.position.x-bd.position.x,dy=ball.position.y-bd.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:ball.velocity.x+dx/d*X(0.7),y:ball.velocity.y+dy/d*X(0.7)}); }
+  if(l.includes('bumper')){ const bd=pr.bodyA.label==='bumper'?pr.bodyA:pr.bodyB; score+=100; bumpFlash[bd.bidx]=10; const dx=ball.position.x-bd.position.x,dy=ball.position.y-bd.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:ball.velocity.x+dx/d*X(0.35),y:ball.velocity.y+dy/d*X(0.35)}); }
   else if(l.includes('sling')){ score+=50; }
-  else if(l.includes('chair')){ score+=250; chairFlash=18; const dx=X(MEGA[0])-ball.position.x,dy=X(MEGA[1])-ball.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:dx/d*X(1.9),y:dy/d*X(1.9)}); }
+  else if(l.includes('chair')){ score+=250; chairFlash=18; const dx=X(MEGA[0])-ball.position.x,dy=X(MEGA[1])-ball.position.y,d=Math.hypot(dx,dy)||1; M.Body.setVelocity(ball,{x:dx/d*X(1.1),y:dy/d*X(1.1)}); }
 } }
 
 let pL=false,pR=false;
@@ -99,7 +99,7 @@ function down(e){ if(state==='over'){ if(overT<=0) restart(); return; }
   if(state==='ready'){ charging=true; return; }
   if(x<0.5) pL=true; else pR=true; }
 function up(e){ const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width;
-  if(state==='ready'&&charging){ M.Body.setVelocity(ball,{x:-X(0.4),y:-(X(2.3)+launchP*X(1.35))}); state='play'; charging=false; return; }
+  if(state==='ready'&&charging){ M.Body.setVelocity(ball,{x:-X(0.4),y:-(X(1.1)+launchP*X(0.7))}); state='play'; charging=false; return; }
   if(x<0.5) pL=false; else pR=false; }
 cv.addEventListener('pointerdown',down); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',()=>{pL=pR=false;});
 
@@ -107,7 +107,7 @@ function restart(){ score=0; balls=3; overT=0; newBall(); }
 function loseBall(){ if(draining||state==='over')return; draining=true; balls--;
   if(balls<=0){ state='over'; overT=45; if(score>best){best=score; try{localStorage.setItem('qu33phPinBest',best);}catch(e){}} }
   else setTimeout(newBall,350); }
-function flip(fb,rest,active,press){ M.Body.setAngularVelocity(fb,((press?active:rest)-fb.angle)*0.8); }
+function flip(fb,rest,active,press){ M.Body.setAngularVelocity(fb,((press?active:rest)-fb.angle)*0.45); }
 
 function update(){
   if(state==='loading') return;
@@ -118,7 +118,7 @@ function update(){
   if(ball){ const sp=Math.hypot(ball.velocity.x,ball.velocity.y), mv=X(MAXV_U); if(sp>mv) M.Body.setVelocity(ball,{x:ball.velocity.x/sp*mv,y:ball.velocity.y/sp*mv}); }
   if(megaFlash>0)megaFlash--; if(chairFlash>0)chairFlash--; for(const k in bumpFlash){ if(bumpFlash[k]>0)bumpFlash[k]--; }
   if(ball&&(state==='play'||state==='ready')){
-    if(Math.hypot(ball.position.x-X(MEGA[0]),ball.position.y-X(MEGA[1]))<X(6)){ score+=500; megaFlash=25; M.Body.setPosition(ball,{x:X(BALL_START[0]),y:X(60)}); M.Body.setVelocity(ball,{x:0,y:X(1)}); }
+    if(Math.hypot(ball.position.x-X(MEGA[0]),ball.position.y-X(MEGA[1]))<X(6)){ score+=500; megaFlash=25; M.Body.setPosition(ball,{x:X(BALL_START[0]),y:X(60)}); M.Body.setVelocity(ball,{x:0,y:X(0.6)}); }
     if(ball.position.y>X(PH+4)) loseBall();
   }
   if(state==='over'&&overT>0) overT--;
