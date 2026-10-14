@@ -754,7 +754,7 @@ function paintBG(c){
   }
 }
 // the same deepdream plates Qu33ph Jump uses for its galaxy sky
-const GAL_SRCS=["dreamling76.png","dreamling77.png","dreamling82.png","dreamling83.png","dreamling85.png","dreamling87.png"];
+const GAL_SRCS=[];
 const GAL_IMGS=GAL_SRCS.map(function(s){ const i=new Image(); i.src=s; return i; });
 function galLayer(c, img, alpha, T, seed, dir, W, H){
   if(alpha<=0.01 || !(img && img.complete && img.naturalWidth)) return;
