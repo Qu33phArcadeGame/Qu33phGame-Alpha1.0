@@ -54,6 +54,13 @@ document.addEventListener('dragstart', function(e){
 // number that matters for layout. DESIGN_H is only a target for landscape/
 // desktop letterboxing (see below) — portrait screens ignore it entirely.
 var DESIGN_W = 420, DESIGN_H = 900;
+// Minimum logical height for portrait. Squat tablets (iPad portrait etc.)
+// would otherwise get a very short viewport (e.g. 420x560) that the
+// game's screens weren't designed for — fixed side rails collide with
+// the centered content. Floor the height; the iframe goes wider instead,
+// which the flex layouts handle gracefully. Phones (which already get
+// ~750px+) are essentially unaffected.
+var DESIGN_MIN_H = 800;
 
 // bump this by one every time you upload a new game.html so players (and
 // you) actually get the update instead of a cached copy. Nobody ever sees
@@ -103,6 +110,14 @@ function fitStage(){
     scale = vw / DESIGN_W;
     w = DESIGN_W;
     h = vh / scale;
+    // Squat portrait screens (tablets): never hand the game a logical
+    // viewport shorter than DESIGN_MIN_H. Recompute from the height so
+    // the iframe goes wider instead of shorter.
+    if(h < DESIGN_MIN_H){
+      h = DESIGN_MIN_H;
+      scale = vh / h;
+      w = vw / scale;
+    }
   } else {
     // landscape — the game now has a real landscape layout, so instead of
     // letterboxing it into a portrait strip we lock the SHORT side (height)
