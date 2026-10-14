@@ -4,14 +4,14 @@ plugins {
 
 android {
     namespace = "com.qu33ph.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.qu33ph.app"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 2
-        versionName = "1.1-offline"
+        targetSdk = 36
+        versionCode = 5
+        versionName = "1.4"
     }
 
     signingConfigs {
