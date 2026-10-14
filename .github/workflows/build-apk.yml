@@ -16,6 +16,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # secrets can't be referenced directly in `if:` conditions (GitHub
+    # rejects 'secrets' as an unrecognized named-value there), so we
+    # stash the presence check in env once and test that instead.
+    env:
+      HAS_UPLOAD_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -35,11 +40,11 @@ jobs:
         run: gradle :app:assembleDebug --project-dir android
 
       - name: Decode upload keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_UPLOAD_KEY == 'true'
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/qu33ph-upload.keystore
 
       - name: Build signed release AAB
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_UPLOAD_KEY == 'true'
         env:
           QU33PH_STORE_FILE: ${{ github.workspace }}/android/app/qu33ph-upload.keystore
           QU33PH_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -55,7 +60,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload release AAB
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_UPLOAD_KEY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: qu33ph-aab-release
