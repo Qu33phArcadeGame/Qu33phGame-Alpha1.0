@@ -36,12 +36,21 @@ h2{font-size:14px;letter-spacing:2px;color:#ffd24a;margin:22px 0 8px;border-top:
 .row input[type=range]{flex:1;accent-color:#ffd24a;height:18px;}
 .row .val{font-size:10px;color:#ffd24a;width:38px;text-align:right;flex-shrink:0;font-family:monospace;}
 .row input[type=checkbox]{accent-color:#ffd24a;width:16px;height:16px;}
-.btn{border:2px solid #666;background:linear-gradient(180deg,#2a2a2a,#0d0d0d);color:#fff;font-size:11px;font-weight:bold;letter-spacing:1px;padding:8px 12px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.btn{position:relative;margin-left:16px;border:2.5px solid #fff;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;font-size:11px;font-weight:bold;letter-spacing:1px;padding:8px 12px;border-radius:4px 9px 9px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 3px 0 rgba(0,0,0,0.55),inset 0 1.5px 0 rgba(255,255,255,0.4);}
+.btn::before{content:"";position:absolute;left:-16px;top:2px;bottom:2px;width:16px;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;}
+.btn:active{transform:translateY(3px);}
+.slider-mk{position:relative;flex:1;margin-left:16px;background:#000;border:2.5px solid #fff;border-radius:4px 9px 9px 4px;padding:2px 8px;display:flex;align-items:center;}
+.slider-mk::before{content:"";position:absolute;left:-16px;top:2px;bottom:2px;width:16px;background:#000;border:2.5px solid #fff;border-radius:8px 2px 2px 8px;}
+.slider-mk input[type=range]{flex:1;-webkit-appearance:none;appearance:none;background:transparent;height:20px;accent-color:#ffd24a;}
+.slider-mk input[type=range]::-webkit-slider-runnable-track{height:6px;background:#333;border-radius:3px;}
+.slider-mk input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#ffd24a;border:2px solid #fff;margin-top:-6px;}
+.slider-mk input[type=range]::-moz-range-track{height:6px;background:#333;border-radius:3px;}
+.slider-mk input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#ffd24a;border:2px solid #fff;}
 .btn.gold{border-color:#e8a83c;color:#ffd24a;}
 .btn.green{border-color:#4dff8a;color:#7bffa8;}
 .btn.red{border-color:#ff4d4d;color:#ff8080;}
 .btn:disabled{opacity:.35;cursor:default;}
-.preset{font-size:10px;padding:5px 8px;}
+.preset{font-size:10px;padding:5px 8px;margin-left:14px;}.preset::before{width:14px;left:-14px;}
 .track{background:#0b0b0d;border:2px solid #23232a;border-radius:12px;padding:10px;margin-bottom:10px;}
 .track.playing{border-color:#4dff8a;}
 .track .thead{display:flex;justify-content:space-between;align-items:center;gap:8px;}
@@ -62,10 +71,11 @@ document.addEventListener('dragstart', function(e){ var t=e.target; if(t && (t.t
 <div class="wrap">
   <h1>QU33PH MUSIC</h1>
   <div class="sub">A SAMPLER BUILT FROM THE SONGS ALREADY IN THE APP<br>30 SAMPLES, 4 SECONDS EACH, MADE TO LOOP</div>
-  <p class="note">Tap a sample to hear it. Pitch shifts it up or down in semitones, Speed runs it from half speed (0.5&times;) to double speed (2&times;), Loop keeps it repeating. Then hit <b style="color:#ffd24a">+ ADD BELOW</b> to stack it into your song, one row under the last.</p>
+  <p class="note">Tap a sample to hear it &mdash; only one sample plays at a time, so they never overlap. Pitch shifts it from &minus;24 to +24 semitones, Speed runs it from quarter speed (0.25&times;) to four times speed (4&times;), Loop keeps it repeating. Then hit <b style="color:#ffd24a">+ ADD BELOW</b> to stack it into your song, one row under the last.</p>
 
   <h2>1 &middot; SAMPLES</h2>
   <div class="filters" id="filters"></div>
+  <div class="master" style="margin-top:0"><button class="btn red" onclick="stopAllPreviews()">&#10074;&#10074; STOP ALL SAMPLES</button></div>
   <div class="grid" id="sampleGrid"></div>
 
   <h2>2 &middot; YOUR SONG <span id="trackCount" style="color:#888;font-size:11px;letter-spacing:1px;"></span></h2>
@@ -78,7 +88,7 @@ document.addEventListener('dragstart', function(e){ var t=e.target; if(t && (t.t
   <div id="trackList"></div>
   <div id="dlArea"></div>
   <div id="status"></div>
-  <p class="note">Speed sets the tempo and Pitch shifts the note on top of it, like a record player &mdash; that is how a browser sampler does both at once. Every sample fades in and out at its edges, so looping it repeats cleanly with no click.</p>
+  <p class="note">Speed sets the tempo and Pitch shifts the note on top of it, like a record player &mdash; that is how a browser sampler does both at once. Pitch now runs &minus;24 to +24 semitones and Speed 0.25&times; to 4&times;, with preset buttons for both. Every sample fades in and out at its edges, so looping it repeats cleanly with no click.</p>
 </div>
 <script>
 const SAMPLES = [{"id": "BOWLING-01", "game": "BOWLING", "file": "samples/bowling-01.mp3", "start": 14.1, "dur": 4.0}, {"id": "BOWLING-02", "game": "BOWLING", "file": "samples/bowling-02.mp3", "start": 52.8, "dur": 4.0}, {"id": "BOWLING-03", "game": "BOWLING", "file": "samples/bowling-03.mp3", "start": 88.0, "dur": 4.0}, {"id": "DOZER-01", "game": "DOZER", "file": "samples/dozer-01.mp3", "start": 15.7, "dur": 4.0}, {"id": "DOZER-02", "game": "DOZER", "file": "samples/dozer-02.mp3", "start": 59.0, "dur": 4.0}, {"id": "DOZER-03", "game": "DOZER", "file": "samples/dozer-03.mp3", "start": 98.3, "dur": 4.0}, {"id": "FIDGET-01", "game": "FIDGET", "file": "samples/fidget-01.mp3", "start": 9.1, "dur": 4.0}, {"id": "FIDGET-02", "game": "FIDGET", "file": "samples/fidget-02.mp3", "start": 34.0, "dur": 4.0}, {"id": "FIDGET-03", "game": "FIDGET", "file": "samples/fidget-03.mp3", "start": 56.7, "dur": 4.0}, {"id": "FLIP-01", "game": "FLIP", "file": "samples/flip-01.mp3", "start": 12.6, "dur": 4.0}, {"id": "FLIP-02", "game": "FLIP", "file": "samples/flip-02.mp3", "start": 47.2, "dur": 4.0}, {"id": "FLIP-03", "game": "FLIP", "file": "samples/flip-03.mp3", "start": 78.6, "dur": 4.0}, {"id": "JUMP-01", "game": "JUMP", "file": "samples/jump-01.mp3", "start": 16.8, "dur": 4.0}, {"id": "JUMP-02", "game": "JUMP", "file": "samples/jump-02.mp3", "start": 62.9, "dur": 4.0}, {"id": "JUMP-03", "game": "JUMP", "file": "samples/jump-03.mp3", "start": 104.8, "dur": 4.0}, {"id": "JUMP-04", "game": "JUMP", "file": "samples/jump-04.mp3", "start": 81.0, "dur": 4.0}, {"id": "MINI-01", "game": "MINI", "file": "samples/mini-01.mp3", "start": 5.4, "dur": 4.0}, {"id": "MINI-02", "game": "MINI", "file": "samples/mini-02.mp3", "start": 20.2, "dur": 4.0}, {"id": "MINI-03", "game": "MINI", "file": "samples/mini-03.mp3", "start": 33.6, "dur": 4.0}, {"id": "PINBALL-01", "game": "PINBALL", "file": "samples/pinball-01.mp3", "start": 25.4, "dur": 4.0}, {"id": "PINBALL-02", "game": "PINBALL", "file": "samples/pinball-02.mp3", "start": 95.3, "dur": 4.0}, {"id": "PINBALL-03", "game": "PINBALL", "file": "samples/pinball-03.mp3", "start": 158.8, "dur": 4.0}, {"id": "PINBALL-04", "game": "PINBALL", "file": "samples/pinball-04.mp3", "start": 122.8, "dur": 4.0}, {"id": "QU33PHBALL-01", "game": "QU33PHBALL", "file": "samples/qu33phball-01.mp3", "start": 18.6, "dur": 4.0}, {"id": "QU33PHBALL-02", "game": "QU33PHBALL", "file": "samples/qu33phball-02.mp3", "start": 69.9, "dur": 4.0}, {"id": "QU33PHBALL-03", "game": "QU33PHBALL", "file": "samples/qu33phball-03.mp3", "start": 116.5, "dur": 4.0}, {"id": "QU33PHBALL-04", "game": "QU33PHBALL", "file": "samples/qu33phball-04.mp3", "start": 90.1, "dur": 4.0}, {"id": "STACK-01", "game": "STACK", "file": "samples/stack-01.mp3", "start": 10.3, "dur": 4.0}, {"id": "STACK-02", "game": "STACK", "file": "samples/stack-02.mp3", "start": 38.5, "dur": 4.0}, {"id": "STACK-03", "game": "STACK", "file": "samples/stack-03.mp3", "start": 64.2, "dur": 4.0}];
@@ -86,6 +96,17 @@ const GAMES = [...new Set(SAMPLES.map(s=>s.game))];
 let filter = 'ALL';
 let audioCtx = null, rawCache = {}, bufCache = {};
 let previewSrc = {};   // sample id -> {src, gain}
+let playBtns = {};    // sample id -> its PLAY/PAUSE button
+function stopPreview(id){
+  const n=previewSrc[id]; if(!n) return;
+  stopNode(n); delete previewSrc[id];
+  const b=playBtns[id]; if(b){ b.textContent='\u25B6 PLAY'; b.className='btn gold'; }
+  const c=document.getElementById('card-'+id); if(c) c.classList.remove('playing');
+}
+function stopAllPreviews(quiet){
+  Object.keys(previewSrc).forEach(stopPreview);
+  if(!quiet) document.getElementById('status').textContent='All samples stopped.';
+}
 let songPlaying = false, songSrc = {};  // track uid -> {src, gain}
 let tracks = [];       // {uid, sample, pitch, speed, loop}
 let uidN = 0;
@@ -126,11 +147,13 @@ function stopNode(n){ try{ n.src.stop(); }catch(e){} try{ n.src.disconnect(); }c
 function sliderRow(label, min, max, step, val, oninput, valText){
   const row = document.createElement('div'); row.className='row';
   const lab = document.createElement('label'); lab.textContent = label;
+  const mk = document.createElement('div'); mk.className='slider-mk';
   const inp = document.createElement('input'); inp.type='range';
   inp.min=min; inp.max=max; inp.step=step; inp.value=val;
+  mk.appendChild(inp);
   const v = document.createElement('span'); v.className='val'; v.textContent = valText(val);
   inp.oninput = ()=>{ v.textContent = valText(parseFloat(inp.value)); oninput(parseFloat(inp.value)); };
-  row.append(lab, inp, v); return {row, inp, v};
+  row.append(lab, mk, v); return {row, inp, v};
 }
 function renderFilters(){
   const f = document.getElementById('filters'); f.innerHTML='';
@@ -148,20 +171,23 @@ function renderSamples(){
     const meta=document.createElement('div'); meta.className='meta'; meta.textContent=s.game+'  ·  4 SEC  ·  LOOPS CLEAN';
     const top=document.createElement('div'); top.className='row';
     const play=document.createElement('button'); play.className='btn gold'; play.textContent='▶ PLAY';
+    playBtns[s.id]=play;
     play.onclick=async ()=>{
       ensureAudio();
-      if(previewSrc[s.id]){ stopNode(previewSrc[s.id]); delete previewSrc[s.id]; play.textContent='▶ PLAY'; card.classList.remove('playing'); return; }
+      if(previewSrc[s.id]){ stopPreview(s.id); return; }
+      // one sample at a time: starting a new one stops any other that is playing
+      stopAllPreviews(true);
       const buf=await loadBuf(s.id);
       const node=startBuf(audioCtx, buf, {pitch:state.pitch, speed:state.speed, loop:state.loop});
-      node.src.onended=()=>{ if(!state.loop){ delete previewSrc[s.id]; play.textContent='▶ PLAY'; card.classList.remove('playing'); } };
-      previewSrc[s.id]=node; play.textContent='■ STOP'; card.classList.add('playing');
+      node.src.onended=()=>{ if(!state.loop){ stopPreview(s.id); } };
+      previewSrc[s.id]=node; play.textContent='⏸ PAUSE'; play.className='btn red'; card.classList.add('playing');
     };
     const add=document.createElement('button'); add.className='btn green'; add.textContent='+ ADD BELOW';
     add.onclick=()=>addTrack(s.id);
     top.append(play, add);
     const state={pitch:0, speed:1, loop:true};
-    const pitch=sliderRow('PITCH', -12, 12, 1, 0, v=>{ state.pitch=v; retunePreview(s, state); }, v=>(v>0?'+':'')+v);
-    const speed=sliderRow('SPEED', 0.5, 2, 0.25, 1, v=>{ state.speed=v; retunePreview(s, state); }, v=>v.toFixed(2).replace(/\.?0+$/,'')+'x');
+    const pitch=sliderRow('PITCH', -24, 24, 1, 0, v=>{ state.pitch=v; retunePreview(s, state); }, v=>(v>0?'+':'')+v);
+    const speed=sliderRow('SPEED', 0.25, 4, 0.25, 1, v=>{ state.speed=v; retunePreview(s, state); }, v=>v.toFixed(2).replace(/\.?0+$/,'')+'x');
     const loopRow=document.createElement('div'); loopRow.className='row';
     const loopLab=document.createElement('label'); loopLab.textContent='LOOP';
     const loopChk=document.createElement('input'); loopChk.type='checkbox'; loopChk.checked=true;
@@ -169,13 +195,19 @@ function renderSamples(){
     const loopTxt=document.createElement('span'); loopTxt.className='val'; loopTxt.style.width='auto'; loopTxt.textContent='ON';
     loopChk.onchange=()=>{ state.loop=loopChk.checked; loopTxt.textContent=loopChk.checked?'ON':'OFF'; retunePreview(s, state); };
     loopRow.append(loopLab, loopChk, loopTxt);
-    const presets=document.createElement('div'); presets.className='row';
-    [0.5,1,1.5,2].forEach(sp=>{
+    const pitchPresets=document.createElement('div'); pitchPresets.className='row'; pitchPresets.style.flexWrap='wrap';
+    [-24,-12,0,12,24].forEach(sp=>{
+      const pb=document.createElement('button'); pb.className='btn preset'; pb.textContent=(sp>0?'+':'')+sp;
+      pb.onclick=()=>{ state.pitch=sp; pitch.inp.value=sp; pitch.v.textContent=(sp>0?'+':'')+sp; retunePreview(s, state); };
+      pitchPresets.appendChild(pb);
+    });
+    const presets=document.createElement('div'); presets.className='row'; presets.style.flexWrap='wrap';
+    [0.25,0.5,1,1.5,2,3,4].forEach(sp=>{
       const pb=document.createElement('button'); pb.className='btn preset'; pb.textContent=sp+'x';
       pb.onclick=()=>{ state.speed=sp; speed.inp.value=sp; speed.v.textContent=sp+'x'; retunePreview(s, state); };
       presets.appendChild(pb);
     });
-    card.append(name, meta, top, pitch.row, speed.row, loopRow, presets);
+    card.append(name, meta, top, pitch.row, pitchPresets, speed.row, loopRow, presets);
     grid.appendChild(card);
   });
 }
@@ -224,8 +256,8 @@ function renderTracks(){
     const rm=document.createElement('button'); rm.className='btn red'; rm.textContent='✕ REMOVE';
     rm.onclick=()=>{ if(songSrc[tr.uid]){ stopNode(songSrc[tr.uid]); delete songSrc[tr.uid]; } tracks=tracks.filter(x=>x.uid!==tr.uid); renderTracks(); };
     head.append(b, rm);
-    const pitch=sliderRow('PITCH', -12, 12, 1, tr.pitch, v=>{ tr.pitch=v; if(songPlaying) liveUpdateTrack(tr); }, v=>(v>0?'+':'')+v);
-    const speed=sliderRow('SPEED', 0.5, 2, 0.25, tr.speed, v=>{ tr.speed=v; if(songPlaying) liveUpdateTrack(tr); }, v=>v+'x');
+    const pitch=sliderRow('PITCH', -24, 24, 1, tr.pitch, v=>{ tr.pitch=v; if(songPlaying) liveUpdateTrack(tr); }, v=>(v>0?'+':'')+v);
+    const speed=sliderRow('SPEED', 0.25, 4, 0.25, tr.speed, v=>{ tr.speed=v; if(songPlaying) liveUpdateTrack(tr); }, v=>v+'x');
     const loopRow=document.createElement('div'); loopRow.className='row';
     const loopLab=document.createElement('label'); loopLab.textContent='LOOP';
     const loopChk=document.createElement('input'); loopChk.type='checkbox'; loopChk.checked=tr.loop;
