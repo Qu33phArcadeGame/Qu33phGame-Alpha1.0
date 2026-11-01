@@ -47,7 +47,6 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .s2logo{width:min(190px,44vw,15dvh);height:auto;display:block;margin:0 auto 4px;pointer-events:none;flex-shrink:0;}
 .s2tag{font-family:'Brush Script MT','Segoe Script','Bradley Hand',cursive;font-weight:bold;font-size:clamp(15px,2.8dvh,23px);
   color:#ffd24a;text-align:center;margin:-6px 0 6px;letter-spacing:1px;pointer-events:none;flex-shrink:0;}
-.s2sub{font-size:10px;letter-spacing:2px;color:#888;text-align:center;margin:0 0 10px;pointer-events:none;flex-shrink:0;}
 /* the grid itself takes up all the leftover height (flex:1) and splits it
    evenly across the 5 rows, so the cards grow or shrink to actually fill
    the page on every device instead of sitting at a fixed small size with
@@ -55,16 +54,16 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .cab-row{ display:grid; grid-template-columns:repeat(3,1fr);
   gap:14px 10px; width:100%; max-width:480px; flex:1; min-height:0; padding:2px; box-sizing:border-box;
   align-content:start; }
-/* Season 1 cabinet icons, exactly: a rectangular card, the full art on top
-   (never circle-cropped, never dimmed to a backdrop), and the name as real
-   text underneath it — the same layout as game.html's arcade menu. */
+/* No portrait boxes at all: just the logo art with the name as real text
+   underneath it. The old fixed-height box clipped the names on the top and
+   middle rows, so the art now keeps its own height and nothing can clip. */
 .cab-card{ position:relative; width:100%; height:auto;
-  border-radius:14px; overflow:hidden; cursor:pointer;
-  -webkit-tap-highlight-color:transparent; border:2px solid #3a3a3a; background:#0a0a0c;
-  box-shadow:0 4px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); }
+  border-radius:14px; overflow:visible; cursor:pointer;
+  -webkit-tap-highlight-color:transparent; border:none; background:none;
+  box-shadow:none; }
 .cab-card:active{ transform:scale(0.97); }
-.cab-card .cab-media{ display:block; width:100%; height:168px; object-fit:contain;
-  background:#0a0a0c; }
+.cab-card .cab-media{ display:block; width:100%; height:auto; object-fit:contain;
+  background:none; }
 .cab-card .cab-marquee{ display:none; }
 .cab-card .cab-label{ display:block; text-align:center; padding:6px 4px 10px; box-sizing:border-box;
   font-family:Helvetica,Arial,sans-serif; font-size:11px; font-weight:bold; letter-spacing:1px;
@@ -83,7 +82,9 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .cab-card.empty-slot:active{ transform:none; }
 .cab-card.empty-slot span{ color:#4a4a4a; font-size:9px; letter-spacing:1.5px; font-weight:bold; }
 
-#selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px;overflow-y:auto}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.select-wrap{width:min(720px,96vw)}.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding-left:28px}.choice{position:relative;background:#000;border:3px solid #fff;border-radius:4px 10px 10px 4px;padding:14px 6px 10px;cursor:pointer;min-height:200px;display:flex;align-items:center;justify-content:center}.choice::before{content:"";position:absolute;left:-28px;top:2px;bottom:2px;width:28px;background:#000;border:3px solid #fff;border-radius:8px 2px 2px 8px}.choice:hover{border-color:#ffd24a}.choice:hover::before{border-color:#ffd24a}.choice.sel{border-color:#ffd24a;box-shadow:0 0 14px rgba(255,210,74,.45)}.choice.sel::before{border-color:#ffd24a}.choice .rider-prev{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}.choice .rider-prev .rp-char{height:128px;width:auto;max-width:92%;object-fit:contain;position:relative;z-index:2;margin-bottom:-4px}.choice .rider-prev .rp-board-wrap{height:44px;width:150px;display:flex;align-items:center;justify-content:center;overflow:visible}.choice .rider-prev .rp-board{width:44px;height:150px;object-fit:contain;transform:rotate(90deg);flex:none}
+#selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px;overflow-y:auto}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.select-wrap{width:min(720px,96vw)}.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.choices.choices-capped{padding-left:28px}.choice{position:relative;background:#000;border:3px solid #fff;border-radius:4px 10px 10px 4px;padding:14px 6px 10px;cursor:pointer;min-height:200px;display:flex;align-items:center;justify-content:center}.choice::before{content:"";position:absolute;left:-28px;top:2px;bottom:2px;width:28px;background:#000;border:3px solid #fff;border-radius:8px 2px 2px 8px}.choice:hover{border-color:#ffd24a}.choice:hover::before{border-color:#ffd24a}.choice.sel{border-color:#ffd24a;box-shadow:0 0 14px rgba(255,210,74,.45)}.choice.sel::before{border-color:#ffd24a}.choice .rider-prev{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}.choice .rider-prev .rp-char{height:128px;width:auto;max-width:92%;object-fit:contain;position:relative;z-index:2;margin-bottom:-4px}.choice .rider-prev .rp-board-wrap{height:60px;width:150px;display:flex;align-items:center;justify-content:center;overflow:visible}.choice .rider-prev .rp-board{width:60px;height:150px;object-fit:contain;transform:rotate(90deg);flex:none}
+.choice-pic{background:none;border:none;padding:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}.choice-pic img{height:128px;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 4px 5px rgba(0,0,0,.7))}
+.select-rules{margin:20px 0 8px;color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;text-shadow:0 2px 8px #000,0 0 2px #000;line-height:1.7}.select-rules .sr-how{font-size:12px;letter-spacing:1px}.select-rules .sr-score{font-size:11px;letter-spacing:.5px}.select-rules .sr-score span{color:#ffd24a;letter-spacing:2px;margin-right:6px}
 
 #gameScreen{touch-action:none;user-select:none;-webkit-user-select:none}
 .field{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.9);pointer-events:none;}
@@ -92,6 +93,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
   filter:drop-shadow(0 6px 6px rgba(0,0,0,.8));transform-style:preserve-3d;}
 .rider{position:absolute;z-index:9;width:min(54px,11.5vw);height:auto;pointer-events:none;
   filter:drop-shadow(0 4px 5px rgba(0,0,0,.7));}
+.flock-el{position:absolute;z-index:8;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.6));}
 .chairSpot{position:absolute;z-index:7;width:min(58px,12.5vw);height:auto;pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.7));}
 .trick-label{position:absolute;z-index:12;left:50%;top:34%;transform:translate(-50%,-50%) scale(0.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s, transform .15s;text-align:center;}
 .trick-label.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
@@ -270,7 +272,6 @@ document.addEventListener('dragstart', function(e){
   <div class="menu">
     <img class="s2logo" src="arcadelogo.png?v=377" alt="Qu33ph Arcade" onerror="this.style.display='none'">
     <div class="s2tag">Season 2</div>
-    <div class="s2sub">RESTORED GAME BY GAME &nbsp;&bull;&nbsp; SKATEBOARDING FIRST</div>
     <div class="cab-row">
       <div class="cab-card" onclick="openSelect()">
         <div class="cab-marquee"></div>
@@ -322,7 +323,8 @@ document.addEventListener('dragstart', function(e){
   <button class="marker-btn" onclick="showMenu()">&larr; BACK</button>
   <div class="select-wrap">
     <div class="choices" id="charChoices"></div>
-    <div id="boardStage" class="hidden"><button class="s2mk" onclick="backToChars()">&larr; CHARACTERS</button><div class="choices" id="boardChoices" style="margin-top:18px"></div></div>
+    <div id="boardStage" class="hidden"><button class="s2mk" onclick="backToChars()">&larr; CHARACTERS</button><div class="choices choices-capped" id="boardChoices" style="margin-top:18px"></div></div>
+    <div class="select-rules"><div class="sr-how">FLICK TO ROLL &bull; TAP TO OLLIE &bull; TAP THEN FLICK FOR A TRICK</div><div class="sr-score"><span>SCORING</span> KICKFLIP +50 &bull; TRE FLIP +150 &bull; SHOVE-IT +50 &bull; POP SHOVE-IT +150 &bull; OLLIE ONTO THE CHAIR TO CROSS +100 &bull; FALL OFF THE START EDGE = PEEF &minus;100</div></div>
   </div>
 </div>
 
@@ -378,10 +380,12 @@ function riderPrevHTML(charStand, boardFile){
   return '<div class="rider-prev"><img class="rp-char" src="'+charStand+'" alt=""><span class="rp-board-wrap"><img class="rp-board" src="'+boardFile+'" alt=""></span></div>';
 }
 function buildCharChoices(){
+  // pictures only: no names, no attributes, no outline box, no deck yet —
+  // tapping a picture goes straight to the deck-color select
   const wrap=$('charChoices'); if(!wrap) return; wrap.innerHTML='';
   SKATE_CHARS.forEach(c=>{
-    const b=document.createElement('button'); b.className='choice'+(c.id===skateChar.id?' sel':'');
-    b.innerHTML=riderPrevHTML(c.stand, SKATE_BOARDS[0]);
+    const b=document.createElement('button'); b.className='choice-pic';
+    b.innerHTML='<img src="'+c.stand+'" alt="">';
     b.onclick=()=>pickChar(c.id);
     wrap.appendChild(b);
   });
@@ -1191,6 +1195,7 @@ function restartGame(){
   $('peefLabel').classList.remove('show');
   $('scoreHud').textContent='0';
   boardEl.style.opacity='1';
+  flockReset();
   render();
   frame(last);
 }
@@ -1436,6 +1441,88 @@ function frame(t){
   raf=requestAnimationFrame(frame);
 }
 
+// ── H3mmingway's flock, the same exact mechanics as Qu33ph Jump ─────────
+// She lays an egg every so often. Each one rides her own breadcrumb trail a
+// fixed distance behind, so it retraces exactly where she went. As you cover
+// ground each egg advances: egg -> cracked -> peeking -> a chick that follows
+// you for good. (Jump's pfTrail/pfFlock, ported to the skateboard's screen
+// coordinates; the egg/peek/chick art files are the same repo-root files.)
+const FLOCK_COLORS=['black','gold','white','yellow','wild'];
+const SK_M=13;
+let skTrail=[], skTrailDist=0, skRunDist=0, skFlock=[], skNextEgg=0, skLastX=0, skLastY=0, skTrailFace=1;
+let skFlockEls=[];
+function flockReset(){
+  skTrail=[]; skTrailDist=0; skRunDist=0; skFlock=[]; skTrailFace=1;
+  skNextEgg=(20+Math.random()*10)*SK_M;                        // first egg after 20-30 m
+  skLastX=bx; skLastY=by;
+  skFlockEls.forEach(el=>el.remove()); skFlockEls=[];
+}
+function flockStep(){
+  if(skateChar.id!=='hem') return;
+  const dx=bx-skLastX, dy=by-skLastY, d=Math.hypot(dx,dy);
+  if(d>200){ skTrail=[]; skTrailDist=0; skLastX=bx; skLastY=by; return; } // teleport (area change, peef) — no streak
+  if(d>0.005){
+    skTrailDist+=d;                       // path length — drives following only
+    skRunDist+=Math.abs(dx);              // horizontal progress — drives egg + hatch pacing
+    skLastX=bx; skLastY=by;
+    if(dx>0.35) skTrailFace=1; else if(dx<-0.35) skTrailFace=-1;
+    const last=skTrail[skTrail.length-1];
+    if(!last || (skTrailDist-last.d)>=1.1)                    // breadcrumb every ~1px
+      skTrail.push({x:bx, y:by, d:skTrailDist, f:skTrailFace});
+  }
+  const need=(skFlock.length?skFlock[skFlock.length-1].gap:120)+140;
+  while(skTrail.length>2 && skTrail[1].d < skTrailDist-need) skTrail.shift();
+  if(skTrail.length>4000) skTrail.splice(0,skTrail.length-4000);
+  if(skRunDist>=skNextEgg){
+    skFlock.push({ born:skRunDist,
+                   gap:(7+skFlock.length*5.5)*SK_M,           // tighter formation, closer on her heels
+                   col:FLOCK_COLORS[(Math.random()*FLOCK_COLORS.length)|0],
+                   t1:(20+Math.random()*10)*SK_M,             // crack
+                   t2:(20+Math.random()*10)*SK_M,             // peek
+                   t3:(20+Math.random()*10)*SK_M });          // hatched
+    skNextEgg = skRunDist + (50+Math.random()*50)*SK_M;       // next egg in 50-100 m
+    if(skFlock.length>14) skFlock.shift();
+  }
+}
+function flockSample(dist){                                    // where the trail was, dist behind
+  if(!skTrail.length) return null;
+  const want=skTrailDist-dist;
+  if(want<=skTrail[0].d) return skTrail[0];
+  let lo=0, hi=skTrail.length-1;
+  while(lo<hi){ const mid=(lo+hi)>>1; if(skTrail[mid].d<want) lo=mid+1; else hi=mid; }
+  const b=skTrail[lo], a=skTrail[Math.max(0,lo-1)];
+  const span=(b.d-a.d)||1, t=Math.max(0,Math.min(1,(want-a.d)/span));
+  return { x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t, f:(b.f||a.f||1) };
+}
+function flockDraw(scale){
+  while(skFlockEls.length>skFlock.length){ skFlockEls.pop().remove(); }
+  if(skateChar.id!=='hem'){ skFlockEls.forEach(el=>el.style.display='none'); return; }
+  const now=performance.now()/1000;
+  const rh=(riderEl.offsetHeight||110)*scale;
+  skFlock.forEach((m,i)=>{
+    const age=skRunDist-m.born;
+    let src, h, hatched=false;
+    if(age<m.t1){ src='egg0.png'; h=rh*0.42; }
+    else if(age<m.t1+m.t2){ src='egg1.png'; h=rh*0.42; }
+    else if(age<m.t1+m.t2+m.t3){ src='peek_'+m.col+'.png'; h=rh*0.50; }
+    else { src='chick_'+m.col+'.png'; h=rh*0.46; hatched=true; }
+    const pos=flockSample(m.gap); if(!pos) return;
+    if(m.sx===undefined){ m.sx=pos.x; m.sy=pos.y; m.lx=pos.x; m.vs=0; m.sf=pos.f||1; }
+    else { m.sx+=(pos.x-m.sx)*0.46; m.sy+=(pos.y-m.sy)*0.36; }   // ease, don't snap
+    m.vs=m.vs*0.82+(m.sx-m.lx)*0.18; m.lx=m.sx;
+    if(m.vs>0.14) m.sf=1; else if(m.vs<-0.14) m.sf=-1;
+    let bob=0;
+    if(hatched){ const spd=Math.min(1,Math.abs(m.vs)*0.7); bob=Math.sin(now*0.34+m.born*0.05)*1.5*spd; }
+    let el=skFlockEls[i];
+    if(!el){ el=document.createElement('img'); el.className='flock-el'; $('gameScreen').appendChild(el); skFlockEls[i]=el; }
+    if(el.getAttribute('src')!==src) el.setAttribute('src',src);
+    el.style.display='block';
+    el.style.height=h+'px'; el.style.width='auto';
+    el.style.left=m.sx+'px'; el.style.top=(m.sy+bob)+'px';
+    el.style.transform='translate(-50%,-50%) scale('+(m.sf*scale)+','+scale+')';
+  });
+}
+
 function render(){
   let extraSpin=0, flipY=0, hop=0, opacity=1, scale=1;
 
@@ -1531,6 +1618,7 @@ function render(){
     hop += 30*shrinkK;
   }
 
+  if(!flipMode) flockStep();
   boardEl.style.opacity=opacity;
   boardEl.style.left=bx+'px';
   boardEl.style.top=(by-hop)+'px';
@@ -1548,9 +1636,12 @@ function render(){
     riderEl.style.top=(by-hop-30*scale)+'px';
     riderEl.style.transform=`translate(-50%,-100%) rotate(${boardAngle-90}deg) scale(${scale})`;
   } else if(trick){
-    // mid-trick the rider spins with the board, as before
-    riderEl.style.top=(by-hop-8*scale)+'px';
-    riderEl.style.transform=`translate(-50%,-50%) rotate(${boardAngle+extraSpin}deg) rotateY(${flipY}deg) scale(${scale})`;
+    // mid-trick the BOARD spins but the rider stays vertical on it, feet on
+    // the board's centre — the rider used to spin with the board and end up
+    // lying horizontal along it
+    const rhT=(riderEl.offsetHeight||110)*scale;
+    riderEl.style.top=(by-hop-rhT/2+6*scale)+'px';
+    riderEl.style.transform=`translate(-50%,-50%) scale(${scale})`;
   } else {
     // normal riding: rider stays upright and its feet sit on the board's
     // centre (not through its middle) — centre = board point minus half
@@ -1567,6 +1658,7 @@ function render(){
       el.style.transform='rotate('+s.rot+'deg)';
     });
   }
+  if(!flipMode) flockDraw(scale);
 }
 </script>
 <script src="qu33ph-tilt.js?v=4"></script>
