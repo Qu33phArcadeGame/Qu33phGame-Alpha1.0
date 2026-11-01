@@ -517,7 +517,7 @@ let flipMode=false, fx=0, fy=0, fvx=0, fvy=0, flipPlatformEls=[];
 // that spinner and launches you airborne; while airborne, flicks trigger
 // tricks directly (no tap-first needed). Cooldown stops one overlap from
 // scoring every single frame. ───────────────────────────────────────────────
-let fidgetSpinners=null, fidgetEls=[], airborne=0;
+let fidgetSpinners=null, fidgetEls=[], airborne=0, airStart=0;
 // ── Rails: jump onto one and it carries you the full length automatically;
 // swipe as you come off the end to pop a trick (same "free flick" window as
 // launching off a Fidget spinner). ──────────────────────────────────────────
@@ -938,7 +938,7 @@ function hpStep(dt,hp){
     if(onLedge && hpX>=hp.x2 && push<0) push=Math.min(push,-190);
     if(onLedge && hpX<=hp.x1 && push>0) push=Math.max(push, 190);
     hpVX+=push;
-    if(!hpAir && vy<-35){ hpAir=true; hpY=hpCurSurf(hp,hpX); hpVY=-Math.min(900, 380+Math.abs(vy)*2.2); airborne=Math.max(airborne,1.2); }   // flick up = jump
+    if(!hpAir && vy<-35){ hpAir=true; hpY=hpCurSurf(hp,hpX); hpVY=-Math.min(900, 380+Math.abs(vy)*2.2); if(0.8>airborne){airborne=0.8; airStart=0.8;} }   // flick up = jump
     vx=0; vy=0;
   }
   const g=hpGeo(hp), L=g.L, xmax=hp.x2+L-14, lowMin=g.wallX+HP_SURF+3;
@@ -965,7 +965,7 @@ function hpStep(dt,hp){
         // came up a wall fast — pop out over the lip for a trick window
         const lip=hpSlope(hp, hpX<hp.x1? hp.x1+0.5 : hp.x2-0.5);
         hpAir=true; hpY=hpSurfY(hp,hpX); hpVY=-Math.abs(hpVX*lip)*0.9; hpVX*=0.55;
-        airborne=Math.max(airborne,1.6); addScore(25);
+        if(0.9>airborne){airborne=0.9; airStart=0.9;} addScore(25);
         try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
       }
       if(!hpAir && hpX<g.ledgeL){ hpAir=true; hpY=g.lipY-HP_SURF; hpVY=0; hpLower=true; }   // rolled off the end of the short ledge — drop
@@ -977,7 +977,6 @@ function hpStep(dt,hp){
       if(hpX>=g.endX){ hpX=g.endX; hpSyncBoard(hp); crossToNextArea(); return; }   // into the chair — on to the next area
     }
   }
-  if(airborne>0) airborne=Math.max(0,airborne-dt);
   hpSyncBoard(hp);
 }
 function buildHalfpipeEl(){
@@ -1171,13 +1170,12 @@ function updateFidget(dt){
       const boost=560+Math.random()*220;               // a much harder launch than before
       vx += Math.cos(ang)*boost*0.55;
       vy = -Math.abs(Math.sin(ang)*boost) - 420;
-      airborne = 7;   // a long hangtime window (5-10s) to flip and swipe through tricks
+      airborne = 3; airStart = 3;   // a shorter hangtime window (~3s) to flip and swipe through tricks
       s.cooldown = 0.5;
       addScore(30);
       try{ if(navigator.vibrate) navigator.vibrate(18); }catch(e){}
     }
   });
-  if(airborne>0) airborne=Math.max(0, airborne-dt);
 }
 
 function restartGame(){
@@ -1186,7 +1184,7 @@ function restartGame(){
   loadArea(0);
   const b=bounds();
   bx=b.left+18; by=(b.top+b.bottom)/2;
-  vx=0; vy=0; boardAngle=90; trick=null; crossing=null; ollieHop=0; peefAnim=null;
+  vx=0; vy=0; boardAngle=90; trick=null; crossing=null; ollieHop=0; peefAnim=null; airborne=0; airStart=0;
   pointers.clear(); dragId=null; dragStart=null; dragNow=null;
   lastTapTime=-9999; lastTapPos=null;
   running=true; last=performance.now();
@@ -1243,7 +1241,7 @@ function doTap(x,y){
   if(grinding){
     // tap while grinding = ollie off the rail, straight on in the direction you're riding
     const g=grinding, ux=(g.p2.x-g.p1.x)/g.len, uy=(g.p2.y-g.p1.y)/g.len;
-    grinding=null; railCD=0.6; airborne=Math.max(airborne,1.0);
+    grinding=null; railCD=0.6; if(0.6>airborne){airborne=0.6; airStart=0.6;}
     vx=ux*340; vy=uy*340;
     return;
   }
@@ -1291,7 +1289,7 @@ function applyFlick(dx,dy){
     // flick while grinding = jump off the rail, carrying its speed, in the
     // flicked direction — and it counts as airborne, so the flick's trick fires
     const g=grinding, ux=(g.p2.x-g.p1.x)/g.len, uy=(g.p2.y-g.p1.y)/g.len;
-    grinding=null; railCD=0.6; airborne=Math.max(airborne,1.2);
+    grinding=null; railCD=0.6; if(0.7>airborne){airborne=0.7; airStart=0.7;}
     vx=ux*260; vy=uy*260;
     vx+=dx*FLICK_POWER/10*1.6; vy+=dy*FLICK_POWER/10*1.6;   // (the regular push below adds on top)
   }
@@ -1341,6 +1339,7 @@ function doPeef(){
 function frame(t){
   if(!running) return;
   const dt=Math.min(0.033,(t-last)/1000); last=t;
+  if(airborne>0) airborne=Math.max(0,airborne-dt);   // airtime drains every frame, in every area — it used to drain only in halfpipe/fidget areas, so everywhere else the rider stayed big and in the jump sprite indefinitely
   const curArea=AREAS[areaIdx];
   const hp0 = curArea.halfpipe ? halfpipePoints(curArea.halfpipe) : null;
 
@@ -1384,7 +1383,7 @@ function frame(t){
       // window if you had real speed (same airborne state the Fidget
       // spinners use, so the board grows and free-flicks trigger tricks)
       hpWasIn=false;
-      if(Math.abs(vx)>140){ airborne=1.6; addScore(25); try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){} }
+      if(Math.abs(vx)>140){ airborne=0.9; airStart=0.9; addScore(25); try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){} }
       vy = -Math.abs(vx)*0.4;
     }
     bx+=vx*dt; by+=vy*dt;
@@ -1612,8 +1611,8 @@ function render(){
   // grown large and hanging while airborne off a Fidget spinner hit — a big obvious
   // "flip me now" cue, easing back down to normal size as the window runs out
   if(airborne>0){
-    const growK = Math.min(1, (7-airborne)/1.2);       // ramp up over the first ~1.2s
-    const shrinkK = Math.min(1, airborne/1.5);          // ease back down over the last ~1.5s
+    const growK = Math.max(0, Math.min(1, (airStart-airborne)/0.4));  // grow over the first ~0.4s of airtime
+    const shrinkK = Math.min(1, airborne/0.5);          // shrink back down over the last ~0.5s
     scale *= 1 + 1.1*growK*shrinkK;
     hop += 30*shrinkK;
   }
