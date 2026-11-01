@@ -83,7 +83,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .cab-card.empty-slot:active{ transform:none; }
 .cab-card.empty-slot span{ color:#4a4a4a; font-size:9px; letter-spacing:1.5px; font-weight:bold; }
 
-#selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px;overflow-y:auto}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.choice{background:#06060a;border:2px solid #29292f;border-radius:12px;padding:10px;cursor:pointer;min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center}.choice:hover{border-color:#777}.choice.sel{border-color:#ffd24a;box-shadow:0 0 14px rgba(255,210,74,.45)}.choice .rider-prev{position:relative;width:100%;height:150px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}.choice .rider-prev .rp-char{height:118px;width:auto;max-width:90%;object-fit:contain}.choice .rider-prev .rp-board{width:118px;height:26px;object-fit:cover;object-position:center;border-radius:13px;margin-top:-6px}.choice span{font-size:11px;letter-spacing:2px;color:#aaa;margin-top:5px}.choice small{font-size:9px;letter-spacing:1px;color:#666;margin-top:2px}.hint{margin-top:14px;color:#555;font-size:9.5px;letter-spacing:1.3px;line-height:1.9;}
+#selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px;overflow-y:auto}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.select-wrap{width:min(720px,96vw)}.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding-left:28px}.choice{position:relative;background:#000;border:3px solid #fff;border-radius:4px 10px 10px 4px;padding:14px 6px 10px;cursor:pointer;min-height:200px;display:flex;align-items:center;justify-content:center}.choice::before{content:"";position:absolute;left:-28px;top:2px;bottom:2px;width:28px;background:#000;border:3px solid #fff;border-radius:8px 2px 2px 8px}.choice:hover{border-color:#ffd24a}.choice:hover::before{border-color:#ffd24a}.choice.sel{border-color:#ffd24a;box-shadow:0 0 14px rgba(255,210,74,.45)}.choice.sel::before{border-color:#ffd24a}.choice .rider-prev{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}.choice .rider-prev .rp-char{height:128px;width:auto;max-width:92%;object-fit:contain;position:relative;z-index:2;margin-bottom:-4px}.choice .rider-prev .rp-board-wrap{height:44px;width:150px;display:flex;align-items:center;justify-content:center;overflow:visible}.choice .rider-prev .rp-board{width:44px;height:150px;object-fit:contain;transform:rotate(90deg);flex:none}
 
 #gameScreen{touch-action:none;user-select:none;-webkit-user-select:none}
 .field{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.9);pointer-events:none;}
@@ -321,14 +321,8 @@ document.addEventListener('dragstart', function(e){
 <div id="selectScreen" class="screen hidden">
   <button class="marker-btn" onclick="showMenu()">&larr; BACK</button>
   <div class="select-wrap">
-    <div class="select-title">CHOOSE YOUR RIDER</div>
-    <div class="select-sub">THE 7 CHARACTERS FROM QU33PH JUMP, ON SKATEBOARDS</div>
     <div class="choices" id="charChoices"></div>
-    <div class="hint">FLICK TO ROLL &nbsp;&bull;&nbsp; TAP TO OLLIE &nbsp;&bull;&nbsp; TAP THEN FLICK FOR A TRICK<br>
-    TRICK UP-RIGHT: KICKFLIP (+50) &nbsp;&bull;&nbsp; BIG: TRE FLIP (+150)<br>
-    TRICK UP-LEFT: SHOVE-IT (+50) &nbsp;&bull;&nbsp; BIG: POP SHOVE-IT (+150)<br>
-    OLLIE ONTO THE CHAIR AT THE EDGE TO CROSS TO THE NEXT AREA (+100)<br>
-    FALL OFF THE START EDGE = PEEF (&minus;100)</div>
+    <div id="boardStage" class="hidden"><button class="s2mk" onclick="backToChars()">&larr; CHARACTERS</button><div class="choices" id="boardChoices" style="margin-top:18px"></div></div>
   </div>
 </div>
 
@@ -362,29 +356,48 @@ function backToSeason1(){
   var gv=new URLSearchParams(location.search).get('gv');
   location.replace('game.html?'+(gv?('v='+encodeURIComponent(gv)+'&'):'')+'openArcade=1');
 }
-// The 7 Jump characters, in Jump's own roster order, each on a board.
-// stand/run/jump are Jump's exact sprite files; board is the Season 2 deck.
+// The 7 Jump characters, in Jump's own roster order. stand/run/jump are Jump's
+// exact sprite files. The board is picked separately, for any character:
+// the 3 Season 2 marker decks (green/blue/red).
 const SKATE_CHARS=[
-  {id:'qu33ph',name:'QU33PH',note:'THE ORIGINAL',board:'season2-green.png',stand:'jump_stand.png',run:'jump_runR.png',jump:'jump_jumpR.png'},
-  {id:'coby',name:'COBYQU33PH',note:'',board:'season2-blue.png',stand:'cobystand.png',run:'cobyrun.png',jump:'cobyjump.png'},
-  {id:'3ph3',name:'3PH3',note:'JUMPS TWICE AS HIGH',board:'season2-red.png',stand:'eph3stand.png',run:'eph3run.png',jump:'eph3jump.png'},
-  {id:'smok3y',name:'SMOK3Y',note:'JUMPS TWICE AS HIGH',board:'season2-green.png',stand:'smok3ystand.png',run:'smok3yrun.png',jump:'smok3yjump.png'},
-  {id:'b3ll',name:'B3LL',note:'DOUBLE JUMP \u00b7 FLOATS',board:'season2-blue.png',stand:'b3llstand.png',run:'b3llrun.png',jump:'b3lljump.png'},
-  {id:'bo',name:'BO',note:'DOUBLE JUMP \u00b7 FLOATS',board:'season2-red.png',stand:'bostand.png',run:'borun.png',jump:'bojump.png'},
-  {id:'hem',name:'H3MMINGWAY',note:'DOUBLE JUMP \u00b7 FLOATS',board:'season2-green.png',stand:'hemstand.png',run:'hemrun.png',jump:'hemjump.png'}
+  {id:'qu33ph',stand:'jump_stand.png',run:'jump_runR.png',jump:'jump_jumpR.png'},
+  {id:'coby',stand:'cobystand.png',run:'cobyrun.png',jump:'cobyjump.png'},
+  {id:'3ph3',stand:'eph3stand.png',run:'eph3run.png',jump:'eph3jump.png'},
+  {id:'smok3y',stand:'smok3ystand.png',run:'smok3yrun.png',jump:'smok3yjump.png'},
+  {id:'b3ll',stand:'b3llstand.png',run:'b3llrun.png',jump:'b3lljump.png'},
+  {id:'bo',stand:'bostand.png',run:'borun.png',jump:'bojump.png'},
+  {id:'hem',stand:'hemstand.png',run:'hemrun.png',jump:'hemjump.png'}
 ];
-const SKATE_CHAR_KEY='qu33phSkateChar';
-let skateChar=SKATE_CHARS[0];
-try{ const _ci=SKATE_CHARS.findIndex(c=>c.id===(localStorage.getItem(SKATE_CHAR_KEY)||'')); if(_ci>=0) skateChar=SKATE_CHARS[_ci]; }catch(e){}
+const SKATE_CHAR_KEY='qu33phSkateChar', SKATE_BOARD_KEY='qu33phSkateBoard';
+const SKATE_BOARDS=['season2-green.png','season2-blue.png','season2-red.png'];
+let skateChar=SKATE_CHARS[0], skateBoard=SKATE_BOARDS[0];
+try{ const _ci=SKATE_CHARS.findIndex(c=>c.id===(localStorage.getItem(SKATE_CHAR_KEY)||'')); if(_ci>=0) skateChar=SKATE_CHARS[_ci]; const _sb=localStorage.getItem(SKATE_BOARD_KEY)||''; if(SKATE_BOARDS.indexOf(_sb)>=0) skateBoard=_sb; }catch(e){}
+function riderPrevHTML(charStand, boardFile){
+  // character standing ON the board: feet overlap the board's top edge,
+  // board shown lying flat (the tall deck image, rotated 90 degrees).
+  return '<div class="rider-prev"><img class="rp-char" src="'+charStand+'" alt=""><span class="rp-board-wrap"><img class="rp-board" src="'+boardFile+'" alt=""></span></div>';
+}
 function buildCharChoices(){
   const wrap=$('charChoices'); if(!wrap) return; wrap.innerHTML='';
   SKATE_CHARS.forEach(c=>{
     const b=document.createElement('button'); b.className='choice'+(c.id===skateChar.id?' sel':'');
-    b.innerHTML='<div class="rider-prev"><img class="rp-char" src="'+c.stand+'" alt=""><img class="rp-board" src="'+c.board+'" alt=""></div><span>'+c.name+'</span><small>'+(c.note||'ON A SKATEBOARD')+'</small>';
-    b.onclick=()=>startGame(c.id);
+    b.innerHTML=riderPrevHTML(c.stand, SKATE_BOARDS[0]);
+    b.onclick=()=>pickChar(c.id);
     wrap.appendChild(b);
   });
 }
+function pickChar(charId){
+  skateChar=SKATE_CHARS.find(c=>c.id===charId)||SKATE_CHARS[0];
+  $('charChoices').classList.add('hidden'); $('boardStage').classList.remove('hidden');
+  const wrap=$('boardChoices'); wrap.innerHTML='';
+  SKATE_BOARDS.forEach(bf=>{
+    const b=document.createElement('button'); b.className='choice'+(bf===skateBoard?' sel':'');
+    b.innerHTML=riderPrevHTML(skateChar.stand, bf);
+    b.onclick=()=>startGame(skateChar.id, bf);
+    wrap.appendChild(b);
+  });
+}
+function backToChars(){ $('boardStage').classList.add('hidden'); $('charChoices').classList.remove('hidden'); buildCharChoices(); }
 let riderSrc='';
 const $=id=>document.getElementById(id);
 const boardEl=$('playerBoard'), riderEl=$('playerRider'), gameEl=$('gameScreen'), chairEl=$('chairImg'), fieldImgEl=$('fieldImg');
@@ -402,11 +415,12 @@ function applyTheme(){
 applyTheme();
 
 function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
-function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');buildCharChoices();}
-function startGame(charId){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden');
+function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');$('boardStage').classList.add('hidden');$('charChoices').classList.remove('hidden');buildCharChoices();}
+function startGame(charId, boardFile){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden');
   skateChar=SKATE_CHARS.find(c=>c.id===charId)||SKATE_CHARS[0];
-  try{ localStorage.setItem(SKATE_CHAR_KEY, skateChar.id); }catch(e){}
-  boardEl.src=skateChar.board; riderEl.src=skateChar.stand; riderSrc=skateChar.stand;
+  if(boardFile && SKATE_BOARDS.indexOf(boardFile)>=0) skateBoard=boardFile;
+  try{ localStorage.setItem(SKATE_CHAR_KEY, skateChar.id); localStorage.setItem(SKATE_BOARD_KEY, skateBoard); }catch(e){}
+  boardEl.src=skateBoard; riderEl.src=skateChar.stand; riderSrc=skateChar.stand;
   applyTheme(); restartGame();}
 function quitGame(){$('megaCard').classList.add('hidden');$('totalScreen').classList.add('hidden');running=false;cancelAnimationFrame(raf);pointers.clear();exitFlipMode();clearFidgetEls();fidgetSpinners=null;clearRailEls();grinding=null;clearPins();$('gameScreen').classList.add('hidden');openSelect();}
 
@@ -1530,11 +1544,20 @@ function render(){
   riderEl.style.opacity=opacity;
   riderEl.style.left=bx+'px';
   if(isHp){
+    // side-on: feet sit on the deck's top edge (30px above its centre at scale 1)
     riderEl.style.top=(by-hop-30*scale)+'px';
     riderEl.style.transform=`translate(-50%,-100%) rotate(${boardAngle-90}deg) scale(${scale})`;
-  } else {
+  } else if(trick){
+    // mid-trick the rider spins with the board, as before
     riderEl.style.top=(by-hop-8*scale)+'px';
     riderEl.style.transform=`translate(-50%,-50%) rotate(${boardAngle+extraSpin}deg) rotateY(${flipY}deg) scale(${scale})`;
+  } else {
+    // normal riding: rider stays upright and its feet sit on the board's
+    // centre (not through its middle) — centre = board point minus half
+    // the rider's scaled height, plus a small overlap onto the deck.
+    const rh=(riderEl.offsetHeight||110)*scale;
+    riderEl.style.top=(by-hop-rh/2+6*scale)+'px';
+    riderEl.style.transform=`translate(-50%,-50%) scale(${scale})`;
   }
 
   if(fidgetSpinners){
