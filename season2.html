@@ -110,12 +110,12 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 
 /* ============ PEEF BUCKETS — third Season 2 game ============ */
 #peefScreen{touch-action:none;user-select:none;-webkit-user-select:none}
-.pb-bucket{position:absolute;z-index:7;width:min(64px,14vw);height:min(78px,17vw);transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 5px 5px rgba(0,0,0,.7));}
-.pb-bucket .pb-shadow{position:absolute;left:10%;bottom:0;width:80%;height:8%;border-radius:50%;background:rgba(0,0,0,.30);filter:blur(2px);}
-.pb-bucket .pb-body{position:absolute;left:3%;top:15%;width:94%;height:85%;clip-path:polygon(0 0,100% 0,86% 100%,14% 100%);background:linear-gradient(90deg,#4a4f55 0%,#8b9198 18%,#d7dbdf 42%,#f2f4f6 50%,#aab0b6 68%,#6d7278 88%,#4a4f55 100%);}
-.pb-bucket .pb-shine{position:absolute;left:32%;top:22%;width:8%;height:70%;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.05));border-radius:50%;}
-.pb-bucket .pb-rim{position:absolute;left:0;top:0;width:100%;height:20%;border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#f2f4f6 0%,#c3c9cf 45%,#7d838a 75%,#565b62 100%);box-shadow:inset 0 0 0 1.5px #4a4f55;}
-.pb-bucket .pb-mouth{position:absolute;left:15%;top:3.5%;width:70%;height:13%;border-radius:50%;background:#141619;box-shadow:inset 0 2px 5px #000,0 1px 0 rgba(255,255,255,.25);}
+.pb-bucket{position:absolute;z-index:7;width:min(64px,14vw);height:min(78px,17vw);transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)) brightness(.94) saturate(.92);}
+.pb-bucket .pb-shadow{position:absolute;left:10%;bottom:0;width:80%;height:10%;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(4px);}
+.pb-bucket .pb-body{position:absolute;left:3%;top:15%;width:94%;height:85%;clip-path:polygon(0 0,100% 0,86% 100%,14% 100%);background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.30) 100%),linear-gradient(90deg,#3d4247 0%,#6f757c 18%,#a9adb2 42%,#c9ced3 50%,#8d9298 68%,#5d6267 88%,#3d4247 100%);}
+.pb-bucket .pb-shine{position:absolute;left:33%;top:22%;width:6%;height:70%;background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,.02));border-radius:50%;}
+.pb-bucket .pb-rim{position:absolute;left:0;top:0;width:100%;height:20%;border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#d7dbdf 0%,#a8adb3 45%,#6d7278 75%,#4a4f55 100%);box-shadow:inset 0 0 0 1px #3a3e43;}
+.pb-bucket .pb-mouth{position:absolute;left:15%;top:3.5%;width:70%;height:13%;border-radius:50%;background:#141619;box-shadow:inset 0 2px 5px #000,0 1px 0 rgba(255,255,255,.12);}
 .pb-points{position:absolute;z-index:7;transform:translateY(-50%);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(13px,4vw,20px);text-shadow:0 2px 6px #000;pointer-events:none;}
 .pb-marker{position:absolute;z-index:9;transform:translate(-50%,-50%);pointer-events:none;}.pb-marker img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
 .pb-prev{position:absolute;transform:translate(-50%,-50%);opacity:.6;pointer-events:none;z-index:7;}
@@ -399,6 +399,12 @@ document.addEventListener('dragstart', function(e){
     <img class="pb-chair" id="pbChair0" src="Chair.png" alt="" style="display:none;">
     <img class="pb-chair" id="pbChair1" src="Chair.png" alt="" style="display:none;">
     <img class="pb-chair" id="pbChair2" src="Chair.png" alt="" style="display:none;">
+    <img class="pb-chair" id="pbChair3" src="Chair.png" alt="" style="display:none;">
+    <img class="pb-chair" id="pbChair4" src="Chair.png" alt="" style="display:none;">
+    <img class="pb-chair" id="pbChair5" src="Chair.png" alt="" style="display:none;">
+    <img class="pb-chair" id="pbChair6" src="Chair.png" alt="" style="display:none;">
+    <img class="pb-chair" id="pbChair7" src="Chair.png" alt="" style="display:none;">
+    <img class="pb-chair" id="pbChair8" src="Chair.png" alt="" style="display:none;">
     <div class="pb-prev" id="pbPrev0"><img src="green.png" alt=""></div>
     <div class="pb-prev" id="pbPrev1"><img src="red.png" alt=""></div>
     <div class="pb-prev" id="pbPrev2"><img src="blue.png" alt=""></div>
@@ -406,7 +412,7 @@ document.addEventListener('dragstart', function(e){
     <div class="pb-marker" id="pbMarker" style="display:none;"><img id="pbMarkerImg" src="green.png" alt=""></div>
   </div>
   <div class="pb-pop" id="pbPop"></div>
-  <div class="pb-hint">PEEF OFF THE LEFT EDGE INTO A BUCKET &bull; TOP BUCKET WORTH MOST</div>
+  <div class="pb-hint">peef into buckets to score</div>
   <div class="total-screen hidden" id="pbTotalScreen">
     <div class="total-head">
       <h2>TOTAL SCORE</h2>
@@ -443,17 +449,23 @@ const PB_BUCKETS=[
   {by:0.75, pts:50, label:'+50'},
 ];
 // chairs: the original game's chair (Chair.png, 50x50, collision radius 35),
-// on the counter at the field's left edge, in line with a bucket. Round 1
-// guards the 2nd bucket, round 2 adds the 3rd, round 3 adds the 1st — all
-// three in a line by the final round. Same bounce as the original, but no
-// MEGA roll: a chair just bounces the marker around.
-const PB_CHAIR_BUCKETS=[1,2,0];
+// moved right onto the counter as bumpers so markers bounce around toward
+// the buckets. 9 by round 3, 3 added per round: round 1 is the moved middle
+// chair (25% across, mid height) plus the two chairs Coby marked on his
+// screenshot (31.2%, 42.4%) and (43.6%, 49.3%); round 2 adds the same trio
+// mirrored to the top band, round 3 to the bottom band. Same bounce as the
+// original, but no MEGA roll: a chair just bounces the marker around.
+const PB_CHAIRS=[
+  {fx:0.250, fy:0.500}, {fx:0.312, fy:0.424}, {fx:0.436, fy:0.493},
+  {fx:0.250, fy:0.250}, {fx:0.312, fy:0.174}, {fx:0.436, fy:0.243},
+  {fx:0.250, fy:0.750}, {fx:0.312, fy:0.674}, {fx:0.436, fy:0.743},
+];
 let pbHitChairs=[];
 function pbPositionChairs(){
-  for(let i=0;i<3;i++){
-    const el=pb$('pbChair'+i), b=PB_BUCKETS[PB_CHAIR_BUCKETS[i]];
-    el.style.left=PB_LEFT+'px'; el.style.top=(PB_H*b.by)+'px';
-    el.style.display=(pbRound>=i+1)?'block':'none';
+  for(let i=0;i<PB_CHAIRS.length;i++){
+    const el=pb$('pbChair'+i), ch=PB_CHAIRS[i];
+    el.style.left=(PB_W*ch.fx)+'px'; el.style.top=(PB_H*ch.fy)+'px';
+    el.style.display=(pbRound>=Math.floor(i/3)+1)?'block':'none';
   }
 }
 let PB_W=0, PB_H=0, PB_LEFT=0, PB_RIGHT=0, PB_CX=0, PB_LAUNCH=0, PB_END=0;
@@ -540,10 +552,10 @@ function pbThrow(dx, dy){
     if(pbX>PB_RIGHT){ pbX=PB_RIGHT; pbVX*=-0.4; }
     if(pbY<PB_END){ pbY=PB_END; pbVY*=-0.2; }
     // chairs: the original game's bounce, no MEGA — each chair bounces a
-    // marker at most once, so it can still bounce chair-to-chair in round 3
-    for(let ci=0; ci<3; ci++){
-      if(pbRound<ci+1 || pbHitChairs.includes(ci)) continue;
-      const b=PB_BUCKETS[PB_CHAIR_BUCKETS[ci]], cx=PB_LEFT, cy=PB_H*b.by;
+    // marker at most once, so it can still bounce chair-to-chair
+    for(let ci=0; ci<PB_CHAIRS.length; ci++){
+      if(pbRound<Math.floor(ci/3)+1 || pbHitChairs.includes(ci)) continue;
+      const ch=PB_CHAIRS[ci], cx=PB_W*ch.fx, cy=PB_H*ch.fy;
       const dx=pbX-cx, dy=pbY-cy, dist=Math.hypot(dx,dy)||1;
       if(dist<35){
         pbHitChairs.push(ci);
