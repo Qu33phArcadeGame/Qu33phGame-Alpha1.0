@@ -41,14 +41,36 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 .row{display:flex;align-items:center;gap:8px;margin:6px 0;}
 .row label{font-size:9px;letter-spacing:1px;color:#888;width:38px;flex-shrink:0;}
 .row .val{font-size:10px;color:#ffd24a;width:38px;text-align:right;flex-shrink:0;font-family:monospace;}
-/* banner = the greyscale poster, and the track editor lives on it */
-#banner{background:url('qu33phmusicposter.png') center/cover no-repeat;min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 12px 14px;}
-#trackChips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
-#trackTransport{display:flex;gap:8px;justify-content:center;}
+.numbox{background:#000;color:#ffd24a;border:2px solid #333;border-radius:6px;font-family:monospace;font-size:11px;width:60px;padding:4px 6px;text-align:right;flex-shrink:0;}
+.ticks{display:flex;justify-content:space-between;font-size:9px;color:#666;margin:-2px 0 4px 54px;}
+/* banner = the greyscale poster; transport lives on it */
+#banner{background:url('qu33phmusicposter.png') center/cover no-repeat;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 12px 14px;}
+#trackTransport{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
 #bannerHint{font-size:10px;letter-spacing:1.5px;color:#ddd;text-shadow:0 1px 4px #000;text-align:center;}
-#chipEditor{margin:12px;padding:12px;background:#0b0b0d;border:2px solid #23232a;border-radius:12px;}
-#chipEditor .ce-name{font-weight:bold;letter-spacing:1px;color:#ffd24a;font-size:13px;margin-bottom:8px;}
-#chipEditor .ce-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+#status{text-align:center;font-size:11px;color:#ffd24a;min-height:16px;margin:6px 12px 0;}
+#dlArea{text-align:center;margin:6px 12px 0;}
+#dlArea a{display:inline-block;background:linear-gradient(180deg,#ffdd66,#e8a83c);color:#241300;font-weight:bold;font-size:12px;letter-spacing:1px;padding:9px 20px;border-radius:8px;text-decoration:none;}
+/* timeline: 2 lanes, clips carry name + waveform */
+#tlWrap{margin:12px;border:2px solid #23232a;border-radius:12px;overflow:hidden;background:#0b0b0d;}
+#tlScroll{overflow-x:auto;}
+#tlInner{position:relative;}
+#ruler{position:relative;height:20px;border-bottom:1px solid #23232a;}
+#ruler .tick{position:absolute;bottom:0;width:1px;height:6px;background:#555;}
+#ruler .lab{position:absolute;bottom:7px;transform:translateX(-50%);font-size:9px;color:#888;font-family:monospace;}
+.lane{position:relative;height:76px;border-bottom:1px solid #1a1a1e;}
+.lane:last-child{border-bottom:none;}
+.lane .badge{position:sticky;left:6px;top:28px;display:inline-block;z-index:5;background:#1c1c20;border:1px solid #333;color:#888;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:8px;pointer-events:none;}
+#playhead{position:absolute;top:0;bottom:0;width:2px;background:#ff4d4d;z-index:10;pointer-events:none;}
+.clip{position:absolute;height:64px;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:4px 9px 9px 4px;padding:4px 6px 4px 20px;cursor:grab;overflow:hidden;box-sizing:border-box;touch-action:none;z-index:2;}
+.clip::before{content:"";position:absolute;left:2px;top:2px;bottom:2px;width:12px;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;}
+.clip.sel{border-color:#ffd24a;}
+.clip.invalid{border-color:#ff4d4d;}
+.clip.dragging{cursor:grabbing;z-index:20;box-shadow:0 6px 14px rgba(0,0,0,.6);}
+.clip-name{font-size:10px;font-weight:bold;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;}
+.clip canvas{display:block;width:100%;height:30px;margin-top:2px;}
+#clipEditor{margin:12px;padding:12px;background:#0b0b0d;border:2px solid #23232a;border-radius:12px;}
+#clipEditor .ce-name{font-weight:bold;letter-spacing:1px;color:#ffd24a;font-size:13px;margin-bottom:8px;}
+#clipEditor .ce-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
 #games{padding:6px 12px 30px;}
 .game{margin:14px 0;}
 .drop{margin:8px 0 0 15px;padding:6px 12px;background:#0b0b0d;border:2px solid #23232a;border-radius:12px;}
@@ -64,24 +86,33 @@ document.addEventListener('dragstart', function(e){ var t=e.target; if(t && (t.t
 </script>
 <button class="marker-btn" onclick="location.href='season2.html'">&larr; BACK</button>
 <div id="banner">
-  <div id="trackChips"></div>
-  <div id="trackTransport" class="hidden">
+  <div id="trackTransport">
     <button class="btn sm gold" onclick="playTrack()">&#9654;</button>
     <button class="btn sm red" onclick="pauseTrack()">&#10074;&#10074;</button>
     <button class="btn sm" onclick="clearTrack()">&#10005;</button>
+    <button class="btn sm gold" onclick="exportMp3()">EXPORT MP3</button>
   </div>
   <div id="bannerHint">TAP + ON A SAMPLE TO BUILD YOUR TRACK</div>
 </div>
-<div id="chipEditor" class="hidden"></div>
+<div id="status"></div>
+<div id="dlArea"></div>
+<div id="tlWrap"><div id="tlScroll"><div id="tlInner"></div></div></div>
+<div id="clipEditor" class="hidden"></div>
 <div id="games"></div>
 <script>
 const SAMPLES = [{"id": "BOWLING-01", "game": "BOWLING", "file": "samples/bowling-01.mp3"}, {"id": "BOWLING-02", "game": "BOWLING", "file": "samples/bowling-02.mp3"}, {"id": "BOWLING-03", "game": "BOWLING", "file": "samples/bowling-03.mp3"}, {"id": "DOZER-01", "game": "DOZER", "file": "samples/dozer-01.mp3"}, {"id": "DOZER-02", "game": "DOZER", "file": "samples/dozer-02.mp3"}, {"id": "DOZER-03", "game": "DOZER", "file": "samples/dozer-03.mp3"}, {"id": "FIDGET-01", "game": "FIDGET", "file": "samples/fidget-01.mp3"}, {"id": "FIDGET-02", "game": "FIDGET", "file": "samples/fidget-02.mp3"}, {"id": "FIDGET-03", "game": "FIDGET", "file": "samples/fidget-03.mp3"}, {"id": "FLIP-01", "game": "FLIP", "file": "samples/flip-01.mp3"}, {"id": "FLIP-02", "game": "FLIP", "file": "samples/flip-02.mp3"}, {"id": "FLIP-03", "game": "FLIP", "file": "samples/flip-03.mp3"}, {"id": "JUMP-01", "game": "JUMP", "file": "samples/jump-01.mp3"}, {"id": "JUMP-02", "game": "JUMP", "file": "samples/jump-02.mp3"}, {"id": "JUMP-03", "game": "JUMP", "file": "samples/jump-03.mp3"}, {"id": "JUMP-04", "game": "JUMP", "file": "samples/jump-04.mp3"}, {"id": "MINI-01", "game": "MINI", "file": "samples/mini-01.mp3"}, {"id": "MINI-02", "game": "MINI", "file": "samples/mini-02.mp3"}, {"id": "MINI-03", "game": "MINI", "file": "samples/mini-03.mp3"}, {"id": "PINBALL-01", "game": "PINBALL", "file": "samples/pinball-01.mp3"}, {"id": "PINBALL-02", "game": "PINBALL", "file": "samples/pinball-02.mp3"}, {"id": "PINBALL-03", "game": "PINBALL", "file": "samples/pinball-03.mp3"}, {"id": "PINBALL-04", "game": "PINBALL", "file": "samples/pinball-04.mp3"}, {"id": "QU33PHBALL-01", "game": "QU33PHBALL", "file": "samples/qu33phball-01.mp3"}, {"id": "QU33PHBALL-02", "game": "QU33PHBALL", "file": "samples/qu33phball-02.mp3"}, {"id": "QU33PHBALL-03", "game": "QU33PHBALL", "file": "samples/qu33phball-03.mp3"}, {"id": "QU33PHBALL-04", "game": "QU33PHBALL", "file": "samples/qu33phball-04.mp3"}, {"id": "STACK-01", "game": "STACK", "file": "samples/stack-01.mp3"}, {"id": "STACK-02", "game": "STACK", "file": "samples/stack-02.mp3"}, {"id": "STACK-03", "game": "STACK", "file": "samples/stack-03.mp3"}];
 const GAMES = [...new Set(SAMPLES.map(s=>s.game))];
-let audioCtx = null, rawCache = {}, bufCache = {};
+const PPS = 30, RULER_H = 20, LANE_H = 76, CLIP_H = 64, SNAP = 0.25;
+let audioCtx = null, rawCache = {}, bufCache = {}, peaksCache = {};
 let previewId = null, previewNode = null, previewPaused = false, previewToken = 0;
-let chips = [], chipN = 0, selectedUid = null;
-let trackState = {playing:false, paused:false, idx:0, node:null}, trackToken = 0, trackNodes = {};
+let clips = [], clipN = 0, selectedUid = null;
+let tl = {playing:false, paused:false, ctxStart:0, playFrom:0, nodes:{}, raf:0};
+let playToken = 0;
 const $ = id => document.getElementById(id);
+const clipDur = c => 4 / c.speed;
+const clipEnd = c => c.start + clipDur(c);
+const timelineEnd = () => clips.reduce((m,c)=>Math.max(m, clipEnd(c)), 0);
+const status = t => { $('status').textContent = t; };
 
 function ensureAudio(){
   if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -94,21 +125,22 @@ async function loadRaw(id){
   const r = await fetch(s.file); const ab = await r.arrayBuffer();
   rawCache[id] = ab; return ab;
 }
-async function loadBuf(id){
-  ensureAudio();
-  if(bufCache[id]) return bufCache[id];
+async function loadBuf(id, ctx){
+  ctx = ctx || ensureAudio();
+  const key = id + '@' + (ctx===audioCtx ? 'main' : 'off');
+  if(bufCache[key]) return bufCache[key];
   const raw = await loadRaw(id);
-  const buf = await audioCtx.decodeAudioData(raw.slice(0));
-  bufCache[id] = buf; return buf;
+  const buf = await ctx.decodeAudioData(raw.slice(0));
+  bufCache[key] = buf; return buf;
 }
-function startBuf(buf, opts){
-  const src = audioCtx.createBufferSource();
+function startBuf(ctx, buf, opts, when){
+  const src = ctx.createBufferSource();
   src.buffer = buf; src.loop = false;
   src.playbackRate.value = opts.speed;
   try{ src.detune.value = opts.pitch * 100; }catch(e){}
-  const g = audioCtx.createGain(); g.gain.value = 0.9;
-  src.connect(g); g.connect(audioCtx.destination);
-  src.start(0);
+  const g = ctx.createGain(); g.gain.value = 0.9;
+  src.connect(g); g.connect(opts.dest || ctx.destination);
+  src.start(when === undefined ? 0 : when);
   return {src:src, gain:g};
 }
 function stopNode(n){ try{ n.src.stop(); }catch(e){} try{ n.src.disconnect(); }catch(e){} }
@@ -123,20 +155,33 @@ function stopPreview(){
   previewNode = null; previewId = null; previewPaused = false;
   markPreview();
 }
-function stopTrack(){
-  trackToken++;
-  trackState.playing = false; trackState.paused = false; trackState.idx = 0;
-  if(trackState.node) stopNode(trackState.node);
-  trackState.node = null; trackNodes = {};
+function stopPlayback(){
+  playToken++;
+  tl.playing = false; tl.paused = false;
+  Object.values(tl.nodes).forEach(stopNode); tl.nodes = {};
+  cancelAnimationFrame(tl.raf); tl.raf = 0;
+  const ph = $('playhead'); if(ph) ph.style.left = '0px';
+}
+function setPlayhead(x){
+  const ph = $('playhead'); if(!ph) return;
+  ph.style.left = Math.max(0, x) + 'px';
+  const sc = $('tlScroll');
+  if(x > sc.scrollLeft + sc.clientWidth - 30) sc.scrollLeft = x - 30;
+}
+function playheadLoop(){
+  if(!tl.playing && !tl.paused) return;
+  const pos = tl.playFrom + (audioCtx.currentTime - tl.ctxStart);
+  setPlayhead(pos * PPS);
+  tl.raf = requestAnimationFrame(playheadLoop);
 }
 async function playPreview(id){
   ensureAudio();
   if(previewPaused && previewId===id){ audioCtx.resume(); previewPaused = false; markPreview(); return; }
-  stopTrack(); stopPreview();
+  stopPlayback(); stopPreview();
   const tok = ++previewToken;
   const buf = await loadBuf(id);
   if(tok!==previewToken) return;
-  const n = startBuf(buf, {pitch:0, speed:1});
+  const n = startBuf(audioCtx, buf, {pitch:0, speed:1});
   previewNode = n; previewId = id; previewPaused = false;
   n.src.onended = ()=>{ if(previewNode===n){ previewNode = null; previewId = null; previewPaused = false; markPreview(); } };
   markPreview();
@@ -167,7 +212,7 @@ function renderGames(){
       const pause = document.createElement('button'); pause.className = 'btn mini red'; pause.textContent = '\u275A\u275A';
       pause.onclick = ()=>pausePreview();
       const plus = document.createElement('button'); plus.className = 'btn mini green'; plus.textContent = '+';
-      plus.onclick = ()=>addChip(s.id);
+      plus.onclick = ()=>addClip(s.id);
       row.append(lab, play, pause, plus);
       drop.appendChild(row);
     });
@@ -176,30 +221,143 @@ function renderGames(){
   });
 }
 
-// ---------- track editor (on the banner) ----------
-function renderChips(){
-  const c = $('trackChips'); c.innerHTML = '';
-  chips.forEach(ch=>{
-    const b = document.createElement('button');
-    b.className = 'btn sm chip' + (ch.uid===selectedUid ? ' sel' : '');
-    b.textContent = ch.sample.id;
-    b.onclick = ()=>selectChip(ch.uid);
-    c.appendChild(b);
+// ---------- timeline ----------
+function laneEnd(lane){
+  return clips.filter(c=>c.lane===lane).reduce((m,c)=>Math.max(m, clipEnd(c)), 0);
+}
+function overlaps(lane, start, end, skipUid){
+  return clips.some(c=>c.lane===lane && c.uid!==skipUid && start < clipEnd(c) - 0.01 && end > c.start + 0.01);
+}
+function renderTimeline(){
+  const inner = $('tlInner'); inner.innerHTML = '';
+  const end = Math.max(timelineEnd(), 16) + 4;
+  inner.style.width = (end * PPS) + 'px';
+  const ruler = document.createElement('div'); ruler.id = 'ruler';
+  for(let t=0; t<=end; t+=2){
+    const tick = document.createElement('div'); tick.className = 'tick'; tick.style.left = (t*PPS) + 'px';
+    ruler.appendChild(tick);
+    if(t % 4 === 0){
+      const lab = document.createElement('span'); lab.className = 'lab'; lab.style.left = (t*PPS) + 'px'; lab.textContent = t;
+      ruler.appendChild(lab);
+    }
+  }
+  inner.appendChild(ruler);
+  [1,2].forEach(lane=>{
+    const d = document.createElement('div'); d.className = 'lane';
+    const badge = document.createElement('span'); badge.className = 'badge'; badge.textContent = lane;
+    d.appendChild(badge);
+    inner.appendChild(d);
   });
-  $('trackTransport').classList.toggle('hidden', !chips.length);
-  $('bannerHint').classList.toggle('hidden', !!chips.length);
+  const ph = document.createElement('div'); ph.id = 'playhead'; ph.style.left = '0px';
+  inner.appendChild(ph);
+  clips.forEach(c=>{
+    const el = document.createElement('div');
+    el.className = 'clip' + (c.uid===selectedUid ? ' sel' : '');
+    el.dataset.uid = c.uid;
+    el.style.left = (c.start * PPS) + 'px';
+    el.style.top = (RULER_H + (c.lane-1) * LANE_H + 6) + 'px';
+    el.style.width = Math.max(46, clipDur(c) * PPS) + 'px';
+    const name = document.createElement('div'); name.className = 'clip-name'; name.textContent = c.sample.id;
+    const cv = document.createElement('canvas');
+    cv.dataset.sid = c.sample.id; cv.dataset.uid = c.uid;
+    cv.width = Math.max(46, Math.round(clipDur(c) * PPS)); cv.height = 30;
+    el.append(name, cv);
+    inner.appendChild(el);
+    bindClipDrag(el, c);
+    drawClipWave(cv, c.sample.id);
+  });
+  $('bannerHint').classList.toggle('hidden', !!clips.length);
 }
-function addChip(sampleId){
+function drawWave(cv, peaks){
+  const x = cv.getContext('2d'), w = cv.width, h = cv.height;
+  x.clearRect(0, 0, w, h);
+  x.fillStyle = '#ffd24a';
+  const n = peaks.length, bw = w / n;
+  for(let i=0; i<n; i++){
+    const ph = Math.max(1, peaks[i] * (h - 4));
+    x.fillRect(i * bw, (h - ph) / 2, Math.max(1, bw - 1), ph);
+  }
+}
+function peaksFor(id, buf){
+  if(peaksCache[id]) return peaksCache[id];
+  const c0 = buf.getChannelData(0);
+  const c1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : null;
+  const N = 120, peaks = new Float32Array(N);
+  const per = Math.max(1, Math.floor(c0.length / N));
+  for(let i=0; i<N; i++){
+    let m = 0;
+    for(let j=i*per; j<Math.min((i+1)*per, c0.length); j+=4){
+      const a = Math.abs(c0[j]); if(a>m) m = a;
+      if(c1){ const b = Math.abs(c1[j]); if(b>m) m = b; }
+    }
+    peaks[i] = m;
+  }
+  peaksCache[id] = peaks; return peaks;
+}
+function drawClipWave(cv, sid){
+  const key = sid + '@main';
+  if(bufCache[key]){ drawWave(cv, peaksFor(sid, bufCache[key])); return; }
+  loadBuf(sid).then(buf=>{
+    const cur = document.querySelector('canvas[data-uid="' + cv.dataset.uid + '"]');
+    if(cur) drawWave(cur, peaksFor(sid, buf));
+  }).catch(()=>{});
+}
+function bindClipDrag(el, c){
+  let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false, moved = false;
+  el.addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    try{ el.setPointerCapture(e.pointerId); }catch(_){}
+    sx = e.clientX; sy = e.clientY;
+    ox = c.start * PPS; oy = RULER_H + (c.lane-1) * LANE_H + 6;
+    dragging = false; moved = false;
+  });
+  el.addEventListener('pointermove', e=>{
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if(!moved && Math.hypot(dx, dy) > 6){ moved = true; dragging = true; el.classList.add('dragging'); }
+    if(!dragging) return;
+    const nx = Math.max(0, ox + dx);
+    const ny = Math.min(Math.max(oy + dy, RULER_H + 6), RULER_H + LANE_H + 6);
+    el.style.left = nx + 'px'; el.style.top = ny + 'px';
+    const candStart = Math.max(0, Math.round((nx / PPS) / SNAP) * SNAP);
+    const candLane = laneFromClientY(e.clientY);
+    el.classList.toggle('invalid', overlaps(candLane, candStart, candStart + clipDur(c), c.uid));
+  });
+  const finish = e=>{
+    if(!moved){ selectClip(c.uid); return; }
+    if(!dragging) return;
+    dragging = false; el.classList.remove('dragging', 'invalid');
+    const dx = e.clientX - sx;
+    const candStart = Math.max(0, Math.round(((ox + dx) / PPS) / SNAP) * SNAP);
+    const candLane = laneFromClientY(e.clientY);
+    if(overlaps(candLane, candStart, candStart + clipDur(c), c.uid)){ renderTimeline(); return; }
+    if(candStart!==c.start || candLane!==c.lane){
+      c.start = candStart; c.lane = candLane;
+      stopPlayback();
+    }
+    renderTimeline();
+  };
+  el.addEventListener('pointerup', finish);
+  el.addEventListener('pointercancel', ()=>{ dragging = false; moved = false; el.classList.remove('dragging', 'invalid'); renderTimeline(); });
+}
+function laneFromClientY(clientY){
+  const r = $('tlInner').getBoundingClientRect();
+  const rel = clientY - r.top;
+  return rel < RULER_H + LANE_H ? 1 : 2;
+}
+function addClip(sampleId){
   const s = SAMPLES.find(x=>x.id===sampleId); if(!s) return;
-  chips.push({uid:'c'+(++chipN), sample:s, pitch:0, speed:1});
-  renderChips();
+  stopPlayback();
+  clips.push({uid:'c'+(++clipN), sample:s, pitch:0, speed:1, lane:1, start:laneEnd(1)});
+  renderTimeline();
 }
-function selectChip(uid){
-  if(selectedUid===uid){ selectedUid = null; $('chipEditor').classList.add('hidden'); renderChips(); return; }
+function selectClip(uid){
+  if(selectedUid===uid){ selectedUid = null; $('clipEditor').classList.add('hidden'); renderTimeline(); return; }
   selectedUid = uid;
-  renderChips();
-  renderChipEditor();
+  renderTimeline();
+  renderClipEditor();
 }
+
+// ---------- clip editor: pitch + speed with full numeric control ----------
 function sliderRow(label, min, max, step, val, oninput, valText){
   const row = document.createElement('div'); row.className = 'row';
   const lab = document.createElement('label'); lab.textContent = label;
@@ -211,78 +369,178 @@ function sliderRow(label, min, max, step, val, oninput, valText){
   inp.oninput = ()=>{ v.textContent = valText(parseFloat(inp.value)); oninput(parseFloat(inp.value)); };
   row.append(lab, mk, v); return {row:row, inp:inp, v:v};
 }
-function liveRetuneChip(ch){
-  const n = trackNodes[ch.uid]; if(!n) return;
-  try{ n.src.playbackRate.value = ch.speed; }catch(e){}
+function numRowTicks(labels){
+  const d = document.createElement('div'); d.className = 'ticks';
+  labels.forEach(t=>{ const s = document.createElement('span'); s.textContent = t; d.appendChild(s); });
+  return d;
+}
+function liveRetuneClip(ch){
+  const n = tl.nodes[ch.uid]; if(!n) return;
   try{ n.src.detune.value = ch.pitch * 100; }catch(e){}
 }
-function renderChipEditor(){
-  const ch = chips.find(x=>x.uid===selectedUid);
-  const ed = $('chipEditor');
+function renderClipEditor(){
+  const ch = clips.find(x=>x.uid===selectedUid);
+  const ed = $('clipEditor');
   if(!ch){ ed.classList.add('hidden'); return; }
   ed.classList.remove('hidden');
   ed.innerHTML = '';
   const name = document.createElement('div'); name.className = 'ce-name'; name.textContent = ch.sample.id;
-  const pitch = sliderRow('PITCH', -24, 24, 1, ch.pitch, v=>{ ch.pitch = v; liveRetuneChip(ch); }, v=>(v>0?'+':'')+v);
+  const pitch = sliderRow('PITCH', -24, 24, 0.1, ch.pitch, v=>{ ch.pitch = v; pitchNum.value = v.toFixed(1); liveRetuneClip(ch); }, v=>(v>0?'+':'')+v.toFixed(1));
+  const pitchNum = document.createElement('input'); pitchNum.className = 'numbox'; pitchNum.type = 'number';
+  pitchNum.min = -24; pitchNum.max = 24; pitchNum.step = 0.1; pitchNum.value = ch.pitch.toFixed(1);
+  pitchNum.onchange = ()=>{ let v = Math.max(-24, Math.min(24, parseFloat(pitchNum.value) || 0)); ch.pitch = v; pitch.inp.value = v; pitch.v.textContent = (v>0?'+':'')+v.toFixed(1); pitchNum.value = v.toFixed(1); liveRetuneClip(ch); };
+  const pitchRow2 = document.createElement('div'); pitchRow2.className = 'row';
+  pitchRow2.append(document.createElement('label'), pitchNum);
+  pitchRow2.firstChild.textContent = 'SET';
   const pitchPresets = document.createElement('div'); pitchPresets.className = 'row'; pitchPresets.style.flexWrap = 'wrap';
   [-24,-12,0,12,24].forEach(sp=>{
     const pb = document.createElement('button'); pb.className = 'btn mini'; pb.textContent = (sp>0?'+':'')+sp;
-    pb.onclick = ()=>{ ch.pitch = sp; pitch.inp.value = sp; pitch.v.textContent = (sp>0?'+':'')+sp; liveRetuneChip(ch); };
+    pb.onclick = ()=>{ ch.pitch = sp; pitch.inp.value = sp; pitch.v.textContent = (sp>0?'+':'')+sp; pitchNum.value = sp.toFixed(1); liveRetuneClip(ch); };
     pitchPresets.appendChild(pb);
   });
-  const speed = sliderRow('SPEED', 0.25, 4, 0.25, ch.speed, v=>{ ch.speed = v; liveRetuneChip(ch); }, v=>v+'x');
+  const speed = sliderRow('SPEED', 0.25, 4, 0.01, ch.speed, v=>{ ch.speed = v; speedNum.value = v.toFixed(2); stopPlayback(); renderTimeline(); }, v=>v.toFixed(2)+'x');
+  const speedNum = document.createElement('input'); speedNum.className = 'numbox'; speedNum.type = 'number';
+  speedNum.min = 0.25; speedNum.max = 4; speedNum.step = 0.01; speedNum.value = ch.speed.toFixed(2);
+  speedNum.onchange = ()=>{ let v = Math.max(0.25, Math.min(4, parseFloat(speedNum.value) || 1)); ch.speed = v; speed.inp.value = v; speed.v.textContent = v.toFixed(2)+'x'; speedNum.value = v.toFixed(2); stopPlayback(); renderTimeline(); };
+  const speedRow2 = document.createElement('div'); speedRow2.className = 'row';
+  speedRow2.append(document.createElement('label'), speedNum);
+  speedRow2.firstChild.textContent = 'SET';
   const speedPresets = document.createElement('div'); speedPresets.className = 'row'; speedPresets.style.flexWrap = 'wrap';
   [0.25,0.5,1,1.5,2,3,4].forEach(sp=>{
     const pb = document.createElement('button'); pb.className = 'btn mini'; pb.textContent = sp+'x';
-    pb.onclick = ()=>{ ch.speed = sp; speed.inp.value = sp; speed.v.textContent = sp+'x'; liveRetuneChip(ch); };
+    pb.onclick = ()=>{ ch.speed = sp; speed.inp.value = sp; speed.v.textContent = sp.toFixed(2)+'x'; speedNum.value = sp.toFixed(2); stopPlayback(); renderTimeline(); };
     speedPresets.appendChild(pb);
   });
   const btns = document.createElement('div'); btns.className = 'ce-btns';
+  const laneBtn = document.createElement('button'); laneBtn.className = 'btn sm'; laneBtn.textContent = 'LANE ' + ch.lane + ' \u21C6';
+  laneBtn.onclick = ()=>{
+    const other = ch.lane === 1 ? 2 : 1;
+    if(!overlaps(other, ch.start, clipEnd(ch), ch.uid)){ ch.lane = other; }
+    else { ch.lane = other; ch.start = laneEnd(other); }
+    stopPlayback(); renderTimeline(); renderClipEditor();
+  };
   const hear = document.createElement('button'); hear.className = 'btn sm gold'; hear.textContent = '\u25B6 HEAR IT';
-  hear.onclick = async ()=>{ ensureAudio(); stopTrack(); stopPreview(); const buf = await loadBuf(ch.sample.id); startBuf(buf, {pitch:ch.pitch, speed:ch.speed}); };
+  hear.onclick = async ()=>{ ensureAudio(); stopPlayback(); stopPreview(); const buf = await loadBuf(ch.sample.id); startBuf(audioCtx, buf, {pitch:ch.pitch, speed:ch.speed}); };
   const rm = document.createElement('button'); rm.className = 'btn sm red'; rm.textContent = '\u2715 REMOVE';
-  rm.onclick = ()=>{ removeChip(ch.uid); };
-  btns.append(hear, rm);
-  ed.append(name, pitch.row, pitchPresets, speed.row, speedPresets, btns);
+  rm.onclick = ()=>{ removeClip(ch.uid); };
+  btns.append(laneBtn, hear, rm);
+  ed.append(name, pitch.row, numRowTicks(['-24','0','+24']), pitchRow2, pitchPresets, speed.row, numRowTicks(['0.25\u00D7','1\u00D7','4\u00D7']), speedRow2, speedPresets, btns);
 }
-function removeChip(uid){
-  if(trackNodes[uid] || (trackState.node && chips[trackState.idx] && chips[trackState.idx].uid===uid)) stopTrack();
-  chips = chips.filter(x=>x.uid!==uid);
-  if(selectedUid===uid){ selectedUid = null; $('chipEditor').classList.add('hidden'); }
-  renderChips();
+function removeClip(uid){
+  stopPlayback();
+  clips = clips.filter(x=>x.uid!==uid);
+  if(selectedUid===uid){ selectedUid = null; $('clipEditor').classList.add('hidden'); }
+  renderTimeline();
 }
 
-// ---------- track transport: each chip plays once, in order ----------
-function playTrack(){
+// ---------- timeline transport ----------
+async function playTrack(){
   ensureAudio();
-  if(trackState.paused){ audioCtx.resume(); trackState.paused = false; trackState.playing = true; return; }
-  if(!chips.length) return;
-  stopPreview(); stopTrack();
-  trackState.playing = true; trackState.idx = 0;
-  playChipAt(0);
-}
-async function playChipAt(i){
-  if(!trackState.playing) return;
-  if(i>=chips.length){ trackState.playing = false; trackState.idx = 0; trackState.node = null; return; }
-  trackState.idx = i;
-  const ch = chips[i];
-  const tok = trackToken;
-  const buf = await loadBuf(ch.sample.id);
-  if(tok!==trackToken || !trackState.playing || trackState.idx!==i || chips[i]!==ch) return;
-  const n = startBuf(buf, {pitch:ch.pitch, speed:ch.speed});
-  trackState.node = n; trackNodes[ch.uid] = n;
-  n.src.onended = ()=>{ delete trackNodes[ch.uid]; if(trackState.playing && trackState.idx===i) playChipAt(i+1); };
+  if(tl.paused){ audioCtx.resume(); tl.paused = false; tl.playing = true; return; }
+  if(!clips.length) return;
+  stopPreview(); stopPlayback();
+  const tok = ++playToken;
+  try{ for(const c of clips) await loadBuf(c.sample.id); }
+  catch(e){ console.error(e); status('A sample did not load — check connection and try again.'); return; }
+  if(tok!==playToken) return;
+  tl.playing = true; tl.paused = false; tl.playFrom = 0; tl.ctxStart = audioCtx.currentTime;
+  tl.nodes = {};
+  let lastUid = null, lastEnd = -1;
+  clips.forEach(c=>{
+    const buf = bufCache[c.sample.id + '@main'];
+    const n = startBuf(audioCtx, buf, {pitch:c.pitch, speed:c.speed}, tl.ctxStart + c.start);
+    tl.nodes[c.uid] = n;
+    if(clipEnd(c) > lastEnd){ lastEnd = clipEnd(c); lastUid = c.uid; }
+  });
+  if(lastUid && tl.nodes[lastUid]){
+    tl.nodes[lastUid].src.onended = ()=>{ if(tl.playing){ stopPlayback(); } };
+  }
+  tl.raf = requestAnimationFrame(playheadLoop);
 }
 function pauseTrack(){
-  if(trackState.playing && !trackState.paused){ audioCtx.suspend(); trackState.paused = true; }
+  if(tl.playing && !tl.paused){ audioCtx.suspend(); tl.paused = true; }
 }
 function clearTrack(){
-  stopTrack(); stopPreview();
-  chips = []; selectedUid = null;
-  $('chipEditor').classList.add('hidden');
-  renderChips();
+  stopPlayback(); stopPreview();
+  clips = []; selectedUid = null;
+  $('clipEditor').classList.add('hidden');
+  renderTimeline();
 }
-renderGames(); renderChips();
+
+// ---------- MP3 export (WAV fallback if the encoder will not load) ----------
+function ensureLame(){
+  if(window.lamejs) return Promise.resolve(true);
+  return new Promise(res=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js';
+    let done = false;
+    const finish = ok=>{ if(!done){ done = true; res(ok); } };
+    s.onload = ()=>finish(!!window.lamejs);
+    s.onerror = ()=>finish(false);
+    setTimeout(()=>finish(!!window.lamejs), 12000);
+    document.head.appendChild(s);
+  });
+}
+function encodeWav(buf){
+  const n = buf.length, ch = 2, sr = buf.sampleRate;
+  const out = new DataView(new ArrayBuffer(44 + n * ch * 2));
+  function str(o, s){ for(let i=0; i<s.length; i++) out.setUint8(o+i, s.charCodeAt(i)); }
+  str(0,'RIFF'); out.setUint32(4, 36 + n*ch*2, true); str(8,'WAVE'); str(12,'fmt ');
+  out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, ch, true);
+  out.setUint32(24, sr, true); out.setUint32(28, sr*ch*2, true); out.setUint16(32, ch*2, true); out.setUint16(34, 16, true);
+  str(36,'data'); out.setUint32(40, n*ch*2, true);
+  const l = buf.getChannelData(0), r = buf.numberOfChannels > 1 ? buf.getChannelData(1) : l;
+  for(let i=0; i<n; i++){
+    const a = Math.max(-1, Math.min(1, l[i])), b = Math.max(-1, Math.min(1, r[i]));
+    out.setInt16(44 + i*4, a<0 ? a*0x8000 : a*0x7FFF, true);
+    out.setInt16(44 + i*4 + 2, b<0 ? b*0x8000 : b*0x7FFF, true);
+  }
+  return out.buffer;
+}
+function showDownload(blob, filename, label){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.textContent = label;
+  const dl = $('dlArea'); dl.innerHTML = ''; dl.appendChild(a);
+}
+async function exportMp3(){
+  if(!clips.length){ status('Add a sample to your track first.'); return; }
+  status('Mixing…');
+  try{
+    const sr = 44100;
+    const fullEnd = timelineEnd();
+    const end = Math.min(fullEnd, 180);
+    const off = new OfflineAudioContext(2, Math.ceil(sr * end), sr);
+    const comp = off.createDynamicsCompressor(); comp.connect(off.destination);
+    for(const c of clips){
+      if(c.start >= end) continue;
+      const buf = await loadBuf(c.sample.id, off);
+      const src = off.createBufferSource(); src.buffer = buf;
+      src.playbackRate.value = c.speed;
+      try{ src.detune.value = c.pitch * 100; }catch(e){}
+      const g = off.createGain(); g.gain.value = 0.9;
+      src.connect(g); g.connect(comp); src.start(c.start);
+    }
+    const rendered = await off.startRendering();
+    const ok = await ensureLame();
+    if(ok){
+      const enc = new lamejs.Mp3Encoder(2, rendered.sampleRate, 128);
+      const L = rendered.getChannelData(0), R = rendered.numberOfChannels > 1 ? rendered.getChannelData(1) : L;
+      const chunks = [], block = 1152;
+      const to16 = f=>{ const a = new Int16Array(f.length); for(let i=0; i<f.length; i++){ const s = Math.max(-1, Math.min(1, f[i])); a[i] = s<0 ? s*0x8000 : s*0x7FFF; } return a; };
+      for(let i=0; i<L.length; i+=block){
+        const out = enc.encodeBuffer(to16(L.subarray(i, i+block)), to16(R.subarray(i, i+block)));
+        if(out.length) chunks.push(out);
+      }
+      const fin = enc.flush(); if(fin.length) chunks.push(fin);
+      showDownload(new Blob(chunks, {type:'audio/mpeg'}), 'qu33ph-song.mp3', '\u2B07 DOWNLOAD YOUR SONG (MP3)');
+      status(end < fullEnd ? 'Done — first 3 minutes exported as MP3.' : 'Done — your song is ready as MP3.');
+    } else {
+      showDownload(new Blob([encodeWav(rendered)], {type:'audio/wav'}), 'qu33ph-song.wav', '\u2B07 DOWNLOAD YOUR SONG (WAV — MP3 encoder did not load)');
+      status('MP3 encoder did not load — WAV fallback ready below.');
+    }
+  }catch(e){ console.error(e); status('Export hit a snag — try again.'); }
+}
+renderGames(); renderTimeline();
 </script>
 </body>
 </html>
