@@ -118,6 +118,14 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .pb-bucket .pb-mouth{position:absolute;left:12%;top:4%;width:76%;height:14%;border-radius:50%;background:#1c1e20;box-shadow:inset 0 2px 4px #000;}
 .pb-points{position:absolute;z-index:7;transform:translateY(-50%);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(13px,4vw,20px);text-shadow:0 2px 6px #000;pointer-events:none;}
 .pb-marker{position:absolute;z-index:9;transform:translate(-50%,-50%);pointer-events:none;}.pb-marker img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
+.pb-prev{position:absolute;left:47.5%;transform:translate(-50%,-50%);opacity:.6;pointer-events:none;z-index:7;}
+.pb-prev img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
+#pbPrev0{bottom:45px;} #pbPrev0 img{width:50px;height:50px;transform:rotate(60deg);}
+#pbPrev1{bottom:91px;} #pbPrev1 img{width:50px;height:50px;transform:rotate(60deg);}
+#pbPrev2{bottom:137px;} #pbPrev2 img{width:80px;height:50px;transform:rotate(105deg);}
+.pb-swipe-hint{position:absolute;left:47.5%;bottom:200px;transform:translateX(-50%);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;z-index:7;white-space:nowrap;}
+.pb-dead{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:7;}
+.pb-dead img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
 .pb-aim{position:absolute;z-index:8;height:0;border-top:3px dashed #fff;transform-origin:0 50%;pointer-events:none;opacity:.85;}
 .pb-pop{position:absolute;z-index:12;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;text-align:center;}
 .pb-pop.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
@@ -379,7 +387,7 @@ document.addEventListener('dragstart', function(e){
 
 <div id="peefScreen" class="screen hidden">
   <button class="marker-btn" onclick="peefBack()">&larr; BACK</button>
-  <div class="hud"><span class="area" id="pbRoundHud">ROUND 1/3</span><span id="pbMarkersHud">●●●</span><span class="score" id="pbScoreHud">0</span></div>
+  <div class="hud"><span class="area" id="pbRoundHud">ROUND 1/3</span><span class="score" id="pbScoreHud">0</span></div>
   <div id="pbField" style="position:absolute;inset:0;">
     <img class="field" src="originalfield.png">
     <div class="pb-points" style="left:calc(8% + 45px);top:25%;">+200</div>
@@ -388,11 +396,15 @@ document.addEventListener('dragstart', function(e){
     <div class="pb-bucket" style="left:8%;top:50%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
     <div class="pb-points" style="left:calc(8% + 45px);top:75%;">+50</div>
     <div class="pb-bucket" style="left:8%;top:75%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
-    <div class="pb-marker" id="pbMarker" style="left:85%;top:60%;"><img id="pbMarkerImg" src="green.png" alt=""></div>
+    <div class="pb-prev" id="pbPrev0"><img src="green.png" alt=""></div>
+    <div class="pb-prev" id="pbPrev1"><img src="red.png" alt=""></div>
+    <div class="pb-prev" id="pbPrev2"><img src="blue.png" alt=""></div>
+    <div class="pb-swipe-hint">swipe to roll</div>
+    <div class="pb-marker" id="pbMarker" style="display:none;"><img id="pbMarkerImg" src="green.png" alt=""></div>
     <div class="pb-aim" id="pbAim" style="width:0px;"></div>
   </div>
   <div class="pb-pop" id="pbPop"></div>
-  <div class="pb-hint">FLICK LEFT TO THROW &bull; PEEF OFF THE LEFT EDGE INTO A BUCKET &bull; TOP BUCKET WORTH MOST</div>
+  <div class="pb-hint">PEEF OFF THE LEFT EDGE INTO A BUCKET &bull; TOP BUCKET WORTH MOST</div>
   <div class="total-screen hidden" id="pbTotalScreen">
     <div class="total-head">
       <h2>TOTAL SCORE</h2>
@@ -408,15 +420,14 @@ document.addEventListener('dragstart', function(e){
 </div>
 
 <script>
-// ============ PEEF BUCKETS — the original field, buckets vertical on the left ============
-// The 3 original markers (green, red, blue) take turns, 3 rounds x 3 = 9 throws.
-// Throw from the right side of the field: flick left, and the marker must PEEF
-// off the left edge — over the counter — dropping into one of the 3 buckets
-// stacked vertically on the left side. Buckets face up, so the marker must be
-// falling when it reaches the bucket column, and it drops into the first
-// bucket mouth at or below its height: top +200, middle +100, bottom +50.
-// Top/bottom/right walls bounce like the original field's hitboxes; the left
-// edge is open, and anything that peefs past the buckets is a miss.
+// ============ PEEF BUCKETS — the original marker game, plus buckets ============
+// Carried over from the original game exactly: the field, the previews lined
+// up at the bottom, the swipe-to-roll throw, and the physics — frame-based,
+// launch velocity = swipe px * 0.2, curve = swipe dx * 0.0003, drag 0.94/frame,
+// spin decay 0.96/frame, 1-second life, right-wall bounce, top bounce, and
+// falling off the left edge = PEEF. The one change: peefing no longer ends
+// the marker — it rolls on into the bucket column, and dropping into a bucket
+// scores (top +200, middle +100, bottom +50). 3 rounds x 3 markers.
 const pb$=id=>document.getElementById(id);
 const PB_MARKERS=[
   {c:'#2ecc71', d:'#1e8449', file:'green.png', w:50, h:50},
@@ -424,18 +435,21 @@ const PB_MARKERS=[
   {c:'#3498db', d:'#1a5276', file:'blue.png', w:80, h:50},
 ];
 const PB_BUCKETS=[
-  {x:8, by:25, mouth:21, pts:200, label:'+200'},
-  {x:8, by:50, mouth:46, pts:100, label:'+100'},
-  {x:8, by:75, mouth:71, pts:50, label:'+50'},
+  {by:0.25, pts:200, label:'+200'},
+  {by:0.50, pts:100, label:'+100'},
+  {by:0.75, pts:50, label:'+50'},
 ];
-const PB_THROW={x:85, y:60};
-const PB_GRAV=200;    // %/s^2, pulls the marker back down
-const PB_SCALE=0.45;  // flick px -> %/s of throw velocity
+let PB_W=0, PB_H=0, PB_LEFT=0, PB_RIGHT=0, PB_CX=0, PB_LAUNCH=0, PB_END=0;
 let pbRound=1, pbScore=0, pbLeft=3, pbRoundScores=[0,0,0];
-let pbFlying=false, pbVX=0, pbVY=0, pbX=PB_THROW.x, pbY=PB_THROW.y, pbLast=0, pbRaf=0, pbDrag=null, pbFlightT=0, pbRot=0;
+let pbFlying=false, pbVX=0, pbVY=0, pbX=0, pbY=0, pbCurve=0, pbRot=0, pbSpin=0, pbLife=0, pbRaf=0, pbDrag=null;
+function pbMetrics(){
+  const f=pb$('pbField'); PB_W=f.clientWidth; PB_H=f.clientHeight;
+  PB_LEFT=PB_W*0.20; PB_RIGHT=PB_W*0.75; PB_CX=PB_W*0.475; PB_LAUNCH=PB_H-40; PB_END=PB_H*0.11;
+}
 function openPeef(){
   pb$('menuScreen').classList.add('hidden');
   pb$('peefScreen').classList.remove('hidden');
+  pbMetrics();
   pbStart();
 }
 function peefBack(){
@@ -444,39 +458,24 @@ function peefBack(){
   pb$('peefScreen').classList.add('hidden');
   showMenu();
 }
+function pbClearDead(){
+  document.querySelectorAll('#pbField .pb-dead').forEach(el=>el.remove());
+}
 function pbStart(){
   pbRound=1; pbScore=0; pbRoundScores=[0,0,0]; pbLeft=3;
   pb$('pbTotalScreen').classList.add('hidden');
-  pbUpdateHud(); pbSpawnMarker();
+  pbClearDead();
+  pb$('pbMarker').style.display='none';
+  for(let i=0;i<3;i++) pb$('pbPrev'+i).style.display='block';
+  pbUpdateHud();
 }
 function pbUpdateHud(){
   pb$('pbRoundHud').textContent='ROUND '+pbRound+'/3';
-  const used=3-pbLeft;
-  let dots='';
-  for(let i=0;i<3;i++){
-    if(i<used) dots+='<span style="color:#555">○</span>';
-    else dots+='<span style="color:'+PB_MARKERS[i].c+'">●</span>';
-  }
-  pb$('pbMarkersHud').innerHTML=dots;
   pb$('pbScoreHud').textContent=pbScore;
-}
-function pbSpawnMarker(){
-  pbFlying=false; pbX=PB_THROW.x; pbY=PB_THROW.y; pbRot=0;
-  const m=pb$('pbMarker');
-  const col=PB_MARKERS[3-pbLeft];
-  const img=pb$('pbMarkerImg');
-  img.src=col.file;
-  img.style.width='min('+col.w+'px,'+(col.w*12/50)+'vw)';
-  img.style.height='min('+col.h+'px,12vw)';
-  img.style.transform='rotate(0rad)';
-  img.onerror=()=>{ m.style.background='radial-gradient(circle at 35% 30%, #ffffff 0%, '+col.c+' 35%, '+col.d+' 100%)'; m.style.borderRadius='50%'; };
-  m.style.background=''; m.style.borderRadius='';
-  m.style.transition=''; m.style.opacity='1'; m.style.transform='translate(-50%,-50%) scale(1)';
-  pbPlaceMarker();
 }
 function pbPlaceMarker(){
   const m=pb$('pbMarker');
-  m.style.left=pbX+'%'; m.style.top=pbY+'%';
+  m.style.left=pbX+'px'; m.style.top=pbY+'px';
 }
 let pbPopTimer=0;
 function pbPop(text, miss){
@@ -486,50 +485,74 @@ function pbPop(text, miss){
 }
 function pbThrow(dx, dy){
   if(pbFlying || pbLeft<=0) return;
-  pbVX=dx*PB_SCALE; pbVY=dy*PB_SCALE;
-  pbFlying=true; pbLast=performance.now(); pbFlightT=0;
-  const step=(t)=>{
+  const idx=3-pbLeft;
+  const col=PB_MARKERS[idx];
+  pb$('pbPrev'+idx).style.display='none';
+  const m=pb$('pbMarker'), img=pb$('pbMarkerImg');
+  img.src=col.file; img.style.width=col.w+'px'; img.style.height=col.h+'px';
+  img.onerror=()=>{ m.style.background='radial-gradient(circle at 35% 30%, #ffffff 0%, '+col.c+' 35%, '+col.d+' 100%)'; m.style.borderRadius='50%'; };
+  m.style.background=''; m.style.borderRadius='';
+  m.style.display='block'; m.style.transition=''; m.style.opacity='1';
+  m.style.transform='translate(-50%,-50%)';
+  pbX=PB_CX; pbY=PB_LAUNCH; pbVX=dx*0.2; pbVY=dy*0.2; pbCurve=dx*0.0003;
+  pbRot=Math.PI/3; pbSpin=0.08; pbLife=0; pbFlying=true;
+  pbPlaceMarker();
+  img.style.transform='rotate('+pbRot+'rad)';
+  const bx=PB_W*0.08;
+  const step=()=>{
     if(!pbFlying) return;
-    const dt=Math.min(0.033,(t-pbLast)/1000); pbLast=t; pbFlightT+=dt;
-    pbVY+=PB_GRAV*dt; pbX+=pbVX*dt; pbY+=pbVY*dt;
-    if(pbY<=4){ pbY=4; pbVY=Math.abs(pbVY)*0.7; }
-    if(pbY>=92){ pbY=92; pbVY=-Math.abs(pbVY)*0.7; pbVX*=0.8; }
-    if(pbX>=97){ pbX=97; pbVX=-Math.abs(pbVX)*0.7; }
+    pbLife+=1/60;
+    if(pbLife>=1){ pbVX=0; pbVY=0; }
+    pbVX+=pbCurve; pbX+=pbVX; pbY+=pbVY;
+    pbVX*=0.94; pbVY*=0.94;
+    pbRot+=pbSpin; pbSpin*=0.96;
+    if(pbX>PB_RIGHT){ pbX=PB_RIGHT; pbVX*=-0.4; }
+    if(pbY<PB_END){ pbY=PB_END; pbVY*=-0.2; }
     pbPlaceMarker();
-    pbRot+=6*dt; pb$('pbMarkerImg').style.transform='rotate('+pbRot+'rad)';
-    // over the bucket column and falling: drop into the first mouth at or below
-    if(pbVX<0 && pbX<=15 && pbX>=1 && pbVY>0){
-      for(const b of PB_BUCKETS){ if(b.mouth>=pbY){ pbLand(b); return; } }
+    img.style.transform='rotate('+pbRot+'rad)';
+    if(pbX<PB_LEFT){
+      for(const b of PB_BUCKETS){
+        const by=PB_H*b.by;
+        if(Math.abs(pbX-bx)<=45 && Math.abs(pbY-by)<=45){ pbLand(b); return; }
+      }
+      if(pbX<bx-45){ pbLand(null); return; }
     }
-    if(pbX<1){ pbLand(null); return; }
-    if(pbFlightT>5){ pbLand(null); return; }
-    if(pbY>=92 && Math.abs(pbVX)<10 && Math.abs(pbVY)<10){ pbLand(null); return; }
+    if(pbLife>=1 || (Math.abs(pbVX)<0.05 && Math.abs(pbVY)<0.05) || pbY>PB_H+100){ pbLand(null); return; }
     pbRaf=requestAnimationFrame(step);
   };
   pbRaf=requestAnimationFrame(step);
 }
 function pbLand(hit){
   pbFlying=false;
+  const m=pb$('pbMarker');
   if(hit){
     pbScore+=hit.pts; pbRoundScores[pbRound-1]+=hit.pts;
     try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
-    const m=pb$('pbMarker');
-    m.style.transition='all .25s'; m.style.left=hit.x+'%'; m.style.top=hit.by+'%';
+    m.style.transition='all .25s';
+    m.style.left=(PB_W*0.08)+'px'; m.style.top=(PB_H*hit.by)+'px';
     m.style.transform='translate(-50%,-50%) scale(.3)'; m.style.opacity='0';
-    setTimeout(()=>{ m.style.transition=''; }, 300);
+    setTimeout(()=>{ m.style.transition=''; m.style.display='none'; }, 300);
     pbPop(hit.label, false);
   } else {
     pbPop('MISS', true);
+    // missed markers stay on the field like the original's stopped markers
+    // until the round ends — clone this one static, the flyer resets next throw
+    const dead=m.cloneNode(true);
+    dead.removeAttribute('id'); dead.className='pb-dead';
+    const di=dead.querySelector('img'); if(di) di.removeAttribute('id');
+    pb$('pbField').appendChild(dead);
+    m.style.display='none';
   }
-  pbLeft--; pbUpdateHud();
+  pbLeft--;
   setTimeout(pbAfterThrow, hit?500:900);
 }
 function pbAfterThrow(){
-  if(pbLeft>0){ pbSpawnMarker(); return; }
+  if(pbLeft>0){ pbUpdateHud(); return; }
   if(pbRound<3){
-    pbRound++; pbLeft=3; pbUpdateHud();
+    pbRound++; pbLeft=3; pbClearDead();
+    for(let i=0;i<3;i++) pb$('pbPrev'+i).style.display='block';
+    pbUpdateHud();
     pbPop('ROUND '+pbRound+' — 3 MARKERS', false);
-    setTimeout(pbSpawnMarker, 900);
     return;
   }
   pbShowTotal();
@@ -549,12 +572,17 @@ function pbDrawAim(){
   const dx=pbDrag.x-pbDrag.x0, dy=pbDrag.y-pbDrag.y0;
   const len=Math.min(Math.hypot(dx,dy), 140);
   const aim=pb$('pbAim');
-  aim.style.left=PB_THROW.x+'%'; aim.style.top=PB_THROW.y+'%';
+  aim.style.left=PB_CX+'px'; aim.style.top=PB_LAUNCH+'px';
   aim.style.width=len+'px';
   aim.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
 }
 pb$('pbField').addEventListener('pointerdown', e=>{
   if(pbFlying || pbLeft<=0) return;
+  pbMetrics();
+  const r=pb$('pbField').getBoundingClientRect();
+  const sx=e.clientX-r.left;
+  if(sx<PB_LEFT || sx>PB_RIGHT) return;   // only a swipe inside the field rolls a marker
+  try{ pb$('pbField').setPointerCapture(e.pointerId); }catch(_){}
   pbDrag={x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY};
   pbDrawAim();
 });
@@ -565,7 +593,6 @@ pb$('pbField').addEventListener('pointerup', ()=>{
   if(!pbDrag) return;
   const dx=pbDrag.x-pbDrag.x0, dy=pbDrag.y-pbDrag.y0; pbDrag=null;
   pb$('pbAim').style.width='0px';
-  if(Math.hypot(dx,dy)<12) return;
   pbThrow(dx, dy);
 });
 pb$('pbField').addEventListener('pointercancel', ()=>{
