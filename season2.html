@@ -84,6 +84,8 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 
 #selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px;overflow-y:auto}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.select-wrap{width:min(720px,96vw)}.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.choices.choices-capped{padding-left:28px}.choice{position:relative;background:#000;border:3px solid #fff;border-radius:4px 10px 10px 4px;padding:14px 6px 10px;cursor:pointer;min-height:200px;display:flex;align-items:center;justify-content:center}.choice::before{content:"";position:absolute;left:-28px;top:2px;bottom:2px;width:28px;background:#000;border:3px solid #fff;border-radius:8px 2px 2px 8px}.choice:hover{border-color:#ffd24a}.choice:hover::before{border-color:#ffd24a}.choice.sel{border-color:#ffd24a;box-shadow:0 0 14px rgba(255,210,74,.45)}.choice.sel::before{border-color:#ffd24a}.choice .rider-prev{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}.choice .rider-prev .rp-char{height:128px;width:auto;max-width:92%;object-fit:contain;position:relative;z-index:2;margin-bottom:-4px}.choice .rider-prev .rp-board-wrap{height:60px;width:150px;display:flex;align-items:center;justify-content:center;overflow:visible}.choice .rider-prev .rp-board{width:60px;height:150px;object-fit:contain;transform:rotate(90deg);flex:none}
 .choice-pic{background:none;border:none;padding:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}.choice-pic img{height:128px;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 4px 5px rgba(0,0,0,.7))}
+/* 7 characters in a 2-column grid leaves the last one alone on its row — centre it so the grid reads even */
+#charChoices .choice-pic:last-child:nth-child(odd){grid-column:1/-1;justify-self:center}
 .select-rules{margin:20px 0 8px;color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;text-shadow:0 2px 8px #000,0 0 2px #000;line-height:1.7}.select-rules .sr-how{font-size:12px;letter-spacing:1px}.select-rules .sr-score{font-size:11px;letter-spacing:.5px}.select-rules .sr-score span{color:#ffd24a;letter-spacing:2px;margin-right:6px}
 
 #gameScreen{touch-action:none;user-select:none;-webkit-user-select:none}
@@ -105,6 +107,24 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
   font-family:'Arial Black',Arial,sans-serif;font-size:clamp(22px,7vw,40px);letter-spacing:3px;text-shadow:0 3px 10px #000;
   pointer-events:none;opacity:0;transition:opacity .15s, transform .15s;}
 .peef-label.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+
+/* ============ PEEF BUCKETS — third Season 2 game ============ */
+#peefScreen{touch-action:none;user-select:none;-webkit-user-select:none}
+.pb-bucket{position:absolute;z-index:7;width:min(64px,14vw);height:min(78px,17vw);transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 5px 5px rgba(0,0,0,.7));}
+.pb-bucket .pb-shadow{position:absolute;left:-8%;bottom:-8%;width:116%;height:12%;border-radius:50%;background:rgba(0,0,0,.35);filter:blur(2px);}
+.pb-bucket .pb-body{position:absolute;left:2%;top:16%;width:96%;height:84%;clip-path:polygon(0 0,100% 0,84% 100%,16% 100%);background:linear-gradient(90deg,#5c6167 0%,#c9ced4 28%,#eef1f3 45%,#9aa0a7 70%,#565b62 100%);}
+.pb-bucket .pb-shine{position:absolute;left:30%;top:20%;width:10%;height:76%;background:rgba(255,255,255,.35);border-radius:50%;}
+.pb-bucket .pb-rim{position:absolute;left:0;top:0;width:100%;height:22%;border-radius:50%;background:radial-gradient(ellipse at 50% 40%,#e8ebee 0%,#aab0b7 55%,#6d7278 100%);box-shadow:inset 0 0 0 2px #565b62;}
+.pb-bucket .pb-mouth{position:absolute;left:12%;top:4%;width:76%;height:14%;border-radius:50%;background:#1c1e20;box-shadow:inset 0 2px 4px #000;}
+.pb-points{position:absolute;z-index:7;transform:translateX(-50%);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(13px,4vw,20px);text-shadow:0 2px 6px #000;pointer-events:none;}
+.pb-marker{position:absolute;z-index:9;width:min(30px,7vw);height:min(30px,7vw);border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff7a7a,#c81e1e 60%,#7a0d0d);border:2px solid #fff;box-shadow:0 4px 6px rgba(0,0,0,.7);transform:translate(-50%,-50%);pointer-events:none;}
+.pb-aim{position:absolute;z-index:8;height:0;border-top:3px dashed #fff;transform-origin:0 50%;pointer-events:none;opacity:.85;}
+.pb-pop{position:absolute;z-index:12;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;text-align:center;}
+.pb-pop.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.pb-pop.miss{color:#ff5a5a;}
+.pb-hint{position:absolute;z-index:10;left:50%;bottom:12px;transform:translateX(-50%);width:92vw;text-align:center;color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;}
+.pb-card-bucket{display:flex;align-items:flex-end;justify-content:center;height:110px;padding-bottom:6px;box-sizing:border-box;}
+.pb-card-bucket .pb-bucket{position:relative;transform:none;left:auto;top:auto;}
 
 /* ============ THEME TREATMENT — mirrors index.html's arcade-menu theming ============
    "inverted" flips the whole page (same as everywhere else in the arcade).
@@ -283,6 +303,11 @@ document.addEventListener('dragstart', function(e){
         <img class="cab-media" src="qu33phmusicposter.png" alt="Qu33ph Music">
         <div class="cab-label">MUSIC</div>
       </div>
+      <div class="cab-card" onclick="openPeef()">
+        <div class="cab-marquee"></div>
+        <div class="cab-media pb-card-bucket"><div class="pb-bucket"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div></div>
+        <div class="cab-label">PEEF BUCKETS</div>
+      </div>
       <div class="cab-card soon">
         <div class="cab-marquee"></div>
         <video class="cab-media" src="qu33ph10.mp4" autoplay loop muted playsinline preload="metadata"></video>
@@ -352,6 +377,168 @@ document.addEventListener('dragstart', function(e){
   </div>
 </div>
 
+<div id="peefScreen" class="screen hidden">
+  <button class="marker-btn" onclick="peefBack()">&larr; BACK</button>
+  <div class="hud"><span class="area" id="pbRoundHud">ROUND 1/3</span><span id="pbMarkersHud">●●●</span><span class="score" id="pbScoreHud">0</span></div>
+  <div id="pbField" style="position:absolute;inset:0;">
+    <img class="field" src="originalfield.png">
+    <div class="pb-points" style="left:26%;bottom:calc(14% + 92px);">+50</div>
+    <div class="pb-bucket" style="left:26%;bottom:14%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
+    <div class="pb-points" style="left:52%;bottom:calc(14% + 92px);">+100</div>
+    <div class="pb-bucket" style="left:52%;bottom:14%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
+    <div class="pb-points" style="left:78%;bottom:calc(14% + 92px);">+200</div>
+    <div class="pb-bucket" style="left:78%;bottom:14%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
+    <div class="pb-marker" id="pbMarker"></div>
+    <div class="pb-aim" id="pbAim" style="width:0px;"></div>
+  </div>
+  <div class="pb-pop" id="pbPop"></div>
+  <div class="pb-hint">FLICK TO THROW &bull; LAND A MARKER IN A BUCKET &bull; FURTHEST = MOST POINTS</div>
+  <div class="total-screen hidden" id="pbTotalScreen">
+    <div class="total-head">
+      <h2>TOTAL SCORE</h2>
+      <div class="total-sum" id="pbTotalSum">0</div>
+      <div class="total-best" id="pbTotalBest">BEST 0</div>
+      <div class="total-btns">
+        <button class="s2mk" onclick="pbStart()">PLAY AGAIN</button>
+        <button class="s2mk flip" onclick="peefBack()">MENU</button>
+      </div>
+    </div>
+    <div class="total-rows" id="pbTotalRows"></div>
+  </div>
+</div>
+
+<script>
+// ============ PEEF BUCKETS — the original field, 3 buckets in a line ============
+// Throw from the start edge: flick to throw, gravity arcs the marker down.
+// Buckets: near +50, middle +100, far +200. 3 rounds, 3 markers each = 9 markers.
+const PB_BUCKETS=[
+  {x:26, pts:50, label:'+50'},
+  {x:52, pts:100, label:'+100'},
+  {x:78, pts:200, label:'+200'},
+];
+const PB_GROUND=14;   // bottom % of the ground line the buckets sit on
+const PB_GRAV=300;    // %/s^2, pulls the marker back to the ground
+const PB_SCALE=0.45;  // flick px -> %/s of throw velocity
+let pbRound=1, pbScore=0, pbLeft=3, pbRoundScores=[0,0,0];
+let pbFlying=false, pbVX=0, pbVY=0, pbX=6, pbY=0, pbLast=0, pbRaf=0, pbDrag=null;
+const pb$=id=>document.getElementById(id);
+function openPeef(){
+  pb$('menuScreen').classList.add('hidden');
+  pb$('peefScreen').classList.remove('hidden');
+  pbStart();
+}
+function peefBack(){
+  cancelAnimationFrame(pbRaf); pbFlying=false; pbDrag=null;
+  pb$('pbTotalScreen').classList.add('hidden');
+  pb$('peefScreen').classList.add('hidden');
+  showMenu();
+}
+function pbStart(){
+  pbRound=1; pbScore=0; pbRoundScores=[0,0,0]; pbLeft=3;
+  pb$('pbTotalScreen').classList.add('hidden');
+  pbUpdateHud(); pbSpawnMarker();
+}
+function pbUpdateHud(){
+  pb$('pbRoundHud').textContent='ROUND '+pbRound+'/3';
+  pb$('pbMarkersHud').textContent='●'.repeat(pbLeft)+'○'.repeat(3-pbLeft);
+  pb$('pbScoreHud').textContent=pbScore;
+}
+function pbSpawnMarker(){
+  pbFlying=false; pbX=6; pbY=0;
+  const m=pb$('pbMarker');
+  m.style.transition=''; m.style.opacity='1'; m.style.transform='translate(-50%,-50%) scale(1)';
+  pbPlaceMarker();
+}
+function pbPlaceMarker(){
+  const m=pb$('pbMarker');
+  m.style.left=pbX+'%'; m.style.bottom=(PB_GROUND+pbY)+'%';
+}
+let pbPopTimer=0;
+function pbPop(text, miss){
+  const p=pb$('pbPop'); p.textContent=text; p.classList.toggle('miss', !!miss);
+  p.classList.add('show'); clearTimeout(pbPopTimer);
+  pbPopTimer=setTimeout(()=>p.classList.remove('show'), 800);
+}
+function pbThrow(dx, dy){
+  if(pbFlying || pbLeft<=0) return;
+  pbVX=dx*PB_SCALE; pbVY=-dy*PB_SCALE;
+  pbFlying=true; pbLast=performance.now();
+  const step=(t)=>{
+    if(!pbFlying) return;
+    const dt=Math.min(0.033,(t-pbLast)/1000); pbLast=t;
+    pbVY-=PB_GRAV*dt; pbX+=pbVX*dt; pbY+=pbVY*dt;
+    if(pbY<=0){ pbY=0; pbPlaceMarker(); pbLand(); return; }
+    pbPlaceMarker(); pbRaf=requestAnimationFrame(step);
+  };
+  pbRaf=requestAnimationFrame(step);
+}
+function pbLand(){
+  pbFlying=false;
+  let hit=null;
+  for(const b of PB_BUCKETS){ if(Math.abs(pbX-b.x)<=9){ hit=b; break; } }
+  if(hit){
+    pbScore+=hit.pts; pbRoundScores[pbRound-1]+=hit.pts;
+    try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
+    const m=pb$('pbMarker');
+    m.style.transition='all .25s'; m.style.left=hit.x+'%';
+    m.style.transform='translate(-50%,-50%) scale(.3)'; m.style.opacity='0';
+    setTimeout(()=>{ m.style.transition=''; }, 300);
+    pbPop(hit.label, false);
+  } else {
+    pbPop('MISS', true);
+  }
+  pbLeft--; pbUpdateHud();
+  setTimeout(pbAfterThrow, hit?500:900);
+}
+function pbAfterThrow(){
+  if(pbLeft>0){ pbSpawnMarker(); return; }
+  if(pbRound<3){
+    pbRound++; pbLeft=3; pbUpdateHud();
+    pbPop('ROUND '+pbRound+' — 3 MARKERS', false);
+    setTimeout(pbSpawnMarker, 900);
+    return;
+  }
+  pbShowTotal();
+}
+function pbShowTotal(){
+  const best=+localStorage.getItem('qu33phPeefBest')||0;
+  if(pbScore>best){ localStorage.setItem('qu33phPeefBest', pbScore); }
+  pb$('pbTotalSum').textContent=pbScore;
+  const nb=pb$('pbTotalBest');
+  nb.textContent=(pbScore>best?'NEW BEST! ':'BEST ')+Math.max(best,pbScore);
+  nb.classList.toggle('new', pbScore>best);
+  pb$('pbTotalRows').innerHTML=pbRoundScores.map((s,i)=>'<div>ROUND '+(i+1)+': '+s+'</div>').join('');
+  pb$('pbTotalScreen').classList.remove('hidden');
+}
+function pbDrawAim(){
+  if(!pbDrag) return;
+  const dx=pbDrag.x-pbDrag.x0, dy=pbDrag.y-pbDrag.y0;
+  const len=Math.min(Math.hypot(dx,dy), 140);
+  const aim=pb$('pbAim');
+  aim.style.left='6%'; aim.style.bottom='calc('+PB_GROUND+'% + 15px)';
+  aim.style.width=len+'px';
+  aim.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
+}
+pb$('pbField').addEventListener('pointerdown', e=>{
+  if(pbFlying || pbLeft<=0) return;
+  pbDrag={x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY};
+  pbDrawAim();
+});
+pb$('pbField').addEventListener('pointermove', e=>{
+  if(!pbDrag) return; pbDrag.x=e.clientX; pbDrag.y=e.clientY; pbDrawAim();
+});
+pb$('pbField').addEventListener('pointerup', ()=>{
+  if(!pbDrag) return;
+  const dx=pbDrag.x-pbDrag.x0, dy=pbDrag.y-pbDrag.y0; pbDrag=null;
+  pb$('pbAim').style.width='0px';
+  if(Math.hypot(dx,dy)<12) return;
+  pbThrow(dx, dy);
+});
+pb$('pbField').addEventListener('pointercancel', ()=>{
+  pbDrag=null; pb$('pbAim').style.width='0px';
+});
+</script>
+
 <script>
 // SEASON 1 → straight to the Season 1 arcade menu (same cached game.html)
 function backToSeason1(){
@@ -418,7 +605,7 @@ function applyTheme(){
 }
 applyTheme();
 
-function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
+function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('peefScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');$('boardStage').classList.add('hidden');$('charChoices').classList.remove('hidden');buildCharChoices();}
 function startGame(charId, boardFile){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden');
   skateChar=SKATE_CHARS.find(c=>c.id===charId)||SKATE_CHARS[0];
