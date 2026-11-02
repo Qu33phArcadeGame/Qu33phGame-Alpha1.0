@@ -110,6 +110,7 @@ let clips = [], clipN = 0, selectedUid = null;
 let clipBoard = null;
 let tl = {playing:false, paused:false, ctxStart:0, playFrom:0, nodes:{}, raf:0};
 let playToken = 0;
+let audNode = null, audRaf = 0, audStart = 0, audClip = null;
 const $ = id => document.getElementById(id);
 const clipDur = c => 4 / c.speed;
 const clipEnd = c => c.start + clipDur(c);
@@ -158,6 +159,7 @@ function stopPreview(){
   markPreview();
 }
 function stopPlayback(){
+  stopAudPlayhead();
   playToken++;
   tl.playing = false; tl.paused = false;
   Object.values(tl.nodes).forEach(stopNode); tl.nodes = {};
@@ -175,6 +177,24 @@ function playheadLoop(){
   const pos = tl.playFrom + (audioCtx.currentTime - tl.ctxStart);
   setPlayhead(pos * PPS);
   tl.raf = requestAnimationFrame(playheadLoop);
+}
+// HEAR IT audition playhead: the audition plays the clip's buffer at its
+// speed, so in T wall seconds it covers T*speed/4 of the clip — and the
+// clip's box is (4/speed) seconds wide, so the timeline position is just
+// the clip's start plus T, whatever the speed. The line sweeps the clip's
+// own waveform and stops (with the audio) when the clip ends.
+function stopAudPlayhead(){
+  if(audNode){ try{ audNode.src.stop(); }catch(e){} audNode = null; }
+  audClip = null;
+  cancelAnimationFrame(audRaf); audRaf = 0;
+}
+function audLoop(){
+  if(!audClip) return;
+  const el = audioCtx.currentTime - audStart;
+  const dur = 4 / audClip.speed;
+  if(el >= dur){ stopPlayback(); return; }
+  setPlayhead((audClip.start + el) * PPS);
+  audRaf = requestAnimationFrame(audLoop);
 }
 async function playPreview(id){
   ensureAudio();
@@ -445,7 +465,7 @@ function renderClipEditor(){
     stopPlayback(); renderTimeline(); renderClipEditor();
   };
   const hear = document.createElement('button'); hear.className = 'btn sm gold'; hear.textContent = '\u25B6 HEAR IT';
-  hear.onclick = async ()=>{ ensureAudio(); stopPlayback(); stopPreview(); const buf = await loadBuf(ch.sample.id); startBuf(audioCtx, buf, {pitch:ch.pitch, speed:ch.speed}); };
+  hear.onclick = async ()=>{ ensureAudio(); stopPlayback(); stopPreview(); const buf = await loadBuf(ch.sample.id); audNode = startBuf(audioCtx, buf, {pitch:ch.pitch, speed:ch.speed}); audClip = ch; audStart = audioCtx.currentTime; cancelAnimationFrame(audRaf); audRaf = requestAnimationFrame(audLoop); };
   const cp = document.createElement('button'); cp.className = 'btn sm gold'; cp.textContent = 'COPY';
   cp.onclick = ()=>{ clipBoard = {sample:ch.sample, pitch:ch.pitch, speed:ch.speed, lane:ch.lane, sourceUid:ch.uid}; $('pasteBtn').classList.remove('hidden'); status('Copied ' + ch.sample.id + ' — tap PASTE to drop a copy in.'); };
   const rm = document.createElement('button'); rm.className = 'btn sm red'; rm.textContent = '\u2715 REMOVE';
