@@ -91,7 +91,6 @@ document.addEventListener('dragstart', function(e){ var t=e.target; if(t && (t.t
     <button class="btn sm red" onclick="pauseTrack()">&#10074;&#10074;</button>
     <button class="btn sm" onclick="clearTrack()">&#10005;</button>
     <button class="btn sm gold" onclick="exportMp3()">EXPORT MP3</button>
-    <button class="btn sm gold hidden" id="pasteBtn" onclick="pasteClip()">PASTE</button>
   </div>
   <div id="bannerHint">TAP + ON A SAMPLE TO BUILD YOUR TRACK</div>
 </div>
@@ -468,10 +467,13 @@ function renderClipEditor(){
   const hear = document.createElement('button'); hear.className = 'btn sm gold'; hear.textContent = '\u25B6 HEAR IT';
   hear.onclick = async ()=>{ ensureAudio(); stopPlayback(); stopPreview(); const buf = await loadBuf(ch.sample.id); audNode = startBuf(audioCtx, buf, {pitch:ch.pitch, speed:ch.speed}); audClip = ch; audStart = audioCtx.currentTime; cancelAnimationFrame(audRaf); audRaf = requestAnimationFrame(audLoop); };
   const cp = document.createElement('button'); cp.className = 'btn sm gold'; cp.textContent = 'COPY';
-  cp.onclick = ()=>{ clipBoard = {sample:ch.sample, pitch:ch.pitch, speed:ch.speed, lane:ch.lane, sourceUid:ch.uid}; $('pasteBtn').classList.remove('hidden'); status('Copied ' + ch.sample.id + ' — tap PASTE to drop a copy in.'); };
+  const ps = document.createElement('button'); ps.className = 'btn sm gold'; ps.textContent = 'PASTE';
+  ps.onclick = ()=>{ pasteClip(); };
+  cp.onclick = ()=>{ clipBoard = {sample:ch.sample, pitch:ch.pitch, speed:ch.speed, lane:ch.lane, sourceUid:ch.uid}; renderClipEditor(); status('Copied ' + ch.sample.id + ' — tap PASTE to drop a copy in.'); };
   const rm = document.createElement('button'); rm.className = 'btn sm red'; rm.textContent = '\u2715 REMOVE';
   rm.onclick = ()=>{ removeClip(ch.uid); };
-  btns.append(laneBtn, hear, cp, rm);
+  if(clipBoard) btns.append(laneBtn, hear, cp, ps, rm);
+  else btns.append(laneBtn, hear, cp, rm);
   ed.append(name, pitch.row, numRowTicks(['-24','0','+24']), pitchRow2, pitchPresets, speed.row, numRowTicks(['0.25\u00D7','1\u00D7','4\u00D7']), speedRow2, speedPresets, btns);
 }
 function removeClip(uid){
