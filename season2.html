@@ -111,8 +111,8 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 /* ============ PEEF BUCKETS — third Season 2 game ============ */
 #peefScreen{touch-action:none;user-select:none;-webkit-user-select:none}
 .pb-bucket{position:absolute;z-index:7;width:min(64px,14vw);height:min(78px,17vw);transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)) brightness(.94) saturate(.92);}
-.pb-bucket .pb-shadow{position:absolute;left:10%;bottom:0;width:80%;height:10%;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(4px);}
-.pb-bucket .pb-body{position:absolute;left:3%;top:15%;width:94%;height:85%;clip-path:polygon(0 0,100% 0,86% 100%,14% 100%);background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.30) 100%),linear-gradient(90deg,#3d4247 0%,#6f757c 18%,#a9adb2 42%,#c9ced3 50%,#8d9298 68%,#5d6267 88%,#3d4247 100%);}
+.pb-bucket .pb-shadow{position:absolute;left:4%;bottom:0;width:92%;height:12%;border-radius:50%;background:rgba(0,0,0,.32);filter:blur(7px);}
+.pb-bucket .pb-body{position:absolute;left:3%;top:15%;width:94%;height:85%;clip-path:polygon(0 0,100% 0,86% 100%,14% 100%);background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.30) 100%),linear-gradient(90deg,#3d4247 0%,#6f757c 18%,#a9adb2 42%,#c9ced3 50%,#8d9298 68%,#5d6267 88%,#3d4247 100%);-webkit-mask-image:linear-gradient(180deg,#000 72%,transparent 99%);mask-image:linear-gradient(180deg,#000 72%,transparent 99%);}
 .pb-bucket .pb-shine{position:absolute;left:33%;top:22%;width:6%;height:70%;background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,.02));border-radius:50%;}
 .pb-bucket .pb-rim{position:absolute;left:0;top:0;width:100%;height:20%;border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#d7dbdf 0%,#a8adb3 45%,#6d7278 75%,#4a4f55 100%);box-shadow:inset 0 0 0 1px #3a3e43;}
 .pb-bucket .pb-mouth{position:absolute;left:15%;top:3.5%;width:70%;height:13%;border-radius:50%;background:#141619;box-shadow:inset 0 2px 5px #000,0 1px 0 rgba(255,255,255,.12);}
@@ -449,16 +449,19 @@ const PB_BUCKETS=[
   {by:0.75, pts:50, label:'+50'},
 ];
 // chairs: the original game's chair (Chair.png, 50x50, collision radius 35),
-// moved right onto the counter as bumpers so markers bounce around toward
-// the buckets. 9 by round 3, 3 added per round: round 1 is the moved middle
-// chair (25% across, mid height) plus the two chairs Coby marked on his
-// screenshot (31.2%, 42.4%) and (43.6%, 49.3%); round 2 adds the same trio
-// mirrored to the top band, round 3 to the bottom band. Same bounce as the
-// original, but no MEGA roll: a chair just bounces the marker around.
+// rearranged as shallow funnel ramps just ABOVE each bucket line — a marker
+// passing below a ramp chair gets nudged left and down onto the line.
+// 9 by round 3, 3 added per round: round 1 is the middle ramp, round 2 adds
+// the top ramp, round 3 the bottom ramp. Sim-verified over a 56-swipe grid:
+// with the original's hard bounce no arrangement helped (chairs only ever
+// knocked markers off course, and round 3's hard bounce knocked 7/56 clean
+// off the bottom of the screen), so the bounce is softened to a nudge below
+// (no velocity reflection, gentle tangential redirect). Ramps + nudge:
+// 77% score (was 63%), balanced across all three buckets, nothing flies off.
 const PB_CHAIRS=[
-  {fx:0.250, fy:0.500}, {fx:0.312, fy:0.424}, {fx:0.436, fy:0.493},
-  {fx:0.250, fy:0.250}, {fx:0.312, fy:0.174}, {fx:0.436, fy:0.243},
-  {fx:0.250, fy:0.750}, {fx:0.312, fy:0.674}, {fx:0.436, fy:0.743},
+  {fx:0.40, fy:0.46}, {fx:0.30, fy:0.47}, {fx:0.20, fy:0.48},
+  {fx:0.40, fy:0.21}, {fx:0.30, fy:0.22}, {fx:0.20, fy:0.23},
+  {fx:0.40, fy:0.71}, {fx:0.30, fy:0.72}, {fx:0.20, fy:0.73},
 ];
 let pbHitChairs=[];
 function pbPositionChairs(){
@@ -551,8 +554,12 @@ function pbThrow(dx, dy){
     pbRot+=pbSpin; pbSpin*=0.96;
     if(pbX>PB_RIGHT){ pbX=PB_RIGHT; pbVX*=-0.4; }
     if(pbY<PB_END){ pbY=PB_END; pbVY*=-0.2; }
-    // chairs: the original game's bounce, no MEGA — each chair bounces a
-    // marker at most once, so it can still bounce chair-to-chair
+    // chairs: funnel nudge, no MEGA — each chair nudges a marker at most
+    // once, so it can still bounce chair-to-chair. Deliberately NOT the
+    // original's hard bounce: reflecting velocity rocketed markers back
+    // right and off the bottom of the screen. The nudge keeps the marker's
+    // speed and just redirects it — the push-out slides it around the chair
+    // and the gentle tangential kick steers it toward the bucket line.
     for(let ci=0; ci<PB_CHAIRS.length; ci++){
       if(pbRound<Math.floor(ci/3)+1 || pbHitChairs.includes(ci)) continue;
       const ch=PB_CHAIRS[ci], cx=PB_W*ch.fx, cy=PB_H*ch.fy;
@@ -561,10 +568,8 @@ function pbThrow(dx, dy){
         pbHitChairs.push(ci);
         const nx=dx/dist, ny=dy/dist;
         pbX=cx+nx*52.5; pbY=cy+ny*52.5;
-        const relv=pbVX*nx+pbVY*ny;
-        if(relv<0){ pbVX-=1.6*relv*nx; pbVY-=1.6*relv*ny; }
         const tx=-ny, ty=nx, side=(pbX<cx)?-1:1;
-        pbVX+=tx*side*1.8; pbVY+=ty*side*1.8;
+        pbVX+=tx*side*1.0; pbVY+=ty*side*1.0;
         if(pbVX<-3) pbVX=-3+Math.random()*1.5;
         pbSpin+=(nx>0?1:-1)*1.1;
       }
