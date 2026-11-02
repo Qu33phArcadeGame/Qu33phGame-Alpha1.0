@@ -47,13 +47,12 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .s2logo{width:min(190px,44vw,15dvh);height:auto;display:block;margin:0 auto 4px;pointer-events:none;flex-shrink:0;}
 .s2tag{font-family:'Brush Script MT','Segoe Script','Bradley Hand',cursive;font-weight:bold;font-size:clamp(15px,2.8dvh,23px);
   color:#ffd24a;text-align:center;margin:-6px 0 6px;letter-spacing:1px;pointer-events:none;flex-shrink:0;}
-/* the grid itself takes up all the leftover height (flex:1) and splits it
-   evenly across the 5 rows, so the cards grow or shrink to actually fill
-   the page on every device instead of sitting at a fixed small size with
-   empty black space underneath */
+/* the grid itself takes up all the leftover height (flex:1) and spreads
+   the 3 rows evenly across it, so the menu fills the page like Season 1's
+   instead of sitting at a fixed small size with empty black space underneath */
 .cab-row{ display:grid; grid-template-columns:repeat(3,1fr);
-  gap:14px 10px; width:100%; max-width:480px; flex:1; min-height:0; padding:2px; box-sizing:border-box;
-  align-content:start; }
+  gap:26px 10px; width:100%; max-width:480px; flex:1; min-height:0; padding:2px; box-sizing:border-box;
+  align-content:space-evenly; }
 /* No portrait boxes at all: just the logo art with the name as real text
    underneath it. The old fixed-height box clipped the names on the top and
    middle rows, so the art now keeps its own height and nothing can clip. */
@@ -127,7 +126,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .pb-swipe-hint{position:absolute;transform:translateX(-50%);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;z-index:7;white-space:nowrap;}
 .pb-dead{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:7;}
 .pb-dead img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
-.pb-aim{position:absolute;z-index:8;height:0;border-top:3px dashed #fff;transform-origin:0 50%;pointer-events:none;opacity:.85;}
+.pb-chair{position:absolute;z-index:8;transform:translate(-50%,-50%);pointer-events:none;width:50px;height:50px;}
 .pb-pop{position:absolute;z-index:12;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;text-align:center;}
 .pb-pop.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
 .pb-pop.miss{color:#ff5a5a;}
@@ -397,12 +396,14 @@ document.addEventListener('dragstart', function(e){
     <div class="pb-bucket" style="left:0;top:50%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
     <div class="pb-points" style="left:10%;top:75%;">+50</div>
     <div class="pb-bucket" style="left:0;top:75%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
+    <img class="pb-chair" id="pbChair0" src="Chair.png" alt="" style="display:none;">
+    <img class="pb-chair" id="pbChair1" src="Chair.png" alt="" style="display:none;">
+    <img class="pb-chair" id="pbChair2" src="Chair.png" alt="" style="display:none;">
     <div class="pb-prev" id="pbPrev0"><img src="green.png" alt=""></div>
     <div class="pb-prev" id="pbPrev1"><img src="red.png" alt=""></div>
     <div class="pb-prev" id="pbPrev2"><img src="blue.png" alt=""></div>
     <div class="pb-swipe-hint" id="pbSwipeHint">swipe to roll</div>
     <div class="pb-marker" id="pbMarker" style="display:none;"><img id="pbMarkerImg" src="green.png" alt=""></div>
-    <div class="pb-aim" id="pbAim" style="width:0px;"></div>
   </div>
   <div class="pb-pop" id="pbPop"></div>
   <div class="pb-hint">PEEF OFF THE LEFT EDGE INTO A BUCKET &bull; TOP BUCKET WORTH MOST</div>
@@ -441,6 +442,20 @@ const PB_BUCKETS=[
   {by:0.50, pts:100, label:'+100'},
   {by:0.75, pts:50, label:'+50'},
 ];
+// chairs: the original game's chair (Chair.png, 50x50, collision radius 35),
+// on the counter at the field's left edge, in line with a bucket. Round 1
+// guards the 2nd bucket, round 2 adds the 3rd, round 3 adds the 1st — all
+// three in a line by the final round. Same bounce as the original, but no
+// MEGA roll: a chair just bounces the marker around.
+const PB_CHAIR_BUCKETS=[1,2,0];
+let pbHitChairs=[];
+function pbPositionChairs(){
+  for(let i=0;i<3;i++){
+    const el=pb$('pbChair'+i), b=PB_BUCKETS[PB_CHAIR_BUCKETS[i]];
+    el.style.left=PB_LEFT+'px'; el.style.top=(PB_H*b.by)+'px';
+    el.style.display=(pbRound>=i+1)?'block':'none';
+  }
+}
 let PB_W=0, PB_H=0, PB_LEFT=0, PB_RIGHT=0, PB_CX=0, PB_LAUNCH=0, PB_END=0;
 let pbRound=1, pbScore=0, pbLeft=3, pbRoundScores=[0,0,0];
 let pbFlying=false, pbVX=0, pbVY=0, pbX=0, pbY=0, pbCurve=0, pbRot=0, pbSpin=0, pbLife=0, pbRaf=0, pbDrag=null;
@@ -483,7 +498,7 @@ function pbStart(){
   pbClearDead();
   pb$('pbMarker').style.display='none';
   for(let i=0;i<3;i++) pb$('pbPrev'+i).style.display='block';
-  pbUpdateHud();
+  pbUpdateHud(); pbPositionChairs();
 }
 function pbUpdateHud(){
   pb$('pbRoundHud').textContent='ROUND '+pbRound+'/3';
@@ -511,7 +526,7 @@ function pbThrow(dx, dy){
   m.style.display='block'; m.style.transition=''; m.style.opacity='1';
   m.style.transform='translate(-50%,-50%)';
   pbX=PB_CX; pbY=PB_LAUNCH; pbVX=dx*0.2; pbVY=dy*0.2; pbCurve=dx*0.0003;
-  pbRot=Math.PI/3; pbSpin=0.08; pbLife=0; pbFlying=true;
+  pbRot=Math.PI/3; pbSpin=0.08; pbLife=0; pbFlying=true; pbHitChairs=[];
   pbPlaceMarker();
   img.style.transform='rotate('+pbRot+'rad)';
   const bx=0;   // buckets sit half off the left edge, centres at x=0
@@ -524,6 +539,24 @@ function pbThrow(dx, dy){
     pbRot+=pbSpin; pbSpin*=0.96;
     if(pbX>PB_RIGHT){ pbX=PB_RIGHT; pbVX*=-0.4; }
     if(pbY<PB_END){ pbY=PB_END; pbVY*=-0.2; }
+    // chairs: the original game's bounce, no MEGA — each chair bounces a
+    // marker at most once, so it can still bounce chair-to-chair in round 3
+    for(let ci=0; ci<3; ci++){
+      if(pbRound<ci+1 || pbHitChairs.includes(ci)) continue;
+      const b=PB_BUCKETS[PB_CHAIR_BUCKETS[ci]], cx=PB_LEFT, cy=PB_H*b.by;
+      const dx=pbX-cx, dy=pbY-cy, dist=Math.hypot(dx,dy)||1;
+      if(dist<35){
+        pbHitChairs.push(ci);
+        const nx=dx/dist, ny=dy/dist;
+        pbX=cx+nx*52.5; pbY=cy+ny*52.5;
+        const relv=pbVX*nx+pbVY*ny;
+        if(relv<0){ pbVX-=1.6*relv*nx; pbVY-=1.6*relv*ny; }
+        const tx=-ny, ty=nx, side=(pbX<cx)?-1:1;
+        pbVX+=tx*side*1.8; pbVY+=ty*side*1.8;
+        if(pbVX<-3) pbVX=-3+Math.random()*1.5;
+        pbSpin+=(nx>0?1:-1)*1.1;
+      }
+    }
     pbPlaceMarker();
     img.style.transform='rotate('+pbRot+'rad)';
     if(pbX<PB_LEFT){
@@ -565,7 +598,7 @@ function pbLand(hit){
 function pbAfterThrow(){
   if(pbLeft>0){ pbUpdateHud(); return; }
   if(pbRound<3){
-    pbRound++; pbLeft=3; pbClearDead();
+    pbRound++; pbLeft=3; pbClearDead(); pbPositionChairs();
     for(let i=0;i<3;i++) pb$('pbPrev'+i).style.display='block';
     pbUpdateHud();
     pbPop('ROUND '+pbRound+' — 3 MARKERS', false);
@@ -583,37 +616,26 @@ function pbShowTotal(){
   pb$('pbTotalRows').innerHTML=pbRoundScores.map((s,i)=>'<div>ROUND '+(i+1)+': '+s+'</div>').join('');
   pb$('pbTotalScreen').classList.remove('hidden');
 }
-function pbDrawAim(){
-  if(!pbDrag) return;
-  const dx=pbDrag.x-pbDrag.x0, dy=pbDrag.y-pbDrag.y0;
-  const len=Math.min(Math.hypot(dx,dy), 140);
-  const aim=pb$('pbAim');
-  aim.style.left=PB_CX+'px'; aim.style.top=PB_LAUNCH+'px';
-  aim.style.width=len+'px';
-  aim.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
-}
 pb$('pbField').addEventListener('pointerdown', e=>{
   if(pbFlying || pbLeft<=0) return;
   pbMetrics();
-  pbPositionPreviews();
+  pbPositionPreviews(); pbPositionChairs();
   const r=pb$('pbField').getBoundingClientRect();
   const sx=e.clientX-r.left;
   if(sx<PB_LEFT || sx>PB_RIGHT) return;   // only a swipe inside the field rolls a marker
   try{ pb$('pbField').setPointerCapture(e.pointerId); }catch(_){}
   pbDrag={x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY};
-  pbDrawAim();
 });
 pb$('pbField').addEventListener('pointermove', e=>{
-  if(!pbDrag) return; pbDrag.x=e.clientX; pbDrag.y=e.clientY; pbDrawAim();
+  if(!pbDrag) return; pbDrag.x=e.clientX; pbDrag.y=e.clientY;
 });
 pb$('pbField').addEventListener('pointerup', ()=>{
   if(!pbDrag) return;
   const dx=pbDrag.x-pbDrag.x0, dy=pbDrag.y-pbDrag.y0; pbDrag=null;
-  pb$('pbAim').style.width='0px';
   pbThrow(dx, dy);
 });
 pb$('pbField').addEventListener('pointercancel', ()=>{
-  pbDrag=null; pb$('pbAim').style.width='0px';
+  pbDrag=null;
 });
 </script>
 
