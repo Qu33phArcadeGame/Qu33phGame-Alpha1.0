@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Qu33ph Music — Sampler</title>
+<title>Qu33ph Music</title>
 <style>
 img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;pointer-events:auto;}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Helvetica,Arial,sans-serif;overflow-y:auto;-webkit-user-select:none;user-select:none;}
+.hidden{display:none!important;}
 .marker-btn{position:fixed;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
   background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;
   border:2.5px solid #fff;border-radius:4px 9px 9px 4px;
@@ -18,27 +19,17 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
   background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;
   box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.35),inset 0 -3px 5px rgba(0,0,0,0.45);}
 .marker-btn:active{transform:translateY(3px);}
-.wrap{max-width:720px;margin:0 auto;padding:44px 12px 24px;}
-h1{margin:6px 0 2px;text-align:center;font-size:clamp(18px,5vw,26px);letter-spacing:3px;color:#ffd24a;text-shadow:0 0 10px rgba(255,210,74,.5);}
-.sub{text-align:center;font-size:11px;color:#888;letter-spacing:1px;margin-bottom:4px;line-height:1.6;}
-.note{font-size:10px;color:#666;text-align:center;margin:0 0 14px;line-height:1.6;}
-h2{font-size:14px;letter-spacing:2px;color:#ffd24a;margin:22px 0 8px;border-top:1px solid #222;padding-top:14px;}
-.filters{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px;}
-.fbtn{background:#141414;border:2px solid #333;color:#999;font-size:10px;font-weight:bold;letter-spacing:1px;padding:6px 11px;border-radius:20px;cursor:pointer;}
-.fbtn.active{border-color:#ffd24a;color:#ffd24a;}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
-.card{background:#0b0b0d;border:2px solid #23232a;border-radius:12px;padding:10px;}
-.card.playing{border-color:#ffd24a;box-shadow:0 0 12px rgba(255,210,74,.35);}
-.card .name{font-weight:bold;font-size:13px;letter-spacing:1px;}
-.card .meta{font-size:10px;color:#888;letter-spacing:1px;margin:2px 0 8px;}
-.row{display:flex;align-items:center;gap:8px;margin:6px 0;}
-.row label{font-size:9px;letter-spacing:1px;color:#888;width:38px;flex-shrink:0;}
-.row input[type=range]{flex:1;accent-color:#ffd24a;height:18px;}
-.row .val{font-size:10px;color:#ffd24a;width:38px;text-align:right;flex-shrink:0;font-family:monospace;}
-.row input[type=checkbox]{accent-color:#ffd24a;width:16px;height:16px;}
 .btn{position:relative;margin-left:16px;border:2.5px solid #fff;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;font-size:11px;font-weight:bold;letter-spacing:1px;padding:8px 12px;border-radius:4px 9px 9px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 3px 0 rgba(0,0,0,0.55),inset 0 1.5px 0 rgba(255,255,255,0.4);}
 .btn::before{content:"";position:absolute;left:-16px;top:2px;bottom:2px;width:16px;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;}
 .btn:active{transform:translateY(3px);}
+.btn.sm{font-size:11px;padding:7px 11px;margin-left:15px;}
+.btn.sm::before{width:15px;left:-15px;}
+.btn.mini{font-size:10px;padding:6px 9px;margin-left:14px;}
+.btn.mini::before{width:14px;left:-14px;}
+.btn.gold{border-color:#e8a83c;color:#ffd24a;}
+.btn.green{border-color:#4dff8a;color:#7bffa8;}
+.btn.red{border-color:#ff4d4d;color:#ff8080;}
+.btn.sel{border-color:#ffd24a;color:#ffd24a;}
 .slider-mk{position:relative;flex:1;margin-left:16px;background:#000;border:2.5px solid #fff;border-radius:4px 9px 9px 4px;padding:2px 8px;display:flex;align-items:center;}
 .slider-mk::before{content:"";position:absolute;left:-16px;top:2px;bottom:2px;width:16px;background:#000;border:2.5px solid #fff;border-radius:8px 2px 2px 8px;}
 .slider-mk input[type=range]{flex:1;-webkit-appearance:none;appearance:none;background:transparent;height:20px;accent-color:#ffd24a;}
@@ -46,20 +37,24 @@ h2{font-size:14px;letter-spacing:2px;color:#ffd24a;margin:22px 0 8px;border-top:
 .slider-mk input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#ffd24a;border:2px solid #fff;margin-top:-6px;}
 .slider-mk input[type=range]::-moz-range-track{height:6px;background:#333;border-radius:3px;}
 .slider-mk input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#ffd24a;border:2px solid #fff;}
-.btn.gold{border-color:#e8a83c;color:#ffd24a;}
-.btn.green{border-color:#4dff8a;color:#7bffa8;}
-.btn.red{border-color:#ff4d4d;color:#ff8080;}
-.btn:disabled{opacity:.35;cursor:default;}
 .preset{font-size:10px;padding:5px 8px;margin-left:14px;}.preset::before{width:14px;left:-14px;}
-.track{background:#0b0b0d;border:2px solid #23232a;border-radius:12px;padding:10px;margin-bottom:10px;}
-.track.playing{border-color:#4dff8a;}
-.track .thead{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-.track .thead b{font-size:13px;letter-spacing:1px;}
-.empty{border:2px dashed #26262c;border-radius:12px;padding:18px;text-align:center;color:#666;font-size:11px;letter-spacing:1px;line-height:1.8;}
-.master{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0;}
-#dlArea{text-align:center;margin-top:10px;}
-#dlArea a{display:inline-block;background:linear-gradient(180deg,#ffdd66,#e8a83c);color:#241300;font-weight:bold;font-size:12px;letter-spacing:1px;padding:9px 20px;border-radius:8px;text-decoration:none;}
-#status{text-align:center;font-size:11px;color:#ffd24a;min-height:16px;margin-top:6px;}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0;}
+.row label{font-size:9px;letter-spacing:1px;color:#888;width:38px;flex-shrink:0;}
+.row .val{font-size:10px;color:#ffd24a;width:38px;text-align:right;flex-shrink:0;font-family:monospace;}
+/* banner = the greyscale poster, and the track editor lives on it */
+#banner{background:url('qu33phmusicposter.png') center/cover no-repeat;min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 12px 14px;}
+#trackChips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+#trackTransport{display:flex;gap:8px;justify-content:center;}
+#bannerHint{font-size:10px;letter-spacing:1.5px;color:#ddd;text-shadow:0 1px 4px #000;text-align:center;}
+#chipEditor{margin:12px;padding:12px;background:#0b0b0d;border:2px solid #23232a;border-radius:12px;}
+#chipEditor .ce-name{font-weight:bold;letter-spacing:1px;color:#ffd24a;font-size:13px;margin-bottom:8px;}
+#chipEditor .ce-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+#games{padding:6px 12px 30px;}
+.game{margin:14px 0;}
+.drop{margin:8px 0 0 15px;padding:6px 12px;background:#0b0b0d;border:2px solid #23232a;border-radius:12px;}
+.srow{display:flex;align-items:center;gap:8px;padding:6px 2px;border-radius:8px;}
+.srow.playing{background:#1c1a10;}
+.snum{font-family:monospace;color:#ffd24a;font-size:12px;width:28px;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -68,48 +63,25 @@ document.addEventListener('contextmenu', function(e){ var t=e.target; if(t && (t
 document.addEventListener('dragstart', function(e){ var t=e.target; if(t && (t.tagName==='IMG'||t.tagName==='VIDEO')) e.preventDefault(); });
 </script>
 <button class="marker-btn" onclick="location.href='season2.html'">&larr; BACK</button>
-<div class="wrap">
-  <h1>QU33PH MUSIC</h1>
-  <div class="sub">A SAMPLER BUILT FROM THE SONGS ALREADY IN THE APP<br>30 SAMPLES, 4 SECONDS EACH, MADE TO LOOP</div>
-  <p class="note">Tap a sample to hear it &mdash; only one sample plays at a time, so they never overlap. Pitch shifts it from &minus;24 to +24 semitones, Speed runs it from quarter speed (0.25&times;) to four times speed (4&times;), Loop keeps it repeating. Then hit <b style="color:#ffd24a">+ ADD BELOW</b> to stack it into your song, one row under the last.</p>
-
-  <h2>1 &middot; SAMPLES</h2>
-  <div class="filters" id="filters"></div>
-  <div class="master" style="margin-top:0"><button class="btn red" onclick="stopAllPreviews()">&#10074;&#10074; STOP ALL SAMPLES</button></div>
-  <div class="grid" id="sampleGrid"></div>
-
-  <h2>2 &middot; YOUR SONG <span id="trackCount" style="color:#888;font-size:11px;letter-spacing:1px;"></span></h2>
-  <div class="master">
-    <button class="btn green" id="playSongBtn" onclick="playSong()">&#9654; PLAY SONG</button>
-    <button class="btn red" onclick="stopSong()">&#9632; STOP</button>
-    <button class="btn" onclick="clearSong()">CLEAR SONG</button>
-    <button class="btn gold" onclick="exportSong()">&#11015; EXPORT 12s WAV</button>
+<div id="banner">
+  <div id="trackChips"></div>
+  <div id="trackTransport" class="hidden">
+    <button class="btn sm gold" onclick="playTrack()">&#9654;</button>
+    <button class="btn sm red" onclick="pauseTrack()">&#10074;&#10074;</button>
+    <button class="btn sm" onclick="clearTrack()">&#10005;</button>
   </div>
-  <div id="trackList"></div>
-  <div id="dlArea"></div>
-  <div id="status"></div>
-  <p class="note">Speed sets the tempo and Pitch shifts the note on top of it, like a record player &mdash; that is how a browser sampler does both at once. Pitch now runs &minus;24 to +24 semitones and Speed 0.25&times; to 4&times;, with preset buttons for both. Every sample fades in and out at its edges, so looping it repeats cleanly with no click.</p>
+  <div id="bannerHint">TAP + ON A SAMPLE TO BUILD YOUR TRACK</div>
 </div>
+<div id="chipEditor" class="hidden"></div>
+<div id="games"></div>
 <script>
-const SAMPLES = [{"id": "BOWLING-01", "game": "BOWLING", "file": "samples/bowling-01.mp3", "start": 14.1, "dur": 4.0}, {"id": "BOWLING-02", "game": "BOWLING", "file": "samples/bowling-02.mp3", "start": 52.8, "dur": 4.0}, {"id": "BOWLING-03", "game": "BOWLING", "file": "samples/bowling-03.mp3", "start": 88.0, "dur": 4.0}, {"id": "DOZER-01", "game": "DOZER", "file": "samples/dozer-01.mp3", "start": 15.7, "dur": 4.0}, {"id": "DOZER-02", "game": "DOZER", "file": "samples/dozer-02.mp3", "start": 59.0, "dur": 4.0}, {"id": "DOZER-03", "game": "DOZER", "file": "samples/dozer-03.mp3", "start": 98.3, "dur": 4.0}, {"id": "FIDGET-01", "game": "FIDGET", "file": "samples/fidget-01.mp3", "start": 9.1, "dur": 4.0}, {"id": "FIDGET-02", "game": "FIDGET", "file": "samples/fidget-02.mp3", "start": 34.0, "dur": 4.0}, {"id": "FIDGET-03", "game": "FIDGET", "file": "samples/fidget-03.mp3", "start": 56.7, "dur": 4.0}, {"id": "FLIP-01", "game": "FLIP", "file": "samples/flip-01.mp3", "start": 12.6, "dur": 4.0}, {"id": "FLIP-02", "game": "FLIP", "file": "samples/flip-02.mp3", "start": 47.2, "dur": 4.0}, {"id": "FLIP-03", "game": "FLIP", "file": "samples/flip-03.mp3", "start": 78.6, "dur": 4.0}, {"id": "JUMP-01", "game": "JUMP", "file": "samples/jump-01.mp3", "start": 16.8, "dur": 4.0}, {"id": "JUMP-02", "game": "JUMP", "file": "samples/jump-02.mp3", "start": 62.9, "dur": 4.0}, {"id": "JUMP-03", "game": "JUMP", "file": "samples/jump-03.mp3", "start": 104.8, "dur": 4.0}, {"id": "JUMP-04", "game": "JUMP", "file": "samples/jump-04.mp3", "start": 81.0, "dur": 4.0}, {"id": "MINI-01", "game": "MINI", "file": "samples/mini-01.mp3", "start": 5.4, "dur": 4.0}, {"id": "MINI-02", "game": "MINI", "file": "samples/mini-02.mp3", "start": 20.2, "dur": 4.0}, {"id": "MINI-03", "game": "MINI", "file": "samples/mini-03.mp3", "start": 33.6, "dur": 4.0}, {"id": "PINBALL-01", "game": "PINBALL", "file": "samples/pinball-01.mp3", "start": 25.4, "dur": 4.0}, {"id": "PINBALL-02", "game": "PINBALL", "file": "samples/pinball-02.mp3", "start": 95.3, "dur": 4.0}, {"id": "PINBALL-03", "game": "PINBALL", "file": "samples/pinball-03.mp3", "start": 158.8, "dur": 4.0}, {"id": "PINBALL-04", "game": "PINBALL", "file": "samples/pinball-04.mp3", "start": 122.8, "dur": 4.0}, {"id": "QU33PHBALL-01", "game": "QU33PHBALL", "file": "samples/qu33phball-01.mp3", "start": 18.6, "dur": 4.0}, {"id": "QU33PHBALL-02", "game": "QU33PHBALL", "file": "samples/qu33phball-02.mp3", "start": 69.9, "dur": 4.0}, {"id": "QU33PHBALL-03", "game": "QU33PHBALL", "file": "samples/qu33phball-03.mp3", "start": 116.5, "dur": 4.0}, {"id": "QU33PHBALL-04", "game": "QU33PHBALL", "file": "samples/qu33phball-04.mp3", "start": 90.1, "dur": 4.0}, {"id": "STACK-01", "game": "STACK", "file": "samples/stack-01.mp3", "start": 10.3, "dur": 4.0}, {"id": "STACK-02", "game": "STACK", "file": "samples/stack-02.mp3", "start": 38.5, "dur": 4.0}, {"id": "STACK-03", "game": "STACK", "file": "samples/stack-03.mp3", "start": 64.2, "dur": 4.0}];
+const SAMPLES = [{"id": "BOWLING-01", "game": "BOWLING", "file": "samples/bowling-01.mp3"}, {"id": "BOWLING-02", "game": "BOWLING", "file": "samples/bowling-02.mp3"}, {"id": "BOWLING-03", "game": "BOWLING", "file": "samples/bowling-03.mp3"}, {"id": "DOZER-01", "game": "DOZER", "file": "samples/dozer-01.mp3"}, {"id": "DOZER-02", "game": "DOZER", "file": "samples/dozer-02.mp3"}, {"id": "DOZER-03", "game": "DOZER", "file": "samples/dozer-03.mp3"}, {"id": "FIDGET-01", "game": "FIDGET", "file": "samples/fidget-01.mp3"}, {"id": "FIDGET-02", "game": "FIDGET", "file": "samples/fidget-02.mp3"}, {"id": "FIDGET-03", "game": "FIDGET", "file": "samples/fidget-03.mp3"}, {"id": "FLIP-01", "game": "FLIP", "file": "samples/flip-01.mp3"}, {"id": "FLIP-02", "game": "FLIP", "file": "samples/flip-02.mp3"}, {"id": "FLIP-03", "game": "FLIP", "file": "samples/flip-03.mp3"}, {"id": "JUMP-01", "game": "JUMP", "file": "samples/jump-01.mp3"}, {"id": "JUMP-02", "game": "JUMP", "file": "samples/jump-02.mp3"}, {"id": "JUMP-03", "game": "JUMP", "file": "samples/jump-03.mp3"}, {"id": "JUMP-04", "game": "JUMP", "file": "samples/jump-04.mp3"}, {"id": "MINI-01", "game": "MINI", "file": "samples/mini-01.mp3"}, {"id": "MINI-02", "game": "MINI", "file": "samples/mini-02.mp3"}, {"id": "MINI-03", "game": "MINI", "file": "samples/mini-03.mp3"}, {"id": "PINBALL-01", "game": "PINBALL", "file": "samples/pinball-01.mp3"}, {"id": "PINBALL-02", "game": "PINBALL", "file": "samples/pinball-02.mp3"}, {"id": "PINBALL-03", "game": "PINBALL", "file": "samples/pinball-03.mp3"}, {"id": "PINBALL-04", "game": "PINBALL", "file": "samples/pinball-04.mp3"}, {"id": "QU33PHBALL-01", "game": "QU33PHBALL", "file": "samples/qu33phball-01.mp3"}, {"id": "QU33PHBALL-02", "game": "QU33PHBALL", "file": "samples/qu33phball-02.mp3"}, {"id": "QU33PHBALL-03", "game": "QU33PHBALL", "file": "samples/qu33phball-03.mp3"}, {"id": "QU33PHBALL-04", "game": "QU33PHBALL", "file": "samples/qu33phball-04.mp3"}, {"id": "STACK-01", "game": "STACK", "file": "samples/stack-01.mp3"}, {"id": "STACK-02", "game": "STACK", "file": "samples/stack-02.mp3"}, {"id": "STACK-03", "game": "STACK", "file": "samples/stack-03.mp3"}];
 const GAMES = [...new Set(SAMPLES.map(s=>s.game))];
-let filter = 'ALL';
 let audioCtx = null, rawCache = {}, bufCache = {};
-let previewSrc = {};   // sample id -> {src, gain}
-let playBtns = {};    // sample id -> its PLAY/PAUSE button
-function stopPreview(id){
-  const n=previewSrc[id]; if(!n) return;
-  stopNode(n); delete previewSrc[id];
-  const b=playBtns[id]; if(b){ b.textContent='\u25B6 PLAY'; b.className='btn gold'; }
-  const c=document.getElementById('card-'+id); if(c) c.classList.remove('playing');
-}
-function stopAllPreviews(quiet){
-  Object.keys(previewSrc).forEach(stopPreview);
-  if(!quiet) document.getElementById('status').textContent='All samples stopped.';
-}
-let songPlaying = false, songSrc = {};  // track uid -> {src, gain}
-let tracks = [];       // {uid, sample, pitch, speed, loop}
-let uidN = 0;
+let previewId = null, previewNode = null, previewPaused = false, previewToken = 0;
+let chips = [], chipN = 0, selectedUid = null;
+let trackState = {playing:false, paused:false, idx:0, node:null}, trackToken = 0, trackNodes = {};
+const $ = id => document.getElementById(id);
 
 function ensureAudio(){
   if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -122,211 +94,195 @@ async function loadRaw(id){
   const r = await fetch(s.file); const ab = await r.arrayBuffer();
   rawCache[id] = ab; return ab;
 }
-async function loadBuf(id, ctx){
-  ctx = ctx || ensureAudio();
-  const key = id + '@' + (ctx===audioCtx ? 'main' : 'off');
-  if(bufCache[key]) return bufCache[key];
+async function loadBuf(id){
+  ensureAudio();
+  if(bufCache[id]) return bufCache[id];
   const raw = await loadRaw(id);
-  const buf = await ctx.decodeAudioData(raw.slice(0));
-  bufCache[key] = buf; return buf;
+  const buf = await audioCtx.decodeAudioData(raw.slice(0));
+  bufCache[id] = buf; return buf;
 }
-function effRate(speed, pitch){ return speed * Math.pow(2, pitch/12); }
-function startBuf(ctx, buf, opts, dest){
-  const src = ctx.createBufferSource();
-  src.buffer = buf; src.loop = !!opts.loop;
+function startBuf(buf, opts){
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf; src.loop = false;
   src.playbackRate.value = opts.speed;
   try{ src.detune.value = opts.pitch * 100; }catch(e){}
-  const g = ctx.createGain(); g.gain.value = opts.vol || 0.9;
-  src.connect(g); g.connect(dest || ctx.destination);
+  const g = audioCtx.createGain(); g.gain.value = 0.9;
+  src.connect(g); g.connect(audioCtx.destination);
   src.start(0);
-  return {src, gain:g};
+  return {src:src, gain:g};
 }
 function stopNode(n){ try{ n.src.stop(); }catch(e){} try{ n.src.disconnect(); }catch(e){} }
-
-// ---------- sample library ----------
-function sliderRow(label, min, max, step, val, oninput, valText){
-  const row = document.createElement('div'); row.className='row';
-  const lab = document.createElement('label'); lab.textContent = label;
-  const mk = document.createElement('div'); mk.className='slider-mk';
-  const inp = document.createElement('input'); inp.type='range';
-  inp.min=min; inp.max=max; inp.step=step; inp.value=val;
-  mk.appendChild(inp);
-  const v = document.createElement('span'); v.className='val'; v.textContent = valText(val);
-  inp.oninput = ()=>{ v.textContent = valText(parseFloat(inp.value)); oninput(parseFloat(inp.value)); };
-  row.append(lab, mk, v); return {row, inp, v};
-}
-function renderFilters(){
-  const f = document.getElementById('filters'); f.innerHTML='';
-  ['ALL', ...GAMES].forEach(g=>{
-    const b=document.createElement('button'); b.className='fbtn'+(g===filter?' active':''); b.textContent=g;
-    b.onclick=()=>{ filter=g; renderFilters(); renderSamples(); };
-    f.appendChild(b);
+function markPreview(){
+  document.querySelectorAll('.srow').forEach(r=>{
+    r.classList.toggle('playing', !!previewId && !previewPaused && r.dataset.sid===previewId);
   });
 }
-function renderSamples(){
-  const grid=document.getElementById('sampleGrid'); grid.innerHTML='';
-  SAMPLES.filter(s=>filter==='ALL'||s.game===filter).forEach(s=>{
-    const card=document.createElement('div'); card.className='card'; card.id='card-'+s.id;
-    const name=document.createElement('div'); name.className='name'; name.textContent=s.id;
-    const meta=document.createElement('div'); meta.className='meta'; meta.textContent=s.game+'  ·  4 SEC  ·  LOOPS CLEAN';
-    const top=document.createElement('div'); top.className='row';
-    const play=document.createElement('button'); play.className='btn gold'; play.textContent='▶ PLAY';
-    playBtns[s.id]=play;
-    play.onclick=async ()=>{
-      ensureAudio();
-      if(previewSrc[s.id]){ stopPreview(s.id); return; }
-      // one sample at a time: starting a new one stops any other that is playing
-      stopAllPreviews(true);
-      const buf=await loadBuf(s.id);
-      const node=startBuf(audioCtx, buf, {pitch:state.pitch, speed:state.speed, loop:state.loop});
-      node.src.onended=()=>{ if(!state.loop){ stopPreview(s.id); } };
-      previewSrc[s.id]=node; play.textContent='⏸ PAUSE'; play.className='btn red'; card.classList.add('playing');
+function stopPreview(){
+  previewToken++;
+  if(previewNode) stopNode(previewNode);
+  previewNode = null; previewId = null; previewPaused = false;
+  markPreview();
+}
+function stopTrack(){
+  trackToken++;
+  trackState.playing = false; trackState.paused = false; trackState.idx = 0;
+  if(trackState.node) stopNode(trackState.node);
+  trackState.node = null; trackNodes = {};
+}
+async function playPreview(id){
+  ensureAudio();
+  if(previewPaused && previewId===id){ audioCtx.resume(); previewPaused = false; markPreview(); return; }
+  stopTrack(); stopPreview();
+  const tok = ++previewToken;
+  const buf = await loadBuf(id);
+  if(tok!==previewToken) return;
+  const n = startBuf(buf, {pitch:0, speed:1});
+  previewNode = n; previewId = id; previewPaused = false;
+  n.src.onended = ()=>{ if(previewNode===n){ previewNode = null; previewId = null; previewPaused = false; markPreview(); } };
+  markPreview();
+}
+function pausePreview(){
+  if(previewNode && !previewPaused){ audioCtx.suspend(); previewPaused = true; markPreview(); }
+}
+
+// ---------- game buttons + dropdowns ----------
+function renderGames(){
+  const g = $('games'); g.innerHTML = '';
+  GAMES.forEach(game=>{
+    const block = document.createElement('div'); block.className = 'game';
+    const btn = document.createElement('button'); btn.className = 'btn sm'; btn.textContent = game;
+    const drop = document.createElement('div'); drop.className = 'drop hidden';
+    btn.onclick = ()=>{
+      const wasOpen = !drop.classList.contains('hidden');
+      document.querySelectorAll('.drop').forEach(d=>d.classList.add('hidden'));
+      document.querySelectorAll('.game .btn.sm').forEach(b=>b.classList.remove('sel'));
+      if(!wasOpen){ drop.classList.remove('hidden'); btn.classList.add('sel'); }
     };
-    const add=document.createElement('button'); add.className='btn green'; add.textContent='+ ADD BELOW';
-    add.onclick=()=>addTrack(s.id);
-    top.append(play, add);
-    const state={pitch:0, speed:1, loop:true};
-    const pitch=sliderRow('PITCH', -24, 24, 1, 0, v=>{ state.pitch=v; retunePreview(s, state); }, v=>(v>0?'+':'')+v);
-    const speed=sliderRow('SPEED', 0.25, 4, 0.25, 1, v=>{ state.speed=v; retunePreview(s, state); }, v=>v.toFixed(2).replace(/\.?0+$/,'')+'x');
-    const loopRow=document.createElement('div'); loopRow.className='row';
-    const loopLab=document.createElement('label'); loopLab.textContent='LOOP';
-    const loopChk=document.createElement('input'); loopChk.type='checkbox'; loopChk.checked=true;
-    loopChk.onchange=()=>{ state.loop=loopChk.checked; retunePreview(s, state); };
-    const loopTxt=document.createElement('span'); loopTxt.className='val'; loopTxt.style.width='auto'; loopTxt.textContent='ON';
-    loopChk.onchange=()=>{ state.loop=loopChk.checked; loopTxt.textContent=loopChk.checked?'ON':'OFF'; retunePreview(s, state); };
-    loopRow.append(loopLab, loopChk, loopTxt);
-    const pitchPresets=document.createElement('div'); pitchPresets.className='row'; pitchPresets.style.flexWrap='wrap';
-    [-24,-12,0,12,24].forEach(sp=>{
-      const pb=document.createElement('button'); pb.className='btn preset'; pb.textContent=(sp>0?'+':'')+sp;
-      pb.onclick=()=>{ state.pitch=sp; pitch.inp.value=sp; pitch.v.textContent=(sp>0?'+':'')+sp; retunePreview(s, state); };
-      pitchPresets.appendChild(pb);
+    SAMPLES.filter(s=>s.game===game).forEach(s=>{
+      const num = s.id.split('-')[1];
+      const row = document.createElement('div'); row.className = 'srow'; row.dataset.sid = s.id;
+      const lab = document.createElement('span'); lab.className = 'snum'; lab.textContent = num;
+      const play = document.createElement('button'); play.className = 'btn mini gold'; play.textContent = '\u25B6';
+      play.onclick = ()=>playPreview(s.id);
+      const pause = document.createElement('button'); pause.className = 'btn mini red'; pause.textContent = '\u275A\u275A';
+      pause.onclick = ()=>pausePreview();
+      const plus = document.createElement('button'); plus.className = 'btn mini green'; plus.textContent = '+';
+      plus.onclick = ()=>addChip(s.id);
+      row.append(lab, play, pause, plus);
+      drop.appendChild(row);
     });
-    const presets=document.createElement('div'); presets.className='row'; presets.style.flexWrap='wrap';
-    [0.25,0.5,1,1.5,2,3,4].forEach(sp=>{
-      const pb=document.createElement('button'); pb.className='btn preset'; pb.textContent=sp+'x';
-      pb.onclick=()=>{ state.speed=sp; speed.inp.value=sp; speed.v.textContent=sp+'x'; retunePreview(s, state); };
-      presets.appendChild(pb);
-    });
-    card.append(name, meta, top, pitch.row, pitchPresets, speed.row, loopRow, presets);
-    grid.appendChild(card);
+    block.append(btn, drop);
+    g.appendChild(block);
   });
-}
-function retunePreview(s, state){
-  // live retune, no restart: pitch and speed change while it keeps playing
-  const node=previewSrc[s.id]; if(!node) return;
-  try{ node.src.playbackRate.value=state.speed; }catch(e){}
-  try{ node.src.detune.value=state.pitch*100; }catch(e){}
-  try{ node.src.loop=!!state.loop; }catch(e){}
-}
-function liveUpdateTrack(tr){
-  const node=songSrc[tr.uid]; if(!node) return;
-  try{ node.src.playbackRate.value=tr.speed; }catch(e){}
-  try{ node.src.detune.value=tr.pitch*100; }catch(e){}
-  try{ node.src.loop=!!tr.loop; }catch(e){}
 }
 
-// ---------- song builder ----------
-function addTrack(sampleId){
-  const s=SAMPLES.find(x=>x.id===sampleId); if(!s) return;
-  tracks.push({uid:'t'+(++uidN), sample:s, pitch:0, speed:1, loop:true});
-  if(songPlaying) startTrack(tracks[tracks.length-1]);
-  renderTracks();
-  document.getElementById('trackList').scrollIntoView({behavior:'smooth', block:'nearest'});
-}
-function startTrack(tr){
-  if(songSrc[tr.uid]) stopNode(songSrc[tr.uid]);
-  loadBuf(tr.sample.id).then(buf=>{
-    if(!songPlaying && !songSrc[tr.uid]) return;
-    const n=startBuf(audioCtx, buf, {pitch:tr.pitch, speed:tr.speed, loop:tr.loop});
-    songSrc[tr.uid]=n;
+// ---------- track editor (on the banner) ----------
+function renderChips(){
+  const c = $('trackChips'); c.innerHTML = '';
+  chips.forEach(ch=>{
+    const b = document.createElement('button');
+    b.className = 'btn sm chip' + (ch.uid===selectedUid ? ' sel' : '');
+    b.textContent = ch.sample.id;
+    b.onclick = ()=>selectChip(ch.uid);
+    c.appendChild(b);
   });
+  $('trackTransport').classList.toggle('hidden', !chips.length);
+  $('bannerHint').classList.toggle('hidden', !!chips.length);
 }
-function renderTracks(){
-  const list=document.getElementById('trackList'); list.innerHTML='';
-  document.getElementById('trackCount').textContent = tracks.length ? '('+tracks.length+' TRACK'+(tracks.length>1?'S':'')+')' : '';
-  if(!tracks.length){
-    const e=document.createElement('div'); e.className='empty';
-    e.innerHTML='NO TRACKS YET<br>Pick a sample above and hit + ADD BELOW &mdash; each one lands here as a new row, under the last one.';
-    list.appendChild(e); return;
-  }
-  tracks.forEach((tr,i)=>{
-    const d=document.createElement('div'); d.className='track'+(songSrc[tr.uid]?' playing':'');
-    const head=document.createElement('div'); head.className='thead';
-    const b=document.createElement('b'); b.textContent=(i+1)+'. '+tr.sample.id;
-    const rm=document.createElement('button'); rm.className='btn red'; rm.textContent='✕ REMOVE';
-    rm.onclick=()=>{ if(songSrc[tr.uid]){ stopNode(songSrc[tr.uid]); delete songSrc[tr.uid]; } tracks=tracks.filter(x=>x.uid!==tr.uid); renderTracks(); };
-    head.append(b, rm);
-    const pitch=sliderRow('PITCH', -24, 24, 1, tr.pitch, v=>{ tr.pitch=v; if(songPlaying) liveUpdateTrack(tr); }, v=>(v>0?'+':'')+v);
-    const speed=sliderRow('SPEED', 0.25, 4, 0.25, tr.speed, v=>{ tr.speed=v; if(songPlaying) liveUpdateTrack(tr); }, v=>v+'x');
-    const loopRow=document.createElement('div'); loopRow.className='row';
-    const loopLab=document.createElement('label'); loopLab.textContent='LOOP';
-    const loopChk=document.createElement('input'); loopChk.type='checkbox'; loopChk.checked=tr.loop;
-    loopChk.onchange=()=>{ tr.loop=loopChk.checked; if(songPlaying) liveUpdateTrack(tr); };
-    loopRow.append(loopLab, loopChk);
-    d.append(head, pitch.row, speed.row, loopRow);
-    list.appendChild(d);
+function addChip(sampleId){
+  const s = SAMPLES.find(x=>x.id===sampleId); if(!s) return;
+  chips.push({uid:'c'+(++chipN), sample:s, pitch:0, speed:1});
+  renderChips();
+}
+function selectChip(uid){
+  if(selectedUid===uid){ selectedUid = null; $('chipEditor').classList.add('hidden'); renderChips(); return; }
+  selectedUid = uid;
+  renderChips();
+  renderChipEditor();
+}
+function sliderRow(label, min, max, step, val, oninput, valText){
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const mk = document.createElement('div'); mk.className = 'slider-mk';
+  const inp = document.createElement('input'); inp.type = 'range';
+  inp.min = min; inp.max = max; inp.step = step; inp.value = val;
+  mk.appendChild(inp);
+  const v = document.createElement('span'); v.className = 'val'; v.textContent = valText(val);
+  inp.oninput = ()=>{ v.textContent = valText(parseFloat(inp.value)); oninput(parseFloat(inp.value)); };
+  row.append(lab, mk, v); return {row:row, inp:inp, v:v};
+}
+function liveRetuneChip(ch){
+  const n = trackNodes[ch.uid]; if(!n) return;
+  try{ n.src.playbackRate.value = ch.speed; }catch(e){}
+  try{ n.src.detune.value = ch.pitch * 100; }catch(e){}
+}
+function renderChipEditor(){
+  const ch = chips.find(x=>x.uid===selectedUid);
+  const ed = $('chipEditor');
+  if(!ch){ ed.classList.add('hidden'); return; }
+  ed.classList.remove('hidden');
+  ed.innerHTML = '';
+  const name = document.createElement('div'); name.className = 'ce-name'; name.textContent = ch.sample.id;
+  const pitch = sliderRow('PITCH', -24, 24, 1, ch.pitch, v=>{ ch.pitch = v; liveRetuneChip(ch); }, v=>(v>0?'+':'')+v);
+  const pitchPresets = document.createElement('div'); pitchPresets.className = 'row'; pitchPresets.style.flexWrap = 'wrap';
+  [-24,-12,0,12,24].forEach(sp=>{
+    const pb = document.createElement('button'); pb.className = 'btn mini'; pb.textContent = (sp>0?'+':'')+sp;
+    pb.onclick = ()=>{ ch.pitch = sp; pitch.inp.value = sp; pitch.v.textContent = (sp>0?'+':'')+sp; liveRetuneChip(ch); };
+    pitchPresets.appendChild(pb);
   });
+  const speed = sliderRow('SPEED', 0.25, 4, 0.25, ch.speed, v=>{ ch.speed = v; liveRetuneChip(ch); }, v=>v+'x');
+  const speedPresets = document.createElement('div'); speedPresets.className = 'row'; speedPresets.style.flexWrap = 'wrap';
+  [0.25,0.5,1,1.5,2,3,4].forEach(sp=>{
+    const pb = document.createElement('button'); pb.className = 'btn mini'; pb.textContent = sp+'x';
+    pb.onclick = ()=>{ ch.speed = sp; speed.inp.value = sp; speed.v.textContent = sp+'x'; liveRetuneChip(ch); };
+    speedPresets.appendChild(pb);
+  });
+  const btns = document.createElement('div'); btns.className = 'ce-btns';
+  const hear = document.createElement('button'); hear.className = 'btn sm gold'; hear.textContent = '\u25B6 HEAR IT';
+  hear.onclick = async ()=>{ ensureAudio(); stopTrack(); stopPreview(); const buf = await loadBuf(ch.sample.id); startBuf(buf, {pitch:ch.pitch, speed:ch.speed}); };
+  const rm = document.createElement('button'); rm.className = 'btn sm red'; rm.textContent = '\u2715 REMOVE';
+  rm.onclick = ()=>{ removeChip(ch.uid); };
+  btns.append(hear, rm);
+  ed.append(name, pitch.row, pitchPresets, speed.row, speedPresets, btns);
 }
-function playSong(){
-  if(!tracks.length){ document.getElementById('status').textContent='Add a sample to your song first.'; return; }
-  ensureAudio(); songPlaying=true;
-  document.getElementById('status').textContent='Playing '+tracks.length+' track'+(tracks.length>1?'s':'')+' together.';
-  tracks.forEach(startTrack); renderTracks();
+function removeChip(uid){
+  if(trackNodes[uid] || (trackState.node && chips[trackState.idx] && chips[trackState.idx].uid===uid)) stopTrack();
+  chips = chips.filter(x=>x.uid!==uid);
+  if(selectedUid===uid){ selectedUid = null; $('chipEditor').classList.add('hidden'); }
+  renderChips();
 }
-function stopSong(){
-  songPlaying=false;
-  Object.values(songSrc).forEach(stopNode); songSrc={};
-  document.getElementById('status').textContent='Stopped.';
-  renderTracks();
+
+// ---------- track transport: each chip plays once, in order ----------
+function playTrack(){
+  ensureAudio();
+  if(trackState.paused){ audioCtx.resume(); trackState.paused = false; trackState.playing = true; return; }
+  if(!chips.length) return;
+  stopPreview(); stopTrack();
+  trackState.playing = true; trackState.idx = 0;
+  playChipAt(0);
 }
-function clearSong(){ stopSong(); tracks=[]; renderTracks(); document.getElementById('status').textContent='Song cleared.'; }
-async function exportSong(){
-  if(!tracks.length){ document.getElementById('status').textContent='Add a sample to your song first.'; return; }
-  const st=document.getElementById('status'); st.textContent='Mixing 12 seconds…';
-  try{
-    const sr=44100, dur=12;
-    const off=new OfflineAudioContext(2, sr*dur, sr);
-    const comp=off.createDynamicsCompressor(); comp.connect(off.destination);
-    const vol=0.9/Math.sqrt(tracks.length);
-    for(const tr of tracks){
-      const buf=await loadBuf(tr.sample.id, off);
-      const rate=effRate(tr.speed, tr.pitch);
-      const period=buf.duration/rate;
-      for(let t0=0; t0<dur; t0+=period){
-        const src=off.createBufferSource(); src.buffer=buf;
-        src.playbackRate.value=tr.speed;
-        try{ src.detune.value=tr.pitch*100; }catch(e){}
-        if(tr.loop || t0===0){
-          const g=off.createGain(); g.gain.value=vol;
-          src.connect(g); g.connect(comp); src.start(t0);
-        }
-      }
-    }
-    const rendered=await off.startRendering();
-    const wav=encodeWav(rendered);
-    const url=URL.createObjectURL(new Blob([wav],{type:'audio/wav'}));
-    const a=document.createElement('a'); a.href=url; a.download='qu33ph-song-mix.wav'; a.textContent='⬇ DOWNLOAD YOUR SONG (WAV, 12s)';
-    const dl=document.getElementById('dlArea'); dl.innerHTML=''; dl.appendChild(a);
-    st.textContent='Done — your 12-second mix is ready below.';
-  }catch(e){ console.error(e); st.textContent='Export hit a snag — the song still plays fine above. Try again.'; }
+async function playChipAt(i){
+  if(!trackState.playing) return;
+  if(i>=chips.length){ trackState.playing = false; trackState.idx = 0; trackState.node = null; return; }
+  trackState.idx = i;
+  const ch = chips[i];
+  const tok = trackToken;
+  const buf = await loadBuf(ch.sample.id);
+  if(tok!==trackToken || !trackState.playing || trackState.idx!==i || chips[i]!==ch) return;
+  const n = startBuf(buf, {pitch:ch.pitch, speed:ch.speed});
+  trackState.node = n; trackNodes[ch.uid] = n;
+  n.src.onended = ()=>{ delete trackNodes[ch.uid]; if(trackState.playing && trackState.idx===i) playChipAt(i+1); };
 }
-function encodeWav(buf){
-  const n=buf.length, ch=2, sr=buf.sampleRate;
-  const out=new DataView(new ArrayBuffer(44+n*ch*2));
-  function str(o,s){ for(let i=0;i<s.length;i++) out.setUint8(o+i, s.charCodeAt(i)); }
-  str(0,'RIFF'); out.setUint32(4,36+n*ch*2,true); str(8,'WAVE'); str(12,'fmt ');
-  out.setUint32(16,16,true); out.setUint16(20,1,true); out.setUint16(22,ch,true);
-  out.setUint32(24,sr,true); out.setUint32(28,sr*ch*2,true); out.setUint16(32,ch*2,true); out.setUint16(34,16,true);
-  str(36,'data'); out.setUint32(40,n*ch*2,true);
-  const l=buf.getChannelData(0), r=buf.numberOfChannels>1?buf.getChannelData(1):l;
-  for(let i=0;i<n;i++){
-    const a=Math.max(-1,Math.min(1,l[i])), b=Math.max(-1,Math.min(1,r[i]));
-    out.setInt16(44+i*4, a<0?a*0x8000:a*0x7FFF, true);
-    out.setInt16(44+i*4+2, b<0?b*0x8000:b*0x7FFF, true);
-  }
-  return out.buffer;
+function pauseTrack(){
+  if(trackState.playing && !trackState.paused){ audioCtx.suspend(); trackState.paused = true; }
 }
-renderFilters(); renderSamples(); renderTracks();
+function clearTrack(){
+  stopTrack(); stopPreview();
+  chips = []; selectedUid = null;
+  $('chipEditor').classList.add('hidden');
+  renderChips();
+}
+renderGames(); renderChips();
 </script>
 </body>
 </html>
