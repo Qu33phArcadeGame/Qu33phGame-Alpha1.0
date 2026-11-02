@@ -91,6 +91,7 @@ document.addEventListener('dragstart', function(e){ var t=e.target; if(t && (t.t
     <button class="btn sm red" onclick="pauseTrack()">&#10074;&#10074;</button>
     <button class="btn sm" onclick="clearTrack()">&#10005;</button>
     <button class="btn sm gold" onclick="exportMp3()">EXPORT MP3</button>
+    <button class="btn sm gold hidden" id="pasteBtn" onclick="pasteClip()">PASTE</button>
   </div>
   <div id="bannerHint">TAP + ON A SAMPLE TO BUILD YOUR TRACK</div>
 </div>
@@ -106,6 +107,7 @@ const PPS = 30, RULER_H = 20, LANE_H = 76, CLIP_H = 64, SNAP = 0.25;
 let audioCtx = null, rawCache = {}, bufCache = {}, peaksCache = {};
 let previewId = null, previewNode = null, previewPaused = false, previewToken = 0;
 let clips = [], clipN = 0, selectedUid = null;
+let clipBoard = null;
 let tl = {playing:false, paused:false, ctxStart:0, playFrom:0, nodes:{}, raf:0};
 let playToken = 0;
 const $ = id => document.getElementById(id);
@@ -256,11 +258,11 @@ function renderTimeline(){
     el.dataset.uid = c.uid;
     el.style.left = (c.start * PPS) + 'px';
     el.style.top = (RULER_H + (c.lane-1) * LANE_H + 6) + 'px';
-    el.style.width = Math.max(46, clipDur(c) * PPS) + 'px';
+    el.style.width = (clipDur(c) * PPS) + 'px';
     const name = document.createElement('div'); name.className = 'clip-name'; name.textContent = c.sample.id;
     const cv = document.createElement('canvas');
     cv.dataset.sid = c.sample.id; cv.dataset.uid = c.uid;
-    cv.width = Math.max(46, Math.round(clipDur(c) * PPS)); cv.height = 30;
+    cv.width = Math.max(1, Math.round(clipDur(c) * PPS)); cv.height = 30;
     el.append(name, cv);
     inner.appendChild(el);
     bindClipDrag(el, c);
@@ -268,38 +270,42 @@ function renderTimeline(){
   });
   $('bannerHint').classList.toggle('hidden', !!clips.length);
 }
-function drawWave(cv, peaks){
+function drawWave(cv, cols){
   const x = cv.getContext('2d'), w = cv.width, h = cv.height;
   x.clearRect(0, 0, w, h);
   x.fillStyle = '#ffd24a';
-  const n = peaks.length, bw = w / n;
-  for(let i=0; i<n; i++){
-    const ph = Math.max(1, peaks[i] * (h - 4));
-    x.fillRect(i * bw, (h - ph) / 2, Math.max(1, bw - 1), ph);
+  for(let i=0; i<w; i++){
+    const yT = (0.5 - cols.mx[i] * 0.5) * h, yB = (0.5 - cols.mn[i] * 0.5) * h;
+    x.fillRect(i, yT, 1, Math.max(1, yB - yT));
   }
 }
-function peaksFor(id, buf){
-  if(peaksCache[id]) return peaksCache[id];
+// one min/max pair per pixel column, from EVERY sample (no skipping) —
+// the drawn shape is the sample's true envelope at the clip's current
+// width, so it stays accurate when speed stretches or squeezes the box
+function waveCols(id, buf, w){
+  const key = id + '@' + w;
+  if(peaksCache[key]) return peaksCache[key];
   const c0 = buf.getChannelData(0);
   const c1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : null;
-  const N = 120, peaks = new Float32Array(N);
-  const per = Math.max(1, Math.floor(c0.length / N));
-  for(let i=0; i<N; i++){
-    let m = 0;
-    for(let j=i*per; j<Math.min((i+1)*per, c0.length); j+=4){
-      const a = Math.abs(c0[j]); if(a>m) m = a;
-      if(c1){ const b = Math.abs(c1[j]); if(b>m) m = b; }
+  const mn = new Float32Array(w), mx = new Float32Array(w);
+  const per = c0.length / w;
+  for(let i=0; i<w; i++){
+    const s0 = Math.floor(i * per), s1 = Math.max(s0 + 1, Math.floor((i + 1) * per));
+    let lo = Infinity, hi = -Infinity;
+    for(let j=s0; j<s1; j++){
+      const a = c0[j]; if(a<lo) lo = a; if(a>hi) hi = a;
+      if(c1){ const b = c1[j]; if(b<lo) lo = b; if(b>hi) hi = b; }
     }
-    peaks[i] = m;
+    mn[i] = lo; mx[i] = hi;
   }
-  peaksCache[id] = peaks; return peaks;
+  const cols = {mn, mx}; peaksCache[key] = cols; return cols;
 }
 function drawClipWave(cv, sid){
   const key = sid + '@main';
-  if(bufCache[key]){ drawWave(cv, peaksFor(sid, bufCache[key])); return; }
+  if(bufCache[key]){ drawWave(cv, waveCols(sid, bufCache[key], cv.width)); return; }
   loadBuf(sid).then(buf=>{
     const cur = document.querySelector('canvas[data-uid="' + cv.dataset.uid + '"]');
-    if(cur) drawWave(cur, peaksFor(sid, buf));
+    if(cur) drawWave(cur, waveCols(sid, buf, cur.width));
   }).catch(()=>{});
 }
 function bindClipDrag(el, c){
@@ -349,6 +355,25 @@ function addClip(sampleId){
   stopPlayback();
   clips.push({uid:'c'+(++clipN), sample:s, pitch:0, speed:1, lane:1, start:laneEnd(1)});
   renderTimeline();
+}
+// copy/paste a timeline clip: COPY (in the clip editor) stores the sample
+// plus its pitch, speed and lane; PASTE drops a copy right after the
+// original on the same lane when that spot is free, else at that lane's end.
+// The clipboard survives, so PASTE can be tapped again for more copies.
+function pasteClip(){
+  if(!clipBoard) return;
+  const src = clips.find(c=>c.uid===clipBoard.sourceUid);
+  const lane = clipBoard.lane, dur = 4 / clipBoard.speed;
+  let start;
+  if(src && src.lane===lane){
+    const after = clipEnd(src);
+    if(!overlaps(lane, after, after+dur, null)) start = after;
+  }
+  if(start===undefined) start = laneEnd(lane);
+  stopPreview(); stopPlayback();
+  const c = {uid:'c'+(++clipN), sample:clipBoard.sample, pitch:clipBoard.pitch, speed:clipBoard.speed, lane, start};
+  clips.push(c); selectedUid = c.uid; renderTimeline(); renderClipEditor();
+  status('Pasted ' + clipBoard.sample.id + ' — tap PASTE again for another copy.');
 }
 function selectClip(uid){
   if(selectedUid===uid){ selectedUid = null; $('clipEditor').classList.add('hidden'); renderTimeline(); return; }
@@ -421,9 +446,11 @@ function renderClipEditor(){
   };
   const hear = document.createElement('button'); hear.className = 'btn sm gold'; hear.textContent = '\u25B6 HEAR IT';
   hear.onclick = async ()=>{ ensureAudio(); stopPlayback(); stopPreview(); const buf = await loadBuf(ch.sample.id); startBuf(audioCtx, buf, {pitch:ch.pitch, speed:ch.speed}); };
+  const cp = document.createElement('button'); cp.className = 'btn sm gold'; cp.textContent = 'COPY';
+  cp.onclick = ()=>{ clipBoard = {sample:ch.sample, pitch:ch.pitch, speed:ch.speed, lane:ch.lane, sourceUid:ch.uid}; $('pasteBtn').classList.remove('hidden'); status('Copied ' + ch.sample.id + ' — tap PASTE to drop a copy in.'); };
   const rm = document.createElement('button'); rm.className = 'btn sm red'; rm.textContent = '\u2715 REMOVE';
   rm.onclick = ()=>{ removeClip(ch.uid); };
-  btns.append(laneBtn, hear, rm);
+  btns.append(laneBtn, hear, cp, rm);
   ed.append(name, pitch.row, numRowTicks(['-24','0','+24']), pitchRow2, pitchPresets, speed.row, numRowTicks(['0.25\u00D7','1\u00D7','4\u00D7']), speedRow2, speedPresets, btns);
 }
 function removeClip(uid){
