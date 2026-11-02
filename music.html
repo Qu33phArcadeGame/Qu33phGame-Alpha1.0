@@ -54,7 +54,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 #tlWrap{margin:12px;border:2px solid #23232a;border-radius:12px;overflow:hidden;background:#0b0b0d;}
 #tlScroll{overflow-x:auto;}
 #tlInner{position:relative;}
-#ruler{position:relative;height:20px;border-bottom:1px solid #23232a;}
+#ruler{position:relative;height:20px;border-bottom:1px solid #23232a;touch-action:none;cursor:ew-resize;}
 #ruler .tick{position:absolute;bottom:0;width:1px;height:6px;background:#555;}
 #ruler .lab{position:absolute;bottom:7px;transform:translateX(-50%);font-size:9px;color:#888;font-family:monospace;}
 .lane{position:relative;height:76px;border-bottom:1px solid #1a1a1e;}
@@ -136,14 +136,15 @@ async function loadBuf(id, ctx){
   const buf = await ctx.decodeAudioData(raw.slice(0));
   bufCache[key] = buf; return buf;
 }
-function startBuf(ctx, buf, opts, when){
+function startBuf(ctx, buf, opts, when, offset){
   const src = ctx.createBufferSource();
   src.buffer = buf; src.loop = false;
   src.playbackRate.value = opts.speed;
   try{ src.detune.value = opts.pitch * 100; }catch(e){}
   const g = ctx.createGain(); g.gain.value = 0.9;
   src.connect(g); g.connect(opts.dest || ctx.destination);
-  src.start(when === undefined ? 0 : when);
+  if(offset) src.start(when === undefined ? 0 : when, offset);
+  else src.start(when === undefined ? 0 : when);
   return {src:src, gain:g};
 }
 function stopNode(n){ try{ n.src.stop(); }catch(e){} try{ n.src.disconnect(); }catch(e){} }
@@ -480,6 +481,85 @@ function removeClip(uid){
   renderTimeline();
 }
 
+// ---------- scrub + seek ----------
+// schedule every clip from time T: clips already over are skipped, a clip
+// spanning T starts mid-buffer (offset = (T - start) * speed), the rest
+// start at their offset from T. Shared by fresh play and by seeking.
+function scheduleFrom(T, paused){
+  tl.playFrom = T; tl.ctxStart = audioCtx.currentTime;
+  tl.playing = true; tl.paused = paused;
+  tl.nodes = {};
+  let lastUid = null, lastEnd = -1;
+  clips.forEach(c=>{
+    const ce = clipEnd(c);
+    if(ce <= T + 0.001) return;
+    const buf = bufCache[c.sample.id + '@main'];
+    if(!buf) return;
+    let when, offset = 0;
+    if(c.start >= T){ when = tl.ctxStart + (c.start - T); }
+    else { when = tl.ctxStart; offset = (T - c.start) * c.speed; }
+    const n = startBuf(audioCtx, buf, {pitch:c.pitch, speed:c.speed}, when, offset);
+    tl.nodes[c.uid] = n;
+    if(ce > lastEnd){ lastEnd = ce; lastUid = c.uid; }
+  });
+  if(lastUid && tl.nodes[lastUid]){
+    tl.nodes[lastUid].src.onended = ()=>{ if(tl.playing){ tl.playFrom = 0; stopPlayback(); } };
+  }
+  setPlayhead(T * PPS);
+  tl.raf = requestAnimationFrame(playheadLoop);
+}
+// jump the playback position (or, when stopped, the pending start point)
+// to time T in seconds
+function seekTo(T){
+  const wasPlaying = tl.playing && !tl.paused;
+  const wasPaused = tl.playing && tl.paused;
+  stopPlayback();
+  T = Math.max(0, T);
+  if(clips.length && T >= timelineEnd()){ tl.playFrom = 0; return; }
+  if((wasPlaying || wasPaused) && audioCtx){ scheduleFrom(T, wasPaused); return; }
+  tl.playFrom = T;
+  setPlayhead(T * PPS);
+}
+// drag the ruler strip at the top of the timeline to move the playback
+// position: the line follows the pointer live, and the jump commits on
+// release so a drag never stutters the audio. Clips keep priority — a
+// press starting on a clip still drags the clip, not the playhead.
+let scrub = null;
+$('tlInner').addEventListener('pointerdown', e=>{
+  if(e.target.closest('.clip')) return;
+  const r = $('tlInner').getBoundingClientRect();
+  if(e.clientY - r.top >= RULER_H + 6) return;
+  const ph = $('playhead');
+  scrub = {prevLine: ph ? parseFloat(ph.style.left) || 0 : 0, prevFrom: tl.playFrom};
+  try{ $('tlInner').setPointerCapture(e.pointerId); }catch(_){}
+  scrubTo(e.clientX - r.left);
+  e.preventDefault();
+});
+$('tlInner').addEventListener('pointermove', e=>{
+  if(!scrub) return;
+  const r = $('tlInner').getBoundingClientRect();
+  scrubTo(e.clientX - r.left);
+});
+$('tlInner').addEventListener('pointerup', ()=>scrubEnd(true));
+$('tlInner').addEventListener('pointercancel', ()=>scrubEnd(false));
+function scrubTo(contentX){
+  const T = clips.length ? Math.min(Math.max(0, contentX / PPS), timelineEnd()) : 0;
+  const ph = $('playhead'); if(ph) ph.style.left = (T * PPS) + 'px';
+  status(T.toFixed(1) + 's');
+}
+function scrubEnd(commit){
+  if(!scrub) return;
+  const s = scrub; scrub = null;
+  status('');
+  if(!commit){
+    tl.playFrom = s.prevFrom;
+    const ph = $('playhead'); if(ph) ph.style.left = s.prevLine + 'px';
+    return;
+  }
+  const ph = $('playhead');
+  seekTo(ph ? (parseFloat(ph.style.left) || 0) / PPS : 0);
+}
+
 // ---------- timeline transport ----------
 async function playTrack(){
   ensureAudio();
@@ -490,26 +570,16 @@ async function playTrack(){
   try{ for(const c of clips) await loadBuf(c.sample.id); }
   catch(e){ console.error(e); status('A sample did not load — check connection and try again.'); return; }
   if(tok!==playToken) return;
-  tl.playing = true; tl.paused = false; tl.playFrom = 0; tl.ctxStart = audioCtx.currentTime;
-  tl.nodes = {};
-  let lastUid = null, lastEnd = -1;
-  clips.forEach(c=>{
-    const buf = bufCache[c.sample.id + '@main'];
-    const n = startBuf(audioCtx, buf, {pitch:c.pitch, speed:c.speed}, tl.ctxStart + c.start);
-    tl.nodes[c.uid] = n;
-    if(clipEnd(c) > lastEnd){ lastEnd = clipEnd(c); lastUid = c.uid; }
-  });
-  if(lastUid && tl.nodes[lastUid]){
-    tl.nodes[lastUid].src.onended = ()=>{ if(tl.playing){ stopPlayback(); } };
-  }
-  tl.raf = requestAnimationFrame(playheadLoop);
+  // start from the scrubbed position when one is set, else from the top
+  const startAt = (tl.playFrom > 0 && tl.playFrom < timelineEnd()) ? tl.playFrom : 0;
+  scheduleFrom(startAt, false);
 }
 function pauseTrack(){
   if(tl.playing && !tl.paused){ audioCtx.suspend(); tl.paused = true; }
 }
 function clearTrack(){
   stopPlayback(); stopPreview();
-  clips = []; selectedUid = null;
+  clips = []; selectedUid = null; tl.playFrom = 0;
   $('clipEditor').classList.add('hidden');
   renderTimeline();
 }
