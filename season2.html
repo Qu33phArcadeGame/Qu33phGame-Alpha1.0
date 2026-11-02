@@ -117,13 +117,13 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .pb-bucket .pb-rim{position:absolute;left:0;top:0;width:100%;height:22%;border-radius:50%;background:radial-gradient(ellipse at 50% 40%,#e8ebee 0%,#aab0b7 55%,#6d7278 100%);box-shadow:inset 0 0 0 2px #565b62;}
 .pb-bucket .pb-mouth{position:absolute;left:12%;top:4%;width:76%;height:14%;border-radius:50%;background:#1c1e20;box-shadow:inset 0 2px 4px #000;}
 .pb-points{position:absolute;z-index:7;transform:translateY(-50%);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(13px,4vw,20px);text-shadow:0 2px 6px #000;pointer-events:none;}
-.pb-marker{position:absolute;z-index:9;width:min(30px,7vw);height:min(30px,7vw);border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff7a7a,#c81e1e 60%,#7a0d0d);border:2px solid #fff;box-shadow:0 4px 6px rgba(0,0,0,.7);transform:translate(-50%,-50%);pointer-events:none;}
+.pb-marker{position:absolute;z-index:9;transform:translate(-50%,-50%);pointer-events:none;}.pb-marker img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
 .pb-aim{position:absolute;z-index:8;height:0;border-top:3px dashed #fff;transform-origin:0 50%;pointer-events:none;opacity:.85;}
 .pb-pop{position:absolute;z-index:12;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;text-align:center;}
 .pb-pop.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
 .pb-pop.miss{color:#ff5a5a;}
 .pb-hint{position:absolute;z-index:10;left:50%;bottom:12px;transform:translateX(-50%);width:92vw;text-align:center;color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;}
-.pb-card-bucket{display:flex;align-items:flex-end;justify-content:center;height:110px;padding-bottom:6px;box-sizing:border-box;}
+.cab-card .cab-media.pb-card-bucket{display:flex;align-items:center;justify-content:center;height:110px;padding-bottom:0;box-sizing:border-box;}
 .pb-card-bucket .pb-bucket{position:relative;transform:none;left:auto;top:auto;}
 
 /* ============ THEME TREATMENT — mirrors index.html's arcade-menu theming ============
@@ -388,7 +388,7 @@ document.addEventListener('dragstart', function(e){
     <div class="pb-bucket" style="left:8%;top:50%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
     <div class="pb-points" style="left:calc(8% + 45px);top:75%;">+50</div>
     <div class="pb-bucket" style="left:8%;top:75%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
-    <div class="pb-marker" id="pbMarker" style="left:85%;top:60%;"></div>
+    <div class="pb-marker" id="pbMarker" style="left:85%;top:60%;"><img id="pbMarkerImg" src="green.png" alt=""></div>
     <div class="pb-aim" id="pbAim" style="width:0px;"></div>
   </div>
   <div class="pb-pop" id="pbPop"></div>
@@ -419,9 +419,9 @@ document.addEventListener('dragstart', function(e){
 // edge is open, and anything that peefs past the buckets is a miss.
 const pb$=id=>document.getElementById(id);
 const PB_MARKERS=[
-  {c:'#2ecc71', d:'#1e8449'},
-  {c:'#e74c3c', d:'#922b21'},
-  {c:'#3498db', d:'#1a5276'},
+  {c:'#2ecc71', d:'#1e8449', file:'green.png', w:50, h:50},
+  {c:'#e74c3c', d:'#922b21', file:'red.png', w:50, h:50},
+  {c:'#3498db', d:'#1a5276', file:'blue.png', w:80, h:50},
 ];
 const PB_BUCKETS=[
   {x:8, by:25, mouth:21, pts:200, label:'+200'},
@@ -432,7 +432,7 @@ const PB_THROW={x:85, y:60};
 const PB_GRAV=200;    // %/s^2, pulls the marker back down
 const PB_SCALE=0.45;  // flick px -> %/s of throw velocity
 let pbRound=1, pbScore=0, pbLeft=3, pbRoundScores=[0,0,0];
-let pbFlying=false, pbVX=0, pbVY=0, pbX=PB_THROW.x, pbY=PB_THROW.y, pbLast=0, pbRaf=0, pbDrag=null, pbFlightT=0;
+let pbFlying=false, pbVX=0, pbVY=0, pbX=PB_THROW.x, pbY=PB_THROW.y, pbLast=0, pbRaf=0, pbDrag=null, pbFlightT=0, pbRot=0;
 function openPeef(){
   pb$('menuScreen').classList.add('hidden');
   pb$('peefScreen').classList.remove('hidden');
@@ -461,10 +461,16 @@ function pbUpdateHud(){
   pb$('pbScoreHud').textContent=pbScore;
 }
 function pbSpawnMarker(){
-  pbFlying=false; pbX=PB_THROW.x; pbY=PB_THROW.y;
+  pbFlying=false; pbX=PB_THROW.x; pbY=PB_THROW.y; pbRot=0;
   const m=pb$('pbMarker');
   const col=PB_MARKERS[3-pbLeft];
-  m.style.background='radial-gradient(circle at 35% 30%, #ffffff 0%, '+col.c+' 35%, '+col.d+' 100%)';
+  const img=pb$('pbMarkerImg');
+  img.src=col.file;
+  img.style.width='min('+col.w+'px,'+(col.w*12/50)+'vw)';
+  img.style.height='min('+col.h+'px,12vw)';
+  img.style.transform='rotate(0rad)';
+  img.onerror=()=>{ m.style.background='radial-gradient(circle at 35% 30%, #ffffff 0%, '+col.c+' 35%, '+col.d+' 100%)'; m.style.borderRadius='50%'; };
+  m.style.background=''; m.style.borderRadius='';
   m.style.transition=''; m.style.opacity='1'; m.style.transform='translate(-50%,-50%) scale(1)';
   pbPlaceMarker();
 }
@@ -490,6 +496,7 @@ function pbThrow(dx, dy){
     if(pbY>=92){ pbY=92; pbVY=-Math.abs(pbVY)*0.7; pbVX*=0.8; }
     if(pbX>=97){ pbX=97; pbVX=-Math.abs(pbVX)*0.7; }
     pbPlaceMarker();
+    pbRot+=6*dt; pb$('pbMarkerImg').style.transform='rotate('+pbRot+'rad)';
     // over the bucket column and falling: drop into the first mouth at or below
     if(pbVX<0 && pbX<=15 && pbX>=1 && pbVY>0){
       for(const b of PB_BUCKETS){ if(b.mouth>=pbY){ pbLand(b); return; } }
