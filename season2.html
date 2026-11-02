@@ -118,12 +118,12 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .pb-bucket .pb-mouth{position:absolute;left:12%;top:4%;width:76%;height:14%;border-radius:50%;background:#1c1e20;box-shadow:inset 0 2px 4px #000;}
 .pb-points{position:absolute;z-index:7;transform:translateY(-50%);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(13px,4vw,20px);text-shadow:0 2px 6px #000;pointer-events:none;}
 .pb-marker{position:absolute;z-index:9;transform:translate(-50%,-50%);pointer-events:none;}.pb-marker img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
-.pb-prev{position:absolute;left:47.5%;transform:translate(-50%,-50%);opacity:.6;pointer-events:none;z-index:7;}
+.pb-prev{position:absolute;transform:translate(-50%,-50%);opacity:.6;pointer-events:none;z-index:7;}
 .pb-prev img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
-#pbPrev0{bottom:45px;} #pbPrev0 img{width:50px;height:50px;transform:rotate(60deg);}
-#pbPrev1{bottom:91px;} #pbPrev1 img{width:50px;height:50px;transform:rotate(60deg);}
-#pbPrev2{bottom:137px;} #pbPrev2 img{width:80px;height:50px;transform:rotate(105deg);}
-.pb-swipe-hint{position:absolute;left:47.5%;bottom:200px;transform:translateX(-50%);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;z-index:7;white-space:nowrap;}
+#pbPrev0 img{width:50px;height:50px;transform:rotate(60deg);}
+#pbPrev1 img{width:50px;height:50px;transform:rotate(60deg);}
+#pbPrev2 img{width:80px;height:50px;transform:rotate(105deg);}
+.pb-swipe-hint{position:absolute;transform:translateX(-50%);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;z-index:7;white-space:nowrap;}
 .pb-dead{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:7;}
 .pb-dead img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
 .pb-aim{position:absolute;z-index:8;height:0;border-top:3px dashed #fff;transform-origin:0 50%;pointer-events:none;opacity:.85;}
@@ -132,6 +132,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .pb-pop.miss{color:#ff5a5a;}
 .pb-hint{position:absolute;z-index:10;left:50%;bottom:12px;transform:translateX(-50%);width:92vw;text-align:center;color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;}
 .cab-card .cab-media.pb-card-bucket{display:flex;align-items:center;justify-content:center;height:110px;padding-bottom:0;box-sizing:border-box;}
+.cab-card.cab-music .cab-media{margin-top:8px;}
 .pb-card-bucket .pb-bucket{position:relative;transform:none;left:auto;top:auto;}
 
 /* ============ THEME TREATMENT — mirrors index.html's arcade-menu theming ============
@@ -306,7 +307,7 @@ document.addEventListener('dragstart', function(e){
         <img class="cab-media" src="skateboardingbanner.png" alt="Qu33ph Skateboarding">
         <div class="cab-label">SKATEBOARDING</div>
       </div>
-      <div class="cab-card" onclick="location.href='music.html'">
+      <div class="cab-card cab-music" onclick="location.href='music.html'">
         <div class="cab-marquee"></div>
         <img class="cab-media" src="qu33phmusicposter.png" alt="Qu33ph Music">
         <div class="cab-label">MUSIC</div>
@@ -346,7 +347,6 @@ document.addEventListener('dragstart', function(e){
         <div class="cab-label">CINEMA</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
-      <div class="cab-card empty-slot"><span>COMING SOON</span></div>
       <div class="cab-card empty-slot"><span>COMING SOON</span></div>
     </div>
   </div>
@@ -390,16 +390,16 @@ document.addEventListener('dragstart', function(e){
   <div class="hud"><span class="area" id="pbRoundHud">ROUND 1/3</span><span class="score" id="pbScoreHud">0</span></div>
   <div id="pbField" style="position:absolute;inset:0;">
     <img class="field" src="originalfield.png">
-    <div class="pb-points" style="left:calc(8% + 45px);top:25%;">+200</div>
-    <div class="pb-bucket" style="left:8%;top:25%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
-    <div class="pb-points" style="left:calc(8% + 45px);top:50%;">+100</div>
-    <div class="pb-bucket" style="left:8%;top:50%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
-    <div class="pb-points" style="left:calc(8% + 45px);top:75%;">+50</div>
-    <div class="pb-bucket" style="left:8%;top:75%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
+    <div class="pb-points" style="left:10%;top:25%;">+200</div>
+    <div class="pb-bucket" style="left:0;top:25%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
+    <div class="pb-points" style="left:10%;top:50%;">+100</div>
+    <div class="pb-bucket" style="left:0;top:50%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
+    <div class="pb-points" style="left:10%;top:75%;">+50</div>
+    <div class="pb-bucket" style="left:0;top:75%;"><div class="pb-shadow"></div><div class="pb-body"></div><div class="pb-shine"></div><div class="pb-rim"></div><div class="pb-mouth"></div></div>
     <div class="pb-prev" id="pbPrev0"><img src="green.png" alt=""></div>
     <div class="pb-prev" id="pbPrev1"><img src="red.png" alt=""></div>
     <div class="pb-prev" id="pbPrev2"><img src="blue.png" alt=""></div>
-    <div class="pb-swipe-hint">swipe to roll</div>
+    <div class="pb-swipe-hint" id="pbSwipeHint">swipe to roll</div>
     <div class="pb-marker" id="pbMarker" style="display:none;"><img id="pbMarkerImg" src="green.png" alt=""></div>
     <div class="pb-aim" id="pbAim" style="width:0px;"></div>
   </div>
@@ -426,8 +426,9 @@ document.addEventListener('dragstart', function(e){
 // launch velocity = swipe px * 0.2, curve = swipe dx * 0.0003, drag 0.94/frame,
 // spin decay 0.96/frame, 1-second life, right-wall bounce, top bounce, and
 // falling off the left edge = PEEF. The one change: peefing no longer ends
-// the marker — it rolls on into the bucket column, and dropping into a bucket
-// scores (top +200, middle +100, bottom +50). 3 rounds x 3 markers.
+// the marker — it rolls on into the bucket column (buckets half off the left
+// edge, centres at x=0), and dropping into a bucket scores (top +200, middle
+// +100, bottom +50). 3 rounds x 3 markers.
 const pb$=id=>document.getElementById(id);
 const PB_MARKERS=[
   {c:'#2ecc71', d:'#1e8449', file:'green.png', w:50, h:50},
@@ -443,13 +444,27 @@ let PB_W=0, PB_H=0, PB_LEFT=0, PB_RIGHT=0, PB_CX=0, PB_LAUNCH=0, PB_END=0;
 let pbRound=1, pbScore=0, pbLeft=3, pbRoundScores=[0,0,0];
 let pbFlying=false, pbVX=0, pbVY=0, pbX=0, pbY=0, pbCurve=0, pbRot=0, pbSpin=0, pbLife=0, pbRaf=0, pbDrag=null;
 function pbMetrics(){
+  // the original game's REALISTIC-theme field (the photo room in the screenshots):
+  // LEFT 18.5%, RIGHT 51.88% - 6px, launch at 97.5% height — NOT the 20%/75%/H-40
+  // values of the other theme. CX is the middle of that field.
   const f=pb$('pbField'); PB_W=f.clientWidth; PB_H=f.clientHeight;
-  PB_LEFT=PB_W*0.20; PB_RIGHT=PB_W*0.75; PB_CX=PB_W*0.475; PB_LAUNCH=PB_H-40; PB_END=PB_H*0.11;
+  PB_LEFT=PB_W*0.185; PB_RIGHT=PB_W*0.5188-6; PB_CX=(PB_LEFT+PB_RIGHT)/2; PB_LAUNCH=PB_H*0.975; PB_END=PB_H*0.11;
+}
+function pbPositionPreviews(){
+  // the original's preview stack, at the field's middle: green/red/blue centres
+  // LAUNCH-30/-76/-122, 'swipe to roll' just above the blue one
+  const set=(el,top)=>{ el.style.left=PB_CX+'px'; el.style.top=top+'px'; };
+  set(pb$('pbPrev0'), PB_LAUNCH-30);
+  set(pb$('pbPrev1'), PB_LAUNCH-76);
+  set(pb$('pbPrev2'), PB_LAUNCH-122);
+  const hint=pb$('pbSwipeHint');
+  hint.style.left=PB_CX+'px'; hint.style.top=(PB_LAUNCH-171)+'px';
 }
 function openPeef(){
   pb$('menuScreen').classList.add('hidden');
   pb$('peefScreen').classList.remove('hidden');
   pbMetrics();
+  pbPositionPreviews();
   pbStart();
 }
 function peefBack(){
@@ -498,7 +513,7 @@ function pbThrow(dx, dy){
   pbRot=Math.PI/3; pbSpin=0.08; pbLife=0; pbFlying=true;
   pbPlaceMarker();
   img.style.transform='rotate('+pbRot+'rad)';
-  const bx=PB_W*0.08;
+  const bx=0;   // buckets sit half off the left edge, centres at x=0
   const step=()=>{
     if(!pbFlying) return;
     pbLife+=1/60;
@@ -529,7 +544,7 @@ function pbLand(hit){
     pbScore+=hit.pts; pbRoundScores[pbRound-1]+=hit.pts;
     try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
     m.style.transition='all .25s';
-    m.style.left=(PB_W*0.08)+'px'; m.style.top=(PB_H*hit.by)+'px';
+    m.style.left='0px'; m.style.top=(PB_H*hit.by)+'px';
     m.style.transform='translate(-50%,-50%) scale(.3)'; m.style.opacity='0';
     setTimeout(()=>{ m.style.transition=''; m.style.display='none'; }, 300);
     pbPop(hit.label, false);
@@ -579,6 +594,7 @@ function pbDrawAim(){
 pb$('pbField').addEventListener('pointerdown', e=>{
   if(pbFlying || pbLeft<=0) return;
   pbMetrics();
+  pbPositionPreviews();
   const r=pb$('pbField').getBoundingClientRect();
   const sx=e.clientX-r.left;
   if(sx<PB_LEFT || sx>PB_RIGHT) return;   // only a swipe inside the field rolls a marker
