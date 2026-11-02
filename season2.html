@@ -77,10 +77,11 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
   box-shadow:0 3px 7px rgba(0,0,0,.55); }
 /* fully empty slots — no art yet, so just the plain text, no cabinet-icon
    box treatment at all */
-.cab-card.empty-slot{ cursor:default; display:flex; align-items:center; justify-content:center; border-radius:14px;
-  min-height:196px; border-style:dashed; border-color:#26262c; background:#08080c; box-shadow:none; }
+.cab-card.empty-slot{ cursor:default; display:flex; align-items:flex-start; justify-content:center; border:none; background:none; box-shadow:none; }
 .cab-card.empty-slot:active{ transform:none; }
-.cab-card.empty-slot span{ color:#4a4a4a; font-size:9px; letter-spacing:1.5px; font-weight:bold; }
+.cab-card.empty-slot .empty-box{ width:100%; aspect-ratio:16/9; border:2px dashed #26262c; background:#08080c; border-radius:14px;
+  display:flex; align-items:center; justify-content:center; }
+.cab-card.empty-slot .empty-box span{ color:#4a4a4a; font-size:9px; letter-spacing:1.5px; font-weight:bold; }
 
 #selectScreen{display:flex;align-items:center;justify-content:center;padding:48px 16px;overflow-y:auto}.select-wrap{width:min(900px,96vw);text-align:center}.select-title{font-family:Arial Black,Arial,sans-serif;font-size:clamp(25px,6vw,46px);letter-spacing:4px}.select-sub{color:#888;font-size:11px;letter-spacing:3px;margin:4px 0 16px}.select-wrap{width:min(720px,96vw)}.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.choices.choices-capped{padding-left:28px}.choice{position:relative;background:#000;border:3px solid #fff;border-radius:4px 10px 10px 4px;padding:14px 6px 10px;cursor:pointer;min-height:200px;display:flex;align-items:center;justify-content:center}.choice::before{content:"";position:absolute;left:-28px;top:2px;bottom:2px;width:28px;background:#000;border:3px solid #fff;border-radius:8px 2px 2px 8px}.choice:hover{border-color:#ffd24a}.choice:hover::before{border-color:#ffd24a}.choice.sel{border-color:#ffd24a;box-shadow:0 0 14px rgba(255,210,74,.45)}.choice.sel::before{border-color:#ffd24a}.choice .rider-prev{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}.choice .rider-prev .rp-char{height:128px;width:auto;max-width:92%;object-fit:contain;position:relative;z-index:2;margin-bottom:-4px}.choice .rider-prev .rp-board-wrap{height:60px;width:150px;display:flex;align-items:center;justify-content:center;overflow:visible}.choice .rider-prev .rp-board{width:60px;height:150px;object-fit:contain;transform:rotate(90deg);flex:none}
 .choice-pic{background:none;border:none;padding:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}.choice-pic img{height:128px;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 4px 5px rgba(0,0,0,.7))}
@@ -111,11 +112,11 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 /* ============ PEEF BUCKETS — third Season 2 game ============ */
 #peefScreen{touch-action:none;user-select:none;-webkit-user-select:none}
 .pb-bucket{position:absolute;z-index:7;width:min(64px,14vw);height:min(78px,17vw);transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 5px 5px rgba(0,0,0,.7));}
-.pb-bucket .pb-shadow{position:absolute;left:-8%;bottom:-8%;width:116%;height:12%;border-radius:50%;background:rgba(0,0,0,.35);filter:blur(2px);}
-.pb-bucket .pb-body{position:absolute;left:2%;top:16%;width:96%;height:84%;clip-path:polygon(0 0,100% 0,84% 100%,16% 100%);background:linear-gradient(90deg,#5c6167 0%,#c9ced4 28%,#eef1f3 45%,#9aa0a7 70%,#565b62 100%);}
-.pb-bucket .pb-shine{position:absolute;left:30%;top:20%;width:10%;height:76%;background:rgba(255,255,255,.35);border-radius:50%;}
-.pb-bucket .pb-rim{position:absolute;left:0;top:0;width:100%;height:22%;border-radius:50%;background:radial-gradient(ellipse at 50% 40%,#e8ebee 0%,#aab0b7 55%,#6d7278 100%);box-shadow:inset 0 0 0 2px #565b62;}
-.pb-bucket .pb-mouth{position:absolute;left:12%;top:4%;width:76%;height:14%;border-radius:50%;background:#1c1e20;box-shadow:inset 0 2px 4px #000;}
+.pb-bucket .pb-shadow{position:absolute;left:10%;bottom:0;width:80%;height:8%;border-radius:50%;background:rgba(0,0,0,.30);filter:blur(2px);}
+.pb-bucket .pb-body{position:absolute;left:3%;top:15%;width:94%;height:85%;clip-path:polygon(0 0,100% 0,86% 100%,14% 100%);background:linear-gradient(90deg,#4a4f55 0%,#8b9198 18%,#d7dbdf 42%,#f2f4f6 50%,#aab0b6 68%,#6d7278 88%,#4a4f55 100%);}
+.pb-bucket .pb-shine{position:absolute;left:32%;top:22%;width:8%;height:70%;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.05));border-radius:50%;}
+.pb-bucket .pb-rim{position:absolute;left:0;top:0;width:100%;height:20%;border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#f2f4f6 0%,#c3c9cf 45%,#7d838a 75%,#565b62 100%);box-shadow:inset 0 0 0 1.5px #4a4f55;}
+.pb-bucket .pb-mouth{position:absolute;left:15%;top:3.5%;width:70%;height:13%;border-radius:50%;background:#141619;box-shadow:inset 0 2px 5px #000,0 1px 0 rgba(255,255,255,.25);}
 .pb-points{position:absolute;z-index:7;transform:translateY(-50%);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(13px,4vw,20px);text-shadow:0 2px 6px #000;pointer-events:none;}
 .pb-marker{position:absolute;z-index:9;transform:translate(-50%,-50%);pointer-events:none;}.pb-marker img{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));}
 .pb-prev{position:absolute;transform:translate(-50%,-50%);opacity:.6;pointer-events:none;z-index:7;}
@@ -131,9 +132,9 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .pb-pop.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
 .pb-pop.miss{color:#ff5a5a;}
 .pb-hint{position:absolute;z-index:10;left:50%;bottom:12px;transform:translateX(-50%);width:92vw;text-align:center;color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;}
-.cab-card .cab-media.pb-card-bucket{display:flex;align-items:center;justify-content:center;height:110px;padding-bottom:0;box-sizing:border-box;}
+.cab-card .cab-media.pb-card-bucket{display:flex;align-items:center;justify-content:center;height:auto;aspect-ratio:16/9;padding-bottom:0;box-sizing:border-box;}
 .cab-card.cab-music .cab-media{margin-top:8px;}
-.pb-card-bucket .pb-bucket{position:relative;transform:none;left:auto;top:auto;}
+.pb-card-bucket .pb-bucket{position:relative;transform:none;left:auto;top:auto;width:min(56px,13vw);height:min(64px,16vw);}
 
 /* ============ THEME TREATMENT — mirrors index.html's arcade-menu theming ============
    "inverted" flips the whole page (same as everywhere else in the arcade).
@@ -347,7 +348,7 @@ document.addEventListener('dragstart', function(e){
         <div class="cab-label">CINEMA</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
-      <div class="cab-card empty-slot"><span>COMING SOON</span></div>
+      <div class="cab-card empty-slot"><div class="empty-box"><span>COMING SOON</span></div></div>
     </div>
   </div>
 </div>
