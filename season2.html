@@ -450,7 +450,7 @@ document.addEventListener('dragstart', function(e){
   <button class="marker-btn" onclick="dtBack()">&larr; BACK</button>
   <div class="hud"><span class="area" id="dtRoundHud">ROUND 1/3</span><span class="score" id="dtScoreHud">0</span></div>
   <div id="dtField" style="position:absolute;inset:0;">
-    <img class="field dt-field" src="room-field-bg.png">
+    <img class="field dt-field" src="qu33phdarts-bg-real.png">
     <div class="dt-trail" id="dtTrail"></div>
     <img class="dt-chair" id="dtChair" src="Chair.png" alt="" style="display:none;">
     <div class="dt-face-hit" id="dtFaceHit" style="display:none;"></div>
@@ -712,17 +712,18 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // not an obstacle, it LAUNCHES the marker up at the board — where the marker
 // hits the chair across its width, and how hard it was thrown, set the launch
 // arc, and that arc decides which mega (or the 333 face) it lands on.
-// REAL ROOM FIELD (Nov 3): Coby sent his own photo of the real room after
-// calling the head-on cabinet + flat vent panel version "really bad" — so
-// this version uses HIS photo, nothing invented. The bg is his photo rotated
-// CW and cropped to phone portrait (946x2048, aspect 0.462, so fill shows it
-// with no distortion): green cabinet + paper at the top, long countertop
-// centre-left, the real brown AC unit (beige cabinet, dark vent strip) on
-// the left, window bottom-right. The field starts at the bottom in front of
-// the brown unit, and the launch sits just right of it. The bg img uses
-// object-fit:fill (dt-field). Board fractions below are for this real-room
-// field (946x2048). Board = 9 mega index cards in a 3x3 grid on the green
-// cabinet, left of the paper, around the
+// OLD LONG-COUNTER DESIGN + REAL AC UNIT (Nov 3): Coby said the rotated
+// real-room version inverted the counter, and to go back to the old design
+// (2-3 iterations ago) where the counter was extended — cabinet on top,
+// long countertop running down — and to just use THIS AC unit, not mirrored
+// or messed with. So: bg = the old 1184x2800 long-counter design, extended
+// to 3200 by DIRECT COPY (no mirror) with the copy seam blended, plus THIS
+// AC unit cut from his new photo (1000110940_0_2sbt.jpg) and pasted as-is
+// (uniform scale only, no mirror/flip/rotate) flush with the very bottom,
+// so the field starts in front of it and ENDS at it. The bg img uses
+// object-fit:fill (dt-field). Board fractions below are for this 3200
+// field (cabinet pixels unchanged, so fy = cabinet pixel / 3200). Board
+// = 9 mega index cards in a cutoff circle around the
 // Qu33ph face paper, cut off by the wall on the right. Megas are worth
 // 11/22/33/44/55/66/77/88/99 (one each, 9 megas), the face 333. Numbers are
 // plain, no plus sign. 3 rounds x 3 darts. Previews sit in the bottom right
@@ -737,18 +738,18 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // at the apex with a pulse, instead of dropping into a hole like a ball.
 const dt$=id=>document.getElementById(id);
 const DT_MEGAS=[
-  {fx:0.60, fy:0.12, pts:11},
-  {fx:0.69, fy:0.12, pts:22},
-  {fx:0.78, fy:0.12, pts:33},
-  {fx:0.60, fy:0.18, pts:44},
-  {fx:0.69, fy:0.18, pts:55},
-  {fx:0.78, fy:0.18, pts:66},
-  {fx:0.60, fy:0.24, pts:77},
-  {fx:0.69, fy:0.24, pts:88},
-  {fx:0.78, fy:0.24, pts:99},
+  {fx:0.52, fy:0.151, pts:11},
+  {fx:0.65, fy:0.151, pts:22},
+  {fx:0.40, fy:0.190, pts:33},
+  {fx:0.28, fy:0.242, pts:44},
+  {fx:0.28, fy:0.314, pts:55},
+  {fx:0.28, fy:0.374, pts:66},
+  {fx:0.42, fy:0.393, pts:77},
+  {fx:0.53, fy:0.393, pts:88},
+  {fx:0.65, fy:0.393, pts:99},
 ];
-const DT_FACE={x0:0.89, x1:1.00, y0:0.10, y1:0.19, pts:333};
-const DT_CHAIR={x0:0.25, x1:0.65, y0:0.32, y1:0.58};
+const DT_FACE={x0:0.50, x1:0.67, y0:0.203, y1:0.275, pts:333};
+const DT_CHAIR={x0:0.35, x1:0.75, y0:0.465, y1:0.725};
 const DT_DARTS=[
   {file:'green.png', w:50, h:50, rot:-45, c:'#2ecc71'},
   {file:'red.png', w:50, h:50, rot:-45, c:'#e74c3c'},
@@ -852,7 +853,7 @@ function dtThrow(dx, dy){
   m.style.display='block'; m.style.opacity='1';
   m.classList.remove('dt-flying','dt-stick');
   dtCurColor=d.c; dtClearTrail(); dtHitTimer=0;
-  dtX=DT_W*0.35; dtY=DT_H*0.85; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
+  dtX=DT_W*0.50; dtY=DT_H*0.88; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
   dtLife=0; dtFlying=true; dtPhase=1;
   dtPlaceMarker();
   const step=()=>{
@@ -903,15 +904,12 @@ function dtThrow(dx, dy){
       if(dtVY>=0){
         // apex: snap to the NEAREST target within 17.5% of the field width.
         // The dart animates to that target's centre on a hit, so a near miss
-        // still reads as sticking the card. Real-room-field sim (re-run
-        // before this shipped — see sim_long.py): launch 0.35/0.85, chair
-        // 0.45/0.45, board grid 0.60-0.78 / 0.12-0.24, face at the paper.
-        // The top row sits at y 0.12, BELOW the flew-over line (0.10) — an
-        // earlier grid at y 0.05 was unhittable because the flew-over check
-        // killed any dart flying that high before it could stick. Random
-        // 3000-swipe sim confirms ALL values reachable, face 333 a rare
-        // jackpot. Skilled aim scores far more, since force picks the row
-        // and chair position picks the column.
+        // still reads as sticking the card. Long+real-AC-field sim (225-swipe
+        // grid, re-run before this shipped — see sim_final.py): 53% of
+        // random swipes hit the chair, 24% of chair-hits score, ALL values
+        // reachable, face 333 a rare jackpot (4 hits). Skilled aim scores
+        // far more, since force picks the row and chair position picks the
+        // column.
         let hit=null, best=1e9;
         const snap=DT_W*0.175;
         for(const mg of DT_MEGAS){
