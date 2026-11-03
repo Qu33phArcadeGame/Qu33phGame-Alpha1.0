@@ -450,7 +450,7 @@ document.addEventListener('dragstart', function(e){
   <button class="marker-btn" onclick="dtBack()">&larr; BACK</button>
   <div class="hud"><span class="area" id="dtRoundHud">ROUND 1/3</span><span class="score" id="dtScoreHud">0</span></div>
   <div id="dtField" style="position:absolute;inset:0;">
-    <img class="field dt-field" src="qu33phdarts-bg-long.png">
+    <img class="field dt-field" src="qu33phdarts-bg-long2.png">
     <div class="dt-trail" id="dtTrail"></div>
     <img class="dt-chair" id="dtChair" src="Chair.png" alt="" style="display:none;">
     <div class="dt-face-hit" id="dtFaceHit" style="display:none;"></div>
@@ -712,13 +712,17 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // not an obstacle, it LAUNCHES the marker up at the board — where the marker
 // hits the chair across its width, and how hard it was thrown, set the launch
 // arc, and that arc decides which mega (or the 333 face) it lands on.
-// LONG-COUNTER FIELD, NO AC PHOTO (Nov 3): Coby is done trying to extend
-// the field — the AC-unit photo at the bottom is OUT. Back to the plain old
-// 1184x2800 long-counter design: cabinet on top, long countertop running
-// down, nothing pasted at the bottom. The bg img uses object-fit:fill
-// (dt-field). Board fractions below are for this 2800 field (cabinet pixels
-// unchanged, so fy = cabinet pixel / 2800). Board = 9 mega index cards in
-// a cutoff circle around the
+// LONG-COUNTER FIELD, NO AC PHOTO, BIG CHAIR, RED 333 (Nov 3): Coby is done
+// trying to extend the field — the AC-unit photo at the bottom is OUT.
+// Back to the plain old 1184x2800 long-counter design: cabinet on top, long
+// countertop running down, nothing pasted at the bottom. Chair is BIGGER
+// (45vw) and further right, centred under the Qu33ph paper (x 0.585, the
+// paper's centre). "333" in RED sits UNDER the paper, on the green cabinet
+// (baked into the bg, NOT on the paper — the paper itself stays untouched).
+// 22 and 99 share fx 0.65, so 22 sits exactly in line with 99. The bg img
+// uses object-fit:fill (dt-field). Board fractions below are for this 2800
+// field (cabinet pixels unchanged, so fy = cabinet pixel / 2800). Board
+// = 9 mega index cards in a cutoff circle around the
 // Qu33ph face paper, cut off by the wall on the right. Megas are worth
 // 11/22/33/44/55/66/77/88/99 (one each, 9 megas), the face 333. Numbers are
 // plain, no plus sign. 3 rounds x 3 darts. Previews sit in the bottom right
@@ -744,7 +748,7 @@ const DT_MEGAS=[
   {fx:0.65, fy:0.449, pts:99},
 ];
 const DT_FACE={x0:0.50, x1:0.67, y0:0.232, y1:0.314, pts:333};
-const DT_CHAIR={x0:0.35, x1:0.75, y0:0.55, y1:0.81};
+const DT_CHAIR={x0:0.335, x1:0.835, y0:0.475, y1:0.825};
 const DT_DARTS=[
   {file:'green.png', w:50, h:50, rot:-45, c:'#2ecc71'},
   {file:'red.png', w:50, h:50, rot:-45, c:'#e74c3c'},
@@ -792,7 +796,7 @@ function dtBuildBoard(){
   const ch=dt$('dtChair');
   ch.style.left=(((DT_CHAIR.x0+DT_CHAIR.x1)/2)*100)+'%';
   ch.style.top=(((DT_CHAIR.y0+DT_CHAIR.y1)/2)*100)+'%';
-  ch.style.width='min(300px,35vw)'; ch.style.display='block';
+  ch.style.width='min(300px,45vw)'; ch.style.display='block';
   const hint=dt$('dtSwipeHint');
   hint.style.left='50%'; hint.style.top='86%';
 }
