@@ -714,10 +714,14 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // arc, and that arc decides which mega (or the 333 face) it lands on.
 // LONG FIELD (Nov 3): the bg is the long version (cabinet top, countertop
 // stretched so the runway is much longer, closer to the original game's long
-// field). The bg img uses object-fit:fill (dt-field) so the taller image
-// shows fully instead of cropping top/bottom under cover. Board fractions
-// below are for the LONG field (cabinet pixels unchanged, so fy = old fy *
-// 2096/2800). Board = 9 mega index cards in a cutoff circle around the
+// field), sharpened (unsharp mask) after the stretch so it stays crisp,
+// and extended at the bottom to the real brown AC vent panel cut from the
+// original field photo — the field starts in front of the AC unit, and the
+// launch sits just above it. The bg img uses object-fit:fill (dt-field) so
+// the taller image shows fully instead of cropping top/bottom under cover.
+// Board fractions below are for the LONG + AC field (1184x3200; cabinet
+// pixels unchanged, so fy = cabinet pixel / 3200). Board = 9 mega index
+// cards in a cutoff circle around the
 // Qu33ph face paper, cut off by the wall on the right. Megas are worth
 // 11/22/33/44/55/66/77/88/99 (one each, 9 megas), the face 333. Numbers are
 // plain, no plus sign. 3 rounds x 3 darts. Previews sit in the bottom right
@@ -732,18 +736,18 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // at the apex with a pulse, instead of dropping into a hole like a ball.
 const dt$=id=>document.getElementById(id);
 const DT_MEGAS=[
-  {fx:0.52, fy:0.172, pts:11},
-  {fx:0.65, fy:0.172, pts:22},
-  {fx:0.40, fy:0.217, pts:33},
-  {fx:0.28, fy:0.277, pts:44},
-  {fx:0.28, fy:0.359, pts:55},
-  {fx:0.28, fy:0.427, pts:66},
-  {fx:0.42, fy:0.449, pts:77},
-  {fx:0.53, fy:0.449, pts:88},
-  {fx:0.65, fy:0.449, pts:99},
+  {fx:0.52, fy:0.151, pts:11},
+  {fx:0.65, fy:0.151, pts:22},
+  {fx:0.40, fy:0.190, pts:33},
+  {fx:0.28, fy:0.242, pts:44},
+  {fx:0.28, fy:0.314, pts:55},
+  {fx:0.28, fy:0.374, pts:66},
+  {fx:0.42, fy:0.393, pts:77},
+  {fx:0.53, fy:0.393, pts:88},
+  {fx:0.65, fy:0.393, pts:99},
 ];
-const DT_FACE={x0:0.50, x1:0.67, y0:0.232, y1:0.314, pts:333};
-const DT_CHAIR={x0:0.35, x1:0.75, y0:0.55, y1:0.81};
+const DT_FACE={x0:0.50, x1:0.67, y0:0.203, y1:0.275, pts:333};
+const DT_CHAIR={x0:0.35, x1:0.75, y0:0.465, y1:0.725};
 const DT_DARTS=[
   {file:'green.png', w:50, h:50, rot:-45, c:'#2ecc71'},
   {file:'red.png', w:50, h:50, rot:-45, c:'#e74c3c'},
@@ -847,7 +851,7 @@ function dtThrow(dx, dy){
   m.style.display='block'; m.style.opacity='1';
   m.classList.remove('dt-flying','dt-stick');
   dtCurColor=d.c; dtClearTrail(); dtHitTimer=0;
-  dtX=DT_W*0.5; dtY=DT_H*0.95; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
+  dtX=DT_W*0.5; dtY=DT_H*0.89; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
   dtLife=0; dtFlying=true; dtPhase=1;
   dtPlaceMarker();
   const step=()=>{
@@ -898,10 +902,11 @@ function dtThrow(dx, dy){
       if(dtVY>=0){
         // apex: snap to the NEAREST target within 17.5% of the field width.
         // The dart animates to that target's centre on a hit, so a near miss
-        // still reads as sticking the card. Long-field sim (225-swipe grid,
-        // new positions + bigger chair + 0.22 gravity, re-run before this
-        // shipped): 56% of random swipes hit the chair, 26% of chair-hits
-        // score, ALL values reachable, face 333 a rare 2.4% jackpot.
+        // still reads as sticking the card. Long+AC-field sim (225-swipe
+        // grid, re-run before this shipped — see sim_long.py): 51% of
+        // random swipes hit the chair, 21% of chair-hits score, face 333 a
+        // 3.5% jackpot. A finer 961-swipe grid confirms ALL values reachable
+        // (88 included — the coarse grid just skipped its exact combo).
         // Skilled aim scores far more, since force picks the row and chair
         // position picks the column.
         let hit=null, best=1e9;
