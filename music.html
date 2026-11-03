@@ -111,7 +111,15 @@ let tl = {playing:false, paused:false, ctxStart:0, playFrom:0, nodes:{}, raf:0};
 let playToken = 0;
 let audNode = null, audRaf = 0, audStart = 0, audClip = null;
 const $ = id => document.getElementById(id);
-const clipDur = c => 4 / c.speed;
+// Web Audio's effective playback rate is playbackRate * 2^(detune/1200),
+// and detune here is pitch*100 cents — so a pitched clip plays faster
+// (pitch>0) or slower (pitch<0) than its speed alone, and its audible
+// length is 4/effectiveRate, NOT 4/speed. The old clipDur ignored detune,
+// so every pitched clip got the wrong box width and the playhead drifted
+// away from the audio it was tracking (e.g. pitch +4.8 at 0.51x: the sound
+// ended at 5.94s while the line was only 76% across its 7.84s box).
+const effRate = c => c.speed * Math.pow(2, c.pitch / 12);
+const clipDur = c => 4 / effRate(c);
 const clipEnd = c => c.start + clipDur(c);
 const timelineEnd = () => clips.reduce((m,c)=>Math.max(m, clipEnd(c)), 0);
 const status = t => { $('status').textContent = t; };
@@ -179,10 +187,11 @@ function playheadLoop(){
   tl.raf = requestAnimationFrame(playheadLoop);
 }
 // HEAR IT audition playhead: the audition plays the clip's buffer at its
-// speed, so in T wall seconds it covers T*speed/4 of the clip — and the
-// clip's box is (4/speed) seconds wide, so the timeline position is just
-// the clip's start plus T, whatever the speed. The line sweeps the clip's
-// own waveform and stops (with the audio) when the clip ends.
+// effective rate (speed * 2^(pitch/12)), so in T wall seconds it covers
+// T*effRate/4 of the buffer — and the clip's box is (4/effRate) seconds
+// wide, so the timeline position is just the clip's start plus T, whatever
+// the speed or pitch. The line sweeps the clip's own waveform and stops
+// (with the audio) when the clip ends.
 function stopAudPlayhead(){
   if(audNode){ try{ audNode.src.stop(); }catch(e){} audNode = null; }
   audClip = null;
@@ -191,7 +200,7 @@ function stopAudPlayhead(){
 function audLoop(){
   if(!audClip) return;
   const el = audioCtx.currentTime - audStart;
-  const dur = 4 / audClip.speed;
+  const dur = clipDur(audClip);
   if(el >= dur){ stopPlayback(); return; }
   setPlayhead((audClip.start + el) * PPS);
   audRaf = requestAnimationFrame(audLoop);
@@ -251,7 +260,9 @@ function overlaps(lane, start, end, skipUid){
   return clips.some(c=>c.lane===lane && c.uid!==skipUid && start < clipEnd(c) - 0.01 && end > c.start + 0.01);
 }
 function renderTimeline(){
-  const inner = $('tlInner'); inner.innerHTML = '';
+  const inner = $('tlInner');
+  const oldPh = $('playhead') ? $('playhead').style.left : '0px';
+  inner.innerHTML = '';
   const end = Math.max(timelineEnd(), 16) + 4;
   inner.style.width = (end * PPS) + 'px';
   const ruler = document.createElement('div'); ruler.id = 'ruler';
@@ -270,7 +281,7 @@ function renderTimeline(){
     d.appendChild(badge);
     inner.appendChild(d);
   });
-  const ph = document.createElement('div'); ph.id = 'playhead'; ph.style.left = '0px';
+  const ph = document.createElement('div'); ph.id = 'playhead'; ph.style.left = oldPh;
   inner.appendChild(ph);
   clips.forEach(c=>{
     const el = document.createElement('div');
@@ -383,7 +394,7 @@ function addClip(sampleId){
 function pasteClip(){
   if(!clipBoard) return;
   const src = clips.find(c=>c.uid===clipBoard.sourceUid);
-  const lane = clipBoard.lane, dur = 4 / clipBoard.speed;
+  const lane = clipBoard.lane, dur = clipDur(clipBoard);
   let start;
   if(src && src.lane===lane){
     const after = clipEnd(src);
@@ -430,17 +441,17 @@ function renderClipEditor(){
   ed.classList.remove('hidden');
   ed.innerHTML = '';
   const name = document.createElement('div'); name.className = 'ce-name'; name.textContent = ch.sample.id;
-  const pitch = sliderRow('PITCH', -24, 24, 0.1, ch.pitch, v=>{ ch.pitch = v; pitchNum.value = v.toFixed(1); liveRetuneClip(ch); }, v=>(v>0?'+':'')+v.toFixed(1));
+  const pitch = sliderRow('PITCH', -24, 24, 0.1, ch.pitch, v=>{ ch.pitch = v; pitchNum.value = v.toFixed(1); liveRetuneClip(ch); renderTimeline(); }, v=>(v>0?'+':'')+v.toFixed(1));
   const pitchNum = document.createElement('input'); pitchNum.className = 'numbox'; pitchNum.type = 'number';
   pitchNum.min = -24; pitchNum.max = 24; pitchNum.step = 0.1; pitchNum.value = ch.pitch.toFixed(1);
-  pitchNum.onchange = ()=>{ let v = Math.max(-24, Math.min(24, parseFloat(pitchNum.value) || 0)); ch.pitch = v; pitch.inp.value = v; pitch.v.textContent = (v>0?'+':'')+v.toFixed(1); pitchNum.value = v.toFixed(1); liveRetuneClip(ch); };
+  pitchNum.onchange = ()=>{ let v = Math.max(-24, Math.min(24, parseFloat(pitchNum.value) || 0)); ch.pitch = v; pitch.inp.value = v; pitch.v.textContent = (v>0?'+':'')+v.toFixed(1); pitchNum.value = v.toFixed(1); liveRetuneClip(ch); renderTimeline(); };
   const pitchRow2 = document.createElement('div'); pitchRow2.className = 'row';
   pitchRow2.append(document.createElement('label'), pitchNum);
   pitchRow2.firstChild.textContent = 'SET';
   const pitchPresets = document.createElement('div'); pitchPresets.className = 'row'; pitchPresets.style.flexWrap = 'wrap';
   [-24,-12,0,12,24].forEach(sp=>{
     const pb = document.createElement('button'); pb.className = 'btn mini'; pb.textContent = (sp>0?'+':'')+sp;
-    pb.onclick = ()=>{ ch.pitch = sp; pitch.inp.value = sp; pitch.v.textContent = (sp>0?'+':'')+sp; pitchNum.value = sp.toFixed(1); liveRetuneClip(ch); };
+    pb.onclick = ()=>{ ch.pitch = sp; pitch.inp.value = sp; pitch.v.textContent = (sp>0?'+':'')+sp; pitchNum.value = sp.toFixed(1); liveRetuneClip(ch); renderTimeline(); };
     pitchPresets.appendChild(pb);
   });
   const speed = sliderRow('SPEED', 0.25, 4, 0.01, ch.speed, v=>{ ch.speed = v; speedNum.value = v.toFixed(2); stopPlayback(); renderTimeline(); }, v=>v.toFixed(2)+'x');
@@ -485,8 +496,10 @@ function removeClip(uid){
 
 // ---------- scrub + seek ----------
 // schedule every clip from time T: clips already over are skipped, a clip
-// spanning T starts mid-buffer (offset = (T - start) * speed), the rest
-// start at their offset from T. Shared by fresh play and by seeking.
+// spanning T starts mid-buffer (offset = (T - start) * effectiveRate, so
+// the buffer position matches the timeline point being sought to even on
+// a pitched clip), the rest start at their offset from T. Shared by fresh
+// play and by seeking.
 function scheduleFrom(T, paused){
   tl.playFrom = T; tl.ctxStart = audioCtx.currentTime;
   tl.playing = true; tl.paused = paused;
@@ -499,7 +512,7 @@ function scheduleFrom(T, paused){
     if(!buf) return;
     let when, offset = 0;
     if(c.start >= T){ when = tl.ctxStart + (c.start - T); }
-    else { when = tl.ctxStart; offset = (T - c.start) * c.speed; }
+    else { when = tl.ctxStart; offset = (T - c.start) * effRate(c); }
     const n = startBuf(audioCtx, buf, {pitch:c.pitch, speed:c.speed}, when, offset);
     tl.nodes[c.uid] = n;
     if(ce > lastEnd){ lastEnd = ce; lastUid = c.uid; }
