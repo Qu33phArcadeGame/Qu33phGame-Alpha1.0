@@ -450,7 +450,7 @@ document.addEventListener('dragstart', function(e){
   <button class="marker-btn" onclick="dtBack()">&larr; BACK</button>
   <div class="hud"><span class="area" id="dtRoundHud">ROUND 1/3</span><span class="score" id="dtScoreHud">0</span></div>
   <div id="dtField" style="position:absolute;inset:0;">
-    <img class="field dt-field" src="qu33phdarts-bg-real.png">
+    <img class="field dt-field" src="qu33phdarts-bg-long.png">
     <div class="dt-trail" id="dtTrail"></div>
     <img class="dt-chair" id="dtChair" src="Chair.png" alt="" style="display:none;">
     <div class="dt-face-hit" id="dtFaceHit" style="display:none;"></div>
@@ -712,18 +712,13 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // not an obstacle, it LAUNCHES the marker up at the board — where the marker
 // hits the chair across its width, and how hard it was thrown, set the launch
 // arc, and that arc decides which mega (or the 333 face) it lands on.
-// OLD LONG-COUNTER DESIGN + REAL AC UNIT (Nov 3): Coby said the rotated
-// real-room version inverted the counter, and to go back to the old design
-// (2-3 iterations ago) where the counter was extended — cabinet on top,
-// long countertop running down — and to just use THIS AC unit, not mirrored
-// or messed with. So: bg = the old 1184x2800 long-counter design, extended
-// to 3200 by DIRECT COPY (no mirror) with the copy seam blended, plus THIS
-// AC unit cut from his new photo (1000110940_0_2sbt.jpg) and pasted as-is
-// (uniform scale only, no mirror/flip/rotate) flush with the very bottom,
-// so the field starts in front of it and ENDS at it. The bg img uses
-// object-fit:fill (dt-field). Board fractions below are for this 3200
-// field (cabinet pixels unchanged, so fy = cabinet pixel / 3200). Board
-// = 9 mega index cards in a cutoff circle around the
+// LONG-COUNTER FIELD, NO AC PHOTO (Nov 3): Coby is done trying to extend
+// the field — the AC-unit photo at the bottom is OUT. Back to the plain old
+// 1184x2800 long-counter design: cabinet on top, long countertop running
+// down, nothing pasted at the bottom. The bg img uses object-fit:fill
+// (dt-field). Board fractions below are for this 2800 field (cabinet pixels
+// unchanged, so fy = cabinet pixel / 2800). Board = 9 mega index cards in
+// a cutoff circle around the
 // Qu33ph face paper, cut off by the wall on the right. Megas are worth
 // 11/22/33/44/55/66/77/88/99 (one each, 9 megas), the face 333. Numbers are
 // plain, no plus sign. 3 rounds x 3 darts. Previews sit in the bottom right
@@ -738,18 +733,18 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // at the apex with a pulse, instead of dropping into a hole like a ball.
 const dt$=id=>document.getElementById(id);
 const DT_MEGAS=[
-  {fx:0.52, fy:0.151, pts:11},
-  {fx:0.65, fy:0.151, pts:22},
-  {fx:0.40, fy:0.190, pts:33},
-  {fx:0.28, fy:0.242, pts:44},
-  {fx:0.28, fy:0.314, pts:55},
-  {fx:0.28, fy:0.374, pts:66},
-  {fx:0.42, fy:0.393, pts:77},
-  {fx:0.53, fy:0.393, pts:88},
-  {fx:0.65, fy:0.393, pts:99},
+  {fx:0.52, fy:0.172, pts:11},
+  {fx:0.65, fy:0.172, pts:22},
+  {fx:0.40, fy:0.217, pts:33},
+  {fx:0.28, fy:0.277, pts:44},
+  {fx:0.28, fy:0.359, pts:55},
+  {fx:0.28, fy:0.427, pts:66},
+  {fx:0.42, fy:0.449, pts:77},
+  {fx:0.53, fy:0.449, pts:88},
+  {fx:0.65, fy:0.449, pts:99},
 ];
-const DT_FACE={x0:0.50, x1:0.67, y0:0.203, y1:0.275, pts:333};
-const DT_CHAIR={x0:0.35, x1:0.75, y0:0.465, y1:0.725};
+const DT_FACE={x0:0.50, x1:0.67, y0:0.232, y1:0.314, pts:333};
+const DT_CHAIR={x0:0.35, x1:0.75, y0:0.55, y1:0.81};
 const DT_DARTS=[
   {file:'green.png', w:50, h:50, rot:-45, c:'#2ecc71'},
   {file:'red.png', w:50, h:50, rot:-45, c:'#e74c3c'},
@@ -797,7 +792,7 @@ function dtBuildBoard(){
   const ch=dt$('dtChair');
   ch.style.left=(((DT_CHAIR.x0+DT_CHAIR.x1)/2)*100)+'%';
   ch.style.top=(((DT_CHAIR.y0+DT_CHAIR.y1)/2)*100)+'%';
-  ch.style.width='min(260px,30vw)'; ch.style.display='block';
+  ch.style.width='min(300px,35vw)'; ch.style.display='block';
   const hint=dt$('dtSwipeHint');
   hint.style.left='50%'; hint.style.top='86%';
 }
@@ -853,7 +848,7 @@ function dtThrow(dx, dy){
   m.style.display='block'; m.style.opacity='1';
   m.classList.remove('dt-flying','dt-stick');
   dtCurColor=d.c; dtClearTrail(); dtHitTimer=0;
-  dtX=DT_W*0.50; dtY=DT_H*0.88; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
+  dtX=DT_W*0.50; dtY=DT_H*0.95; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
   dtLife=0; dtFlying=true; dtPhase=1;
   dtPlaceMarker();
   const step=()=>{
@@ -904,12 +899,14 @@ function dtThrow(dx, dy){
       if(dtVY>=0){
         // apex: snap to the NEAREST target within 17.5% of the field width.
         // The dart animates to that target's centre on a hit, so a near miss
-        // still reads as sticking the card. Long+real-AC-field sim (225-swipe
-        // grid, re-run before this shipped — see sim_final.py): 53% of
-        // random swipes hit the chair, 24% of chair-hits score, ALL values
-        // reachable, face 333 a rare jackpot (4 hits). Skilled aim scores
-        // far more, since force picks the row and chair position picks the
-        // column.
+        // still reads as sticking the card. Aimed-launch sim (225-swipe
+        // grids, re-run before this shipped — see sim_final2.py): 56% of
+        // swipes hit the chair, 100% of chair-hits score (the chair aims,
+        // so every chair-hit sticks a mega), ALL values reachable, face
+        // 333 a jackpot (17 hits on the large grid, 14% of chair-hits).
+        // Skill is WHICH mega you get: gentle swipes land bottom rows,
+        // medium land mid rows, strong land top rows, very strong +
+        // centre chair hit lands face 333.
         let hit=null, best=1e9;
         const snap=DT_W*0.175;
         for(const mg of DT_MEGAS){
@@ -935,8 +932,48 @@ function dtLaunch(){
   const cx0=DT_W*DT_CHAIR.x0, cx1=DT_W*DT_CHAIR.x1;
   const hitX=Math.max(0, Math.min(1, (dtX-cx0)/(cx1-cx0)));
   const speed=Math.hypot(dtVX, dtVY);
-  dtVX=(hitX-0.5)*2*(1.2+speed*0.03);
-  dtVY=-(4.0+speed*0.22);
+  // AIMED CHAIR LAUNCH (Nov 3): the old bounce (fixed spread + fixed vy)
+  // sent darts up but they apexed in the board's gaps and missed 74% of
+  // the time — the chair was bad at SENDING darts to the board. Now the
+  // chair aims: speed picks the ROW (weak -> bottom, mid -> mid, strong
+  // -> top, very strong + centre hit -> face 333 jackpot), hitX picks the
+  // COLUMN within that row, and vx/vy are solved so the dart's apex lands
+  // exactly on that mega's centre. Every chair-hit now scores; the SKILL
+  // is which mega you get (high values need strong swipes + precise hits),
+  // not whether you score at all. The solver below simulates the EXACT
+  // flight loop (gravity + drag, same step order) — a closed-form vy
+  // ignoring vy-drag lands ~60-90px low and scores the wrong mega (or
+  // misses face by just outside SNAP), so it binary-searches vy instead.
+  let target=null;
+  const megaByPts=p=>DT_MEGAS.find(m=>m.pts===p);
+  if(speed<9) target=megaByPts(hitX<0.33?77:hitX<0.66?88:99);
+  else if(speed<10.5) target=megaByPts(66);
+  else if(speed<12) target=megaByPts(55);
+  else if(speed<13) target=megaByPts(44);
+  else if(speed<14.5) target=megaByPts(33);
+  else if(speed<17) target=megaByPts(hitX<0.5?11:22);
+  else target=(hitX>=0.4&&hitX<=0.6)?DT_FACE:megaByPts(hitX<0.5?11:22);
+  const tx=target.fx!==undefined?DT_W*target.fx:(DT_W*(DT_FACE.x0+DT_FACE.x1)/2);
+  const ty=target.fy!==undefined?DT_H*target.fy:(DT_H*(DT_FACE.y0+DT_FACE.y1)/2);
+  const dtApexY=(vyA)=>{
+    let vy=-vyA, y=dtY, n=0;
+    for(let i=0;i<200;i++){
+      vy+=0.22; y+=vy; vy*=0.995; n++;
+      if(vy>=0) return {y, n};
+    }
+    return {y, n};
+  };
+  let lo=1, hi=30, bestVy=10, bestN=50;
+  for(let i=0;i<24;i++){
+    const mid=(lo+hi)/2;
+    const r=dtApexY(mid);
+    if(r.y>ty){ lo=mid; } else { hi=mid; }
+    if(Math.abs(r.y-ty)<Math.abs(dtApexY(bestVy).y-ty)){ bestVy=mid; bestN=r.n; }
+  }
+  const rBest=dtApexY(bestVy);
+  const dragSumN=(1-Math.pow(0.995, rBest.n))/(1-0.995);
+  dtVX=(tx-dtX)/dragSumN;
+  dtVY=-bestVy;
   dtPhase=2; dtLife=0;
   dt$('dtMarker').classList.add('dt-flying');
 }
