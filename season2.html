@@ -450,7 +450,7 @@ document.addEventListener('dragstart', function(e){
   <button class="marker-btn" onclick="dtBack()">&larr; BACK</button>
   <div class="hud"><span class="score" id="dtScoreHud">0</span></div>
   <div id="dtField" style="position:absolute;inset:0;">
-    <img class="field dt-field" src="qu33phdarts-bg-long2.png">
+    <img class="field dt-field" src="qu33phdarts-bg-long.png">
     <div class="dt-trail" id="dtTrail"></div>
     <img class="dt-chair" id="dtChair" src="Chair.png" alt="" style="display:none;">
     <div class="dt-face-hit" id="dtFaceHit" style="display:none;"></div>
@@ -712,16 +712,19 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // not an obstacle, it LAUNCHES the marker up at the board — where the marker
 // hits the chair across its width, and how hard it was thrown, set the launch
 // arc, and that arc decides which mega (or the 333 face) it lands on.
-// LONG-COUNTER FIELD, NO AC PHOTO, BIG CHAIR, RED 333, FLUSH RIGHT EDGE,
-// CHAIR BACK, MARKERS BACK, PHYSICAL LAUNCH, NO ROUND COUNTER (Nov 3):
-// Coby is done trying to extend the field — the AC-unit photo at the
-// bottom is OUT. Back to the plain old 1184x2800 long-counter design:
-// cabinet on top, long countertop running down, nothing pasted at the
-// bottom. Chair is BIGGER (45vw) and further right, centred under the
-// Qu33ph paper (x 0.585, the paper's centre), moved BACK some (centre y
-// 0.65 -> 0.68, hitbox y 0.505-0.855). "333" in RED sits UNDER the paper,
-// on the green cabinet (baked into the bg, NOT on the paper — the paper
-// itself stays untouched). The rightmost megas (22 top, 99 bottom) sit
+// LONG-COUNTER FIELD, NO AC PHOTO, BIG CHAIR, NO RED 333, FLUSH RIGHT
+// EDGE, CHAIR BACK, MARKERS BACK, PHYSICAL LAUNCH, NO ROUND COUNTER
+// (Nov 3): Coby is done trying to extend the field — the AC-unit photo
+// at the bottom is OUT. Back to the plain old 1184x2800 long-counter
+// design: cabinet on top, long countertop running down, nothing pasted
+// at the bottom. Chair is BIGGER (45vw) and further right, centred under
+// the Qu33ph paper (x 0.585, the paper's centre), moved BACK some
+// (centre y 0.65 -> 0.68, hitbox y 0.505-0.855). The red "333" under the
+// paper is REMOVED (Nov 3, Coby's word) — the bg is back to the plain
+// long version with no text under the paper. Hitting the paper still
+// scores 333 by position (DT_FACE hitbox) — only the red text is gone,
+// the paper itself stays untouched. The rightmost megas (22 top, 99
+// bottom) sit
 // with their RIGHT EDGES flush against where the green cabinet meets the
 // white wall (measured in the bg: wall x 882px at 22's row, 908px at 99's
 // row — the wall slants slightly, so 22 (fx 0.682) and 99 (fx 0.704) sit at
