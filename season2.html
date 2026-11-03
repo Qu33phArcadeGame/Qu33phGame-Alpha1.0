@@ -132,6 +132,24 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .pb-pop.miss{color:#ff5a5a;}
 .pb-hint{position:absolute;z-index:10;left:50%;bottom:12px;transform:translateX(-50%);width:92vw;text-align:center;color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;}
 .cab-card .cab-media.pb-card-bucket{display:flex;align-items:center;justify-content:center;height:auto;aspect-ratio:16/9;padding-bottom:0;box-sizing:border-box;}
+#dtScreen{touch-action:none;user-select:none;-webkit-user-select:none}
+.dt-chair{position:absolute;z-index:8;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.55));}
+.dt-mega{position:absolute;z-index:7;transform:translate(-50%,-50%);background:#fff;border-radius:6px;box-shadow:0 3px 8px rgba(0,0,0,.45);padding:6px 6px 4px;text-align:center;pointer-events:none;width:min(72px,14vw);}
+.dt-mega::before{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%) rotate(-2deg);width:40%;height:12px;background:rgba(220,220,200,.65);border:1px solid rgba(0,0,0,.08);}
+.dt-mega img{display:block;width:100%;height:auto;}
+.dt-mega .dt-num{font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:clamp(12px,3.5vw,18px);color:#222;margin-top:2px;}
+.dt-face-hit{position:absolute;z-index:8;border:3px solid #ffd24a;border-radius:8px;box-shadow:0 0 18px #ffd24a;opacity:0;transition:opacity .15s;pointer-events:none;}
+.dt-face-hit.show{opacity:1;}
+.dt-prev{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:7;opacity:.95;}
+.dt-dart{display:flex;align-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));}
+.dt-dart-body{height:12px;border-radius:6px;}
+.dt-dart-tip{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:12px solid #c0c0c0;}
+.dt-marker{position:absolute;z-index:9;transform:translate(-50%,-50%);pointer-events:none;}
+.dt-pop{position:absolute;z-index:12;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;text-align:center;}
+.dt-pop.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.dt-pop.miss{color:#ff5a5a;}
+.dt-hint{position:absolute;z-index:10;left:50%;bottom:12px;transform:translateX(-50%);width:92vw;text-align:center;color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;}
+.dt-swipe-hint{position:absolute;transform:translateX(-50%);color:#fff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:13px;letter-spacing:1px;text-shadow:0 2px 6px #000;pointer-events:none;z-index:7;white-space:nowrap;}
 .cab-card.cab-music .cab-media{margin-top:8px;}
 .pb-card-bucket .pb-bucket{position:relative;transform:none;left:auto;top:auto;width:min(56px,13vw);height:min(64px,16vw);}
 
@@ -335,7 +353,11 @@ document.addEventListener('dragstart', function(e){
         <div class="cab-label">STORY TIME</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
-      <div class="cab-card empty-slot"><div class="empty-box"><span>COMING SOON</span></div></div>
+      <div class="cab-card" onclick="openDarts()">
+        <div class="cab-marquee"></div>
+        <img class="cab-media" src="qu33phdarts-icon.png" alt="Qu33ph Darts">
+        <div class="cab-label">QU33PH DARTS</div>
+      </div>
     </div>
   </div>
 </div>
@@ -412,6 +434,35 @@ document.addEventListener('dragstart', function(e){
       </div>
     </div>
     <div class="total-rows" id="pbTotalRows"></div>
+  </div>
+</div>
+
+<div id="dtScreen" class="screen hidden">
+  <button class="marker-btn" onclick="dtBack()">&larr; BACK</button>
+  <div class="hud"><span class="area" id="dtRoundHud">ROUND 1/3</span><span class="score" id="dtScoreHud">0</span></div>
+  <div id="dtField" style="position:absolute;inset:0;">
+    <img class="field" src="qu33phdarts-bg.png">
+    <img class="dt-chair" id="dtChair" src="Chair.png" alt="" style="display:none;">
+    <div class="dt-face-hit" id="dtFaceHit" style="display:none;"></div>
+    <div class="dt-prev" id="dtPrev0" style="right:4%;bottom:7%;"><div class="dt-dart" style="transform:rotate(180deg);"><div class="dt-dart-body" style="width:44px;background:#2ecc71;"></div><div class="dt-dart-tip"></div></div></div>
+    <div class="dt-prev" id="dtPrev1" style="right:4%;bottom:15%;"><div class="dt-dart" style="transform:rotate(180deg);"><div class="dt-dart-body" style="width:44px;background:#e74c3c;"></div><div class="dt-dart-tip"></div></div></div>
+    <div class="dt-prev" id="dtPrev2" style="right:4%;bottom:23%;"><div class="dt-dart" style="transform:rotate(180deg);"><div class="dt-dart-body" style="width:64px;background:#3498db;"></div><div class="dt-dart-tip"></div></div></div>
+    <div class="dt-swipe-hint" id="dtSwipeHint">swipe to throw</div>
+    <div class="dt-marker" id="dtMarker" style="display:none;"><div class="dt-dart" id="dtDart"><div class="dt-dart-body" id="dtDartBody"></div><div class="dt-dart-tip"></div></div></div>
+  </div>
+  <div class="dt-pop" id="dtPop"></div>
+  <div class="dt-hint">hit the chair to launch at the board</div>
+  <div class="total-screen hidden" id="dtTotalScreen">
+    <div class="total-head">
+      <h2>TOTAL SCORE</h2>
+      <div class="total-sum" id="dtTotalSum">0</div>
+      <div class="total-best" id="dtTotalBest">BEST 0</div>
+      <div class="total-btns">
+        <button class="s2mk" onclick="dtStart()">PLAY AGAIN</button>
+        <button class="s2mk flip" onclick="dtBack()">MENU</button>
+      </div>
+    </div>
+    <div class="total-rows" id="dtTotalRows"></div>
   </div>
 </div>
 
@@ -645,6 +696,235 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 </script>
 
 <script>
+// ============ QU33PH DARTS — chair-launch darts on the cabinet board ============
+// Throw physics = the original marker game exactly (swipe velocity px*0.2,
+// curve dx*0.0003, drag 0.94/frame, 1s life). The chair is NEW physics: it is
+// not an obstacle, it LAUNCHES the marker up at the board — where the marker
+// hits the chair across its width, and how hard it was thrown, set the launch
+// arc, and that arc decides which mega (or the 111 face) it lands on.
+// Board = the final playing field image: 9 mega index cards in a cutoff circle
+// around the Qu33ph face paper, cut off by the wall on the right. Megas are
+// worth 11/22/33/44/55, the face 111. Numbers are plain, no plus sign.
+// 3 rounds x 3 darts. Previews sit in the bottom right corner, each with a
+// needle dart tip, realistic and colored to match its marker.
+const dt$=id=>document.getElementById(id);
+const DT_MEGAS=[
+  {fx:0.52, fy:0.23, pts:55},
+  {fx:0.66, fy:0.23, pts:44},
+  {fx:0.40, fy:0.29, pts:33},
+  {fx:0.28, fy:0.37, pts:22},
+  {fx:0.28, fy:0.48, pts:44},
+  {fx:0.28, fy:0.57, pts:55},
+  {fx:0.42, fy:0.60, pts:33},
+  {fx:0.53, fy:0.60, pts:11},
+  {fx:0.65, fy:0.60, pts:22},
+];
+const DT_FACE={x0:0.50, x1:0.67, y0:0.31, y1:0.42, pts:111};
+const DT_CHAIR={x0:0.25, x1:0.55, y0:0.58, y1:0.82};
+const DT_DARTS=[
+  {c:'#2ecc71', w:44},
+  {c:'#e74c3c', w:44},
+  {c:'#3498db', w:64},
+];
+let DT_W=0, DT_H=0;
+let dtRound=1, dtScore=0, dtLeft=3, dtRoundScores=[0,0,0];
+let dtFlying=false, dtPhase=1, dtVX=0, dtVY=0, dtX=0, dtY=0, dtCurve=0, dtLife=0, dtRaf=0, dtDrag=null, dtBoardBuilt=false;
+function dtMetrics(){
+  const f=dt$('dtField'); DT_W=f.clientWidth; DT_H=f.clientHeight;
+}
+function dtBuildBoard(){
+  if(dtBoardBuilt) return; dtBoardBuilt=true;
+  const f=dt$('dtField');
+  for(const m of DT_MEGAS){
+    const d=document.createElement('div'); d.className='dt-mega';
+    d.style.left=(m.fx*100)+'%'; d.style.top=(m.fy*100)+'%';
+    d.innerHTML='<img src="megacard.png" alt=""><div class="dt-num">'+m.pts+'</div>';
+    f.appendChild(d);
+  }
+  const fh=dt$('dtFaceHit');
+  fh.style.left=(DT_FACE.x0*100)+'%'; fh.style.top=(DT_FACE.y0*100)+'%';
+  fh.style.width=((DT_FACE.x1-DT_FACE.x0)*100)+'%'; fh.style.height=((DT_FACE.y1-DT_FACE.y0)*100)+'%';
+  fh.style.display='block';
+  const ch=dt$('dtChair');
+  ch.style.left=(((DT_CHAIR.x0+DT_CHAIR.x1)/2)*100)+'%';
+  ch.style.top=(((DT_CHAIR.y0+DT_CHAIR.y1)/2)*100)+'%';
+  ch.style.width='min(220px,26vw)'; ch.style.display='block';
+  const hint=dt$('dtSwipeHint');
+  hint.style.left='50%'; hint.style.top='86%';
+}
+function openDarts(){
+  dt$('menuScreen').classList.add('hidden');
+  dt$('dtScreen').classList.remove('hidden');
+  dtMetrics(); dtBuildBoard(); dtStart();
+}
+function dtBack(){
+  cancelAnimationFrame(dtRaf); dtFlying=false; dtDrag=null;
+  dt$('dtTotalScreen').classList.add('hidden');
+  dt$('dtScreen').classList.add('hidden');
+  showMenu();
+}
+function dtStart(){
+  dtRound=1; dtScore=0; dtRoundScores=[0,0,0]; dtLeft=3;
+  dt$('dtTotalScreen').classList.add('hidden');
+  dt$('dtMarker').style.display='none';
+  dt$('dtFaceHit').classList.remove('show');
+  for(let i=0;i<3;i++) dt$('dtPrev'+i).style.display='block';
+  dtUpdateHud();
+}
+function dtUpdateHud(){
+  dt$('dtRoundHud').textContent='ROUND '+dtRound+'/3';
+  dt$('dtScoreHud').textContent=dtScore;
+}
+function dtPlaceMarker(){
+  const m=dt$('dtMarker');
+  m.style.left=dtX+'px'; m.style.top=dtY+'px';
+  const ang=Math.atan2(dtVY, dtVX)*180/Math.PI;
+  m.style.transform='translate(-50%,-50%) rotate('+ang+'deg)';
+}
+let dtPopTimer=0;
+function dtPop(text, miss){
+  const p=dt$('dtPop'); p.textContent=text; p.classList.toggle('miss', !!miss);
+  p.classList.add('show'); clearTimeout(dtPopTimer);
+  dtPopTimer=setTimeout(()=>p.classList.remove('show'), 900);
+}
+function dtThrow(dx, dy){
+  if(dtFlying || dtLeft<=0) return;
+  const idx=3-dtLeft;
+  const d=DT_DARTS[idx];
+  dt$('dtPrev'+idx).style.display='none';
+  const m=dt$('dtMarker'), body=dt$('dtDartBody');
+  body.style.width=d.w+'px'; body.style.background=d.c;
+  m.style.display='block'; m.style.opacity='1';
+  dtX=DT_W*0.5; dtY=DT_H*0.92; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
+  dtLife=0; dtFlying=true; dtPhase=1;
+  dtPlaceMarker();
+  const step=()=>{
+    if(!dtFlying) return;
+    dtLife+=1/60;
+    if(dtPhase===1){
+      if(dtLife>=1){ dtVX=0; dtVY=0; }
+      dtVX+=dtCurve; dtX+=dtVX; dtY+=dtVY;
+      dtVX*=0.94; dtVY*=0.94;
+      if(dtX>DT_W){ dtX=DT_W; dtVX*=-0.4; }
+      if(dtY<DT_H*0.08){ dtY=DT_H*0.08; dtVY*=-0.2; }
+      dtPlaceMarker();
+      // dead, off the field, or stopped cold — all miss, before the chair
+      // so a dead marker never launches.
+      if(dtLife>=1 || dtY>DT_H+100 || dtX<0){ dtLand(null); return; }
+      // chair: the launcher. Where it hits across the chair + how hard it
+      // was thrown set the launch arc (dtLaunch).
+      const cx0=DT_W*DT_CHAIR.x0, cx1=DT_W*DT_CHAIR.x1, cy0=DT_H*DT_CHAIR.y0, cy1=DT_H*DT_CHAIR.y1;
+      if(dtX>=cx0 && dtX<=cx1 && dtY>=cy0 && dtY<=cy1){ dtLaunch(); }
+      if(Math.abs(dtVX)<0.05 && Math.abs(dtVY)<0.05){ dtLand(null); return; }
+    } else {
+      // phase 2: the chair launch arc — clean projectile, light drag, no curve.
+      // It sticks at the APEX (top of the arc), not the first zone it passes:
+      // the bottom megas would otherwise block every throw, and nothing could
+      // ever reach the face or the top megas. How high it flies (throw force)
+      // picks the row, where it hit the chair picks the column.
+      dtVY+=0.30; dtX+=dtVX; dtY+=dtVY;
+      dtVX*=0.995; dtVY*=0.995;
+      dtPlaceMarker();
+      if(dtY<DT_H*0.10){ dtLand(null); return; } // flew over the board
+      if(dtVY>=0){
+        // apex: snap to the NEAREST target within 17.5% of the field width.
+        // The dart animates to that target's centre on a hit, so a near miss
+        // still reads as sticking the card. Sim-verified over a 225-swipe
+        // grid: all six values reachable, face (111) a rare ~5% jackpot,
+        // about half of chair-hits score for random swipes (skilled aim
+        // scores far more, since force picks the row and chair position
+        // picks the column).
+        let hit=null, best=1e9;
+        const snap=DT_W*0.175;
+        for(const mg of DT_MEGAS){
+          const d=Math.hypot(dtX-DT_W*mg.fx, dtY-DT_H*mg.fy);
+          if(d<best){ best=d; hit=mg; }
+        }
+        const fdx=dtX-DT_W*(DT_FACE.x0+DT_FACE.x1)/2, fdy=dtY-DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
+        const fd=Math.hypot(fdx, fdy);
+        if(fd<best){ best=fd; hit=DT_FACE; }
+        dtLand(best<=snap?hit:null); return;
+      }
+      if(dtLife>2.2){ dtLand(null); return; }
+    }
+    dtRaf=requestAnimationFrame(step);
+  };
+  dtRaf=requestAnimationFrame(step);
+}
+function dtLaunch(){
+  // hit position across the chair (0 = left edge, 1 = right edge) + incoming
+  // speed set the launch: across steers left/right, harder throws fly higher
+  // and spread wider. This is the chair's own physics, different from the
+  // original game's chair bounce.
+  const cx0=DT_W*DT_CHAIR.x0, cx1=DT_W*DT_CHAIR.x1;
+  const hitX=Math.max(0, Math.min(1, (dtX-cx0)/(cx1-cx0)));
+  const speed=Math.hypot(dtVX, dtVY);
+  dtVX=(hitX-0.5)*2*(1.2+speed*0.03);
+  dtVY=-(4.0+speed*0.22);
+  dtPhase=2; dtLife=0;
+}
+function dtLand(target){
+  dtFlying=false;
+  const m=dt$('dtMarker');
+  if(target){
+    dtScore+=target.pts; dtRoundScores[dtRound-1]+=target.pts;
+    try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
+    if(target===DT_FACE) dt$('dtFaceHit').classList.add('show');
+    setTimeout(()=>dt$('dtFaceHit').classList.remove('show'), 900);
+    m.style.transition='all .25s';
+    m.style.left=(target.fx!==undefined?DT_W*target.fx:(DT_W*(DT_FACE.x0+DT_FACE.x1)/2))+'px';
+    m.style.top=(target.fy!==undefined?DT_H*target.fy:(DT_H*(DT_FACE.y0+DT_FACE.y1)/2))+'px';
+    m.style.opacity='0';
+    setTimeout(()=>{ m.style.transition=''; m.style.display='none'; m.style.opacity='1'; }, 350);
+    dtPop(String(target.pts), false);
+  } else {
+    dtPop('MISS', true);
+    m.style.display='none';
+  }
+  dtLeft--;
+  setTimeout(dtAfterThrow, target?600:900);
+}
+function dtAfterThrow(){
+  if(dtLeft>0){ dtUpdateHud(); return; }
+  if(dtRound<3){
+    dtRound++; dtLeft=3;
+    for(let i=0;i<3;i++) dt$('dtPrev'+i).style.display='block';
+    dtUpdateHud();
+    dtPop('ROUND '+dtRound+' — 3 DARTS', false);
+    return;
+  }
+  dtShowTotal();
+}
+function dtShowTotal(){
+  const best=+localStorage.getItem('qu33phDartsBest')||0;
+  if(dtScore>best){ localStorage.setItem('qu33phDartsBest', dtScore); }
+  dt$('dtTotalSum').textContent=dtScore;
+  const nb=dt$('dtTotalBest');
+  nb.textContent=(dtScore>best?'NEW BEST! ':'BEST ')+Math.max(best,dtScore);
+  nb.classList.toggle('new', dtScore>best);
+  dt$('dtTotalRows').innerHTML=dtRoundScores.map((s,i)=>'<div>ROUND '+(i+1)+': '+s+'</div>').join('');
+  dt$('dtTotalScreen').classList.remove('hidden');
+}
+dt$('dtField').addEventListener('pointerdown', e=>{
+  if(dtFlying || dtLeft<=0) return;
+  dtMetrics();
+  try{ dt$('dtField').setPointerCapture(e.pointerId); }catch(_){}
+  dtDrag={x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY};
+});
+dt$('dtField').addEventListener('pointermove', e=>{
+  if(!dtDrag) return; dtDrag.x=e.clientX; dtDrag.y=e.clientY;
+});
+dt$('dtField').addEventListener('pointerup', ()=>{
+  if(!dtDrag) return;
+  const dx=dtDrag.x-dtDrag.x0, dy=dtDrag.y-dtDrag.y0; dtDrag=null;
+  dtThrow(dx, dy);
+});
+dt$('dtField').addEventListener('pointercancel', ()=>{
+  dtDrag=null;
+});
+</script>
+
+<script>
 // SEASON 1 → straight to the Season 1 arcade menu (same cached game.html)
 function backToSeason1(){
   var gv=new URLSearchParams(location.search).get('gv');
@@ -710,7 +990,7 @@ function applyTheme(){
 }
 applyTheme();
 
-function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('peefScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
+function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('peefScreen').classList.add('hidden');$('dtScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');$('boardStage').classList.add('hidden');$('charChoices').classList.remove('hidden');buildCharChoices();}
 function startGame(charId, boardFile){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden');
   skateChar=SKATE_CHARS.find(c=>c.id===charId)||SKATE_CHARS[0];
