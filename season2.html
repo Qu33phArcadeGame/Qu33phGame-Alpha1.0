@@ -141,9 +141,9 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .dt-face-hit{position:absolute;z-index:8;border:3px solid #ffd24a;border-radius:8px;box-shadow:0 0 18px #ffd24a;opacity:0;transition:opacity .15s;pointer-events:none;}
 .dt-face-hit.show{opacity:1;}
 .dt-prev{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:7;opacity:.95;}
-.dt-dart{display:flex;align-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));}
-.dt-dart-body{height:12px;border-radius:6px;}
-.dt-dart-tip{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:12px solid #c0c0c0;}
+.dt-prev img{display:block;}
+.dt-throw-row{display:flex;align-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));}
+.dt-throw-tip{width:12px;height:3px;background:#c0c0c0;border-radius:2px;flex-shrink:0;}
 .dt-marker{position:absolute;z-index:9;transform:translate(-50%,-50%);pointer-events:none;}
 .dt-pop{position:absolute;z-index:12;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;text-align:center;}
 .dt-pop.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
@@ -444,11 +444,11 @@ document.addEventListener('dragstart', function(e){
     <img class="field" src="qu33phdarts-bg.png">
     <img class="dt-chair" id="dtChair" src="Chair.png" alt="" style="display:none;">
     <div class="dt-face-hit" id="dtFaceHit" style="display:none;"></div>
-    <div class="dt-prev" id="dtPrev0" style="right:4%;bottom:7%;"><div class="dt-dart" style="transform:rotate(180deg);"><div class="dt-dart-body" style="width:44px;background:#2ecc71;"></div><div class="dt-dart-tip"></div></div></div>
-    <div class="dt-prev" id="dtPrev1" style="right:4%;bottom:15%;"><div class="dt-dart" style="transform:rotate(180deg);"><div class="dt-dart-body" style="width:44px;background:#e74c3c;"></div><div class="dt-dart-tip"></div></div></div>
-    <div class="dt-prev" id="dtPrev2" style="right:4%;bottom:23%;"><div class="dt-dart" style="transform:rotate(180deg);"><div class="dt-dart-body" style="width:64px;background:#3498db;"></div><div class="dt-dart-tip"></div></div></div>
+    <div class="dt-prev" id="dtPrev0" style="right:4%;bottom:7%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="green.png" style="width:50px;height:50px;transform:rotate(-45deg);" alt=""><div class="dt-throw-tip"></div></div></div>
+    <div class="dt-prev" id="dtPrev1" style="right:4%;bottom:15%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="red.png" style="width:50px;height:50px;transform:rotate(-45deg);" alt=""><div class="dt-throw-tip"></div></div></div>
+    <div class="dt-prev" id="dtPrev2" style="right:4%;bottom:23%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="blue.png" style="width:80px;height:50px;" alt=""><div class="dt-throw-tip"></div></div></div>
     <div class="dt-swipe-hint" id="dtSwipeHint">swipe to throw</div>
-    <div class="dt-marker" id="dtMarker" style="display:none;"><div class="dt-dart" id="dtDart"><div class="dt-dart-body" id="dtDartBody"></div><div class="dt-dart-tip"></div></div></div>
+    <div class="dt-marker" id="dtMarker" style="display:none;"><div class="dt-throw-row"><img id="dtMarkerImg" src="" alt=""><div class="dt-throw-tip"></div></div></div>
   </div>
   <div class="dt-pop" id="dtPop"></div>
   <div class="dt-hint">hit the chair to launch at the board</div>
@@ -704,27 +704,29 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // arc, and that arc decides which mega (or the 111 face) it lands on.
 // Board = the final playing field image: 9 mega index cards in a cutoff circle
 // around the Qu33ph face paper, cut off by the wall on the right. Megas are
-// worth 11/22/33/44/55, the face 111. Numbers are plain, no plus sign.
-// 3 rounds x 3 darts. Previews sit in the bottom right corner, each with a
-// needle dart tip, realistic and colored to match its marker.
+// worth 11/22/33/44/55/66/77/88/99 (one each, 9 megas), the face 333.
+// Numbers are plain, no plus sign. 3 rounds x 3 darts. Previews sit in the
+// bottom right corner: the real GitHub marker images (green/red/blue.png)
+// with a needle dart tip at the front end, realistic and colored to match.
+// The chair is the real GitHub Chair.png, just bigger — never a redraw.
 const dt$=id=>document.getElementById(id);
 const DT_MEGAS=[
-  {fx:0.52, fy:0.23, pts:55},
-  {fx:0.66, fy:0.23, pts:44},
+  {fx:0.52, fy:0.23, pts:11},
+  {fx:0.66, fy:0.23, pts:22},
   {fx:0.40, fy:0.29, pts:33},
-  {fx:0.28, fy:0.37, pts:22},
-  {fx:0.28, fy:0.48, pts:44},
-  {fx:0.28, fy:0.57, pts:55},
-  {fx:0.42, fy:0.60, pts:33},
-  {fx:0.53, fy:0.60, pts:11},
-  {fx:0.65, fy:0.60, pts:22},
+  {fx:0.28, fy:0.37, pts:44},
+  {fx:0.28, fy:0.48, pts:55},
+  {fx:0.28, fy:0.57, pts:66},
+  {fx:0.42, fy:0.60, pts:77},
+  {fx:0.53, fy:0.60, pts:88},
+  {fx:0.65, fy:0.60, pts:99},
 ];
-const DT_FACE={x0:0.50, x1:0.67, y0:0.31, y1:0.42, pts:111};
+const DT_FACE={x0:0.50, x1:0.67, y0:0.31, y1:0.42, pts:333};
 const DT_CHAIR={x0:0.25, x1:0.55, y0:0.58, y1:0.82};
 const DT_DARTS=[
-  {c:'#2ecc71', w:44},
-  {c:'#e74c3c', w:44},
-  {c:'#3498db', w:64},
+  {file:'green.png', w:50, h:50, rot:-45},
+  {file:'red.png', w:50, h:50, rot:-45},
+  {file:'blue.png', w:80, h:50, rot:0},
 ];
 let DT_W=0, DT_H=0;
 let dtRound=1, dtScore=0, dtLeft=3, dtRoundScores=[0,0,0];
@@ -792,8 +794,9 @@ function dtThrow(dx, dy){
   const idx=3-dtLeft;
   const d=DT_DARTS[idx];
   dt$('dtPrev'+idx).style.display='none';
-  const m=dt$('dtMarker'), body=dt$('dtDartBody');
-  body.style.width=d.w+'px'; body.style.background=d.c;
+  const m=dt$('dtMarker'), img=dt$('dtMarkerImg');
+  img.src=d.file; img.style.width=d.w+'px'; img.style.height=d.h+'px';
+  img.style.transform=d.rot?'rotate('+d.rot+'deg)':'';
   m.style.display='block'; m.style.opacity='1';
   dtX=DT_W*0.5; dtY=DT_H*0.92; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
   dtLife=0; dtFlying=true; dtPhase=1;
@@ -830,10 +833,11 @@ function dtThrow(dx, dy){
         // apex: snap to the NEAREST target within 17.5% of the field width.
         // The dart animates to that target's centre on a hit, so a near miss
         // still reads as sticking the card. Sim-verified over a 225-swipe
-        // grid: all six values reachable, face (111) a rare ~5% jackpot,
-        // about half of chair-hits score for random swipes (skilled aim
-        // scores far more, since force picks the row and chair position
-        // picks the column).
+        // grid (positions unchanged by the value change, so it still holds):
+        // all values reachable, face (333) a rare ~5% jackpot, about half
+        // of chair-hits score for random swipes (skilled aim scores far
+        // more, since force picks the row and chair position picks the
+        // column).
         let hit=null, best=1e9;
         const snap=DT_W*0.175;
         for(const mg of DT_MEGAS){
