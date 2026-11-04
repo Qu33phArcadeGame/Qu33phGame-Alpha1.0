@@ -512,12 +512,12 @@ const PB_BUCKETS=[
 // off the bottom of the screen), so the bounce is softened to a nudge below
 // (no velocity reflection, gentle tangential redirect). Ramps + nudge:
 // 77% score (was 63%), balanced across all three buckets, nothing flies off.
-// Chairs moved left a tiny hair -0.01 (Nov 4, Coby: still a hair too far right; net +0.03
-// from original). Sim (63-swipe grid, seeded): R1 34/63, R3 32/63 -> 33/63, funnel still works.
+// Chairs moved left another hair -0.01 (Nov 4, Coby: still a hair too far right; net +0.02
+// from original). Sim (63-swipe grid, seeded): R1 34/63, R3 33/63, both unchanged, funnel still works.
 const PB_CHAIRS=[
-  {fx:0.43, fy:0.46}, {fx:0.33, fy:0.47}, {fx:0.23, fy:0.48},
-  {fx:0.43, fy:0.21}, {fx:0.33, fy:0.22}, {fx:0.23, fy:0.23},
-  {fx:0.43, fy:0.71}, {fx:0.33, fy:0.72}, {fx:0.23, fy:0.73},
+  {fx:0.42, fy:0.46}, {fx:0.32, fy:0.47}, {fx:0.22, fy:0.48},
+  {fx:0.42, fy:0.21}, {fx:0.32, fy:0.22}, {fx:0.22, fy:0.23},
+  {fx:0.42, fy:0.71}, {fx:0.32, fy:0.72}, {fx:0.22, fy:0.73},
 ];
 let pbHitChairs=[];
 function pbPositionChairs(){
@@ -848,7 +848,7 @@ function dtStart(){
 function dtUpdateHud(){
   dt$('dtScoreHud').textContent=dtScore;
 }
-let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0, dtDragStartFY=0, dtArcMode=false, dtArc=null;
+let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0, dtDragStartFY=0, dtArcMode=false, dtArc=null; const DT_DRAG_OFF=70; // marker sits 70px above the finger while dragging, so the finger does not cover it — you can actually see the dart as you drag it around.
 function dtPushTrail(x,y){
   const last=dtTrailPts[dtTrailPts.length-1];
   if(last){
@@ -1025,7 +1025,7 @@ function dtDirectThrow(vx, vy, sx, sy){
   dtAng=Math.atan2(dtVY, dtVX)*180/Math.PI;
   dtCurve=0; dtLife=0; dtFlying=true; dtPhase=3; dtDirect=true; dtFall=false;
   dtArcMode=false; dtArc=null;
-  if(dtVY < -4 && dtY > DT_H*0.30){
+  if(dtVY < -4 && dtY > DT_H*0.15){ // was 0.30H — lowered for the drag offset, so a marker dragged to mid-board (finger y ~270, marker y ~200) still arcs; a marker above the board top (y < 120) still does not, so arcs stay on screen.
     const tApex=-dtVY/0.55;
     const ax=dtX + dtVX*tApex, ay=dtY + dtVY*tApex + 0.5*0.55*tApex*tApex;
     const faceX=DT_W*(DT_FACE.x0+DT_FACE.x1)/2, faceY=DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
@@ -1192,7 +1192,7 @@ dt$('dtField').addEventListener('pointermove', e=>{
       dtVX=Math.max(-40, Math.min(40, (e.clientX-prev.x)/dtms*16.667));
       dtVY=Math.max(-45, Math.min(45, (e.clientY-prev.y)/dtms*16.667));
     }
-    dtX=fx; dtY=fy; dtPlaceMarker();
+    dtX=fx; dtY=Math.max(0, fy-DT_DRAG_OFF); dtPlaceMarker(); // VISIBLE DRAG (Nov 4): marker 70px above the finger, not under it — previously the marker sat exactly on the finger and was hidden by it, so you could not see what you were dragging.
   }
 });
 dt$('dtField').addEventListener('pointerup', ()=>{
@@ -1209,9 +1209,9 @@ dt$('dtField').addEventListener('pointerup', ()=>{
     }
     vx=Math.max(-30, Math.min(30, vx*0.6)); vy=Math.max(-32, Math.min(15, vy*0.6));
     const r=dt$('dtField').getBoundingClientRect();
-    const fx=Math.max(0, Math.min(DT_W, upX-r.left)), fy=Math.max(0, Math.min(DT_H, upY-r.top));
+    const fx=Math.max(0, Math.min(DT_W, upX-r.left)), fy=Math.max(0, Math.min(DT_H, upY-r.top-DT_DRAG_OFF));
     dtDragHist=[];
-    dtDirectThrow(vx, vy, fx, fy);
+    dtDirectThrow(vx, vy, fx, fy); // throw starts at the visible marker position (above the finger), not under the finger — what you saw is where it throws from, no jump at release.
   } else {
     dtDragHist=[];
     if(dtDragStartFY>=DT_H*0.50 && dy < -30){ dtThrow(dx, dy); }
