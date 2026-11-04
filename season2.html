@@ -462,7 +462,7 @@ document.addEventListener('dragstart', function(e){
     <div class="dt-prev" id="dtPrev0" style="right:2%;bottom:4%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="green.png" style="width:50px;height:50px;transform:rotate(-45deg);" alt=""><div class="dt-throw-tip"></div></div></div>
     <div class="dt-prev" id="dtPrev1" style="right:2%;bottom:9%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="red.png" style="width:50px;height:50px;transform:rotate(-45deg);" alt=""><div class="dt-throw-tip"></div></div></div>
     <div class="dt-prev" id="dtPrev2" style="right:2%;bottom:14%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="blue.png" style="width:80px;height:50px;" alt=""><div class="dt-throw-tip"></div></div></div>
-    <div class="dt-swipe-hint" id="dtSwipeHint">swipe to throw</div>
+    <div class="dt-swipe-hint" id="dtSwipeHint">swipe low to roll, drag up to throw</div>
     <div class="dt-marker" id="dtMarker" style="display:none;"><div class="dt-throw-row"><img id="dtMarkerImg" src="" alt=""><div class="dt-throw-tip"></div></div></div>
   </div>
   <div class="dt-pop" id="dtPop"></div>
@@ -512,10 +512,13 @@ const PB_BUCKETS=[
 // off the bottom of the screen), so the bounce is softened to a nudge below
 // (no velocity reflection, gentle tangential redirect). Ramps + nudge:
 // 77% score (was 63%), balanced across all three buckets, nothing flies off.
+// Chairs moved right +0.06 (Nov 4, Coby: fully on the counter — first chair left edge
+// now right of PB_LEFT, third chair at the field right edge). Sim (63-swipe grid, seeded):
+// R1 34/63 both old and new, R3 30/63 -> 32/63, buckets balanced, funnel still works.
 const PB_CHAIRS=[
-  {fx:0.40, fy:0.46}, {fx:0.30, fy:0.47}, {fx:0.20, fy:0.48},
-  {fx:0.40, fy:0.21}, {fx:0.30, fy:0.22}, {fx:0.20, fy:0.23},
-  {fx:0.40, fy:0.71}, {fx:0.30, fy:0.72}, {fx:0.20, fy:0.73},
+  {fx:0.46, fy:0.46}, {fx:0.36, fy:0.47}, {fx:0.26, fy:0.48},
+  {fx:0.46, fy:0.21}, {fx:0.36, fy:0.22}, {fx:0.26, fy:0.23},
+  {fx:0.46, fy:0.71}, {fx:0.36, fy:0.72}, {fx:0.26, fy:0.73},
 ];
 let pbHitChairs=[];
 function pbPositionChairs(){
@@ -846,7 +849,7 @@ function dtStart(){
 function dtUpdateHud(){
   dt$('dtScoreHud').textContent=dtScore;
 }
-let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0;
+let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0, dtDragStartFY=0;
 function dtPushTrail(x,y){
   const last=dtTrailPts[dtTrailPts.length-1];
   if(last){
@@ -931,7 +934,7 @@ function dtThrow(dx, dy){
       // a slow, visible dart flight with a fading trail, scaled up — like
       // qu33phball's arc, but a dart sticking point-first, not a ball
       // dropping into a hole.
-      dtVY+=0.22*dtDt60; dtX+=dtVX*dtDt60; dtY+=dtVY*dtDt60;
+      dtVY+=0.30*dtDt60; dtX+=dtVX*dtDt60; dtY+=dtVY*dtDt60;
       const dtDrag2=Math.pow(0.995, dtDt60); dtVX*=dtDrag2; dtVY*=dtDrag2;
       dtPlaceMarker(); dtPushTrail(dtX, dtY);
       if(dtY<DT_H*0.10){ dtLand(null); return; } // flew over the board
@@ -1009,7 +1012,7 @@ function dtDirectStep(now){
   if(!dtLastT) dtLastT=now;
   dtDt60=Math.min(2, Math.max(0.5, (now-dtLastT)/16.667)); dtLastT=now;
   dtLife+=dtDt60/60;
-  dtVY+=0.35*dtDt60;
+  dtVY+=(dtFall?0.90:0.55)*dtDt60;
   dtVX*=Math.pow(0.998, dtDt60);
   dtX+=dtVX*dtDt60; dtY+=dtVY*dtDt60;
   if(dtX<0){ dtX=0; dtVX*=-0.3; }
@@ -1034,9 +1037,9 @@ function dtDirectStep(now){
     }
   }
   if(dtFall){
-    if(dtY>=DT_H*0.98 || dtY>DT_H+50 || dtLife>4){ dtLand(null); return; }
+    if(dtY>=DT_H*0.98 || dtY>DT_H+50 || dtLife>3){ dtLand(null); return; }
   } else {
-    if(dtLife>4){ dtLand(null); return; }
+    if(dtLife>3){ dtLand(null); return; }
   }
   dtRaf=requestAnimationFrame(dtDirectStep);
 }
@@ -1062,7 +1065,7 @@ function dtLand(target){
     m.style.display='none';
   }
   dtLeft--;
-  setTimeout(dtAfterThrow, target?600:900);
+  setTimeout(dtAfterThrow, target?450:650);
 }
 function dtAfterThrow(){
   if(dtLeft>0){ dtUpdateHud(); return; }
@@ -1095,6 +1098,7 @@ dt$('dtField').addEventListener('pointerdown', e=>{
   try{ dt$('dtField').setPointerCapture(e.pointerId); }catch(_){}
   dtDrag={x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY};
   dtDragMode=false; dtDragHist=[{x:e.clientX, y:e.clientY, t:performance.now()}]; dtDragT0=performance.now();
+  try{ dtDragStartFY=e.clientY-dt$('dtField').getBoundingClientRect().top; }catch(_){ dtDragStartFY=DT_H; }
 });
 dt$('dtField').addEventListener('pointermove', e=>{
   if(!dtDrag) return; dtDrag.x=e.clientX; dtDrag.y=e.clientY;
@@ -1102,7 +1106,9 @@ dt$('dtField').addEventListener('pointermove', e=>{
   while(dtDragHist.length>20) dtDragHist.shift();
   if(!dtDragMode && !dtFlying && dtLeft>0){
     const held=now-dtDragT0, up=dtDrag.y0-e.clientY;
-    if(held>100 && up>25){
+    const lowStart=dtDragStartFY>=DT_H*0.75;
+    const needUp=lowStart?120:50, needHeld=lowStart?250:150;
+    if(held>=needHeld && up>=needUp){
       dtDragMode=true;
       const idx=3-dtLeft, d=DT_DARTS[idx];
       dt$('dtPrev'+idx).style.display='none';
@@ -1143,7 +1149,8 @@ dt$('dtField').addEventListener('pointerup', ()=>{
     dtDirectThrow(vx, vy, fx, fy);
   } else {
     dtDragHist=[];
-    dtThrow(dx, dy);
+    if(dtDragStartFY>=DT_H*0.65){ dtThrow(dx, dy); }
+    // else: swipe starting high, not low, not a drag-up — ignore, no dart spent.
   }
 });
 dt$('dtField').addEventListener('pointercancel', ()=>{
@@ -1153,7 +1160,7 @@ dt$('dtField').addEventListener('pointercancel', ()=>{
     if(idx>=0 && idx<3) dt$('dtPrev'+idx).style.display='block';
     dtClearTrail();
   }
-  dtDrag=null; dtDragMode=false; dtDragHist=[];
+  dtDrag=null; dtDragMode=false; dtDragHist=[]; dtDragStartFY=0;
 });
 </script>
 
