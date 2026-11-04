@@ -462,7 +462,7 @@ document.addEventListener('dragstart', function(e){
     <div class="dt-prev" id="dtPrev0" style="right:2%;bottom:4%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="green.png" style="width:50px;height:50px;transform:rotate(-45deg);" alt=""><div class="dt-throw-tip"></div></div></div>
     <div class="dt-prev" id="dtPrev1" style="right:2%;bottom:9%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="red.png" style="width:50px;height:50px;transform:rotate(-45deg);" alt=""><div class="dt-throw-tip"></div></div></div>
     <div class="dt-prev" id="dtPrev2" style="right:2%;bottom:14%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="blue.png" style="width:80px;height:50px;" alt=""><div class="dt-throw-tip"></div></div></div>
-    <div class="dt-swipe-hint" id="dtSwipeHint">swipe low to roll, drag up to throw gently</div>
+    <div class="dt-swipe-hint" id="dtSwipeHint">swipe up to roll, hold + drag to throw</div>
     <div class="dt-marker" id="dtMarker" style="display:none;"><div class="dt-throw-row"><img id="dtMarkerImg" src="" alt=""><div class="dt-throw-tip"></div></div></div>
   </div>
   <div class="dt-pop" id="dtPop"></div>
@@ -512,12 +512,12 @@ const PB_BUCKETS=[
 // off the bottom of the screen), so the bounce is softened to a nudge below
 // (no velocity reflection, gentle tangential redirect). Ramps + nudge:
 // 77% score (was 63%), balanced across all three buckets, nothing flies off.
-// Chairs moved left a tiny bit -0.02 (Nov 4, Coby: previous +0.06 went too far; net +0.04
-// from original). Sim (63-swipe grid, seeded): R1 34/63, R3 32/63, unchanged, funnel still works.
+// Chairs moved left a tiny hair -0.01 (Nov 4, Coby: still a hair too far right; net +0.03
+// from original). Sim (63-swipe grid, seeded): R1 34/63, R3 32/63 -> 33/63, funnel still works.
 const PB_CHAIRS=[
-  {fx:0.44, fy:0.46}, {fx:0.34, fy:0.47}, {fx:0.24, fy:0.48},
-  {fx:0.44, fy:0.21}, {fx:0.34, fy:0.22}, {fx:0.24, fy:0.23},
-  {fx:0.44, fy:0.71}, {fx:0.34, fy:0.72}, {fx:0.24, fy:0.73},
+  {fx:0.43, fy:0.46}, {fx:0.33, fy:0.47}, {fx:0.23, fy:0.48},
+  {fx:0.43, fy:0.21}, {fx:0.33, fy:0.22}, {fx:0.23, fy:0.23},
+  {fx:0.43, fy:0.71}, {fx:0.33, fy:0.72}, {fx:0.23, fy:0.73},
 ];
 let pbHitChairs=[];
 function pbPositionChairs(){
@@ -874,7 +874,7 @@ function dtDisplayX(){
   // a real throw in a room. Scoring uses this displayed x, so what you see
   // hit is what scores.
   const cx=DT_W*(DT_FACE.x0+DT_FACE.x1)/2;
-  return dtX + (cx - dtX) * 0.35 * dtDepth();
+  return dtX + (cx - dtX) * 0.50 * dtDepth(); // EASIER (Nov 4): was 0.35 — stronger drift toward the board centre, so left/right throws land closer to the board.
 }
 function dtScale(){
   // Depth size: full size on the counter (foreground), 55% at the board
@@ -910,7 +910,7 @@ function dtThrow(dx, dy){
   m.style.display='block'; m.style.opacity='1';
   m.classList.remove('dt-flying','dt-stick');
   dtCurColor=d.c; dtClearTrail(); dtHitTimer=0;
-  dtX=DT_W*0.50; dtY=DT_H*0.95; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
+  dtX=DT_W*0.50; dtY=DT_H*0.95; dtVX=dx*0.05; dtVY=Math.min(dy*0.2, -30); dtCurve=dx*0.0001; // EASIER (Nov 4): roll always reaches the chair — small swipes used to stop short (vy -10, max 167px, chair 213px away), diagonal swipes used to fly off the side. Minimum up speed -30, sideways drift cut to 0.05, curve cut to 0.0001, so a swipe up, even gentle or diagonal, rolls to the chair and launches.
   dtLife=0; dtFlying=true; dtPhase=1; dtAng=Math.atan2(dtVY, dtVX)*180/Math.PI;
   dtPlaceMarker();
   const step=(now)=>{
@@ -972,13 +972,13 @@ function dtThrow(dx, dy){
         // used to always land 11 now lands 11/33/333/44/55).
         const ax=dtDisplayX(), fdx=ax-DT_W*(DT_FACE.x0+DT_FACE.x1)/2, fdy=dtY-DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
         const fd=Math.hypot(fdx, fdy);
-        if(fd<=DT_W*0.10){ dtLand(DT_FACE); return; }
+        if(fd<=DT_W*0.15){ dtLand(DT_FACE); return; } // EASIER (Nov 4): face 40px -> 60px, mega 80px -> 120px, nearest wins, face first.
         let hit=null, best=1e9;
         for(const mg of DT_MEGAS){
           const d=Math.hypot(ax-DT_W*mg.fx, dtY-DT_H*mg.fy);
           if(d<best){ best=d; hit=mg; }
         }
-        dtLand(best<=DT_W*0.20?hit:null); return;
+        dtLand(best<=DT_W*0.30?hit:null); return;
       }
       if(dtLife>2.2){ dtLand(null); return; }
     }
@@ -1046,12 +1046,12 @@ function dtDirectStep(now){
     if(dtY<DT_H*0.08){
       dtFall=true;
     } else if(dtVY>=0){
-      if(dtDirectSpeed0>=12){
+      if(dtDirectSpeed0>=4){ // EASIER (Nov 4): was >=12 — a slow drag-release that apexes on the board used to miss even when it landed on a card. Now it scores; weak throws that apex below the board still fall and miss, as they should.
         const ax2=dtDisplayX(), fdx=ax2-DT_W*(DT_FACE.x0+DT_FACE.x1)/2, fdy=dtY-DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
-        if(Math.hypot(fdx, fdy)<=DT_W*0.10){ dtLand(DT_FACE); return; }
+        if(Math.hypot(fdx, fdy)<=DT_W*0.15){ dtLand(DT_FACE); return; } // EASIER (Nov 4): same larger tolerances as chair launch.
         let hit=null, best=1e9;
         for(const mg of DT_MEGAS){ const dd=Math.hypot(ax2-DT_W*mg.fx, dtY-DT_H*mg.fy); if(dd<best){ best=dd; hit=mg; } }
-        if(hit && best<=DT_W*0.20){ dtLand(hit); return; }
+        if(hit && best<=DT_W*0.30){ dtLand(hit); return; }
       }
       dtFall=true;
     }
@@ -1126,8 +1126,7 @@ dt$('dtField').addEventListener('pointermove', e=>{
   while(dtDragHist.length>20) dtDragHist.shift();
   if(!dtDragMode && !dtFlying && dtLeft>0){
     const held=now-dtDragT0, up=dtDrag.y0-e.clientY;
-    const lowStart=dtDragStartFY>=DT_H*0.75;
-    const needUp=lowStart?120:50, needHeld=lowStart?250:150;
+    const needUp=150, needHeld=600; // EASIER (Nov 4): drag only on a deliberate hold+drag — normal swipes stay roll, they used to become drag by accident (150ms + 50px was a normal swipe).
     if(held>=needHeld && up>=needUp){
       dtDragMode=true;
       const idx=3-dtLeft, d=DT_DARTS[idx];
@@ -1169,8 +1168,8 @@ dt$('dtField').addEventListener('pointerup', ()=>{
     dtDirectThrow(vx, vy, fx, fy);
   } else {
     dtDragHist=[];
-    if(dtDragStartFY>=DT_H*0.65){ dtThrow(dx, dy); }
-    // else: swipe starting high, not low, not a drag-up — ignore, no dart spent.
+    if(dtDragStartFY>=DT_H*0.50 && dy < -30){ dtThrow(dx, dy); }
+    // else: swipe starting high, or too small / not up — ignore, no dart spent.
   }
 });
 dt$('dtField').addEventListener('pointercancel', ()=>{
