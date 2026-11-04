@@ -450,7 +450,7 @@ document.addEventListener('dragstart', function(e){
   <button class="marker-btn" onclick="dtBack()">&larr; BACK</button>
   <div class="hud"><span class="score" id="dtScoreHud">0</span></div>
   <div id="dtField" style="position:absolute;inset:0;">
-    <img class="field dt-field" src="qu33phdarts-bg-long.png">
+    <img class="field dt-field" src="qu33phdarts-field-new.png">
     <div class="dt-trail" id="dtTrail"></div>
     <img class="dt-chair" id="dtChair" src="Chair.png" alt="" style="display:none;">
     <div class="dt-face-hit" id="dtFaceHit" style="display:none;"></div>
@@ -749,19 +749,27 @@ pb$('pbField').addEventListener('pointercancel', ()=>{
 // fading trail, scaled up so you can watch it) that STICKS into the board
 // at the apex with a pulse, instead of dropping into a hole like a ball.
 const dt$=id=>document.getElementById(id);
+// NEW FIELD (Nov 3 night, Coby's new field photo): bg is now
+// qu33phdarts-field-new.png (945x2048, cleaned green around the paper,
+// numbers baked under the cards, white except bottom-centre 77 in red).
+// Megas + chair + paper are BAKED into that image, so dtBuildBoard below
+// creates NO code mega cards and NO code chair image — only hitboxes here
+// + a gold flash outline on chair hit. 7 megas, reading order:
+// 11 top-left, 22 top-right, 33 middle-left, 44 middle-right,
+// 55 lower-left, 66 lower-right, 77 bottom-centre (red, middle column).
+// Fractions are measured from the new field image itself (card centres,
+// paper bbox, chair bbox), NOT the old 2800 bg.
 const DT_MEGAS=[
-  {fx:0.52, fy:0.172, pts:11},
-  {fx:0.682, fy:0.172, pts:22},
-  {fx:0.40, fy:0.217, pts:33},
-  {fx:0.28, fy:0.277, pts:44},
-  {fx:0.28, fy:0.359, pts:55},
-  {fx:0.28, fy:0.427, pts:66},
-  {fx:0.42, fy:0.449, pts:77},
-  {fx:0.53, fy:0.449, pts:88},
-  {fx:0.704, fy:0.449, pts:99},
+  {fx:0.316, fy:0.180, pts:11},
+  {fx:0.500, fy:0.180, pts:22},
+  {fx:0.193, fy:0.257, pts:33},
+  {fx:0.609, fy:0.258, pts:44},
+  {fx:0.276, fy:0.340, pts:55},
+  {fx:0.529, fy:0.340, pts:66},
+  {fx:0.404, fy:0.397, pts:77},
 ];
-const DT_FACE={x0:0.50, x1:0.67, y0:0.232, y1:0.314, pts:333};
-const DT_CHAIR={x0:0.335, x1:0.835, y0:0.505, y1:0.855};
+const DT_FACE={x0:0.272, x1:0.531, y0:0.228, y1:0.296, pts:333};
+const DT_CHAIR={x0:0.275, x1:0.794, y0:0.366, y1:0.684};
 const DT_DARTS=[
   {file:'green.png', w:50, h:50, rot:-45, c:'#2ecc71'},
   {file:'red.png', w:50, h:50, rot:-45, c:'#e74c3c'},
@@ -796,20 +804,16 @@ function dtBuildBoard(){
     const d=document.createElement('div'); d.className='dt-trail-dot';
     tr.appendChild(d); dtTrailDots.push(d);
   }
-  for(const m of DT_MEGAS){
-    const d=document.createElement('div'); d.className='dt-mega';
-    d.style.left=(m.fx*100)+'%'; d.style.top=(m.fy*100)+'%';
-    d.innerHTML='<img src="megacard.png" alt=""><div class="dt-num">'+m.pts+'</div>';
-    f.appendChild(d);
-  }
+  // BAKED BOARD: no code mega divs — megas + numbers are in the bg image.
+  const cf=document.createElement('div'); cf.id='dtChairFlash';
+  cf.style.cssText='position:absolute;left:'+(DT_CHAIR.x0*100)+'%;top:'+(DT_CHAIR.y0*100)+'%;width:'+((DT_CHAIR.x1-DT_CHAIR.x0)*100)+'%;height:'+((DT_CHAIR.y1-DT_CHAIR.y0)*100)+'%;border:3px solid #ffd700;border-radius:12px;opacity:0;pointer-events:none;z-index:5;';
+  f.appendChild(cf);
   const fh=dt$('dtFaceHit');
   fh.style.left=(DT_FACE.x0*100)+'%'; fh.style.top=(DT_FACE.y0*100)+'%';
   fh.style.width=((DT_FACE.x1-DT_FACE.x0)*100)+'%'; fh.style.height=((DT_FACE.y1-DT_FACE.y0)*100)+'%';
   fh.style.display='block';
-  const ch=dt$('dtChair');
-  ch.style.left=(((DT_CHAIR.x0+DT_CHAIR.x1)/2)*100)+'%';
-  ch.style.top=(((DT_CHAIR.y0+DT_CHAIR.y1)/2)*100)+'%';
-  ch.style.width='min(300px,45vw)'; ch.style.display='block';
+  // Code chair stays hidden — the chair is baked into the new field image.
+  // The gold flash outline (dtChairFlash, above) is the chair-hit feedback.
   const hint=dt$('dtSwipeHint');
   hint.style.left='50%'; hint.style.top='86%';
 }
@@ -822,7 +826,7 @@ function dtBack(){
   cancelAnimationFrame(dtRaf); dtFlying=false; dtDrag=null; dtHitTimer=0;
   dtClearTrail();
   dt$('dtMarker').classList.remove('dt-flying','dt-stick');
-  dt$('dtChair').classList.remove('hit');
+  dt$('dtChair').classList.remove('hit'); const cf3=dt$('dtChairFlash'); if(cf3) cf3.style.opacity='0';
   dt$('dtTotalScreen').classList.add('hidden');
   dt$('dtScreen').classList.add('hidden');
   showMenu();
@@ -832,7 +836,7 @@ function dtStart(){
   dt$('dtTotalScreen').classList.add('hidden');
   dt$('dtMarker').style.display='none';
   dt$('dtMarker').classList.remove('dt-flying','dt-stick');
-  dt$('dtChair').classList.remove('hit');
+  dt$('dtChair').classList.remove('hit'); const cf3=dt$('dtChairFlash'); if(cf3) cf3.style.opacity='0';
   dtClearTrail();
   dt$('dtFaceHit').classList.remove('show');
   for(let i=0;i<3;i++) dt$('dtPrev'+i).style.display='block';
@@ -875,7 +879,7 @@ function dtThrow(dx, dy){
       dtHitTimer--;
       dtPlaceMarker();
       if(dtHitTimer<=0){
-        dt$('dtChair').classList.remove('hit');
+        dt$('dtChair').classList.remove('hit'); const cf3=dt$('dtChairFlash'); if(cf3) cf3.style.opacity='0';
         dtLaunch();
       }
     } else if(dtPhase===1){
@@ -892,7 +896,7 @@ function dtThrow(dx, dy){
       // while it pulses, so the hit reads and feels satisfying, then launch.
       const cx0=DT_W*DT_CHAIR.x0, cx1=DT_W*DT_CHAIR.x1, cy0=DT_H*DT_CHAIR.y0, cy1=DT_H*DT_CHAIR.y1;
       if(dtX>=cx0 && dtX<=cx1 && dtY>=cy0 && dtY<=cy1){
-        dtPhase=1.5; dtHitTimer=7; dt$('dtChair').classList.add('hit');
+        dtPhase=1.5; dtHitTimer=7; dt$('dtChair').classList.add('hit'); const cf2=dt$('dtChairFlash'); if(cf2) cf2.style.opacity='1';
       }
       if(Math.abs(dtVX)<0.05 && Math.abs(dtVY)<0.05){ dtLand(null); return; }
     } else {
