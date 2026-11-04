@@ -361,11 +361,10 @@ document.addEventListener('dragstart', function(e){
         <div class="cab-label">ADVENTURES</div>
         <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
-      <div class="cab-card soon">
+      <div class="cab-card" onclick="openStorytime()">
         <div class="cab-marquee"></div>
         <img class="cab-media" src="qu33phstorytime.jpg" alt="Qu33ph Story Time">
         <div class="cab-label">STORY TIME</div>
-        <div class="soon-ribbon"><span>COMING SOON</span></div>
       </div>
       <div class="cab-card" onclick="openDarts()">
         <div class="cab-marquee"></div>
@@ -480,6 +479,175 @@ document.addEventListener('dragstart', function(e){
     <div class="total-rows" id="dtTotalRows"></div>
   </div>
 </div>
+
+<div id="stScreen" class="screen hidden">
+  <button class="marker-btn" onclick="stBack()">&larr; BACK</button>
+  <video id="stIntro" playsinline muted preload="auto" src="qu33phstorytime-intro.mp4" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;background:#000;"></video>
+  <div id="stBoardWrap" style="position:absolute;inset:0;overflow:hidden;">
+    <img src="qu33phstorytime-board.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
+    <div id="stBoardTitle" style="display:none;position:absolute;top:44px;left:0;right:0;text-align:center;font-size:20px;font-weight:bold;color:#222;font-family:'Segoe Print','Bradley Hand','Comic Sans MS',cursive;padding:0 20px;z-index:2;"></div>
+    <div id="stBoardText" style="position:absolute;left:0;right:0;top:0;bottom:290px;padding:56px 22px 10px;overflow:hidden;font-family:'Segoe Print','Bradley Hand','Comic Sans MS',cursive;font-weight:bold;font-size:22px;line-height:1.45;z-index:1;"></div>
+  </div>
+  <div id="stMarkers" style="position:absolute;left:0;right:0;bottom:0;z-index:10;padding:0 0 14px;display:flex;flex-direction:column;align-items:center;gap:7px;">
+    <button class="st-marker" onclick="stTap(0)"><img src="st-blue.png"><span id="stW0"></span></button>
+    <button class="st-marker" onclick="stTap(1)"><img src="st-red.png"><span id="stW1"></span></button>
+    <button class="st-marker" onclick="stTap(2)"><img src="st-green.png"><span id="stW2"></span></button>
+    <button class="st-marker st-black" onclick="stSaveTap()"><img src="st-black.png"></button>
+  </div>
+  <div id="stTitleDlg" style="display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:16px;width:82%;max-width:340px;">
+      <input id="stTitleInput" maxlength="40" style="width:100%;font-size:20px;padding:10px;border:2px solid #222;border-radius:8px;box-sizing:border-box;">
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button onclick="stSaveConfirm()" style="flex:1;padding:10px;font-size:18px;border-radius:8px;background:#222;color:#fff;border:none;">Save</button>
+        <button onclick="stSaveCancel()" style="width:52px;padding:10px;font-size:18px;border-radius:8px;background:#eee;border:none;">&times;</button>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.st-marker{position:relative;background:none;border:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.st-marker img{display:block;width:260px;height:auto;max-height:64px;object-fit:contain;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));}
+.st-marker span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:17px;text-shadow:0 1px 3px rgba(0,0,0,.6);padding:0 20px;text-align:center;line-height:1.1;}
+.st-black{margin-top:10px;}
+.st-black img{width:220px;max-height:52px;}
+</style>
+<script>
+// ============ QU33PH STORY TIME — whiteboard stories ============
+// Very simple, no explanations: three markers at the bottom (blue on top,
+// red, then green), one word/phrase in each. Tap one, it goes on the board
+// in that marker's colour. Words follow a predictive chain — character ->
+// verb -> object -> connector -> character ... — so taps build a random
+// funny story about qu33phing, peefing and throwing markers. The story
+// stops when the board is full, no bigger. The separate black marker
+// saves it, with an optional title. Swipe the board left/right to see
+// old stories, each on its own whiteboard.
+const st$ = id => document.getElementById(id);
+const ST_CHAR = ["CobyQu33ph","Qu33ph","3ph3","Smok3y","H3rrington","Bob","B3ll","B3d3lia"];
+const ST_VERB = ["qu33phed","peefed","threw a marker","rolled a chair","bounced a marker","slid down the counter","jumped over the bucket","spun the chair","flipped a marker","dropped a marker","played slots","hit the pinball","rode a skateboard","threw a dart"];
+const ST_OBJ = ["into the bucket","at the board","off the chair","into the cabinet","on the counter","through the window","at the whiteboard","into the slots","over the pinball","down the skateboard","into the coin pusher","at the plinko board"];
+const ST_CONN = ["and then","but","so","suddenly","unfortunately","and then everyone laughed","and nobody believed it","then it happened again","and the chair fell over","and a marker bounced back"];
+const ST_COLORS = ["#2f7de1","#e23b2e","#27ae60"];
+let stWords = [], stCat = "char", stOpts = [], stBoardIndex = 0, stSaved = [];
+let stSwipeX0 = 0, stSwipeY0 = 0, stSwipeT0 = 0;
+function stBank(){ return stCat === "char" ? ST_CHAR : stCat === "verb" ? ST_VERB : stCat === "object" ? ST_OBJ : ST_CONN; }
+function stPick3(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a.slice(0, 3);
+}
+function stRenderMarkers(){
+  stOpts = stPick3(stBank());
+  for(let i = 0; i < 3; i++){
+    const el = st$("stW" + i);
+    el.textContent = stOpts[i] || "";
+    el.style.fontSize = (stOpts[i] && stOpts[i].length > 20) ? "13px" : (stOpts[i] && stOpts[i].length > 16) ? "15px" : "17px";
+  }
+}
+function stRenderWords(words, el){
+  el.innerHTML = "";
+  words.forEach((w, i) => {
+    if(i > 0) el.appendChild(document.createTextNode(" "));
+    const s = document.createElement("span");
+    s.textContent = w.text; s.style.color = w.color;
+    el.appendChild(s);
+  });
+}
+function stRenderBoard(){
+  const titleEl = st$("stBoardTitle"), textEl = st$("stBoardText"), markers = st$("stMarkers");
+  if(stBoardIndex === 0){
+    titleEl.style.display = "none";
+    textEl.style.paddingTop = "56px";
+    stRenderWords(stWords, textEl);
+    markers.style.display = "flex";
+  } else {
+    const sv = stSaved[stBoardIndex - 1];
+    if(!sv){ stBoardIndex = 0; stRenderBoard(); return; }
+    if(sv.title){ titleEl.textContent = sv.title; titleEl.style.display = "block"; textEl.style.paddingTop = "84px"; }
+    else { titleEl.style.display = "none"; textEl.style.paddingTop = "56px"; }
+    stRenderWords(sv.words || [], textEl);
+    markers.style.display = "none";
+  }
+}
+function stLoadSaved(){
+  try { const v = JSON.parse(localStorage.getItem("qu33phStorytime") || "[]"); stSaved = Array.isArray(v) ? v : []; }
+  catch(e){ stSaved = []; }
+}
+function stTap(i){
+  if(stBoardIndex !== 0) return;
+  const word = stOpts[i]; if(!word) return;
+  const textEl = st$("stBoardText");
+  const before = textEl.innerHTML;
+  const wordsBefore = stWords.length;
+  stWords.push({text: word, color: ST_COLORS[i]});
+  stRenderWords(stWords, textEl);
+  if(textEl.scrollHeight > textEl.clientHeight + 2){
+    stWords.pop(); textEl.innerHTML = before;
+    if(wordsBefore === 0) stRenderWords(stWords, textEl);
+    return;
+  }
+  stCat = stCat === "char" ? "verb" : stCat === "verb" ? "object" : stCat === "object" ? "conn" : "char";
+  stRenderMarkers();
+}
+function stSaveTap(){
+  if(stBoardIndex !== 0 || stWords.length === 0) return;
+  const dlg = st$("stTitleDlg"); dlg.style.display = "flex";
+  const inp = st$("stTitleInput"); inp.value = "";
+  setTimeout(() => inp.focus(), 50);
+}
+function stSaveCancel(){ st$("stTitleDlg").style.display = "none"; }
+function stSaveConfirm(){
+  const title = st$("stTitleInput").value.trim();
+  stSaved.unshift({title: title, words: stWords.slice(), date: Date.now()});
+  try { localStorage.setItem("qu33phStorytime", JSON.stringify(stSaved)); }
+  catch(e){ stSaved.pop(); try { localStorage.setItem("qu33phStorytime", JSON.stringify(stSaved)); } catch(e2){} }
+  st$("stTitleDlg").style.display = "none";
+  stWords = []; stCat = "char"; stBoardIndex = 0;
+  stRenderBoard(); stRenderMarkers();
+}
+function stIntroEnd(){
+  const v = st$("stIntro");
+  try { v.pause(); } catch(e){}
+  v.style.display = "none";
+  st$("stBoardWrap").style.display = "block";
+  stRenderBoard();
+}
+function openStorytime(){
+  ["selectScreen","gameScreen","peefScreen","dtScreen","menuScreen"].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add("hidden"); });
+  st$("stScreen").classList.remove("hidden");
+  stLoadSaved(); stBoardIndex = 0; stRenderBoard(); stRenderMarkers();
+  const v = st$("stIntro");
+  st$("stBoardWrap").style.display = "none";
+  st$("stMarkers").style.display = "none";
+  v.style.display = "block";
+  v.onended = stIntroEnd;
+  v.onerror = stIntroEnd;
+  v.onclick = stIntroEnd;
+  try { v.currentTime = 0; const pr = v.play(); if(pr && pr.catch) pr.catch(stIntroEnd); } catch(e){ stIntroEnd(); }
+}
+function stBack(){
+  const v = st$("stIntro"); try { v.pause(); } catch(e){}
+  v.style.display = "none"; st$("stTitleDlg").style.display = "none";
+  st$("stScreen").classList.add("hidden"); showMenu();
+}
+st$("stBoardWrap").addEventListener("pointerdown", e => { stSwipeX0 = e.clientX; stSwipeY0 = e.clientY; stSwipeT0 = Date.now(); });
+st$("stBoardWrap").addEventListener("pointerup", e => {
+  const dx = e.clientX - stSwipeX0, dy = e.clientY - stSwipeY0, dt = Date.now() - stSwipeT0;
+  if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5 || dt > 600) return;
+  let next = stBoardIndex;
+  if(dx < 0 && stBoardIndex < stSaved.length) next = stBoardIndex + 1;
+  if(dx > 0 && stBoardIndex > 0) next = stBoardIndex - 1;
+  if(next === stBoardIndex) return;
+  const wrap = st$("stBoardWrap");
+  wrap.style.transition = "transform .18s ease, opacity .18s ease";
+  wrap.style.transform = "translateX(" + (dx < 0 ? "-40px" : "40px") + ")";
+  wrap.style.opacity = ".6";
+  setTimeout(() => {
+    stBoardIndex = next; stRenderBoard();
+    wrap.style.transform = "translateX(0)"; wrap.style.opacity = "1";
+    setTimeout(() => { wrap.style.transition = ""; }, 200);
+  }, 180);
+});
+</script>
 
 <script>
 // ============ PEEF BUCKETS — the original marker game, plus buckets ============
@@ -1321,7 +1489,7 @@ function applyTheme(){
 }
 applyTheme();
 
-function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('peefScreen').classList.add('hidden');$('dtScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
+function showMenu(){$('selectScreen').classList.add('hidden');$('gameScreen').classList.add('hidden');$('peefScreen').classList.add('hidden');$('dtScreen').classList.add('hidden');$('stScreen').classList.add('hidden');$('menuScreen').classList.remove('hidden');}
 function openSelect(){$('menuScreen').classList.add('hidden');$('selectScreen').classList.remove('hidden');$('boardStage').classList.add('hidden');$('charChoices').classList.remove('hidden');buildCharChoices();}
 function startGame(charId, boardFile){$('selectScreen').classList.add('hidden'); $('gameScreen').classList.remove('hidden');
   skateChar=SKATE_CHARS.find(c=>c.id===charId)||SKATE_CHARS[0];
