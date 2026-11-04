@@ -824,9 +824,35 @@ function openDarts(){
   dt$('menuScreen').classList.add('hidden');
   dt$('dtScreen').classList.remove('hidden');
   dtMetrics(); dtBuildBoard(); dtStart();
+  // OPENING ZOOM (Nov 4): no AI video — the AI videos kept failing, so the
+  // zoom is built into the game with the real field photo. Full room ->
+  // board close-up -> back to full game view, every time you open Darts.
+  // Previews + hint stay hidden during the zoom (they would scale with
+  // the field and look huge), input is blocked, then the game appears.
+  dtOpening=true;
+  for(let i=0;i<3;i++) dt$('dtPrev'+i).style.display='none';
+  const hintEl=dt$('dtScreen').querySelector('.dt-hint'); if(hintEl) hintEl.style.display='none';
+  const fld=dt$('dtField');
+  fld.style.transition='transform 1.1s ease-in-out';
+  fld.style.transformOrigin='40% 26%';
+  void fld.offsetWidth;
+  fld.style.transform='scale(2.4)';
+  dtOpeningTimers.forEach(clearTimeout); dtOpeningTimers=[];
+  dtOpeningTimers.push(setTimeout(()=>{
+    fld.style.transition='transform 0.7s ease-in-out';
+    fld.style.transform='scale(1)';
+  }, 1500));
+  dtOpeningTimers.push(setTimeout(()=>{
+    fld.style.transition=''; fld.style.transform=''; fld.style.transformOrigin='';
+    dtOpening=false;
+    for(let i=0;i<3;i++) dt$('dtPrev'+i).style.display='block';
+    if(hintEl) hintEl.style.display='';
+    dtUpdateHud();
+  }, 2200));
 }
 function dtBack(){
-  cancelAnimationFrame(dtRaf); dtFlying=false; dtDrag=null; dtHitTimer=0; dtDragMode=false; dtDirect=false; dtFall=false; dtArcMode=false; dtArc=null;
+  cancelAnimationFrame(dtRaf); dtOpeningTimers.forEach(clearTimeout); dtOpeningTimers=[]; dtOpening=false; const _fld=dt$('dtField'); if(_fld){ _fld.style.transition=''; _fld.style.transform=''; _fld.style.transformOrigin=''; } const _hint=dt$('dtScreen').querySelector('.dt-hint'); if(_hint) _hint.style.display='';
+  dtFlying=false; dtDrag=null; dtHitTimer=0; dtDragMode=false; dtDirect=false; dtFall=false; dtArcMode=false; dtArc=null;
   dtClearTrail();
   dt$('dtMarker').classList.remove('dt-flying','dt-stick');
   dt$('dtChair').classList.remove('hit');
@@ -848,7 +874,7 @@ function dtStart(){
 function dtUpdateHud(){
   dt$('dtScoreHud').textContent=dtScore;
 }
-let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0, dtDragStartFY=0, dtArcMode=false, dtArc=null; const DT_DRAG_OFF=70; // marker sits 70px above the finger while dragging, so the finger does not cover it — you can actually see the dart as you drag it around.
+let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0, dtDragStartFY=0, dtArcMode=false, dtArc=null, dtOpening=false, dtOpeningTimers=[]; const DT_DRAG_OFF=70; // marker sits 70px above the finger while dragging, so the finger does not cover it — you can actually see the dart as you drag it around.
 function dtPushTrail(x,y){
   const last=dtTrailPts[dtTrailPts.length-1];
   if(last){
@@ -1159,7 +1185,7 @@ function dtShowTotal(){
 // - DRAG: hold + drag up slowly (>100ms, >25px up) -> marker follows your finger in the air, release to throw
 //   DIRECTLY at the board (dtDirectThrow, phase 3, different physics, no chair). No hit indicators at all.
 dt$('dtField').addEventListener('pointerdown', e=>{
-  if(dtFlying || dtLeft<=0) return;
+  if(dtFlying || dtLeft<=0 || dtOpening) return;
   dtMetrics();
   try{ dt$('dtField').setPointerCapture(e.pointerId); }catch(_){}
   dtDrag={x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY};
