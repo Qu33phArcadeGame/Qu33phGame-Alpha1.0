@@ -156,7 +156,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .dt-chair.hit{transform:translate(-50%,-50%) scale(1.12);filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)) brightness(1.25);transition:transform .12s,filter .12s;}
 .dt-trail{position:absolute;inset:0;pointer-events:none;z-index:8;}
 .dt-trail-dot{position:absolute;width:7px;height:7px;border-radius:50%;pointer-events:none;opacity:0;transform:translate(-50%,-50%);}
-.dt-marker.dt-flying .dt-throw-row{transform:scale(1.25);}
+/* Depth physics (Nov 4): no flying scale — dtScale() controls size, smaller at the board. */
 @keyframes dtStick{0%{transform:scale(1.25);}50%{transform:scale(1.5);}100%{transform:scale(1.25);}}
 .dt-marker.dt-stick .dt-throw-row{animation:dtStick .18s ease-out;}
 .dt-pop{position:absolute;z-index:12;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;text-align:center;}
@@ -862,16 +862,36 @@ function dtPushTrail(x,y){
   }
   dtTrailPts.push({x,y}); if(dtTrailPts.length>20) dtTrailPts.shift(); dtUpdateTrail();
 }
+function dtDepth(){
+  // 0 at the counter/foreground (y 0.95H), 1 at the board/background (y 0.26H).
+  return Math.max(0, Math.min(1, (DT_H*0.95 - dtY) / (DT_H*0.69)));
+}
+function dtDisplayX(){
+  // Perspective: as the dart flies away from the camera toward the board,
+  // its screen x drifts 35% of the way toward the board centre (the room's
+  // vanishing point). A straight-up flick from the right-side previews no
+  // longer stays stuck on the right edge — it moves toward the board, like
+  // a real throw in a room. Scoring uses this displayed x, so what you see
+  // hit is what scores.
+  const cx=DT_W*(DT_FACE.x0+DT_FACE.x1)/2;
+  return dtX + (cx - dtX) * 0.35 * dtDepth();
+}
+function dtScale(){
+  // Depth size: full size on the counter (foreground), 55% at the board
+  // (background). Same in roll, chair launch, direct throw and fall — the
+  // dart shrinks as it flies to the board and grows again as it falls back.
+  return 1.0 - 0.45 * dtDepth();
+}
 function dtPlaceMarker(){
   const m=dt$('dtMarker');
-  m.style.left=dtX+'px'; m.style.top=dtY+'px';
+  m.style.left=dtDisplayX()+'px'; m.style.top=dtY+'px';
   const sp=Math.hypot(dtVX, dtVY);
   if(sp>0.5){
     const target=Math.atan2(dtVY, dtVX)*180/Math.PI;
     let diff=((target-dtAng+540)%360)-180;
     dtAng+=diff*Math.min(1, 0.35*dtDt60);
   }
-  m.style.transform='translate(-50%,-50%) rotate('+dtAng+'deg)';
+  m.style.transform='translate(-50%,-50%) rotate('+dtAng+'deg) scale('+dtScale().toFixed(3)+')';
 }
 let dtPopTimer=0;
 function dtPop(text, miss){
@@ -912,7 +932,7 @@ function dtThrow(dx, dy){
       const dtDrag=Math.pow(0.94, dtDt60); dtVX*=dtDrag; dtVY*=dtDrag;
       if(dtX>DT_W){ dtX=DT_W; dtVX*=-0.4; }
       if(dtY<DT_H*0.08){ dtY=DT_H*0.08; dtVY*=-0.2; }
-      dtPlaceMarker(); dtPushTrail(dtX, dtY);
+      dtPlaceMarker(); dtPushTrail(dtDisplayX(), dtY);
       // dead, off the field, or stopped cold — all miss, before the chair
       // so a dead marker never launches.
       if(dtLife>=1 || dtY>DT_H+100 || dtX<0){ dtLand(null); return; }
@@ -935,7 +955,7 @@ function dtThrow(dx, dy){
       // dropping into a hole.
       dtVY+=0.30*dtDt60; dtX+=dtVX*dtDt60; dtY+=dtVY*dtDt60;
       const dtDrag2=Math.pow(0.995, dtDt60); dtVX*=dtDrag2; dtVY*=dtDrag2;
-      dtPlaceMarker(); dtPushTrail(dtX, dtY);
+      dtPlaceMarker(); dtPushTrail(dtDisplayX(), dtY);
       if(dtY<DT_H*0.10){ dtLand(null); return; } // flew over the board
       if(dtVY>=0){
         // apex scoring (PHYSICAL launch, Nov 3 — see dtLaunch): the dart
@@ -950,12 +970,12 @@ function dtThrow(dx, dy){
         // the chair, 60% of chair-hits score, ALL values reachable, face
         // 333 ~10% of scores; the same straight-up strong swipe that
         // used to always land 11 now lands 11/33/333/44/55).
-        const fdx=dtX-DT_W*(DT_FACE.x0+DT_FACE.x1)/2, fdy=dtY-DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
+        const ax=dtDisplayX(), fdx=ax-DT_W*(DT_FACE.x0+DT_FACE.x1)/2, fdy=dtY-DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
         const fd=Math.hypot(fdx, fdy);
         if(fd<=DT_W*0.10){ dtLand(DT_FACE); return; }
         let hit=null, best=1e9;
         for(const mg of DT_MEGAS){
-          const d=Math.hypot(dtX-DT_W*mg.fx, dtY-DT_H*mg.fy);
+          const d=Math.hypot(ax-DT_W*mg.fx, dtY-DT_H*mg.fy);
           if(d<best){ best=d; hit=mg; }
         }
         dtLand(best<=DT_W*0.20?hit:null); return;
@@ -1017,7 +1037,7 @@ function dtDirectStep(now){
   if(dtY<0){ dtY=0; if(dtVY<0) dtVY*=-0.2; }
   if(dtX<0){ dtX=0; dtVX*=-0.3; }
   if(dtX>DT_W){ dtX=DT_W; dtVX*=-0.3; }
-  dtPlaceMarker(); dtPushTrail(dtX, dtY);
+  dtPlaceMarker(); dtPushTrail(dtDisplayX(), dtY);
   if(!dtFall){
     // Apex scoring (same tolerances as the chair launch, so all targets stay reachable):
     // strength + drag height set the apex row, aim sets the column. A weak throw apexes
@@ -1027,10 +1047,10 @@ function dtDirectStep(now){
       dtFall=true;
     } else if(dtVY>=0){
       if(dtDirectSpeed0>=12){
-        const fdx=dtX-DT_W*(DT_FACE.x0+DT_FACE.x1)/2, fdy=dtY-DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
+        const ax2=dtDisplayX(), fdx=ax2-DT_W*(DT_FACE.x0+DT_FACE.x1)/2, fdy=dtY-DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
         if(Math.hypot(fdx, fdy)<=DT_W*0.10){ dtLand(DT_FACE); return; }
         let hit=null, best=1e9;
-        for(const mg of DT_MEGAS){ const dd=Math.hypot(dtX-DT_W*mg.fx, dtY-DT_H*mg.fy); if(dd<best){ best=dd; hit=mg; } }
+        for(const mg of DT_MEGAS){ const dd=Math.hypot(ax2-DT_W*mg.fx, dtY-DT_H*mg.fy); if(dd<best){ best=dd; hit=mg; } }
         if(hit && best<=DT_W*0.20){ dtLand(hit); return; }
       }
       dtFall=true;
