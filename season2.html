@@ -462,7 +462,7 @@ document.addEventListener('dragstart', function(e){
     <div class="dt-prev" id="dtPrev0" style="right:2%;bottom:4%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="green.png" style="width:50px;height:50px;transform:rotate(-45deg);" alt=""><div class="dt-throw-tip"></div></div></div>
     <div class="dt-prev" id="dtPrev1" style="right:2%;bottom:9%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="red.png" style="width:50px;height:50px;transform:rotate(-45deg);" alt=""><div class="dt-throw-tip"></div></div></div>
     <div class="dt-prev" id="dtPrev2" style="right:2%;bottom:14%;"><div class="dt-throw-row" style="transform:rotate(180deg);"><img src="blue.png" style="width:80px;height:50px;" alt=""><div class="dt-throw-tip"></div></div></div>
-    <div class="dt-swipe-hint" id="dtSwipeHint">swipe low to roll, drag up to throw</div>
+    <div class="dt-swipe-hint" id="dtSwipeHint">swipe low to roll, drag up to throw gently</div>
     <div class="dt-marker" id="dtMarker" style="display:none;"><div class="dt-throw-row"><img id="dtMarkerImg" src="" alt=""><div class="dt-throw-tip"></div></div></div>
   </div>
   <div class="dt-pop" id="dtPop"></div>
@@ -512,13 +512,12 @@ const PB_BUCKETS=[
 // off the bottom of the screen), so the bounce is softened to a nudge below
 // (no velocity reflection, gentle tangential redirect). Ramps + nudge:
 // 77% score (was 63%), balanced across all three buckets, nothing flies off.
-// Chairs moved right +0.06 (Nov 4, Coby: fully on the counter — first chair left edge
-// now right of PB_LEFT, third chair at the field right edge). Sim (63-swipe grid, seeded):
-// R1 34/63 both old and new, R3 30/63 -> 32/63, buckets balanced, funnel still works.
+// Chairs moved left a tiny bit -0.02 (Nov 4, Coby: previous +0.06 went too far; net +0.04
+// from original). Sim (63-swipe grid, seeded): R1 34/63, R3 32/63, unchanged, funnel still works.
 const PB_CHAIRS=[
-  {fx:0.46, fy:0.46}, {fx:0.36, fy:0.47}, {fx:0.26, fy:0.48},
-  {fx:0.46, fy:0.21}, {fx:0.36, fy:0.22}, {fx:0.26, fy:0.23},
-  {fx:0.46, fy:0.71}, {fx:0.36, fy:0.72}, {fx:0.26, fy:0.73},
+  {fx:0.44, fy:0.46}, {fx:0.34, fy:0.47}, {fx:0.24, fy:0.48},
+  {fx:0.44, fy:0.21}, {fx:0.34, fy:0.22}, {fx:0.24, fy:0.23},
+  {fx:0.44, fy:0.71}, {fx:0.34, fy:0.72}, {fx:0.24, fy:0.73},
 ];
 let pbHitChairs=[];
 function pbPositionChairs(){
@@ -1000,7 +999,7 @@ function dtDirectThrow(vx, vy, sx, sy){
   m.style.display='block'; m.style.opacity='1'; m.classList.remove('dt-stick'); m.classList.add('dt-flying');
   dtCurColor=d.c; dtClearTrail();
   dtX=Math.max(0, Math.min(DT_W, sx)); dtY=Math.max(0, Math.min(DT_H, sy));
-  dtVX=Math.max(-45, Math.min(45, vx)); dtVY=Math.max(-45, Math.min(45, vy));
+  dtVX=Math.max(-30, Math.min(30, vx)); dtVY=Math.max(-32, Math.min(15, vy));
   dtDirectSpeed0=Math.hypot(dtVX, dtVY);
   dtAng=Math.atan2(dtVY, dtVX)*180/Math.PI;
   dtCurve=0; dtLife=0; dtFlying=true; dtPhase=3; dtDirect=true; dtFall=false;
@@ -1015,6 +1014,7 @@ function dtDirectStep(now){
   dtVY+=(dtFall?0.90:0.55)*dtDt60;
   dtVX*=Math.pow(0.998, dtDt60);
   dtX+=dtVX*dtDt60; dtY+=dtVY*dtDt60;
+  if(dtY<0){ dtY=0; if(dtVY<0) dtVY*=-0.2; }
   if(dtX<0){ dtX=0; dtVX*=-0.3; }
   if(dtX>DT_W){ dtX=DT_W; dtVX*=-0.3; }
   dtPlaceMarker(); dtPushTrail(dtX, dtY);
@@ -1142,7 +1142,7 @@ dt$('dtField').addEventListener('pointerup', ()=>{
       const l=dtDragHist[dtDragHist.length-1], pv=dtDragHist[dtDragHist.length-2], dtms=l.t-pv.t;
       if(dtms>0 && dtms<200){ vx=(l.x-pv.x)/dtms*16.667; vy=(l.y-pv.y)/dtms*16.667; }
     }
-    vx=Math.max(-45, Math.min(45, vx)); vy=Math.max(-45, Math.min(45, vy));
+    vx=Math.max(-30, Math.min(30, vx*0.6)); vy=Math.max(-32, Math.min(15, vy*0.6));
     const r=dt$('dtField').getBoundingClientRect();
     const fx=Math.max(0, Math.min(DT_W, upX-r.left)), fy=Math.max(0, Math.min(DT_H, upY-r.top));
     dtDragHist=[];
