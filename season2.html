@@ -150,7 +150,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .dt-prev{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:7;opacity:.95;}
 .dt-prev img{display:block;}
 .dt-throw-row{display:flex;align-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));}
-.dt-throw-tip{width:12px;height:3px;background:#c0c0c0;border-radius:2px;flex-shrink:0;}
+.dt-throw-tip{width:22px;height:10px;flex-shrink:0;margin-left:-1px;background:linear-gradient(to bottom,#f8f8f8 0%,#c8c8c8 45%,#8f8f8f 55%,#e8e8e8 100%);clip-path:polygon(0 0,58% 0,100% 50%,58% 100%,0 100%);} /* ICON TIP (Nov 4): same sharp silver needle as the Qu33ph Darts icon — base wider, point sharp, not the old 12x3 grey bar. Scales with the marker, so it stays pointed at the board. */
 .dt-marker{position:absolute;z-index:9;transform:translate(-50%,-50%);pointer-events:none;}
 .dt-field{object-fit:fill;}
 .dt-chair.hit{transform:translate(-50%,-50%) scale(1.12);filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)) brightness(1.25);transition:transform .12s,filter .12s;}
@@ -826,7 +826,7 @@ function openDarts(){
   dtMetrics(); dtBuildBoard(); dtStart();
 }
 function dtBack(){
-  cancelAnimationFrame(dtRaf); dtFlying=false; dtDrag=null; dtHitTimer=0; dtDragMode=false; dtDirect=false; dtFall=false;
+  cancelAnimationFrame(dtRaf); dtFlying=false; dtDrag=null; dtHitTimer=0; dtDragMode=false; dtDirect=false; dtFall=false; dtArcMode=false; dtArc=null;
   dtClearTrail();
   dt$('dtMarker').classList.remove('dt-flying','dt-stick');
   dt$('dtChair').classList.remove('hit');
@@ -848,7 +848,7 @@ function dtStart(){
 function dtUpdateHud(){
   dt$('dtScoreHud').textContent=dtScore;
 }
-let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0, dtDragStartFY=0;
+let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0, dtDragStartFY=0, dtArcMode=false, dtArc=null;
 function dtPushTrail(x,y){
   const last=dtTrailPts[dtTrailPts.length-1];
   if(last){
@@ -877,10 +877,11 @@ function dtDisplayX(){
   return dtX + (cx - dtX) * 0.50 * dtDepth(); // EASIER (Nov 4): was 0.35 — stronger drift toward the board centre, so left/right throws land closer to the board.
 }
 function dtScale(){
-  // Depth size: full size on the counter (foreground), 55% at the board
-  // (background). Same in roll, chair launch, direct throw and fall — the
-  // dart shrinks as it flies to the board and grows again as it falls back.
-  return 1.0 - 0.45 * dtDepth();
+  // WAY MORE DEPTH (Nov 4): bigger slightly at the start (1.30 on the
+  // counter, was 1.00) and way smaller at the board (0.32, was 0.55).
+  // Same in roll, chair launch, direct throw and fall — the dart shrinks
+  // dramatically as it flies to the board and grows again as it falls back.
+  return 1.30 - 0.98 * dtDepth();
 }
 function dtPlaceMarker(){
   const m=dt$('dtMarker');
@@ -1023,11 +1024,56 @@ function dtDirectThrow(vx, vy, sx, sy){
   dtDirectSpeed0=Math.hypot(dtVX, dtVY);
   dtAng=Math.atan2(dtVY, dtVX)*180/Math.PI;
   dtCurve=0; dtLife=0; dtFlying=true; dtPhase=3; dtDirect=true; dtFall=false;
+  dtArcMode=false; dtArc=null;
+  if(dtVY < -4 && dtY > DT_H*0.30){
+    const tApex=-dtVY/0.55;
+    const ax=dtX + dtVX*tApex, ay=dtY + dtVY*tApex + 0.5*0.55*tApex*tApex;
+    const faceX=DT_W*(DT_FACE.x0+DT_FACE.x1)/2, faceY=DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
+    const faceD=Math.hypot(ax-faceX, ay-faceY);
+    let target=null, bestD=1e9;
+    if(faceD<=DT_W*0.15){ target=DT_FACE; }
+    else {
+      for(const mg of DT_MEGAS){
+        const d=Math.hypot(ax-DT_W*mg.fx, ay-DT_H*mg.fy);
+        if(d<bestD){ bestD=d; target=mg; }
+      }
+      if(bestD>300) target=null;
+    }
+    if(target){
+      const ex=target.fx!==undefined?DT_W*target.fx:faceX;
+      const ey=target.fy!==undefined?DT_H*target.fy:faceY;
+      dtArc={sx:dtX, sy:dtY, ex:ex, ey:ey, cx:(dtX+ex)/2, cy:Math.min(dtY, ey)-180, t0:performance.now(), dur:900, target:target, s0:dtScale(), s1:0.32};
+      dtArcMode=true;
+      dtPlaceMarker();
+      dtLastT=0; dtRaf=requestAnimationFrame(dtArcStep);
+      return;
+    }
+  }
   dtPlaceMarker();
   dtLastT=0; dtRaf=requestAnimationFrame(dtDirectStep);
 }
+function dtArcStep(now){
+  if(!dtFlying || !dtArcMode || !dtArc) return;
+  const p=Math.min(1, Math.max(0, (now-dtArc.t0)/dtArc.dur));
+  const t=p, u=1-t;
+  const x=u*u*dtArc.sx + 2*u*t*dtArc.cx + t*t*dtArc.ex;
+  const y=u*u*dtArc.sy + 2*u*t*dtArc.cy + t*t*dtArc.ey;
+  const dx=2*u*(dtArc.cx-dtArc.sx) + 2*t*(dtArc.ex-dtArc.cx);
+  const dy=2*u*(dtArc.cy-dtArc.sy) + 2*t*(dtArc.ey-dtArc.cy);
+  dtX=x; dtY=y; dtAng=Math.atan2(dy, dx)*180/Math.PI;
+  const sc=dtArc.s0 + (dtArc.s1-dtArc.s0)*t;
+  const m=dt$('dtMarker');
+  m.style.left=x+'px'; m.style.top=y+'px';
+  m.style.transform='translate(-50%,-50%) rotate('+dtAng+'deg) scale('+sc.toFixed(3)+')';
+  dtPushTrail(x, y);
+  if(p>=1){
+    const tgt=dtArc.target; dtArcMode=false; dtArc=null;
+    dtLand(tgt); return;
+  }
+  dtRaf=requestAnimationFrame(dtArcStep);
+}
 function dtDirectStep(now){
-  if(!dtFlying || !dtDirect) return;
+  if(!dtFlying || !dtDirect || dtArcMode) return;
   if(!dtLastT) dtLastT=now;
   dtDt60=Math.min(2, Math.max(0.5, (now-dtLastT)/16.667)); dtLastT=now;
   dtLife+=dtDt60/60;
@@ -1064,7 +1110,7 @@ function dtDirectStep(now){
   dtRaf=requestAnimationFrame(dtDirectStep);
 }
 function dtLand(target){
-  dtFlying=false; dtDirect=false; dtFall=false; dtDragMode=false;
+  dtFlying=false; dtDirect=false; dtFall=false; dtDragMode=false; dtArcMode=false; dtArc=null;
   const m=dt$('dtMarker');
   m.classList.remove('dt-flying');
   dtClearTrail();
