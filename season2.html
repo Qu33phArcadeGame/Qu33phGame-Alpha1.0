@@ -146,7 +146,7 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .dt-face-hit{display:none!important;border:none!important;box-shadow:none!important;}
 .dt-trail-dot{transition:opacity .3s ease;}
 .dt-marker{will-change:transform,left,top;}
-.dt-pulse-ring{position:absolute;z-index:9;border:2px solid #ffd24a;border-radius:50%;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.6);transition:opacity .35s ease,transform .35s ease;}
+/* No hit indicators at all (Nov 4): no rings, no boxes, no highlights — dart + score pop only. */
 .dt-prev{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:7;opacity:.95;}
 .dt-prev img{display:block;}
 .dt-throw-row{display:flex;align-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));}
@@ -159,8 +159,6 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .dt-marker.dt-flying .dt-throw-row{transform:scale(1.25);}
 @keyframes dtStick{0%{transform:scale(1.25);}50%{transform:scale(1.5);}100%{transform:scale(1.25);}}
 .dt-marker.dt-stick .dt-throw-row{animation:dtStick .18s ease-out;}
-@keyframes dtMegaHit{0%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-50%) scale(1.15);}100%{transform:translate(-50%,-50%) scale(1);}}
-.dt-mega.dt-mega-hit{animation:dtMegaHit .3s ease-out;}
 .dt-pop{position:absolute;z-index:12;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);color:#ffd24a;font-family:'Arial Black',Arial,sans-serif;font-size:clamp(18px,5.5vw,30px);letter-spacing:2px;text-shadow:0 3px 10px #000;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;text-align:center;}
 .dt-pop.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
 .dt-pop.miss{color:#ff5a5a;}
@@ -814,15 +812,9 @@ function dtBuildBoard(){
     tr.appendChild(d); dtTrailDots.push(d);
   }
   // BAKED BOARD: no code mega divs — megas + numbers are in the bg image.
-  // No highlighting boxes: chair/face hits use a soft circular pulse ring, not a rectangular outline.
-  const pr=document.createElement('div'); pr.id='dtPulseRing'; pr.className='dt-pulse-ring';
-  f.appendChild(pr);
-  const fh=dt$('dtFaceHit');
-  fh.style.left=(DT_FACE.x0*100)+'%'; fh.style.top=(DT_FACE.y0*100)+'%';
-  fh.style.width=((DT_FACE.x1-DT_FACE.x0)*100)+'%'; fh.style.height=((DT_FACE.y1-DT_FACE.y0)*100)+'%';
-  fh.style.display='block';
+  // No hit indicators at all (Nov 4): no rings, no boxes — dart + score pop only.
   // Code chair stays hidden — the chair is baked into the new field image.
-  // Chair-hit feedback is the soft circular pulse ring (dtPulseRing, above) — no box outline.
+  // Chair hit: no indicator at all (Nov 4) — dart launches, score pop only.
   const hint=dt$('dtSwipeHint');
   hint.style.left='50%'; hint.style.top='86%';
 }
@@ -832,7 +824,7 @@ function openDarts(){
   dtMetrics(); dtBuildBoard(); dtStart();
 }
 function dtBack(){
-  cancelAnimationFrame(dtRaf); dtFlying=false; dtDrag=null; dtHitTimer=0;
+  cancelAnimationFrame(dtRaf); dtFlying=false; dtDrag=null; dtHitTimer=0; dtDragMode=false; dtDirect=false; dtFall=false;
   dtClearTrail();
   dt$('dtMarker').classList.remove('dt-flying','dt-stick');
   dt$('dtChair').classList.remove('hit');
@@ -841,7 +833,7 @@ function dtBack(){
   showMenu();
 }
 function dtStart(){
-  dtRound=1; dtScore=0; dtRoundScores=[0,0,0]; dtLeft=3; dtHitTimer=0;
+  dtRound=1; dtScore=0; dtRoundScores=[0,0,0]; dtLeft=3; dtHitTimer=0; dtDragMode=false; dtDirect=false; dtFall=false; dtDragHist=[];
   dt$('dtTotalScreen').classList.add('hidden');
   dt$('dtMarker').style.display='none';
   dt$('dtMarker').classList.remove('dt-flying','dt-stick');
@@ -854,15 +846,7 @@ function dtStart(){
 function dtUpdateHud(){
   dt$('dtScoreHud').textContent=dtScore;
 }
-let dtAng=0, dtDt60=1, dtLastT=0, dtPulseTimer=0;
-function dtPulse(x,y,size){
-  const pr=dt$('dtPulseRing'); if(!pr) return;
-  pr.style.left=x+'px'; pr.style.top=y+'px'; pr.style.width=size+'px'; pr.style.height=size+'px';
-  pr.style.opacity='0'; pr.style.transform='translate(-50%,-50%) scale(.6)';
-  void pr.offsetWidth;
-  pr.style.opacity='1'; pr.style.transform='translate(-50%,-50%) scale(1.15)';
-  clearTimeout(dtPulseTimer); dtPulseTimer=setTimeout(()=>{ pr.style.opacity='0'; }, 350);
-}
+let dtAng=0, dtDt60=1, dtLastT=0, dtDragMode=false, dtDragHist=[], dtDragT0=0, dtDirect=false, dtFall=false, dtDirectSpeed0=0;
 function dtPushTrail(x,y){
   const last=dtTrailPts[dtTrailPts.length-1];
   if(last){
@@ -934,7 +918,7 @@ function dtThrow(dx, dy){
       // while it pulses, so the hit reads and feels satisfying, then launch.
       const cx0=DT_W*DT_CHAIR.x0, cx1=DT_W*DT_CHAIR.x1, cy0=DT_H*DT_CHAIR.y0, cy1=DT_H*DT_CHAIR.y1;
       if(dtX>=cx0 && dtX<=cx1 && dtY>=cy0 && dtY<=cy1){
-        dtPhase=1.5; dtHitTimer=0.12; dt$('dtChair').classList.add('hit'); dtPulse(dtX, dtY, 70);
+        dtPhase=1.5; dtHitTimer=0.12;
       }
       if(Math.abs(dtVX)<0.05 && Math.abs(dtVY)<0.05){ dtLand(null); return; }
     } else {
@@ -1004,15 +988,66 @@ function dtLaunch(){
   dtPhase=2; dtLife=0;
   dt$('dtMarker').classList.add('dt-flying');
 }
+function dtDirectThrow(vx, vy, sx, sy){
+  if(dtFlying || dtLeft<=0) return;
+  const idx=3-dtLeft, d=DT_DARTS[idx];
+  dt$('dtPrev'+idx).style.display='none';
+  const m=dt$('dtMarker'), img=dt$('dtMarkerImg');
+  img.src=d.file; img.style.width=d.w+'px'; img.style.height=d.h+'px'; img.style.transform=d.rot?'rotate('+d.rot+'deg)':'';
+  m.style.display='block'; m.style.opacity='1'; m.classList.remove('dt-stick'); m.classList.add('dt-flying');
+  dtCurColor=d.c; dtClearTrail();
+  dtX=Math.max(0, Math.min(DT_W, sx)); dtY=Math.max(0, Math.min(DT_H, sy));
+  dtVX=Math.max(-45, Math.min(45, vx)); dtVY=Math.max(-45, Math.min(45, vy));
+  dtDirectSpeed0=Math.hypot(dtVX, dtVY);
+  dtAng=Math.atan2(dtVY, dtVX)*180/Math.PI;
+  dtCurve=0; dtLife=0; dtFlying=true; dtPhase=3; dtDirect=true; dtFall=false;
+  dtPlaceMarker();
+  dtLastT=0; dtRaf=requestAnimationFrame(dtDirectStep);
+}
+function dtDirectStep(now){
+  if(!dtFlying || !dtDirect) return;
+  if(!dtLastT) dtLastT=now;
+  dtDt60=Math.min(2, Math.max(0.5, (now-dtLastT)/16.667)); dtLastT=now;
+  dtLife+=dtDt60/60;
+  dtVY+=0.35*dtDt60;
+  dtVX*=Math.pow(0.998, dtDt60);
+  dtX+=dtVX*dtDt60; dtY+=dtVY*dtDt60;
+  if(dtX<0){ dtX=0; dtVX*=-0.3; }
+  if(dtX>DT_W){ dtX=DT_W; dtVX*=-0.3; }
+  dtPlaceMarker(); dtPushTrail(dtX, dtY);
+  if(!dtFall){
+    // Apex scoring (same tolerances as the chair launch, so all targets stay reachable):
+    // strength + drag height set the apex row, aim sets the column. A weak throw apexes
+    // below the board and falls visibly; a real throw (release speed >=12) apexing on the
+    // board scores; dragging a marker onto the board and letting go gently does not score.
+    if(dtY<DT_H*0.08){
+      dtFall=true;
+    } else if(dtVY>=0){
+      if(dtDirectSpeed0>=12){
+        const fdx=dtX-DT_W*(DT_FACE.x0+DT_FACE.x1)/2, fdy=dtY-DT_H*(DT_FACE.y0+DT_FACE.y1)/2;
+        if(Math.hypot(fdx, fdy)<=DT_W*0.10){ dtLand(DT_FACE); return; }
+        let hit=null, best=1e9;
+        for(const mg of DT_MEGAS){ const dd=Math.hypot(dtX-DT_W*mg.fx, dtY-DT_H*mg.fy); if(dd<best){ best=dd; hit=mg; } }
+        if(hit && best<=DT_W*0.20){ dtLand(hit); return; }
+      }
+      dtFall=true;
+    }
+  }
+  if(dtFall){
+    if(dtY>=DT_H*0.98 || dtY>DT_H+50 || dtLife>4){ dtLand(null); return; }
+  } else {
+    if(dtLife>4){ dtLand(null); return; }
+  }
+  dtRaf=requestAnimationFrame(dtDirectStep);
+}
 function dtLand(target){
-  dtFlying=false;
+  dtFlying=false; dtDirect=false; dtFall=false; dtDragMode=false;
   const m=dt$('dtMarker');
   m.classList.remove('dt-flying');
   dtClearTrail();
   if(target){
     dtScore+=target.pts; dtRoundScores[dtRound-1]+=target.pts;
     try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
-    if(target===DT_FACE) dtPulse(DT_W*(DT_FACE.x0+DT_FACE.x1)/2, DT_H*(DT_FACE.y0+DT_FACE.y1)/2, 90);
     m.classList.add('dt-stick');
     setTimeout(()=>m.classList.remove('dt-stick'), 250);
     // No highlighting box around the hit score — baked numbers stay clean, score pop is the feedback.
@@ -1050,22 +1085,75 @@ function dtShowTotal(){
   dt$('dtTotalRows').innerHTML=dtRoundScores.map((s,i)=>'<div>ROUND '+(i+1)+': '+s+'</div>').join('');
   dt$('dtTotalScreen').classList.remove('hidden');
 }
+// TWO WAYS TO THROW (Nov 4, Coby):
+// - ROLL: quick swipe on the field -> marker rolls to the chair, chair launches it to the board (old dtThrow, phases 1/1.5/2).
+// - DRAG: hold + drag up slowly (>100ms, >25px up) -> marker follows your finger in the air, release to throw
+//   DIRECTLY at the board (dtDirectThrow, phase 3, different physics, no chair). No hit indicators at all.
 dt$('dtField').addEventListener('pointerdown', e=>{
   if(dtFlying || dtLeft<=0) return;
   dtMetrics();
   try{ dt$('dtField').setPointerCapture(e.pointerId); }catch(_){}
   dtDrag={x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY};
+  dtDragMode=false; dtDragHist=[{x:e.clientX, y:e.clientY, t:performance.now()}]; dtDragT0=performance.now();
 });
 dt$('dtField').addEventListener('pointermove', e=>{
   if(!dtDrag) return; dtDrag.x=e.clientX; dtDrag.y=e.clientY;
+  const now=performance.now(); dtDragHist.push({x:e.clientX, y:e.clientY, t:now});
+  while(dtDragHist.length>20) dtDragHist.shift();
+  if(!dtDragMode && !dtFlying && dtLeft>0){
+    const held=now-dtDragT0, up=dtDrag.y0-e.clientY;
+    if(held>100 && up>25){
+      dtDragMode=true;
+      const idx=3-dtLeft, d=DT_DARTS[idx];
+      dt$('dtPrev'+idx).style.display='none';
+      const m=dt$('dtMarker'), img=dt$('dtMarkerImg');
+      img.src=d.file; img.style.width=d.w+'px'; img.style.height=d.h+'px'; img.style.transform=d.rot?'rotate('+d.rot+'deg)':'';
+      m.style.display='block'; m.style.opacity='1'; m.classList.remove('dt-flying','dt-stick');
+      dtCurColor=d.c; dtClearTrail();
+    }
+  }
+  if(dtDragMode){
+    const r=dt$('dtField').getBoundingClientRect();
+    const fx=Math.max(0, Math.min(DT_W, e.clientX-r.left)), fy=Math.max(0, Math.min(DT_H, e.clientY-r.top));
+    const prev=dtDragHist[dtDragHist.length-2];
+    if(prev){
+      const dtms=Math.max(1, now-prev.t);
+      dtVX=Math.max(-40, Math.min(40, (e.clientX-prev.x)/dtms*16.667));
+      dtVY=Math.max(-45, Math.min(45, (e.clientY-prev.y)/dtms*16.667));
+    }
+    dtX=fx; dtY=fy; dtPlaceMarker();
+  }
 });
 dt$('dtField').addEventListener('pointerup', ()=>{
   if(!dtDrag) return;
-  const dx=dtDrag.x-dtDrag.x0, dy=dtDrag.y-dtDrag.y0; dtDrag=null;
-  dtThrow(dx, dy);
+  const wasDrag=dtDragMode;
+  const dx=dtDrag.x-dtDrag.x0, dy=dtDrag.y-dtDrag.y0;
+  const upX=dtDrag.x, upY=dtDrag.y;
+  dtDrag=null; dtDragMode=false;
+  if(wasDrag){
+    let vx=0, vy=0;
+    if(dtDragHist.length>=2){
+      const l=dtDragHist[dtDragHist.length-1], pv=dtDragHist[dtDragHist.length-2], dtms=l.t-pv.t;
+      if(dtms>0 && dtms<200){ vx=(l.x-pv.x)/dtms*16.667; vy=(l.y-pv.y)/dtms*16.667; }
+    }
+    vx=Math.max(-45, Math.min(45, vx)); vy=Math.max(-45, Math.min(45, vy));
+    const r=dt$('dtField').getBoundingClientRect();
+    const fx=Math.max(0, Math.min(DT_W, upX-r.left)), fy=Math.max(0, Math.min(DT_H, upY-r.top));
+    dtDragHist=[];
+    dtDirectThrow(vx, vy, fx, fy);
+  } else {
+    dtDragHist=[];
+    dtThrow(dx, dy);
+  }
 });
 dt$('dtField').addEventListener('pointercancel', ()=>{
-  dtDrag=null;
+  if(dtDragMode){
+    const idx=3-dtLeft;
+    dt$('dtMarker').style.display='none';
+    if(idx>=0 && idx<3) dt$('dtPrev'+idx).style.display='block';
+    dtClearTrail();
+  }
+  dtDrag=null; dtDragMode=false; dtDragHist=[];
 });
 </script>
 
