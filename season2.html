@@ -140,6 +140,13 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 .dt-mega .dt-num{font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:clamp(12px,3.5vw,18px);color:#222;margin-top:2px;}
 .dt-face-hit{position:absolute;z-index:8;border:3px solid #ffd24a;border-radius:8px;box-shadow:0 0 18px #ffd24a;opacity:0;transition:opacity .15s;pointer-events:none;}
 .dt-face-hit.show{opacity:1;}
+/* DARTS POLISH (Nov 4, Coby: no highlighting boxes around scores, smoother/cleaner) */
+#dtScreen .hud{background:transparent;border:none;padding:0;text-shadow:0 2px 6px #000;}
+#dtTotalScreen .total-row{background:transparent;border:none;border-radius:0;padding:4px 0;}
+.dt-face-hit{display:none!important;border:none!important;box-shadow:none!important;}
+.dt-trail-dot{transition:opacity .3s ease;}
+.dt-marker{will-change:transform,left,top;}
+.dt-pulse-ring{position:absolute;z-index:9;border:2px solid #ffd24a;border-radius:50%;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.6);transition:opacity .35s ease,transform .35s ease;}
 .dt-prev{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:7;opacity:.95;}
 .dt-prev img{display:block;}
 .dt-throw-row{display:flex;align-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));}
@@ -643,7 +650,7 @@ function pbLand(hit){
   if(hit){
     pbScore+=hit.pts; pbRoundScores[pbRound-1]+=hit.pts;
     try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
-    m.style.transition='all .25s';
+    m.style.transition='left .30s cubic-bezier(.2,.8,.2,1), top .30s cubic-bezier(.2,.8,.2,1), opacity .30s ease';
     m.style.left='0px'; m.style.top=(PB_H*hit.by)+'px';
     m.style.transform='translate(-50%,-50%) scale(.3)'; m.style.opacity='0';
     setTimeout(()=>{ m.style.transition=''; m.style.display='none'; }, 300);
@@ -793,27 +800,29 @@ function dtUpdateTrail(){
     if(!p){ d.style.opacity='0'; continue; }
     d.style.left=p.x+'px'; d.style.top=p.y+'px';
     d.style.background=dtCurColor;
-    d.style.opacity=String(0.55*(1-i/dtTrailDots.length));
+    const f=1-i/dtTrailDots.length;
+    d.style.opacity=String(0.5*f);
+    d.style.transform='translate(-50%,-50%) scale('+(0.4+0.6*f)+')';
   }
 }
 function dtBuildBoard(){
   if(dtBoardBuilt) return; dtBoardBuilt=true;
   const f=dt$('dtField');
   const tr=dt$('dtTrail');
-  for(let i=0;i<12;i++){
+  for(let i=0;i<20;i++){
     const d=document.createElement('div'); d.className='dt-trail-dot';
     tr.appendChild(d); dtTrailDots.push(d);
   }
   // BAKED BOARD: no code mega divs — megas + numbers are in the bg image.
-  const cf=document.createElement('div'); cf.id='dtChairFlash';
-  cf.style.cssText='position:absolute;left:'+(DT_CHAIR.x0*100)+'%;top:'+(DT_CHAIR.y0*100)+'%;width:'+((DT_CHAIR.x1-DT_CHAIR.x0)*100)+'%;height:'+((DT_CHAIR.y1-DT_CHAIR.y0)*100)+'%;border:3px solid #ffd700;border-radius:12px;opacity:0;pointer-events:none;z-index:5;';
-  f.appendChild(cf);
+  // No highlighting boxes: chair/face hits use a soft circular pulse ring, not a rectangular outline.
+  const pr=document.createElement('div'); pr.id='dtPulseRing'; pr.className='dt-pulse-ring';
+  f.appendChild(pr);
   const fh=dt$('dtFaceHit');
   fh.style.left=(DT_FACE.x0*100)+'%'; fh.style.top=(DT_FACE.y0*100)+'%';
   fh.style.width=((DT_FACE.x1-DT_FACE.x0)*100)+'%'; fh.style.height=((DT_FACE.y1-DT_FACE.y0)*100)+'%';
   fh.style.display='block';
   // Code chair stays hidden — the chair is baked into the new field image.
-  // The gold flash outline (dtChairFlash, above) is the chair-hit feedback.
+  // Chair-hit feedback is the soft circular pulse ring (dtPulseRing, above) — no box outline.
   const hint=dt$('dtSwipeHint');
   hint.style.left='50%'; hint.style.top='86%';
 }
@@ -826,7 +835,7 @@ function dtBack(){
   cancelAnimationFrame(dtRaf); dtFlying=false; dtDrag=null; dtHitTimer=0;
   dtClearTrail();
   dt$('dtMarker').classList.remove('dt-flying','dt-stick');
-  dt$('dtChair').classList.remove('hit'); const cf3=dt$('dtChairFlash'); if(cf3) cf3.style.opacity='0';
+  dt$('dtChair').classList.remove('hit');
   dt$('dtTotalScreen').classList.add('hidden');
   dt$('dtScreen').classList.add('hidden');
   showMenu();
@@ -836,7 +845,7 @@ function dtStart(){
   dt$('dtTotalScreen').classList.add('hidden');
   dt$('dtMarker').style.display='none';
   dt$('dtMarker').classList.remove('dt-flying','dt-stick');
-  dt$('dtChair').classList.remove('hit'); const cf3=dt$('dtChairFlash'); if(cf3) cf3.style.opacity='0';
+  dt$('dtChair').classList.remove('hit');
   dtClearTrail();
   dt$('dtFaceHit').classList.remove('show');
   for(let i=0;i<3;i++) dt$('dtPrev'+i).style.display='block';
@@ -845,11 +854,38 @@ function dtStart(){
 function dtUpdateHud(){
   dt$('dtScoreHud').textContent=dtScore;
 }
+let dtAng=0, dtDt60=1, dtLastT=0, dtPulseTimer=0;
+function dtPulse(x,y,size){
+  const pr=dt$('dtPulseRing'); if(!pr) return;
+  pr.style.left=x+'px'; pr.style.top=y+'px'; pr.style.width=size+'px'; pr.style.height=size+'px';
+  pr.style.opacity='0'; pr.style.transform='translate(-50%,-50%) scale(.6)';
+  void pr.offsetWidth;
+  pr.style.opacity='1'; pr.style.transform='translate(-50%,-50%) scale(1.15)';
+  clearTimeout(dtPulseTimer); dtPulseTimer=setTimeout(()=>{ pr.style.opacity='0'; }, 350);
+}
+function dtPushTrail(x,y){
+  const last=dtTrailPts[dtTrailPts.length-1];
+  if(last){
+    const d=Math.hypot(x-last.x, y-last.y);
+    if(d<4){ dtUpdateTrail(); return; }
+    const steps=Math.min(4, Math.floor(d/6));
+    for(let i=1;i<=steps;i++){
+      dtTrailPts.push({x:last.x+(x-last.x)*i/(steps+1), y:last.y+(y-last.y)*i/(steps+1)});
+      if(dtTrailPts.length>20) dtTrailPts.shift();
+    }
+  }
+  dtTrailPts.push({x,y}); if(dtTrailPts.length>20) dtTrailPts.shift(); dtUpdateTrail();
+}
 function dtPlaceMarker(){
   const m=dt$('dtMarker');
   m.style.left=dtX+'px'; m.style.top=dtY+'px';
-  const ang=Math.atan2(dtVY, dtVX)*180/Math.PI;
-  m.style.transform='translate(-50%,-50%) rotate('+ang+'deg)';
+  const sp=Math.hypot(dtVX, dtVY);
+  if(sp>0.5){
+    const target=Math.atan2(dtVY, dtVX)*180/Math.PI;
+    let diff=((target-dtAng+540)%360)-180;
+    dtAng+=diff*Math.min(1, 0.35*dtDt60);
+  }
+  m.style.transform='translate(-50%,-50%) rotate('+dtAng+'deg)';
 }
 let dtPopTimer=0;
 function dtPop(text, miss){
@@ -869,26 +905,28 @@ function dtThrow(dx, dy){
   m.classList.remove('dt-flying','dt-stick');
   dtCurColor=d.c; dtClearTrail(); dtHitTimer=0;
   dtX=DT_W*0.50; dtY=DT_H*0.95; dtVX=dx*0.2; dtVY=dy*0.2; dtCurve=dx*0.0003;
-  dtLife=0; dtFlying=true; dtPhase=1;
+  dtLife=0; dtFlying=true; dtPhase=1; dtAng=Math.atan2(dtVY, dtVX)*180/Math.PI;
   dtPlaceMarker();
-  const step=()=>{
+  const step=(now)=>{
     if(!dtFlying) return;
-    dtLife+=1/60;
+    if(!dtLastT) dtLastT=now;
+    dtDt60=Math.min(2, Math.max(0.5, (now-dtLastT)/16.667)); dtLastT=now;
+    dtLife+=dtDt60/60;
     if(dtPhase===1.5){
-      // hit pause: hold the dart on the chair while it pulses, then launch.
-      dtHitTimer--;
+      // hit pause: 0.12s, smooth, same real time on 60Hz and 120Hz screens, then launch.
+      dtHitTimer-=dtDt60/60;
       dtPlaceMarker();
       if(dtHitTimer<=0){
-        dt$('dtChair').classList.remove('hit'); const cf3=dt$('dtChairFlash'); if(cf3) cf3.style.opacity='0';
+        dt$('dtChair').classList.remove('hit');
         dtLaunch();
       }
     } else if(dtPhase===1){
       if(dtLife>=1){ dtVX=0; dtVY=0; }
-      dtVX+=dtCurve; dtX+=dtVX; dtY+=dtVY;
-      dtVX*=0.94; dtVY*=0.94;
+      dtVX+=dtCurve*dtDt60; dtX+=dtVX*dtDt60; dtY+=dtVY*dtDt60;
+      const dtDrag=Math.pow(0.94, dtDt60); dtVX*=dtDrag; dtVY*=dtDrag;
       if(dtX>DT_W){ dtX=DT_W; dtVX*=-0.4; }
       if(dtY<DT_H*0.08){ dtY=DT_H*0.08; dtVY*=-0.2; }
-      dtPlaceMarker();
+      dtPlaceMarker(); dtPushTrail(dtX, dtY);
       // dead, off the field, or stopped cold — all miss, before the chair
       // so a dead marker never launches.
       if(dtLife>=1 || dtY>DT_H+100 || dtX<0){ dtLand(null); return; }
@@ -896,7 +934,7 @@ function dtThrow(dx, dy){
       // while it pulses, so the hit reads and feels satisfying, then launch.
       const cx0=DT_W*DT_CHAIR.x0, cx1=DT_W*DT_CHAIR.x1, cy0=DT_H*DT_CHAIR.y0, cy1=DT_H*DT_CHAIR.y1;
       if(dtX>=cx0 && dtX<=cx1 && dtY>=cy0 && dtY<=cy1){
-        dtPhase=1.5; dtHitTimer=7; dt$('dtChair').classList.add('hit'); const cf2=dt$('dtChairFlash'); if(cf2) cf2.style.opacity='1';
+        dtPhase=1.5; dtHitTimer=0.12; dt$('dtChair').classList.add('hit'); dtPulse(dtX, dtY, 70);
       }
       if(Math.abs(dtVX)<0.05 && Math.abs(dtVY)<0.05){ dtLand(null); return; }
     } else {
@@ -909,12 +947,9 @@ function dtThrow(dx, dy){
       // a slow, visible dart flight with a fading trail, scaled up — like
       // qu33phball's arc, but a dart sticking point-first, not a ball
       // dropping into a hole.
-      dtVY+=0.22; dtX+=dtVX; dtY+=dtVY;
-      dtVX*=0.995; dtVY*=0.995;
-      dtPlaceMarker();
-      dtTrailPts.push({x:dtX, y:dtY});
-      if(dtTrailPts.length>12) dtTrailPts.shift();
-      dtUpdateTrail();
+      dtVY+=0.22*dtDt60; dtX+=dtVX*dtDt60; dtY+=dtVY*dtDt60;
+      const dtDrag2=Math.pow(0.995, dtDt60); dtVX*=dtDrag2; dtVY*=dtDrag2;
+      dtPlaceMarker(); dtPushTrail(dtX, dtY);
       if(dtY<DT_H*0.10){ dtLand(null); return; } // flew over the board
       if(dtVY>=0){
         // apex scoring (PHYSICAL launch, Nov 3 — see dtLaunch): the dart
@@ -943,7 +978,7 @@ function dtThrow(dx, dy){
     }
     dtRaf=requestAnimationFrame(step);
   };
-  dtRaf=requestAnimationFrame(step);
+  dtLastT=0; dtRaf=requestAnimationFrame(step);
 }
 function dtLaunch(){
   // PHYSICAL CHAIR LAUNCH (Nov 3, replaces the aimed launch): the old
@@ -977,18 +1012,10 @@ function dtLand(target){
   if(target){
     dtScore+=target.pts; dtRoundScores[dtRound-1]+=target.pts;
     try{ if(navigator.vibrate) navigator.vibrate(14); }catch(e){}
-    if(target===DT_FACE) dt$('dtFaceHit').classList.add('show');
-    setTimeout(()=>dt$('dtFaceHit').classList.remove('show'), 900);
+    if(target===DT_FACE) dtPulse(DT_W*(DT_FACE.x0+DT_FACE.x1)/2, DT_H*(DT_FACE.y0+DT_FACE.y1)/2, 90);
     m.classList.add('dt-stick');
     setTimeout(()=>m.classList.remove('dt-stick'), 250);
-    const mi=DT_MEGAS.indexOf(target);
-    if(mi>=0){
-      const divs=dt$('dtField').querySelectorAll('.dt-mega');
-      if(divs[mi]){
-        divs[mi].classList.add('dt-mega-hit');
-        setTimeout(()=>divs[mi].classList.remove('dt-mega-hit'), 350);
-      }
-    }
+    // No highlighting box around the hit score — baked numbers stay clean, score pop is the feedback.
     m.style.transition='all .25s';
     m.style.left=(target.fx!==undefined?DT_W*target.fx:(DT_W*(DT_FACE.x0+DT_FACE.x1)/2))+'px';
     m.style.top=(target.fy!==undefined?DT_H*target.fy:(DT_H*(DT_FACE.y0+DT_FACE.y1)/2))+'px';
