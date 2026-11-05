@@ -551,10 +551,10 @@ document.addEventListener('dragstart', function(e){
 // saves it, with an optional title. Swipe the board left/right to see
 // old stories, each on its own whiteboard.
 const st$ = id => document.getElementById(id);
-const ST_CHAR = ["CobyQu33ph","Qu33ph","3ph3","Smok3y","H3rrington","Bob","B3ll","B3d3lia","Balam","Taga","Balam Oppo","Teegee Beegee","Skeek","Aracno","Bodega","Taka na scanda","Peegee","Beegy Boogah","Poogah","Boogala"];
-const ST_VERB = ["qu33phed","peefed","threw a marker","rolled a chair","bounced a marker","slid down the counter","jumped over the bucket","spun the chair","flipped a marker","dropped a marker","played slots","hit the pinball","rode a skateboard","threw a dart","balammed","taga'd","skeeked","boogala'd","poogah'd","ate Poogah berries","threw a Poogah berry","hid in the Bodega","danced with Aracno","flipped a Poogah","rolled a Boogala","bounced a Teegee","spun a Peegee","jumped over a Skeek","played with Balam Oppo","rode a Taka","slid on a Poogah berry","dropped a Boogala","caught a Skeek","chased a Beegy Boogah"];
-const ST_OBJ = ["into the bucket","at the board","off the chair","into the cabinet","on the counter","through the window","at the whiteboard","into the slots","over the pinball","down the skateboard","into the coin pusher","at the plinko board","into the Poogah berries","for Poogah berries","with a Boogala","at the Bodega","over a Skeek","under a Teegee Beegee","behind Balam Oppo","into Taka na scanda","on a Peegee","through the Boogala","at the Aracno web","into the Beegy Boogah","over the Poogah","down the Balam slide","at the Taga table","into the marker box"];
-const ST_CONN = ["and then","but","so","suddenly","unfortunately","and then everyone laughed","and nobody believed it","then it happened again","and the chair fell over","and a marker bounced back","and then Balam laughed","but Poogah ran away","so everyone ate Poogah berries","meanwhile","luckily","after that","and then it rained markers","and the Boogala wobbled","and a Skeek squeaked","then Taka na scanda happened"];
+const ST_CHAR = ["CobyQu33ph","Qu33ph","3ph3","Smok3y","H3rrington","Bob","B3ll","B3d3lia","Balam","Taga","Balam Oppo","Teegee Beegee","Skeek","Aracno","Bodega","Taka na scanda","Peegee","Beegy Boogah","Poogah","Boogala","Qu33ph Jr","P33f","M4rk3r","Ch41r","Sl1d3y","B0uncy","Fl1ppy","R0ll3r","Sp1nny","Jumpr","Balam Boogah","Poogah Balam","Taga Boogala","Skeek Boo","Aracno Boo","Bodega Boogah","Peegee Boogah","Teegee Poogah","Balam Taka","Scanda Boo"];
+const ST_VERB = ["qu33phed","peefed","threw a marker","rolled a chair","bounced a marker","slid down the counter","jumped over the bucket","spun the chair","flipped a marker","dropped a marker","played slots","hit the pinball","rode a skateboard","threw a dart","balammed","taga'd","skeeked","boogala'd","poogah'd","ate Poogah berries","threw a Poogah berry","hid in the Bodega","danced with Aracno","flipped a Poogah","rolled a Boogala","bounced a Teegee","spun a Peegee","jumped over a Skeek","played with Balam Oppo","rode a Taka","slid on a Poogah berry","dropped a Boogala","caught a Skeek","chased a Beegy Boogah","qu33phed again","peefed twice","threw a Poogah","rolled a Skeek","bounced a Boogala","slid on a chair","jumped over a marker","spun a bucket","flipped a chair","dropped a Poogah berry","played pinball","hit the slots","rode a bucket","threw a Boogala","caught a marker","chased a Poogah","hid behind a chair","danced on the counter","sang to the chair","laughed at the bucket","cried over a marker","sneezed on the board","tripped over a skateboard","fell off the counter","climbed the cabinet","swam in the slots","flew over the whiteboard","ran around the chair","walked into the cabinet","peeked behind the board","shouted at the pinball","whispered to a marker","tickled a chair","hugged a bucket"];
+const ST_OBJ = ["into the bucket","at the board","off the chair","into the cabinet","on the counter","through the window","at the whiteboard","into the slots","over the pinball","down the skateboard","into the coin pusher","at the plinko board","into the Poogah berries","for Poogah berries","with a Boogala","at the Bodega","over a Skeek","under a Teegee Beegee","behind Balam Oppo","into Taka na scanda","on a Peegee","through the Boogala","at the Aracno web","into the Beegy Boogah","over the Poogah","down the Balam slide","at the Taga table","into the marker box","into the Poogah pile","at the Boogala board","off the Skeek","into the Balam box","on the Poogah berry","through the Bodega door","at the Aracno corner","into the Teegee trap","over the Peegee","down the Boogala hill","into the Taka tunnel","at the Scanda stand","on the chair leg","under the counter","behind the whiteboard","beside the bucket","near the slots","above the pinball","below the cabinet","across the room","around the table","between the markers","inside the coin pusher","outside the window","up the skateboard ramp","through the doorway","into the marker pile","at the green cabinet"];
+const ST_CONN = ["and then","but","so","suddenly","unfortunately","and then everyone laughed","and nobody believed it","then it happened again","and the chair fell over","and a marker bounced back","and then Balam laughed","but Poogah ran away","so everyone ate Poogah berries","meanwhile","luckily","after that","and then it rained markers","and the Boogala wobbled","and a Skeek squeaked","then Taka na scanda happened","and then Balam danced","but the chair was gone","so Poogah hid","and then the room spun","and nobody saw the Poogah","then the Boogala bounced","and the marker flew away","and a chair wobbled","then it all went quiet","and then Balam Oppo laughed","but Teegee Beegee ran","so Aracno spun a web","and nobody found the marker","then the Poogah berries spilled","and the Skeek squeaked loudly","but the bucket tipped over","so everyone cheered loudly","and then the whiteboard shook","then a Boogala rolled in","and the chair fell over again"];
 const ST_COLORS = ["#2f7de1","#e23b2e","#27ae60"];
 let stWords = [], stCat = "char", stOpts = [], stBoardIndex = 0, stSaved = [];
 let stSwipeX0 = 0, stSwipeY0 = 0, stSwipeT0 = 0;
@@ -574,10 +574,35 @@ function stRenderMarkers(){
 }
 function stRenderWords(words, el){
   el.innerHTML = "";
+  const INTRO = ["suddenly","unfortunately","meanwhile","luckily","after that"];
+  const CONJ = ["and then","but","so"];
   words.forEach((w, i) => {
     if(i > 0) el.appendChild(document.createTextNode(" "));
     const s = document.createElement("span");
-    s.textContent = w.text; s.style.color = w.color;
+    let t = w.text;
+    const cat = i % 4; // 0 char, 1 verb, 2 object, 3 conn
+    const isLast = i === words.length - 1;
+    const prevWasObj = i > 0 && ((i - 1) % 4 === 2);
+    const prevWasClauseConn = i > 0 && ((i - 1) % 4 === 3) && !CONJ.includes(words[i-1].text.toLowerCase()) && !INTRO.includes(words[i-1].text.toLowerCase());
+    // Capitalise a connector that starts a new sentence (after an object, or after a complete-clause connector)
+    if(cat === 3 && (prevWasObj || prevWasClauseConn || i === 0)){
+      t = t.charAt(0).toUpperCase() + t.slice(1);
+    }
+    // Punctuation, attached to the word (no space before it)
+    if(cat === 2){
+      // End of a clause: . normally, ! every 5th sentence, ? every 7th
+      const sent = Math.floor(i / 4) + 1;
+      t += (sent % 5 === 0) ? "!" : (sent % 7 === 0) ? "?" : ".";
+    } else if(cat === 3){
+      const low = w.text.toLowerCase();
+      if(INTRO.includes(low)){
+        if(!isLast) t += ",";
+      } else if(!CONJ.includes(low)){
+        // Complete-clause connector: ends a sentence
+        t += ".";
+      }
+    }
+    s.textContent = t; s.style.color = w.color;
     el.appendChild(s);
   });
 }
