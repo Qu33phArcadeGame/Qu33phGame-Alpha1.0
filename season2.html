@@ -490,6 +490,7 @@ document.addEventListener('dragstart', function(e){
     <img src="qu33phstorytime-board.png?v=3" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
     <div id="stBoardTitle" style="display:none;position:absolute;top:44px;left:0;right:0;text-align:center;font-size:20px;font-weight:bold;color:#222;font-family:Arial,Helvetica,sans-serif;padding:0 20px;z-index:2;"></div>
     <div id="stBoardText" style="position:absolute;left:25%;right:14%;top:28%;bottom:40%;padding:10px 12px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:16px;line-height:1.35;text-shadow:0 1px 2px rgba(255,255,255,0.9);z-index:1;"></div>
+    <button class="st-arrow st-arrow-left" onclick="stOpenSaved()" style="position:absolute;left:4px;top:50%;transform:translateY(-50%);z-index:11;background:none;border:none;padding:12px;cursor:pointer;"><span class="st-chev"><img src="st-blue.png"><img src="st-red.png"></span></button>
   </div>
   <div id="stMarkers" style="position:absolute;left:0;right:0;bottom:0;z-index:10;padding:0 0 14px;display:flex;flex-direction:column;align-items:center;gap:7px;">
     <button class="st-marker" onclick="stTap(0)"><img src="st-blue.png"><span id="stW0"></span></button>
@@ -499,7 +500,7 @@ document.addEventListener('dragstart', function(e){
   </div>
   <div id="stTitleDlg" style="display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
     <div style="background:#fff;border-radius:12px;padding:16px;width:82%;max-width:340px;">
-      <input id="stTitleInput" maxlength="40" style="width:100%;font-size:20px;padding:10px;border:2px solid #222;border-radius:8px;box-sizing:border-box;">
+      <input id="stTitleInput" maxlength="15" style="width:100%;font-size:20px;padding:10px;border:2px solid #222;border-radius:8px;box-sizing:border-box;">
       <div style="display:flex;gap:10px;margin-top:12px;">
         <button onclick="stSaveConfirm()" style="flex:1;padding:10px;font-size:18px;border-radius:8px;background:#222;color:#fff;border:none;">Save</button>
         <button onclick="stSaveCancel()" style="width:52px;padding:10px;font-size:18px;border-radius:8px;background:#eee;border:none;">&times;</button>
@@ -507,7 +508,23 @@ document.addEventListener('dragstart', function(e){
     </div>
   </div>
 </div>
+
+<div id="stSavedScreen" class="screen hidden">
+  <button class="marker-btn" onclick="stSavedBack()">&larr; BACK</button>
+  <div style="position:absolute;inset:0;overflow:hidden;">
+    <img src="qu33phstorytime-board-left.jpg?v=1" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
+  </div>
+  <div id="stSavedList" style="position:absolute;left:0;right:0;top:14%;bottom:14%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px;z-index:5;"></div>
+  <button class="st-arrow st-arrow-right" onclick="stSavedBack()" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);z-index:11;background:none;border:none;padding:12px;cursor:pointer;"><span class="st-chev st-chev-right"><img src="st-blue.png"><img src="st-red.png"></span></button>
+</div>
 <style>
+.st-chev{display:block;position:relative;width:70px;height:60px;}
+.st-chev img{position:absolute;left:8px;width:62px;height:auto;max-height:26px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));}
+.st-chev img:first-child{top:6px;transform:rotate(-30deg);transform-origin:left center;}
+.st-chev img:last-child{top:30px;transform:rotate(30deg);transform-origin:left center;}
+.st-chev-right img{left:auto;right:8px;}
+.st-chev-right img:first-child{transform:rotate(30deg);transform-origin:right center;}
+.st-chev-right img:last-child{transform:rotate(-30deg);transform-origin:right center;}
 .st-marker{position:relative;background:none;border:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .st-marker img{display:block;width:260px;height:auto;max-height:64px;object-fit:contain;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));}
 .st-marker span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:17px;text-shadow:0 1px 3px rgba(0,0,0,.6);padding:0 20px;text-align:center;line-height:1.1;}
@@ -525,10 +542,10 @@ document.addEventListener('dragstart', function(e){
 // saves it, with an optional title. Swipe the board left/right to see
 // old stories, each on its own whiteboard.
 const st$ = id => document.getElementById(id);
-const ST_CHAR = ["CobyQu33ph","Qu33ph","3ph3","Smok3y","H3rrington","Bob","B3ll","B3d3lia"];
-const ST_VERB = ["qu33phed","peefed","threw a marker","rolled a chair","bounced a marker","slid down the counter","jumped over the bucket","spun the chair","flipped a marker","dropped a marker","played slots","hit the pinball","rode a skateboard","threw a dart"];
-const ST_OBJ = ["into the bucket","at the board","off the chair","into the cabinet","on the counter","through the window","at the whiteboard","into the slots","over the pinball","down the skateboard","into the coin pusher","at the plinko board"];
-const ST_CONN = ["and then","but","so","suddenly","unfortunately","and then everyone laughed","and nobody believed it","then it happened again","and the chair fell over","and a marker bounced back"];
+const ST_CHAR = ["CobyQu33ph","Qu33ph","3ph3","Smok3y","H3rrington","Bob","B3ll","B3d3lia","Balam","Taga","Balam Oppo","Teegee Beegee","Skeek","Aracno","Bodega","Taka na scanda","Peegee","Beegy Boogah","Poogah","Boogala"];
+const ST_VERB = ["qu33phed","peefed","threw a marker","rolled a chair","bounced a marker","slid down the counter","jumped over the bucket","spun the chair","flipped a marker","dropped a marker","played slots","hit the pinball","rode a skateboard","threw a dart","balammed","taga'd","skeeked","boogala'd","poogah'd","ate Poogah berries","threw a Poogah berry","hid in the Bodega","danced with Aracno","flipped a Poogah","rolled a Boogala","bounced a Teegee","spun a Peegee","jumped over a Skeek","played with Balam Oppo","rode a Taka","slid on a Poogah berry","dropped a Boogala","caught a Skeek","chased a Beegy Boogah"];
+const ST_OBJ = ["into the bucket","at the board","off the chair","into the cabinet","on the counter","through the window","at the whiteboard","into the slots","over the pinball","down the skateboard","into the coin pusher","at the plinko board","into the Poogah berries","for Poogah berries","with a Boogala","at the Bodega","over a Skeek","under a Teegee Beegee","behind Balam Oppo","into Taka na scanda","on a Peegee","through the Boogala","at the Aracno web","into the Beegy Boogah","over the Poogah","down the Balam slide","at the Taga table","into the marker box"];
+const ST_CONN = ["and then","but","so","suddenly","unfortunately","and then everyone laughed","and nobody believed it","then it happened again","and the chair fell over","and a marker bounced back","and then Balam laughed","but Poogah ran away","so everyone ate Poogah berries","meanwhile","luckily","after that","and then it rained markers","and the Boogala wobbled","and a Skeek squeaked","then Taka na scanda happened"];
 const ST_COLORS = ["#2f7de1","#e23b2e","#27ae60"];
 let stWords = [], stCat = "char", stOpts = [], stBoardIndex = 0, stSaved = [];
 let stSwipeX0 = 0, stSwipeY0 = 0, stSwipeT0 = 0;
@@ -565,7 +582,7 @@ function stRenderBoard(){
   } else {
     const sv = stSaved[stBoardIndex - 1];
     if(!sv){ stBoardIndex = 0; stRenderBoard(); return; }
-    if(sv.title){ titleEl.textContent = sv.title; titleEl.style.display = "block"; textEl.style.paddingTop = "10px"; }
+    if(sv.title){ titleEl.textContent = sv.title.slice(0,15); titleEl.style.display = "block"; textEl.style.paddingTop = "10px"; }
     else { titleEl.style.display = "none"; textEl.style.paddingTop = "10px"; }
     stRenderWords(sv.words || [], textEl);
     markers.style.display = "none";
@@ -599,7 +616,7 @@ function stSaveTap(){
 }
 function stSaveCancel(){ st$("stTitleDlg").style.display = "none"; }
 function stSaveConfirm(){
-  const title = st$("stTitleInput").value.trim();
+  const title = st$("stTitleInput").value.trim().slice(0,15);
   stSaved.unshift({title: title, words: stWords.slice(), date: Date.now()});
   try { localStorage.setItem("qu33phStorytime", JSON.stringify(stSaved)); }
   catch(e){ stSaved.pop(); try { localStorage.setItem("qu33phStorytime", JSON.stringify(stSaved)); } catch(e2){} }
@@ -613,6 +630,37 @@ function stIntroEnd(){
   v.style.display = "none";
   st$("stBoardWrap").style.display = "block";
   stRenderBoard();
+}
+function stRenderSavedList(){
+  const list = st$("stSavedList"); if(!list) return;
+  list.innerHTML = "";
+  const cols = ["st-blue.png","st-red.png","st-green.png"];
+  stSaved.forEach((sv, i) => {
+    const title = (sv.title || "untitled").slice(0,15);
+    const b = document.createElement("button");
+    b.className = "st-marker";
+    b.innerHTML = '<img src="' + cols[i % 3] + '"><span>' + title.replace(/</g, "&lt;") + '</span>';
+    b.onclick = () => stOpenSavedStory(i);
+    list.appendChild(b);
+  });
+}
+function stOpenSaved(){
+  stLoadSaved(); stRenderSavedList();
+  st$("stScreen").classList.add("hidden");
+  st$("stSavedScreen").classList.remove("hidden");
+}
+function stSavedBack(){
+  st$("stSavedScreen").classList.add("hidden");
+  st$("stScreen").classList.remove("hidden");
+  stRenderBoard(); stRenderMarkers();
+}
+function stOpenSavedStory(i){
+  stLoadSaved();
+  if(i < 0 || i >= stSaved.length) return;
+  stBoardIndex = i + 1;
+  st$("stSavedScreen").classList.add("hidden");
+  st$("stScreen").classList.remove("hidden");
+  stRenderBoard(); stRenderMarkers();
 }
 function openStorytime(){
   ["selectScreen","gameScreen","peefScreen","dtScreen","menuScreen"].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add("hidden"); });
