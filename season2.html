@@ -514,7 +514,16 @@ document.addEventListener('dragstart', function(e){
   <div style="position:absolute;inset:0;overflow:hidden;">
     <img src="qu33phstorytime-board-left.jpg?v=1" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
   </div>
-  <div id="stSavedList" style="position:absolute;left:0;right:0;top:14%;bottom:14%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px;z-index:5;"></div>
+  <div id="stSavedList" style="position:absolute;left:0;right:0;top:23%;bottom:46%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px;z-index:5;"></div>
+  <div id="stDeleteDlg" style="display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:16px;width:82%;max-width:340px;text-align:center;">
+      <div id="stDeleteTitle" style="font-size:20px;font-weight:bold;font-family:Arial,Helvetica,sans-serif;padding:6px 0 14px;word-break:break-word;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="stDeleteConfirm()" style="flex:1;padding:10px;font-size:18px;border-radius:8px;background:#e23b2e;color:#fff;border:none;">Delete</button>
+        <button onclick="stDeleteCancel()" style="flex:1;padding:10px;font-size:18px;border-radius:8px;background:#eee;border:none;">Cancel</button>
+      </div>
+    </div>
+  </div>
   <button class="st-arrow st-arrow-right" onclick="stSavedBack()" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);z-index:11;background:none;border:none;padding:12px;cursor:pointer;"><span class="st-chev st-chev-right"><img src="st-blue.png"><img src="st-red.png"></span></button>
 </div>
 <style>
@@ -631,18 +640,46 @@ function stIntroEnd(){
   st$("stBoardWrap").style.display = "block";
   stRenderBoard();
 }
+let stDeleteIndex = -1;
 function stRenderSavedList(){
   const list = st$("stSavedList"); if(!list) return;
   list.innerHTML = "";
   const cols = ["st-blue.png","st-red.png","st-green.png"];
   stSaved.forEach((sv, i) => {
     const title = (sv.title || "untitled").slice(0,15);
+    const row = document.createElement("div");
+    row.style.display = "flex"; row.style.alignItems = "center"; row.style.gap = "8px";
     const b = document.createElement("button");
     b.className = "st-marker";
     b.innerHTML = '<img src="' + cols[i % 3] + '"><span>' + title.replace(/</g, "&lt;") + '</span>';
     b.onclick = () => stOpenSavedStory(i);
-    list.appendChild(b);
+    const del = document.createElement("button");
+    del.textContent = "\u00d7";
+    del.style.cssText = "width:34px;height:34px;min-width:34px;border-radius:50%;background:#e23b2e;color:#fff;border:none;font-size:22px;font-weight:bold;line-height:1;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.35);";
+    del.onclick = (e) => { e.stopPropagation(); stDeleteTap(i); };
+    row.appendChild(b); row.appendChild(del);
+    list.appendChild(row);
   });
+}
+function stDeleteTap(i){
+  stLoadSaved();
+  if(i < 0 || i >= stSaved.length) return;
+  stDeleteIndex = i;
+  st$("stDeleteTitle").textContent = (stSaved[i].title || "untitled").slice(0,15);
+  st$("stDeleteDlg").style.display = "flex";
+}
+function stDeleteCancel(){ stDeleteIndex = -1; st$("stDeleteDlg").style.display = "none"; }
+function stDeleteConfirm(){
+  if(stDeleteIndex < 0) { stDeleteCancel(); return; }
+  const deletedBoardIndex = stDeleteIndex + 1;
+  stLoadSaved();
+  stSaved.splice(stDeleteIndex, 1);
+  try { localStorage.setItem("qu33phStorytime", JSON.stringify(stSaved)); } catch(e){}
+  if(stBoardIndex === deletedBoardIndex) stBoardIndex = 0;
+  else if(stBoardIndex > deletedBoardIndex) stBoardIndex -= 1;
+  if(stBoardIndex > stSaved.length) stBoardIndex = 0;
+  stDeleteIndex = -1; st$("stDeleteDlg").style.display = "none";
+  stRenderSavedList();
 }
 function stOpenSaved(){
   stLoadSaved(); stRenderSavedList();
