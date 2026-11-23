@@ -6,6 +6,13 @@
 <title>Qu33ph Adventures</title>
 <link href="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css" rel="stylesheet" />
 <script src="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js"></script>
+<script type="importmap">
+{"imports":{
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+
 <style>
 img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;pointer-events:auto;}
 *{box-sizing:border-box}
@@ -50,6 +57,8 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 /* car hood overlay */
 #carHood{position:fixed;left:0;right:0;bottom:0;z-index:1600;pointer-events:none;height:31vh;min-height:120px;}
 #carHood svg{position:absolute;left:0;bottom:0;width:100%;height:100%;}
+#car3d{position:absolute;left:0;bottom:0;width:100%;height:100%;}
+#car3d canvas{display:block;width:100%;height:100%;}
 #carBadge{position:absolute;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(0,0,0,.65);
   border:2px solid #fff;border-radius:8px;padding:3px 12px;font-size:12px;font-weight:bold;letter-spacing:2px;white-space:nowrap;}
 /* drive controls */
@@ -109,6 +118,13 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 </div>
 
 <div id="carHood" class="hidden">
+  <!-- 3D car (Three.js) renders here when available; the drawn SVG hoods
+       below stay as the fallback if a 3D model fails to load.
+       Audi 3D model: "Audi TT Coupe 2003" — Sketchfab free model,
+       via the public osm-racing repo (car/models/audi_tt/audi_tt.glb).
+       Paint is re-tinted to Coby's dark Daytona Grey. The Fiat has no
+       obtainable free 3D model, so it keeps its drawn SVG hood. -->
+  <div id="car3d" aria-hidden="true"></div>
   <!-- AUDI hood: wide, flat, angular; sharp LED daytime-running-light
        strips; wide trapezoidal single-frame grille at the front edge. -->
   <svg id="hoodAudi" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
@@ -410,6 +426,7 @@ function selectCar(which){
   $("carBadge").textContent = c.name;
   $("carBadge").style.color = c.badge;
   $("carHud").textContent = c.name;
+  if (window.Car3D) window.Car3D.select(which);
 }
 $("carAudi").addEventListener("click", function(){ selectCar("audi"); });
 $("carFiat").addEventListener("click", function(){ selectCar("fiat"); });
@@ -802,6 +819,7 @@ function resetRun(){
   $("hud").classList.remove("hidden");
   $("carHood").classList.remove("hidden");
   $("driveCtrls").classList.remove("hidden");
+  if (window.Car3D) window.Car3D.render();
 }
 function startDriving(){
   if (!tokenOk()){
@@ -885,5 +903,119 @@ $("bestHud").textContent = best;
 $("startBest").textContent = best > 0 ? "BEST " + best : "";
 </script>
 
+<script type="module">
+/* ── 3D cars (Three.js) ───────────────────────────────────────────
+   Real 3D model of the Audi, rendered as the driver's-POV hood view
+   at the bottom of the screen (same spot/size as the drawn hood).
+   The Fiat has no obtainable free 3D model, so it keeps its SVG hood.
+   Rendering is on-demand only (the car never moves): one render when
+   the car is shown/selected/resized, no continuous frame loop. */
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+var container = document.getElementById('car3d');
+var hoodEl = document.getElementById('carHood');
+var renderer = null, scene = null, camera = null;
+var models = {};                 // which -> THREE.Group
+var audiReady = false, audiFailed = false;
+var current3d = null;            // which car is shown in 3D, or null
+
+function hoodVisible(){
+  return hoodEl && !hoodEl.classList.contains('hidden') && container.clientWidth > 0;
+}
+function setFov(){
+  // Keep the horizontal field of view constant (~64 deg) so the car
+  // fills the width at any aspect; vertical FOV follows from it.
+  var aspect = container.clientWidth / Math.max(1, container.clientHeight);
+  camera.aspect = aspect;
+  camera.fov = 2 * Math.atan(Math.tan(32 * Math.PI / 180) / aspect) * 180 / Math.PI;
+  camera.updateProjectionMatrix();
+}
+function render(){
+  if (!renderer || !scene || !camera) return;
+  if (!hoodVisible()) return;
+  setFov();
+  renderer.setSize(container.clientWidth, container.clientHeight, false);
+  renderer.render(scene, camera);
+}
+function show3d(which){
+  var g = models[which];
+  if (!g) return false;
+  Object.keys(models).forEach(function(k){ models[k].visible = (k === which); });
+  document.getElementById('hoodAudi').style.display = 'none';
+  document.getElementById('hoodFiat').style.display = 'none';
+  container.style.display = 'block';
+  current3d = which;
+  render();
+  return true;
+}
+function showSvg(which){
+  container.style.display = 'none';
+  current3d = null;
+  document.getElementById('hoodAudi').style.display = which === 'audi' ? 'block' : 'none';
+  document.getElementById('hoodFiat').style.display = which === 'fiat' ? 'block' : 'none';
+}
+function select(which){
+  if (which === 'audi' && audiReady) { show3d('audi'); return; }
+  showSvg(which); // fiat, or audi still loading / failed: drawn hood
+}
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 0);
+  container.appendChild(renderer.domElement);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, 1.5, 0.1, 100);
+  // Driver's POV: just above the roof, looking forward over the hood.
+  camera.position.set(0, 1.45, -1.0);
+  camera.lookAt(0, 0.5, 2.0);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.15));
+  var sun = new THREE.DirectionalLight(0xffffff, 1.7);
+  sun.position.set(-2, 4, 3);
+  scene.add(sun);
+  var sun2 = new THREE.DirectionalLight(0xfff2dd, 0.7);
+  sun2.position.set(2, 2, -2);
+  scene.add(sun2);
+
+  window.Car3D = { select: select, render: render, ready: function(){ return audiReady; } };
+
+  new GLTFLoader().load('models/audi-tt.glb', function(gltf){
+    var car = gltf.scene;
+    // Normalize: scale so the car is 4 m long, centre it, wheels at y=0.
+    var box = new THREE.Box3().setFromObject(car);
+    var size = new THREE.Vector3(); box.getSize(size);
+    var s = 4 / Math.max(size.z, 0.001);
+    car.scale.setScalar(s);
+    box = new THREE.Box3().setFromObject(car);
+    var c = new THREE.Vector3(); box.getCenter(c);
+    car.position.set(-c.x, -box.min.y, -c.z);
+    // Re-tint the body paint (material "phong1") to dark Daytona Grey.
+    car.traverse(function(o){
+      if (o.isMesh && o.material) {
+        var mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(function(m){
+          if (m && m.name === 'phong1' && m.color) m.color.set(0x3a3d43);
+        });
+      }
+    });
+    car.visible = false;
+    scene.add(car);
+    models.audi = car;
+    audiReady = true;
+    var cur = (typeof window.car === 'string') ? window.car : 'audi';
+    if (cur === 'audi') show3d('audi');
+  }, undefined, function(){
+    audiFailed = true;
+    if (window.showToast) window.showToast('3D AUDI DID NOT LOAD \u2014 SHOWING DRAWN HOOD', 3500);
+  });
+
+  window.addEventListener('resize', function(){ if (current3d) render(); });
+  window.addEventListener('orientationchange', function(){ setTimeout(function(){ if (current3d) render(); }, 300); });
+} catch (e) {
+  audiFailed = true;
+  // No WebGL / Three.js failed to start: the drawn SVG hoods stay visible.
+  window.Car3D = { select: select, render: function(){}, ready: function(){ return false; } };
+}
+</script>
 </body>
 </html>
