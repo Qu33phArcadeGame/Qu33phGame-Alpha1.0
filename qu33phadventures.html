@@ -912,15 +912,30 @@ $("startBest").textContent = best > 0 ? "BEST " + best : "";
    - FIAT: Fiat 850 Spider (classic Fiat roadster, NOT a 124 —
      no free 124 model was obtainable; Coby sent this one),
      paint re-tinted to dark racing green.
-   Both models are normalised to 4 m long, centred, wheels at y=0,
-   front pointing at -Z. Camera is a HIGH REAR chase view: pulled
-   back and up behind the car so the whole model shows, from the
-   front of the hood all the way back to the back windshield
-   (hood, windshield, roof, rear window). Per-car camera framing:
-   the Fiat 850 is lower/narrower than the TTS, so its camera sits
-   a touch lower/closer to fill the frame the same way. The
-   horizontal FOV is narrowed to 30 deg per car (was 64) so the
-   whole car fills the bottom band instead of sitting small in it.
+   Both models are normalised to 4 m long, centred, wheels at y=0.
+   THE TWO MODELS FACE OPPOSITE WAYS (proven by rendering each
+   from +Z and -Z): the Audi's front (grille/headlights) is at +Z,
+   the Fiat's front is at -Z. So the "rear chase" camera sits on a
+   different side per car: Audi on -Z, Fiat on +Z would be its rear
+   — but the Fiat's rear view hides its hood behind the cabin, while
+   its FRONT view (-Z side) shows the whole car (bumper, hood,
+   windshield, cabin, rear deck). Each car gets the angle that shows
+   it whole. The Audi's rear camera sits HIGH (y 5) so the
+   windshield and hood clear the roof — from a lower rear angle the
+   roof hides them and only roof/rear-window/trunk show. Camera is
+   a HIGH chase view: behind/above the car, looking forward over
+   the whole model (hood, windshield, roof, rear window, trunk all
+   visible). Per-car camera framing: the Fiat 850 is
+   lower/narrower than the TTS, so its camera sits a touch
+   lower/closer to fill the frame the same way. Framing is
+   ASPECT-AWARE (fitFov): the vertical FOV is computed from the
+   model's real bounding-box corners projected onto the camera axes,
+   so the whole car fits at any viewport, and into the visible
+   region above the drive buttons. The old build fixed the
+   HORIZONTAL FOV at 30 deg, which collapsed the vertical FOV to
+   ~20 deg on a phone and ~5 deg on a wide screen — the car was
+   clipped top and bottom at every aspect. Never fix the horizontal
+   FOV again.
    Rendering is on-demand only (the car never moves): one render when
    the car is shown/selected/resized, or when the hood becomes
    visible (a MutationObserver covers the START tap — the old build
@@ -943,10 +958,17 @@ var CAR3D = {
   fiat: { file: 'models/fiat-850.glb', paint: 'paint',    color: 0x14532d }
 };
 
-// which -> high rear chase camera { pos, lookAt target, horizontal FOV deg }
+// which -> high chase camera { pos, lookAt target }. Audi: rear
+// (-Z) side, HIGH (y 6) so the windshield and hood clear the roof —
+// proven by centreline sampling: from y 5 the hood is only a 28px
+// sliver, from y 6 it is a clear band above the windshield. Fiat:
+// FRONT (-Z) side — its front is at -Z, and from its rear side the
+// hood hides behind the cabin; from the front the whole car shows
+// (bumper, hood, windshield, cabin, rear deck). fitFov() below
+// handles the exact FOV per car and viewport.
 var CAM3D = {
-  audi: { pos: [0, 4.2, 3.2], tgt: [0, 0.5, -0.3], hfov: 30 },
-  fiat: { pos: [0, 3.8, 3.2], tgt: [0, 0.5, -0.3], hfov: 30 }
+  audi: { pos: [0, 6.0, -4.0], tgt: [0, 0.5, 0] },
+  fiat: { pos: [0, 3.5, -5.2], tgt: [0, 0.5, 0] }
 };
 var camFor = 'audi';
 function applyCam(which){
@@ -959,18 +981,87 @@ function applyCam(which){
 function hoodVisible(){
   return hoodEl && !hoodEl.classList.contains('hidden') && container.clientWidth > 0;
 }
-function setFov(){
-  // Keep the horizontal field of view constant (per-car hfov, ~30 deg)
-  // so the car fills the width at any aspect; vertical FOV follows.
+function fitFov(){
+  // Fit the WHOLE car in the band at any aspect — and ABOVE the drive
+  // buttons. Project the model's real bounding-box corners onto the
+  // camera axes and set the VERTICAL FOV from the car's actual
+  // angular height (horizontal follows from the aspect; the car's
+  // width never binds). The visible region is the top of the band
+  // minus the drive-button strip at the bottom (#driveCtrls is
+  // measured live, so this holds on any phone): the car is fitted
+  // into that region with a small margin and raised so its centre
+  // sits at the region's centre — otherwise the rear bumper hides
+  // behind the buttons and the car still reads as "cut off", which
+  // is exactly what Coby's phone showed. Never fix the horizontal
+  // FOV: the old build fixed it at 30 deg, which collapsed the
+  // vertical FOV to ~20 deg on a phone and ~5 deg on a wide screen.
   var aspect = container.clientWidth / Math.max(1, container.clientHeight);
   camera.aspect = aspect;
-  camera.fov = 2 * Math.atan(Math.tan(CAM3D[camFor].hfov / 2 * Math.PI / 180) / aspect) * 180 / Math.PI;
+  var g = models[camFor];
+  if (!g) { camera.fov = 40; camera.updateProjectionMatrix(); return; }
+  var bandH = container.clientHeight;
+  var ctrls = document.getElementById('driveCtrls');
+  var btnH = (ctrls && !ctrls.classList.contains('hidden')) ? ctrls.offsetHeight : 0;
+  var visFrac = Math.max(0.5, Math.min(1, (bandH - btnH) / Math.max(1, bandH)));
+  var box = new THREE.Box3().setFromObject(g);
+  var base = CAM3D[camFor].tgt.slice();
+  var pos = camera.position;
+  var tanHalf = 0.3;
+  for (var pass = 0; pass < 3; pass++) {
+    camera.lookAt(base[0], base[1], base[2]);
+    var d = new THREE.Vector3(base[0]-pos.x, base[1]-pos.y, base[2]-pos.z).normalize();
+    var r = new THREE.Vector3().crossVectors(d, new THREE.Vector3(0,1,0)).normalize();
+    var u = new THREE.Vector3().crossVectors(r, d);
+    var minU = Infinity, maxU = -Infinity, maxR = 0;
+    for (var i = 0; i < 8; i++) {
+      var p = new THREE.Vector3(
+        (i & 1) ? box.max.x : box.min.x,
+        (i & 2) ? box.max.y : box.min.y,
+        (i & 4) ? box.max.z : box.min.z);
+      var v = p.clone().sub(pos);
+      var depth = v.dot(d);
+      if (depth < 0.1) depth = 0.1;
+      var uR = v.dot(u) / depth, rR = Math.abs(v.dot(r)) / depth;
+      if (uR < minU) minU = uR;
+      if (uR > maxU) maxU = uR;
+      if (rR > maxR) maxR = rR;
+    }
+    var centerU = (minU + maxU) / 2, halfU = (maxU - minU) / 2;
+    var dist = Math.hypot(base[0]-pos.x, base[1]-pos.y, base[2]-pos.z);
+    if (pass === 0) {
+      // Centre the car's projected span (aim += camera-up *
+      // centerU * dist). Sign matters: the first version had it
+      // backwards and pushed the car out the bottom of the band.
+      base = [base[0] + u.x * centerU * dist,
+              base[1] + u.y * centerU * dist,
+              base[2] + u.z * centerU * dist];
+    } else if (pass === 1) {
+      // Fit into the visible region (top visFrac of the band) with
+      // an 8% margin, then raise the car so its centre sits at the
+      // visible region's centre (NDC 1-visFrac): move the aim DOWN
+      // by that NDC offset, which moves the image UP. Applied ONCE
+      // (pass 1 only): re-applying it every pass doubles the shift
+      // and pushes the car out the top of the band.
+      tanHalf = Math.max(halfU / (visFrac * 0.92), maxR / aspect);
+      var up = (1 - visFrac) * tanHalf * dist;
+      base = [base[0] - u.x * up,
+              base[1] - u.y * up,
+              base[2] - u.z * up];
+    } else {
+      // Pass 2: recompute the fit from the final aim (no more
+      // shifting) so the FOV matches where the camera now points.
+      tanHalf = Math.max(halfU / (visFrac * 0.92), maxR / aspect);
+    }
+  }
+  camera.lookAt(base[0], base[1], base[2]);
+  var vfov = 2 * Math.atan(tanHalf) * 180 / Math.PI;
+  camera.fov = Math.max(18, Math.min(70, vfov));
   camera.updateProjectionMatrix();
 }
 function render(){
   if (!renderer || !scene || !camera) return;
   if (!hoodVisible()) return;
-  setFov();
+  fitFov();
   renderer.setSize(container.clientWidth, container.clientHeight, false);
   renderer.render(scene, camera);
 }
@@ -1055,8 +1146,9 @@ try {
 
   window.Car3D = { select: select, render: render, ready: function(){ return ready.audi && ready.fiat; },
                    readyCar: function(w){ return !!ready[w]; },
+                   fov: function(){ return camera ? +camera.fov.toFixed(1) : null; },
                    debug: function(){
-                     var out = { camPos: camera.position.toArray(), camTarget: CAM3D[camFor].tgt.slice(), hfov: CAM3D[camFor].hfov };
+                     var out = { camPos: camera.position.toArray(), camTarget: CAM3D[camFor].tgt.slice(), vfov: camera ? +camera.fov.toFixed(1) : null };
                      Object.keys(models).forEach(function(k){
                        var box = new THREE.Box3().setFromObject(models[k]);
                        var sz = new THREE.Vector3(); box.getSize(sz);
