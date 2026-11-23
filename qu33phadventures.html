@@ -913,10 +913,14 @@ $("startBest").textContent = best > 0 ? "BEST " + best : "";
      no free 124 model was obtainable; Coby sent this one),
      paint re-tinted to dark racing green.
    Both models are normalised to 4 m long, centred, wheels at y=0,
-   front pointing at -Z. Camera sits just above/behind the
-   windshield and looks forward over the hood (the old build had the
-   camera over the FRONT looking BACKWARD, so all you saw was a flat
-   dark-grey roof/trunk panel).
+   front pointing at -Z. Camera is a HIGH REAR chase view: pulled
+   back and up behind the car so the whole model shows, from the
+   front of the hood all the way back to the back windshield
+   (hood, windshield, roof, rear window). Per-car camera framing:
+   the Fiat 850 is lower/narrower than the TTS, so its camera sits
+   a touch lower/closer to fill the frame the same way. The
+   horizontal FOV is narrowed to 30 deg per car (was 64) so the
+   whole car fills the bottom band instead of sitting small in it.
    Rendering is on-demand only (the car never moves): one render when
    the car is shown/selected/resized, or when the hood becomes
    visible (a MutationObserver covers the START tap — the old build
@@ -939,15 +943,28 @@ var CAR3D = {
   fiat: { file: 'models/fiat-850.glb', paint: 'paint',    color: 0x14532d }
 };
 
+// which -> high rear chase camera { pos, lookAt target, horizontal FOV deg }
+var CAM3D = {
+  audi: { pos: [0, 4.2, 3.2], tgt: [0, 0.5, -0.3], hfov: 30 },
+  fiat: { pos: [0, 3.8, 3.2], tgt: [0, 0.5, -0.3], hfov: 30 }
+};
+var camFor = 'audi';
+function applyCam(which){
+  var c = CAM3D[which];
+  camFor = which;
+  camera.position.set(c.pos[0], c.pos[1], c.pos[2]);
+  camera.lookAt(c.tgt[0], c.tgt[1], c.tgt[2]);
+}
+
 function hoodVisible(){
   return hoodEl && !hoodEl.classList.contains('hidden') && container.clientWidth > 0;
 }
 function setFov(){
-  // Keep the horizontal field of view constant (~64 deg) so the car
-  // fills the width at any aspect; vertical FOV follows from it.
+  // Keep the horizontal field of view constant (per-car hfov, ~30 deg)
+  // so the car fills the width at any aspect; vertical FOV follows.
   var aspect = container.clientWidth / Math.max(1, container.clientHeight);
   camera.aspect = aspect;
-  camera.fov = 2 * Math.atan(Math.tan(32 * Math.PI / 180) / aspect) * 180 / Math.PI;
+  camera.fov = 2 * Math.atan(Math.tan(CAM3D[camFor].hfov / 2 * Math.PI / 180) / aspect) * 180 / Math.PI;
   camera.updateProjectionMatrix();
 }
 function render(){
@@ -965,6 +982,7 @@ function show3d(which){
   document.getElementById('hoodFiat').style.display = 'none';
   container.style.display = 'block';
   current3d = which;
+  applyCam(which);
   render();
   return true;
 }
@@ -1023,12 +1041,10 @@ try {
   container.appendChild(renderer.domElement);
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, 1.5, 0.1, 100);
-  // Driver's POV: just above the roof, just FORWARD of the windshield,
-  // looking forward and down over the hood (front of car is at -Z).
-  // (Camera must sit ahead of the dashboard/interior, or the open-top
-  // Fiat shows its steering wheel and dash instead of its hood.)
-  camera.position.set(0, 1.42, -0.35);
-  camera.lookAt(0, 0.45, -2.4);
+  // High rear chase view (per-car, see CAM3D): behind and above the
+  // car, looking forward-down over the whole model, front of the
+  // hood to the back windshield.
+  applyCam('audi');
   scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.15));
   var sun = new THREE.DirectionalLight(0xffffff, 1.7);
   sun.position.set(-2, 4, 3);
@@ -1040,7 +1056,7 @@ try {
   window.Car3D = { select: select, render: render, ready: function(){ return ready.audi && ready.fiat; },
                    readyCar: function(w){ return !!ready[w]; },
                    debug: function(){
-                     var out = { camPos: camera.position.toArray(), camTarget: [0, 0.45, -2.4] };
+                     var out = { camPos: camera.position.toArray(), camTarget: CAM3D[camFor].tgt.slice(), hfov: CAM3D[camFor].hfov };
                      Object.keys(models).forEach(function(k){
                        var box = new THREE.Box3().setFromObject(models[k]);
                        var sz = new THREE.Vector3(); box.getSize(sz);
