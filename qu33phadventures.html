@@ -70,7 +70,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 .carCard.sel{border-color:#e8a83c;box-shadow:0 0 14px rgba(232,168,60,.6);}
 .carCard .swatch{height:34px;border-radius:8px;margin-bottom:8px;border:2px solid rgba(255,255,255,.35);}
 .carCard .swatch.audi{background:linear-gradient(180deg,#c9ccd2 0%,#8a8f98 45%,#4a4e55 100%);}
-.carCard .swatch.fiat{background:linear-gradient(180deg,#ff5a5a 0%,#d21f26 45%,#7a0d12 100%);}
+.carCard .swatch.fiat{background:linear-gradient(180deg,#7ee787 0%,#2da44e 45%,#14532d 100%);}
 .carCard .nm{font-size:12px;font-weight:bold;letter-spacing:1px;}
 .carCard .sub{font-size:10px;letter-spacing:1px;color:#aaa;margin-top:3px;}
 /* globe picker */
@@ -102,7 +102,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
   <span class="pill gold">SCORE <span id="scoreHud">0</span></span>
   <span class="pill">TIME <span id="timeHud">60</span></span>
   <span class="pill">BEST <span id="bestHud">0</span></span>
-  <span class="pill" id="carHud">AUDI TTS</span>
+  <span class="pill" id="carHud">AUDI</span>
   <span class="pill red">RED +1</span>
   <span class="pill green">GREEN +2</span>
   <span class="pill blue">BLUE +3</span>
@@ -123,7 +123,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
     <ellipse cx="76" cy="15" rx="5.5" ry="2.2" fill="#fff8c0" opacity="0.95"/>
     <path d="M50,4 L50,30" stroke="rgba(255,255,255,.35)" stroke-width="0.7"/>
   </svg>
-  <div id="carBadge">AUDI TTS</div>
+  <div id="carBadge">AUDI</div>
 </div>
 
 <div id="driveCtrls" class="hidden">
@@ -152,12 +152,12 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
   <div class="carRow">
     <div class="carCard sel" id="carAudi" data-car="audi">
       <div class="swatch audi"></div>
-      <div class="nm">AUDI TTS</div>
+      <div class="nm">AUDI</div>
       <div class="sub">DARK SILVER</div>
     </div>
     <div class="carCard" id="carFiat" data-car="fiat">
       <div class="swatch fiat"></div>
-      <div class="nm">FIAT SPIDER</div>
+      <div class="nm">FIAT</div>
       <div class="sub">RED</div>
     </div>
   </div>
@@ -239,8 +239,8 @@ var MARKER_EVERY = 3; // a marker every 3rd pano along the road
 var MARKER_TARGET = 14;
 
 var CARS = {
-  audi: { name: "AUDI TTS", top: "#c9ccd2", mid: "#8a8f98", bot: "#3a3d43", badge: "#d7dae0" },
-  fiat: { name: "FIAT SPIDER", top: "#ff5a5a", mid: "#d21f26", bot: "#7a0d12", badge: "#ff8080" }
+  audi: { name: "AUDI", top: "#c9ccd2", mid: "#8a8f98", bot: "#3a3d43", badge: "#d7dae0" },
+  fiat: { name: "FIAT", top: "#7ee787", mid: "#2da44e", bot: "#14532d", badge: "#7bffa8" }
 };
 var SPOTS = {
   tokyo:  { lat: 35.68,  lng: 139.69,  name: "Tokyo" },
