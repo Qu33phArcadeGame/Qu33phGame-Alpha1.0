@@ -215,9 +215,10 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
    The markers are the REAL Qu33ph marker art (repo-root blue.png,
    green.png, red.png), shown as overlays along the road in Street
    View. Drive into one to collect it.
-   There is NO API key bundled with this file. The key lives in
-   localStorage (qu33phAdventuresApiKey) and is entered on the start
-   screen. Without a key the game says so plainly and never shows a
+   API KEY: put a key in BUILTIN_API_KEY (below) and Street View works for
+   EVERYONE who visits the site. Leave it "" and the key lives in each
+   visitor's localStorage (qu33phAdventuresApiKey), entered on the start
+   screen. Without any key the game says so plainly and never shows a
    blank screen or crashes.
    ═══════════════════════════════════════════════════════════════════ */
 var PTS_RED = 1;     // original Qu33ph: red = 1
@@ -226,6 +227,12 @@ var PTS_BLUE = 3;    // original Qu33ph: blue = 3
 var GAME_SECS = 60;
 var BEST_KEY = "qu33phAdventuresBest";
 var API_KEY = "qu33phAdventuresApiKey";
+/* BUILTIN_API_KEY: paste a Google Maps API key between the quotes to make
+   Street View work for EVERYONE who visits the site (no key entry needed).
+   The key is visible in this file's source, so in Google Cloud Console
+   restrict it to qu33ph.com (APIs & Services > Credentials > HTTP referrers).
+   Leave it "" and the game uses the key each visitor saves on the start screen. */
+var BUILTIN_API_KEY = "";
 var HOP_MS = 950;    // one Street View pano hop per 950ms while GAS is held
 var HFOV = 80;       // horizontal field of view used to place marker overlays
 var MARKER_EVERY = 3; // a marker every 3rd pano along the road
@@ -716,7 +723,7 @@ selectCar("audi");
 setPick(SPOTS.ny.lat, SPOTS.ny.lng, "New York");
 $("bestHud").textContent = best;
 $("startBest").textContent = best > 0 ? "BEST " + best : "";
-var savedKey = loadSavedKey();
+var savedKey = (typeof BUILTIN_API_KEY === "string" && BUILTIN_API_KEY.trim()) ? BUILTIN_API_KEY.trim() : loadSavedKey();
 if (savedKey){
   $("keyInput").value = savedKey;
   setKeyStatus("KEY SAVED \u2014 LOADING GOOGLE MAPS\u2026", "");
