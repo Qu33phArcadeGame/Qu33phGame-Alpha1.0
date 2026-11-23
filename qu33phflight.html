@@ -119,12 +119,18 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
    So: touching a GREEN plane = +2, touching a RED plane = +1.
    The player plane is BLUE (blue = 3 in the original, but the player
    is never scored — only the planes you collect pay).
+   THE MAP IS EARTH: a real equirectangular world map (continents in
+   their real places, oceans blue). Longitude WRAPS — fly east past
+   the date line and you come back in from the west, all the way
+   around the planet. The poles are clamped (you can never fly off
+   into a void). No external map file: the coastlines are a compact
+   outline dataset drawn in code (see EARTH below).
    ═══════════════════════════════════════════════════════════════════ */
 var PTS_GREEN = 2;   // original Qu33ph: green = 2
 var PTS_RED = 1;     // original Qu33ph: red = 1
 
 var VW = 320, VH = 200;              // low-res offscreen canvas, scaled up crisp
-var WORLD_W = 2400, WORLD_H = 1600;  // world size in units
+var WORLD_W = 2400, WORLD_H = 1200;  // Earth, equirectangular: 360 lon x 180 lat (2:1)
 var GAME_SECS = 60;
 var BEST_KEY = "qu33phFlightBest";
 
@@ -156,13 +162,68 @@ function mulberry32(seed){
   };
 }
 
+/* ── EARTH: real continents as lon/lat outlines (flat [lon,lat,...]) ──
+   Simplified but real coastline points (no invented shapes). Equirectangular:
+   x = (lon+180)/360 * WORLD_W, y = (90-lat)/180 * WORLD_H.
+   No polygon crosses the date line except Antarctica, which spans the
+   whole width as a bottom band (its left/right edges ARE the map edges). */
+var EARTH = [
+  /* North America (+ Hudson Bay notch) */
+  [-168,66,-156,58,-144,60,-133,56,-125,49,-121,37,-112,28,-106,22,-97,16,-90,14,-84,10,-79,8,-80,10,-83,13,-86,16,-87,21,-91,19,-97,23,-97,26,-94,29,-90,29,-85,30,-81,26,-80,32,-76,35,-74,39,-71,41,-68,44,-64,44,-60,46,-55,51,-58,55,-64,59,-68,61,-77,60,-85,55,-92,58,-91,63,-88,66,-93,67,-102,68,-114,68,-126,70,-140,70,-152,71,-163,70],
+  /* Greenland */
+  [-45,60,-40,62,-32,66,-24,69,-19,72,-20,76,-28,79,-40,81,-52,80,-60,78,-64,75,-62,71,-56,66,-50,62],
+  /* South America */
+  [-79,8,-72,11,-63,10,-57,7,-51,4,-49,0,-43,-3,-36,-7,-35,-9,-38,-14,-40,-21,-47,-26,-52,-32,-57,-38,-62,-42,-66,-47,-68,-52,-70,-54,-73,-49,-73,-41,-72,-32,-71,-24,-70,-18,-76,-13,-80,-5,-81,0,-80,5],
+  /* Africa */
+  [-6,35,-12,30,-16,23,-17,14,-13,9,-7,5,1,6,7,4,10,0,12,-6,13,-13,14,-20,16,-28,18,-35,21,-35,26,-34,31,-28,35,-23,38,-17,40,-10,42,-3,47,1,51,11,45,11,41,14,38,20,35,27,32,31,26,33,19,35,12,34,10,37,4,37,-3,35],
+  /* Eurasia (Europe + Asia, one landmass) */
+  [-6,36,-9,38,-9,43,-2,44,-1,48,2,51,6,54,9,57,13,56,18,56,22,59,27,60,30,64,33,68,40,68,48,69,56,69,64,70,72,72,80,73,90,75,100,76,110,74,120,73,130,72,140,72,150,70,160,69,170,67,178,66,170,63,162,59,157,53,150,58,143,55,140,49,135,44,130,41,127,38,122,38,119,33,116,24,110,20,107,14,104,8,101,3,99,7,97,12,93,17,90,21,87,20,83,18,80,13,77,9,74,14,71,21,67,24,62,25,57,26,56,26,59,22,57,18,54,16,50,15,46,13,43,12,41,15,39,19,38,23,36,27,35,28,34,31,31,32,27,34,22,34,19,36,15,38,11,38,7,37,2,37,-3,36],
+  /* Australia */
+  [114,-22,115,-33,122,-34,130,-32,137,-35,142,-38,150,-37,153,-30,151,-24,146,-19,142,-14,140,-12,135,-12,131,-12,126,-14,121,-17,116,-20],
+  /* Antarctica (full-width bottom band; edges are the map edges) */
+  [-180,-66,-150,-68,-120,-66,-90,-68,-60,-70,-30,-72,0,-70,30,-68,60,-66,90,-66,120,-66,150,-68,180,-66,180,-90,-180,-90],
+  /* UK */
+  [-5,50,-4,54,-5,57,-3,58,-1,58,1,55,1,52,0,51,-2,50],
+  /* Japan */
+  [130,31,133,34,137,35,142,36,143,39,144,43,145,44,143,43,141,40,139,37,136,34,133,32,130,31],
+  /* Borneo */
+  [109,1,113,4,117,6,119,1,117,-3,113,-4,110,-2],
+  /* Sumatra */
+  [95,5,99,2,102,-1,105,-4,106,-6,103,-4,100,0,97,3],
+  /* New Guinea */
+  [131,-1,136,-3,141,-4,146,-7,149,-9,146,-8,141,-6,136,-4,132,-2],
+  /* Madagascar */
+  [44,-16,48,-15,50,-18,49,-22,46,-25,44,-22,43,-18],
+  /* New Zealand */
+  [173,-35,177,-38,174,-41,171,-43,168,-46,168,-44,171,-42,174,-39]
+];
+function lonToX(lon){ return (lon + 180) / 360 * WORLD_W; }
+function latToY(lat){ return (90 - lat) / 180 * WORLD_H; }
+function xToLon(x){ return x / WORLD_W * 360 - 180; }
+function yToLat(y){ return 90 - y / WORLD_H * 180; }
+function pipoly(poly, lon, lat){ // ray-casting point-in-polygon on lon/lat
+  var inside = false;
+  for (var i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2){
+    var xi = poly[i], yi = poly[i + 1], xj = poly[j], yj = poly[j + 1];
+    if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function isLandLonLat(lon, lat){
+  lon = ((lon + 180) % 360 + 360) % 360 - 180;
+  if (lat > 90) lat = 90; if (lat < -90) lat = -90;
+  for (var k = 0; k < EARTH.length; k++) if (pipoly(EARTH[k], lon, lat)) return true;
+  return false;
+}
+function isLandXY(x, y){ return isLandLonLat(xToLon(x), yToLat(y)); }
+
 /* ── state ─────────────────────────────────────────────────────── */
 var state = "start"; // start | play | end
 var score = 0, timeLeft = GAME_SECS, best = 0;
 try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
 var elapsed = 0, lastTs = 0;
 
-var player = { x: WORLD_W / 2, y: WORLD_H / 2, z: 90, h: 0, speed: 58 };
+var player = { x: lonToX(-98), y: latToY(39), z: 90, h: 0, speed: 58 }; // start over central North America
 var planes = [];   // collectible marker planes {x,y,z,h,speed,color,pts,active,respawn}
 var clouds = [];   // {x,y,z,s,drift}
 var popups = [];   // {x,y,z,txt,color,t}
@@ -214,39 +275,52 @@ function stepCamera(dt){
   }
 }
 
-/* ── world: seeded procedural sea + islands + clouds ───────────── */
+/* ── world: REAL Earth map (equirectangular) + clouds ─────────────
+   Ocean gradient, then every continent in EARTH drawn in its real
+   place (green fill, sand rim). The map wraps in longitude: render()
+   draws it tiled at -W, 0, +W so the date line is seamless. */
 var worldMap = document.createElement("canvas");
+var MW = 1200, MH = 600; // 0.5 px per world unit (2400x1200 world)
 var seed = (Math.random() * 1e9) | 0;
 var rng = mulberry32(seed);
+function drawLandPoly(g, poly){
+  g.beginPath();
+  for (var i = 0; i < poly.length; i += 2){
+    var mx = (poly[i] + 180) / 360 * MW;
+    var my = (90 - poly[i + 1]) / 180 * MH;
+    if (i === 0) g.moveTo(mx, my); else g.lineTo(mx, my);
+  }
+  g.closePath();
+}
 function buildWorld(){
-  var MW = 1200, MH = 800; // 0.5 px per world unit
   worldMap.width = MW; worldMap.height = MH;
   var g = worldMap.getContext("2d");
   // sea
   var grad = g.createLinearGradient(0, 0, 0, MH);
   grad.addColorStop(0, "#1f8fd0"); grad.addColorStop(0.55, "#1678b4"); grad.addColorStop(1, "#0d5a8c");
   g.fillStyle = grad; g.fillRect(0, 0, MW, MH);
+  // continents: sand rim, then green land
+  for (var k = 0; k < EARTH.length; k++) {
+    drawLandPoly(g, EARTH[k]);
+    g.strokeStyle = "#e8d696"; g.lineWidth = 5; g.lineJoin = "round";
+    g.stroke();
+    g.fillStyle = "#2ea05a"; g.fill();
+  }
+  // darker green interior patches (fixed, known-land spots)
+  g.fillStyle = "#1e7d46";
+  var patches = [
+    [-100, 45, 60, 30], [-60, -5, 55, 28], [20, 5, 55, 28], [90, 55, 70, 30],
+    [100, 28, 40, 20], [135, -25, 45, 22], [-45, -15, 40, 20], [10, 50, 45, 20]
+  ];
+  for (var p = 0; p < patches.length; p++) {
+    var px = (patches[p][0] + 180) / 360 * MW;
+    var py = (90 - patches[p][1]) / 180 * MH;
+    g.beginPath(); g.ellipse(px, py, patches[p][2], patches[p][3], 0, 0, Math.PI * 2); g.fill();
+  }
   // sea sparkle
   g.fillStyle = "rgba(255,255,255,0.10)";
   for (var i = 0; i < 260; i++) {
     g.fillRect(rng() * MW, rng() * MH, 2, 1);
-  }
-  // islands: green blobs with sand rim
-  for (var k = 0; k < 14; k++) {
-    var cx = 60 + rng() * (MW - 120), cy = 50 + rng() * (MH - 100);
-    var rx = 26 + rng() * 70, ry = 18 + rng() * 42;
-    g.fillStyle = "#e8d696";
-    g.beginPath(); g.ellipse(cx, cy, rx + 5, ry + 4, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = "#2ea05a";
-    g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = "#1e7d46";
-    g.beginPath(); g.ellipse(cx - rx * 0.25, cy - ry * 0.15, rx * 0.55, ry * 0.5, 0, 0, Math.PI * 2); g.fill();
-    // trees
-    g.fillStyle = "#14663a";
-    for (var t = 0; t < 4; t++) {
-      var tx = cx - rx * 0.6 + rng() * rx * 1.2, ty = cy - ry * 0.55 + rng() * ry * 1.1;
-      g.beginPath(); g.arc(tx, ty, 3 + rng() * 3, 0, Math.PI * 2); g.fill();
-    }
   }
   // clouds (drift slowly, drawn as sprites with altitude)
   clouds = [];
@@ -325,6 +399,9 @@ function loadSprites(done){
    MAP views use head = PI/2 (north-up); CHASE uses head = player heading. */
 function project(x, y, z){
   var dx = x - camX, dy = y - camY;
+  // longitude wraps: use the shortest way around the globe (so a plane just
+  // across the date line renders next to you, not a whole world away)
+  if (dx > WORLD_W / 2) dx -= WORLD_W; else if (dx < -WORLD_W / 2) dx += WORLD_W;
   var H = cam.head, s = cam.scale, ct = Math.cos(cam.tilt), st = Math.sin(cam.tilt);
   var fwd = dx * Math.cos(H) + dy * Math.sin(H);
   var rgt = dx * Math.sin(H) - dy * Math.cos(H);
@@ -359,9 +436,10 @@ function mkPlane(color, pts, speed){
 }
 function respawnPlane(p){
   // respawn away from the player so you have to fly to it
+  // (longitude wraps; latitude clamps at the poles — never off the map)
   var a = Math.random() * Math.PI * 2, d = 500 + Math.random() * 500;
-  p.x = (player.x + Math.cos(a) * d + WORLD_W) % WORLD_W;
-  p.y = (player.y + Math.sin(a) * d + WORLD_H) % WORLD_H;
+  p.x = wrap(player.x + Math.cos(a) * d, WORLD_W);
+  p.y = clamp(player.y + Math.sin(a) * d, 0, WORLD_H);
   p.z = 50 + Math.random() * 100;
   p.h = Math.random() * Math.PI * 2;
   p.active = true;
@@ -372,9 +450,9 @@ function wrap(v, m){ return ((v % m) + m) % m; }
 function tryCollect(p){
   if (!p.active) return;
   var dx = p.x - player.x, dy = p.y - player.y;
-  // world wraps, so use the shortest wrapped distance
+  // longitude wraps, so use the shortest wrapped distance east-west;
+  // latitude does NOT wrap (poles are clamped), so dy is plain
   if (dx > WORLD_W / 2) dx -= WORLD_W; else if (dx < -WORLD_W / 2) dx += WORLD_W;
-  if (dy > WORLD_H / 2) dy -= WORLD_H; else if (dy < -WORLD_H / 2) dy += WORLD_H;
   var dz = p.z - player.z;
   if (dx * dx + dy * dy < 30 * 30 && Math.abs(dz) < 24) {
     p.active = false;
@@ -431,10 +509,15 @@ function step(dt){
   climb += climbBtn;
   player.h += turn * 1.7 * dt;
   player.z = clamp(player.z + climb * 45 * dt, 30, 170);
+  // longitude WRAPS (fly east past the date line, come back in from the west);
+  // latitude CLAMPS at the poles (you can never fly off the map)
   player.x = wrap(player.x + Math.cos(player.h) * player.speed * dt, WORLD_W);
-  player.y = wrap(player.y + Math.sin(player.h) * player.speed * dt, WORLD_H);
-  // camera follows the player (smoothed)
-  camX = lerp(camX, player.x, Math.min(1, dt * 5));
+  player.y = clamp(player.y + Math.sin(player.h) * player.speed * dt, 0, WORLD_H);
+  // camera follows the player (smoothed; longitude via the wrapped delta so
+  // crossing the date line does not swing the camera across the whole map)
+  var camDx = player.x - camX;
+  if (camDx > WORLD_W / 2) camDx -= WORLD_W; else if (camDx < -WORLD_W / 2) camDx += WORLD_W;
+  camX = wrap(camX + camDx * Math.min(1, dt * 5), WORLD_W);
   camY = lerp(camY, player.y, Math.min(1, dt * 5));
   stepCamera(dt);
   // collectible planes wander gently
@@ -448,7 +531,7 @@ function step(dt){
     p.wob += dt;
     p.h += Math.sin(p.wob * 0.7) * 0.35 * dt;
     p.x = wrap(p.x + Math.cos(p.h) * p.speed * dt, WORLD_W);
-    p.y = wrap(p.y + Math.sin(p.h) * p.speed * dt, WORLD_H);
+    p.y = clamp(p.y + Math.sin(p.h) * p.speed * dt, 0, WORLD_H);
     if (state === "play") tryCollect(p);
   }
   // clouds drift
@@ -464,7 +547,7 @@ function step(dt){
     var pt = parts[k];
     pt.t += dt;
     pt.x = wrap(pt.x + pt.vx * dt, WORLD_W);
-    pt.y = wrap(pt.y + pt.vy * dt, WORLD_H);
+    pt.y = clamp(pt.y + pt.vy * dt, 0, WORLD_H);
     pt.z += pt.vz * dt;
     if (pt.t > 0.7) parts.splice(k, 1);
   }
@@ -500,13 +583,17 @@ function render(){
   g.fillStyle = "#0d5a8c";
   g.fillRect(0, 0, VW, VH);
   var H = cam.head, s = cam.scale, ct = Math.cos(cam.tilt), st = Math.sin(cam.tilt);
-  // ground (sea + islands) via one affine draw of the pre-rendered world map
+  // ground (Earth) via one affine draw of the pre-rendered world map,
+  // tiled 3x in longitude so the date line wraps seamlessly — the map is
+  // periodic in x with period WORLD_W, so the three tiles cover the view
   var a = s * Math.sin(H), b = -s * ct * Math.cos(H);
   var c = -s * Math.cos(H), d = -s * ct * Math.sin(H);
   var e = VW / 2 - s * Math.sin(H) * camX + s * Math.cos(H) * camY;
   var f = VH / 2 + s * ct * Math.cos(H) * camX + s * ct * Math.sin(H) * camY + cam.yOff;
   g.setTransform(a, b, c, d, e, f);
+  g.drawImage(worldMap, -WORLD_W, 0, WORLD_W, WORLD_H);
   g.drawImage(worldMap, 0, 0, WORLD_W, WORLD_H);
+  g.drawImage(worldMap, WORLD_W, 0, WORLD_W, WORLD_H);
   g.setTransform(1, 0, 0, 1, 0, 0);
   // cloud shadows on the sea
   for (var ci = 0; ci < clouds.length; ci++) {
@@ -597,7 +684,7 @@ function show(id, on){
 }
 function startGame(){
   score = 0; timeLeft = GAME_SECS; elapsed = 0;
-  player.x = WORLD_W / 2; player.y = WORLD_H / 2; player.z = 90; player.h = 0;
+  player.x = lonToX(-98); player.y = latToY(39); player.z = 90; player.h = 0; // central North America
   camX = player.x; camY = player.y;
   viewIdx = 0;
   cam.tilt = VIEWS[0].tilt; cam.scale = VIEWS[0].scale; cam.size = VIEWS[0].size;
@@ -703,7 +790,13 @@ window.__flight = {
   get planes(){ return planes; }, // getter: spawnPlanes() reassigns the array
   start: startGame, cycleView: cycleView,
   collectAt: function(x, y, z){ player.x = x; player.y = y; player.z = z; },
-  pts: { green: PTS_GREEN, red: PTS_RED }
+  pts: { green: PTS_GREEN, red: PTS_RED },
+  WORLD_W: WORLD_W, WORLD_H: WORLD_H,
+  isLand: isLandLonLat, isLandXY: isLandXY,
+  lonToX: lonToX, latToY: latToY, xToLon: xToLon, yToLat: yToLat,
+  cam: function(){ return { x: camX, y: camY }; },
+  project: project,
+  step: step
 };
 </script>
 </body>
