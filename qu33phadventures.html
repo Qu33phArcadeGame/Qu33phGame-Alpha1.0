@@ -114,47 +114,64 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
   <svg id="hoodAudi" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
     <defs>
       <linearGradient id="hoodGradAudi" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#c9ccd2" id="audiTop"/>
-        <stop offset=".55" stop-color="#8a8f98" id="audiMid"/>
-        <stop offset="1" stop-color="#3a3d43" id="audiBot"/>
+        <stop offset="0" stop-color="#55585e" id="audiTop"/>
+        <stop offset=".55" stop-color="#33353a" id="audiMid"/>
+        <stop offset="1" stop-color="#1a1b1e" id="audiBot"/>
       </linearGradient>
     </defs>
-    <path d="M0,32 L7,15 L50,7 L93,15 L100,32 Z" fill="url(#hoodGradAudi)"/>
-    <path d="M7,15 L50,7" stroke="rgba(255,255,255,.45)" stroke-width="0.7"/>
-    <path d="M93,15 L50,7" stroke="rgba(255,255,255,.45)" stroke-width="0.7"/>
-    <path d="M10,17 L28,13 L31,17.5 L13,20 Z" fill="#14171c" opacity="0.9"/>
-    <path d="M90,17 L72,13 L69,17.5 L87,20 Z" fill="#14171c" opacity="0.9"/>
-    <path d="M12,16.5 L27,13.2 L28.5,14.8 L13.5,18 Z" fill="#e8f6ff" opacity="0.98"/>
-    <path d="M88,16.5 L73,13.2 L71.5,14.8 L86.5,18 Z" fill="#e8f6ff" opacity="0.98"/>
-    <path d="M35,23 L65,23 L69,31 L31,31 Z" fill="#101318" stroke="#c9ccd2" stroke-width="0.8"/>
-    <path d="M37,25.5 L63,25.5" stroke="#5a6068" stroke-width="0.7"/>
-    <path d="M36,28 L64,28" stroke="#5a6068" stroke-width="0.7"/>
-    <path d="M35,30 L65,30" stroke="#5a6068" stroke-width="0.5"/>
-    <path d="M50,7 L50,23" stroke="rgba(255,255,255,.3)" stroke-width="0.6"/>
+    <!-- TTS hood, driver POV: front edge at top, windshield base at bottom -->
+    <path d="M0,32 L6,14 L50,6 L94,14 L100,32 Z" fill="url(#hoodGradAudi)"/>
+    <!-- hood creases running front to windshield -->
+    <path d="M22,9 L14,30" stroke="rgba(255,255,255,.28)" stroke-width="0.7" fill="none"/>
+    <path d="M78,9 L86,30" stroke="rgba(255,255,255,.28)" stroke-width="0.7" fill="none"/>
+    <path d="M50,6 L50,30" stroke="rgba(255,255,255,.22)" stroke-width="0.6" fill="none"/>
+    <!-- single-frame grille: wide black trapezoid at the front edge -->
+    <path d="M33,7 L67,7 L70,13 L30,13 Z" fill="#0b0c0e" stroke="#c9ccd2" stroke-width="0.7"/>
+    <path d="M35,9 L65,9" stroke="#3a3d43" stroke-width="0.6"/>
+    <path d="M35.5,11 L64.5,11" stroke="#3a3d43" stroke-width="0.6"/>
+    <!-- four rings badge above the grille -->
+    <g stroke="#d7dae0" stroke-width="0.55" fill="none">
+      <circle cx="44" cy="8.6" r="1.1"/><circle cx="47.2" cy="8.6" r="1.1"/>
+      <circle cx="50.4" cy="8.6" r="1.1"/><circle cx="53.6" cy="8.6" r="1.1"/>
+    </g>
+    <!-- TTS angular LED headlights -->
+    <path d="M8,12 L26,8.5 L29,12.5 L12,15.5 Z" fill="#14171c" opacity="0.95"/>
+    <path d="M10,12.2 L25,9.6 L26.5,11.4 L12,14.2 Z" fill="#e8f6ff" opacity="0.98"/>
+    <path d="M92,12 L74,8.5 L71,12.5 L88,15.5 Z" fill="#14171c" opacity="0.95"/>
+    <path d="M90,12.2 L75,9.6 L73.5,11.4 L88,14.2 Z" fill="#e8f6ff" opacity="0.98"/>
+    <!-- TTS badge on the grille -->
+    <path d="M36,10.2 L39,10.2 L39,11.4 L36,11.4 Z" fill="#c00" opacity="0.9"/>
   </svg>
   <!-- FIAT 500 hood: rounder, higher, bubbly retro dome; big round
        headlights with chrome rings; small chrome grille at the front. -->
   <svg id="hoodFiat" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true" style="display:none">
     <defs>
       <linearGradient id="hoodGradFiat" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#7ee787" id="fiatTop"/>
-        <stop offset=".55" stop-color="#2da44e" id="fiatMid"/>
-        <stop offset="1" stop-color="#14532d" id="fiatBot"/>
+        <stop offset="0" stop-color="#1e5c38" id="fiatTop"/>
+        <stop offset=".55" stop-color="#14532d" id="fiatMid"/>
+        <stop offset="1" stop-color="#0a2e1a" id="fiatBot"/>
       </linearGradient>
     </defs>
-    <path d="M0,32 Q4,12 50,2 Q96,12 100,32 Z" fill="url(#hoodGradFiat)"/>
-    <path d="M18,12 Q50,4 82,12" stroke="rgba(255,255,255,.35)" stroke-width="0.8" fill="none"/>
-    <ellipse cx="23" cy="17" rx="5.8" ry="2.3" fill="none" stroke="#dfe3e6" stroke-width="1"/>
-    <ellipse cx="23" cy="17" rx="4.5" ry="1.8" fill="#fff8c0" opacity="0.95"/>
-    <ellipse cx="23" cy="17" rx="1.9" ry="0.8" fill="#fff" opacity="0.9"/>
-    <ellipse cx="77" cy="17" rx="5.8" ry="2.3" fill="none" stroke="#dfe3e6" stroke-width="1"/>
-    <ellipse cx="77" cy="17" rx="4.5" ry="1.8" fill="#fff8c0" opacity="0.95"/>
-    <ellipse cx="77" cy="17" rx="1.9" ry="0.8" fill="#fff" opacity="0.9"/>
-    <path d="M43,24 Q50,22 57,24 L57,29 Q50,31 43,29 Z" fill="#c8ccd0" stroke="#7a7f85" stroke-width="0.6"/>
-    <path d="M45,25.5 L55,25.5" stroke="#7a7f85" stroke-width="0.5"/>
-    <path d="M45,27.5 L55,27.5" stroke="#7a7f85" stroke-width="0.5"/>
-    <ellipse cx="50" cy="20.5" rx="1.7" ry="0.7" fill="#dfe3e6" stroke="#7a7f85" stroke-width="0.4"/>
-    <path d="M50,3 Q50,12 50,22" stroke="rgba(255,255,255,.3)" stroke-width="0.6" fill="none"/>
+    <!-- 124 Spider hood, driver POV: long flat hood, front edge at top -->
+    <path d="M0,32 Q3,10 50,3 Q97,10 100,32 Z" fill="url(#hoodGradFiat)"/>
+    <!-- long hood centre crease -->
+    <path d="M50,4 Q50,14 50,30" stroke="rgba(255,255,255,.25)" stroke-width="0.6" fill="none"/>
+    <path d="M30,6 Q22,16 18,30" stroke="rgba(255,255,255,.18)" stroke-width="0.6" fill="none"/>
+    <path d="M70,6 Q78,16 82,30" stroke="rgba(255,255,255,.18)" stroke-width="0.6" fill="none"/>
+    <!-- chrome front bumper line -->
+    <path d="M4,8 Q50,2 96,8" stroke="#dfe3e6" stroke-width="1.1" fill="none" opacity="0.9"/>
+    <!-- black grille with slats, round Fiat badge in the middle -->
+    <path d="M40,7 L60,7 L61,12 L39,12 Z" fill="#0b0c0e" stroke="#8a8f98" stroke-width="0.6"/>
+    <path d="M41,8.6 L59,8.6" stroke="#3a3d43" stroke-width="0.5"/>
+    <path d="M41,10.4 L59,10.4" stroke="#3a3d43" stroke-width="0.5"/>
+    <circle cx="50" cy="9.5" r="1.4" fill="#dfe3e6" stroke="#7a7f85" stroke-width="0.4"/>
+    <!-- round headlights with chrome rings -->
+    <circle cx="20" cy="12" r="4.6" fill="none" stroke="#dfe3e6" stroke-width="1"/>
+    <circle cx="20" cy="12" r="3.5" fill="#fff8c0" opacity="0.95"/>
+    <circle cx="20" cy="12" r="1.5" fill="#fff" opacity="0.9"/>
+    <circle cx="80" cy="12" r="4.6" fill="none" stroke="#dfe3e6" stroke-width="1"/>
+    <circle cx="80" cy="12" r="3.5" fill="#fff8c0" opacity="0.95"/>
+    <circle cx="80" cy="12" r="1.5" fill="#fff" opacity="0.9"/>
   </svg>
   <div id="carBadge">AUDI</div>
 </div>
@@ -265,8 +282,8 @@ var MARKER_EVERY = 3; // a marker every 3rd photo along the road
 var MARKER_TARGET = 14;
 
 var CARS = {
-  audi: { name: "AUDI", top: "#c9ccd2", mid: "#8a8f98", bot: "#3a3d43", badge: "#d7dae0" },
-  fiat: { name: "FIAT", top: "#7ee787", mid: "#2da44e", bot: "#14532d", badge: "#7bffa8" }
+  audi: { name: "AUDI", top: "#55585e", mid: "#33353a", bot: "#1a1b1e", badge: "#d7dae0" },
+  fiat: { name: "FIAT", top: "#1e5c38", mid: "#14532d", bot: "#0a2e1a", badge: "#9ff0b3" }
 };
 var SPOTS = {
   tokyo:  { lat: 35.68,  lng: 139.69,  name: "Tokyo" },
