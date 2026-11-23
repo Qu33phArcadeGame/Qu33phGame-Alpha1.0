@@ -913,17 +913,21 @@ $("startBest").textContent = best > 0 ? "BEST " + best : "";
      no free 124 model was obtainable; Coby sent this one),
      paint re-tinted to dark racing green.
    Both models are normalised to 4 m long, centred, wheels at y=0.
-   THE TWO MODELS FACE OPPOSITE WAYS (proven by rendering each
-   from +Z and -Z): the Audi's front (grille/headlights) is at +Z,
-   the Fiat's front is at -Z. So the "rear chase" camera sits on a
-   different side per car: Audi on -Z, Fiat on +Z would be its rear
-   — but the Fiat's rear view hides its hood behind the cabin, while
-   its FRONT view (-Z side) shows the whole car (bumper, hood,
-   windshield, cabin, rear deck). Each car gets the angle that shows
-   it whole. The Audi's rear camera sits HIGH (y 5) so the
-   windshield and hood clear the roof — from a lower rear angle the
-   roof hides them and only roof/rear-window/trunk show. Camera is
-   a HIGH chase view: behind/above the car, looking forward over
+   THE TWO MODELS FACE OPPOSITE WAYS in their files (proven by
+   rendering each from +Z and -Z): the Audi's front (grille/
+   headlights) is at +Z, the Fiat's front is at -Z. The Fiat is
+   therefore rotated 180 deg in code (CAR3D.rotY) so BOTH fronts
+   point +Z and both cars face the same way on screen — hood at the
+   top, rear bumper at the bottom — with both chase cameras on the
+   -Z (rear) side. (The old build showed the Fiat from its FRONT
+   side instead, which put its headlights at the bottom of the
+   screen — Coby, Nov 23: "the fiat is backwards".) The Audi's
+   rear camera sits HIGH (y 6) so the windshield and hood clear the
+   roof — from a lower rear angle the roof hides them and only
+   roof/rear-window/trunk show. The Fiat's rear camera height is
+   chosen the same way (swept in the render-test harness): high
+   enough that the hood shows over the open cabin. Camera is a
+   HIGH chase view: behind/above the car, looking forward over
    the whole model (hood, windshield, roof, rear window, trunk all
    visible). Per-car camera framing: the Fiat 850 is
    lower/narrower than the TTS, so its camera sits a touch
@@ -952,23 +956,35 @@ var ready = { audi: false, fiat: false };
 var failed = { audi: false, fiat: false };
 var current3d = null;            // which car is shown in 3D, or null
 
-// which -> { file, paint material name, paint colour }
+// which -> { file, paint material name, paint colour, Y-rotation }
+// The two models face OPPOSITE ways in their files (Audi front +Z,
+// Fiat front -Z), so the Fiat is rotated 180 deg in code (rotY) so
+// BOTH fronts point +Z — both cars then face the same way on screen
+// (hood at the top, rear bumper at the bottom), with both chase
+// cameras on the -Z (rear) side. Coby, Nov 23: "the fiat is
+// backwards" — before this rotation the Fiat showed front-first.
 var CAR3D = {
-  audi: { file: 'models/audi-tts.glb', paint: 'carpaint', color: 0x3a3d43 },
-  fiat: { file: 'models/fiat-850.glb', paint: 'paint',    color: 0x14532d }
+  audi: { file: 'models/audi-tts.glb', paint: 'carpaint', color: 0x3a3d43, rotY: 0 },
+  fiat: { file: 'models/fiat-850.glb', paint: 'paint',    color: 0x14532d, rotY: Math.PI }
 };
 
-// which -> high chase camera { pos, lookAt target }. Audi: rear
-// (-Z) side, HIGH (y 6) so the windshield and hood clear the roof —
+// which -> high chase camera { pos, lookAt target }. BOTH cameras
+// sit on the -Z (rear) side now that the Fiat is rotated 180 deg in
+// code (see CAR3D.rotY) so its front points +Z like the Audi's.
+// Audi: HIGH (y 6) so the windshield and hood clear the roof —
 // proven by centreline sampling: from y 5 the hood is only a 28px
 // sliver, from y 6 it is a clear band above the windshield. Fiat:
-// FRONT (-Z) side — its front is at -Z, and from its rear side the
-// hood hides behind the cabin; from the front the whole car shows
-// (bumper, hood, windshield, cabin, rear deck). fitFov() below
-// handles the exact FOV per car and viewport.
+// rear (-Z) side at y 5.5 — swept in the render-test harness
+// (fiat-sweep.js, heights 3.5–6.5): the old claim that the hood
+// hides behind the cabin from the rear is WRONG — at y 5.5 the hood
+// is a clear green band above the windshield, with the whole car
+// (hood, windshield, cabin, rear deck, rear bumper) visible. At
+// y 3.5 the hood is only a thin strip; at y 6.5 the car shrinks
+// for no gain. fitFov() below handles the exact FOV per car and
+// viewport.
 var CAM3D = {
   audi: { pos: [0, 6.0, -4.0], tgt: [0, 0.5, 0] },
-  fiat: { pos: [0, 3.5, -5.2], tgt: [0, 0.5, 0] }
+  fiat: { pos: [0, 5.5, -5.2], tgt: [0, 0.5, 0] }
 };
 var camFor = 'audi';
 function applyCam(which){
@@ -1091,6 +1107,9 @@ function loadCar(which){
   var cfg = CAR3D[which];
   new GLTFLoader().load(cfg.file, function(gltf){
     var car = gltf.scene;
+    // Rotate first (Fiat 180 deg, see CAR3D.rotY) so the bounding
+    // box and centring below are computed on the rotated model.
+    if (cfg.rotY) car.rotation.y = cfg.rotY;
     // Normalize: scale so the car is 4 m long, centre it, wheels at y=0.
     var box = new THREE.Box3().setFromObject(car);
     var size = new THREE.Vector3(); box.getSize(size);
@@ -1147,6 +1166,9 @@ try {
   window.Car3D = { select: select, render: render, ready: function(){ return ready.audi && ready.fiat; },
                    readyCar: function(w){ return !!ready[w]; },
                    fov: function(){ return camera ? +camera.fov.toFixed(1) : null; },
+                   // Test hook: override the current car's camera (used by
+                   // the render-test harness to sweep camera heights).
+                   setCam: function(pos, tgt){ CAM3D[camFor] = { pos: pos.slice(), tgt: tgt.slice() }; applyCam(camFor); render(); },
                    debug: function(){
                      var out = { camPos: camera.position.toArray(), camTarget: CAM3D[camFor].tgt.slice(), vfov: camera ? +camera.fov.toFixed(1) : null };
                      Object.keys(models).forEach(function(k){
