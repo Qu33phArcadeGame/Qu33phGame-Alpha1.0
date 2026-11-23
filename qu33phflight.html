@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Qu33ph Flight</title>
+<style>
+img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;pointer-events:auto;}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Helvetica,Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;}
+.hidden{display:none!important;}
+#wrap{position:fixed;inset:0;background:#000;}
+#game{display:block;width:100%;height:100%;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges;}
+.marker-btn{position:fixed;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;
+  border:2.5px solid #fff;border-radius:4px 9px 9px 4px;
+  font-family:Helvetica,Arial,sans-serif;font-size:9.5px;font-weight:bold;letter-spacing:1px;
+  padding:5px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 3px 0 rgba(0,0,0,.55),0 6px 10px rgba(0,0,0,.4),inset 0 1.5px 0 rgba(255,255,255,.4),inset 0 -4px 7px rgba(0,0,0,.45);}
+.marker-btn::before{content:"";position:absolute;left:-15px;top:2px;bottom:2px;width:15px;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.35),inset 0 -3px 5px rgba(0,0,0,.45);}
+.marker-btn:active{transform:translateY(3px);}
+.btn{position:relative;margin-left:16px;border:2.5px solid #fff;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;font-size:11px;font-weight:bold;letter-spacing:1px;padding:8px 12px;border-radius:4px 9px 9px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 3px 0 rgba(0,0,0,.55),inset 0 1.5px 0 rgba(255,255,255,.4);}
+.btn::before{content:"";position:absolute;left:-16px;top:2px;bottom:2px;width:16px;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;}
+.btn:active{transform:translateY(3px);}
+.btn.gold{border-color:#e8a83c;color:#ffd24a;}
+.btn.green{border-color:#4dff8a;color:#7bffa8;}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;align-items:center;justify-content:center;gap:14px;
+  padding:10px 60px 0 70px;pointer-events:none;font-weight:bold;letter-spacing:1px;}
+#hud .pill{background:rgba(0,0,0,.55);border:2px solid #fff;border-radius:8px;padding:4px 10px;font-size:13px;white-space:nowrap;}
+#hud .pill.gold{color:#ffd24a;border-color:#e8a83c;}
+#hud .pill.green{color:#7bffa8;border-color:#4dff8a;}
+#hud .pill.red{color:#ff8080;border-color:#ff4d4d;}
+#altWrap{position:fixed;right:10px;top:64px;z-index:2000;pointer-events:none;text-align:center;}
+#altWrap .lab{font-size:9px;letter-spacing:2px;color:#ddd;text-shadow:0 1px 3px #000;}
+#altBar{width:12px;height:90px;margin:4px auto 0;border:2px solid #fff;border-radius:6px;background:rgba(0,0,0,.5);position:relative;overflow:hidden;}
+#altFill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,#7bffa8,#2f9fd8);height:50%;}
+/* view + touch buttons */
+#viewBtn{position:fixed;right:12px;bottom:16px;z-index:2000;}
+#climbBtns{position:fixed;left:12px;bottom:16px;z-index:2000;display:flex;flex-direction:column;gap:10px;}
+#climbBtns .btn{margin-left:16px;}
+#hint{position:fixed;left:0;right:0;bottom:16px;z-index:1500;text-align:center;font-size:10px;letter-spacing:1.5px;color:#ddd;text-shadow:0 1px 3px #000;pointer-events:none;}
+/* overlays */
+.overlay{position:fixed;inset:0;z-index:2500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:rgba(0,0,0,.72);text-align:center;padding:20px;}
+.overlay h1{margin:0;font-size:clamp(26px,8vw,44px);letter-spacing:6px;color:#fff;text-shadow:0 0 18px rgba(80,160,255,.8);}
+.overlay h1 .b{color:#7fb4ff;}
+.overlay p{margin:0;font-size:12px;letter-spacing:1px;color:#ddd;line-height:1.7;max-width:420px;}
+.overlay p .g{color:#7bffa8;font-weight:bold;}
+.overlay p .r{color:#ff8080;font-weight:bold;}
+.overlay p .b{color:#7fb4ff;font-weight:bold;}
+.overlay .big{font-size:clamp(30px,9vw,52px);font-weight:bold;color:#ffd24a;letter-spacing:2px;}
+.overlay .best{font-size:12px;letter-spacing:2px;color:#aaa;}
+.overlay .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+#pop{position:fixed;z-index:2100;pointer-events:none;font-weight:bold;font-size:18px;letter-spacing:1px;
+  text-shadow:0 2px 4px #000;opacity:0;transform:translate(-50%,-50%);}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game"></canvas></div>
+
+<button class="marker-btn" id="backBtn" onclick="location.href='season2.html'">&larr; SEASON 2</button>
+
+<div id="hud" class="hidden">
+  <span class="pill gold">SCORE <span id="scoreHud">0</span></span>
+  <span class="pill">TIME <span id="timeHud">60</span></span>
+  <span class="pill">BEST <span id="bestHud">0</span></span>
+  <span class="pill green">GREEN +2</span>
+  <span class="pill red">RED +1</span>
+</div>
+<div id="altWrap" class="hidden">
+  <div class="lab">ALT</div>
+  <div id="altBar"><div id="altFill"></div></div>
+</div>
+<div id="climbBtns" class="hidden">
+  <button class="btn" id="upBtn">▲ CLIMB</button>
+  <button class="btn" id="downBtn">▼ DIVE</button>
+</div>
+<button class="btn gold hidden" id="viewBtn">VIEW: TOP</button>
+<div id="hint" class="hidden">DRAG TO STEER &bull; DRAG UP/DOWN TO CLIMB / DIVE &bull; SPACE = VIEW</div>
+<div id="pop"></div>
+
+<div class="overlay" id="startScreen">
+  <h1>QU33PH <span class="b">FLIGHT</span></h1>
+  <p>Your plane is the <span class="b">blue Qu33ph marker</span>. No fighting here &mdash;
+  just fly into the other marker planes to collect them.<br>
+  Touch a <span class="g">GREEN</span> plane for <span class="g">+2</span> &bull;
+  touch a <span class="r">RED</span> plane for <span class="r">+1</span>.<br>
+  Points are the original Qu33ph marker points (red 1, green 2, blue 3).<br>
+  60 seconds. Steer with drag or arrow keys, climb / dive with W &amp; S or the buttons.<br>
+  Space switches the camera: top-down, isometric, chase.</p>
+  <div class="row"><button class="btn gold" id="startBtn">TAKE OFF</button></div>
+  <div class="best" id="startBest"></div>
+</div>
+
+<div class="overlay hidden" id="endScreen">
+  <h1>TIME UP</h1>
+  <div class="big" id="finalScore">0</div>
+  <div class="best" id="finalBest">BEST 0</div>
+  <div class="row">
+    <button class="btn green" id="againBtn">PLAY AGAIN</button>
+    <button class="btn" id="menuBtn">MENU</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════
+   QU33PH FLIGHT — a 2.5D sprite-stacking plane game, Qu33ph style.
+   Plain JS + HTML Canvas, custom pixel renderer, NO 3D engine.
+   The planes are the REAL Qu33ph marker art (repo-root blue.png,
+   green.png, red.png), stacked into slices so they read as 3D.
+   Scoring is the ORIGINAL Qu33ph marker points, from the GBA source
+   (qu33ph-gba-src/source/flip.c line 178):
+       int pts = p->color + 1;  // red 1, green 2, blue 3
+   So: touching a GREEN plane = +2, touching a RED plane = +1.
+   The player plane is BLUE (blue = 3 in the original, but the player
+   is never scored — only the planes you collect pay).
+   ═══════════════════════════════════════════════════════════════════ */
+var PTS_GREEN = 2;   // original Qu33ph: green = 2
+var PTS_RED = 1;     // original Qu33ph: red = 1
+
+var VW = 320, VH = 200;              // low-res offscreen canvas, scaled up crisp
+var WORLD_W = 2400, WORLD_H = 1600;  // world size in units
+var GAME_SECS = 60;
+var BEST_KEY = "qu33phFlightBest";
+
+var canvas = document.getElementById("game");
+var ctx = canvas.getContext("2d");
+var view = document.getElementById("game"); // (kept for clarity; canvas is the view)
+var low = document.createElement("canvas"); // the 320x200 pixel buffer
+low.width = VW; low.height = VH;
+var lctx = low.getContext("2d");
+lctx.imageSmoothingEnabled = false;
+
+function $(id){ return document.getElementById(id); }
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t){ return a + (b - a) * t; }
+function smooth(t){ return t * t * (3 - 2 * t); }
+function angLerp(a, b, t){ // shortest-arc angle lerp
+  var d = b - a;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return a + d * t;
+}
+function mulberry32(seed){
+  var s = seed >>> 0;
+  return function(){
+    s |= 0; s = (s + 0x6D2B79F5) | 0;
+    var t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ── state ─────────────────────────────────────────────────────── */
+var state = "start"; // start | play | end
+var score = 0, timeLeft = GAME_SECS, best = 0;
+try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
+var elapsed = 0, lastTs = 0;
+
+var player = { x: WORLD_W / 2, y: WORLD_H / 2, z: 90, h: 0, speed: 58 };
+var planes = [];   // collectible marker planes {x,y,z,h,speed,color,pts,active,respawn}
+var clouds = [];   // {x,y,z,s,drift}
+var popups = [];   // {x,y,z,txt,color,t}
+var parts = [];    // {x,y,z,vx,vy,vz,color,t}
+
+var keys = {};
+var drag = null;   // {x0,y0,dx,dy} active pointer drag
+var climbBtn = 0;  // -1 dive, +1 climb (touch buttons)
+
+/* camera: three views, smoothly interpolated (no hard cuts) */
+var VIEWS = [
+  { name: "TOP",    tilt: 0.15, scale: 0.42, size: 30, stack: 2, yOff: 0  },
+  { name: "ISO",    tilt: 0.85, scale: 0.38, size: 44, stack: 5, yOff: 0  },
+  { name: "CHASE",  tilt: 1.22, scale: 0.85, size: 66, stack: 7, yOff: 26 }
+];
+var viewIdx = 0;
+var cam = { tilt: 0.15, scale: 0.42, size: 30, stack: 2, yOff: 0, head: Math.PI / 2 };
+var camFrom = null, camT = 1, CAM_TIME = 1.0; // transition state (1 = settled)
+var camX = player.x, camY = player.y;
+
+function viewTarget(){
+  var v = VIEWS[viewIdx];
+  // MAP views (top/iso) look north-up (heading PI/2); CHASE looks along the player.
+  var head = viewIdx === 2 ? player.h : Math.PI / 2;
+  return { tilt: v.tilt, scale: v.scale, size: v.size, stack: v.stack, yOff: v.yOff, head: head };
+}
+function cycleView(){
+  viewIdx = (viewIdx + 1) % VIEWS.length;
+  camFrom = { tilt: cam.tilt, scale: cam.scale, size: cam.size, stack: cam.stack, yOff: cam.yOff, head: cam.head };
+  camT = 0;
+  $("viewBtn").textContent = "VIEW: " + VIEWS[viewIdx].name;
+}
+function stepCamera(dt){
+  var tgt = viewTarget();
+  if (camT < 1) {
+    camT = Math.min(1, camT + dt / CAM_TIME);
+    var k = smooth(camT);
+    cam.tilt = lerp(camFrom.tilt, tgt.tilt, k);
+    cam.scale = lerp(camFrom.scale, tgt.scale, k);
+    cam.size = lerp(camFrom.size, tgt.size, k);
+    cam.stack = lerp(camFrom.stack, tgt.stack, k);
+    cam.yOff = lerp(camFrom.yOff, tgt.yOff, k);
+    cam.head = angLerp(camFrom.head, tgt.head, k);
+  } else {
+    // CHASE heading follows the player even when settled
+    if (viewIdx === 2) cam.head = angLerp(cam.head, player.h, Math.min(1, dt * 4));
+    cam.tilt = tgt.tilt; cam.scale = tgt.scale; cam.size = tgt.size;
+    cam.stack = tgt.stack; cam.yOff = tgt.yOff;
+  }
+}
+
+/* ── world: seeded procedural sea + islands + clouds ───────────── */
+var worldMap = document.createElement("canvas");
+var seed = (Math.random() * 1e9) | 0;
+var rng = mulberry32(seed);
+function buildWorld(){
+  var MW = 1200, MH = 800; // 0.5 px per world unit
+  worldMap.width = MW; worldMap.height = MH;
+  var g = worldMap.getContext("2d");
+  // sea
+  var grad = g.createLinearGradient(0, 0, 0, MH);
+  grad.addColorStop(0, "#1f8fd0"); grad.addColorStop(0.55, "#1678b4"); grad.addColorStop(1, "#0d5a8c");
+  g.fillStyle = grad; g.fillRect(0, 0, MW, MH);
+  // sea sparkle
+  g.fillStyle = "rgba(255,255,255,0.10)";
+  for (var i = 0; i < 260; i++) {
+    g.fillRect(rng() * MW, rng() * MH, 2, 1);
+  }
+  // islands: green blobs with sand rim
+  for (var k = 0; k < 14; k++) {
+    var cx = 60 + rng() * (MW - 120), cy = 50 + rng() * (MH - 100);
+    var rx = 26 + rng() * 70, ry = 18 + rng() * 42;
+    g.fillStyle = "#e8d696";
+    g.beginPath(); g.ellipse(cx, cy, rx + 5, ry + 4, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#2ea05a";
+    g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#1e7d46";
+    g.beginPath(); g.ellipse(cx - rx * 0.25, cy - ry * 0.15, rx * 0.55, ry * 0.5, 0, 0, Math.PI * 2); g.fill();
+    // trees
+    g.fillStyle = "#14663a";
+    for (var t = 0; t < 4; t++) {
+      var tx = cx - rx * 0.6 + rng() * rx * 1.2, ty = cy - ry * 0.55 + rng() * ry * 1.1;
+      g.beginPath(); g.arc(tx, ty, 3 + rng() * 3, 0, Math.PI * 2); g.fill();
+    }
+  }
+  // clouds (drift slowly, drawn as sprites with altitude)
+  clouds = [];
+  for (var c = 0; c < 16; c++) {
+    clouds.push({
+      x: rng() * WORLD_W, y: rng() * WORLD_H,
+      z: 120 + rng() * 40, s: 26 + rng() * 42,
+      drift: 2 + rng() * 4
+    });
+  }
+}
+
+/* ── marker sprites: real Qu33ph marker art, stacked into a plane ──
+   The nose is the end OPPOSITE the cap in every marker:
+   - blue.png is already horizontal, black Qu33ph label end = nose, points right.
+   - green/red.png are diagonal (cap top-left); rotate -45deg in canvas so the
+     tail end (nose) points right. (Verified in PIL: canvas rotate(-PI/4)
+     == PIL rotate(+45) gives a horizontal marker, nose right.) */
+var SPR = { blue: null, green: null, red: null };       // normal sprite canvases
+var SPRD = { blue: null, green: null, red: null };      // darkened slices
+var SPR_W = 96, SPR_H = 40;
+var imgsLoaded = 0, imgsTotal = 3, spritesReady = false;
+
+function makeSprite(img, rot){
+  var c = document.createElement("canvas");
+  c.width = SPR_W; c.height = SPR_H;
+  var g = c.getContext("2d");
+  g.imageSmoothingEnabled = true;
+  g.translate(SPR_W / 2, SPR_H / 2);
+  if (rot) g.rotate(rot);
+  // fit the marker inside the sprite, keeping its aspect
+  var iw = img.width, ih = img.height;
+  var s = Math.min((SPR_W - 8) / iw, (SPR_H - 6) / ih);
+  g.drawImage(img, -iw * s / 2, -ih * s / 2, iw * s, ih * s);
+  return c;
+}
+function makeDark(src){
+  var c = document.createElement("canvas");
+  c.width = src.width; c.height = src.height;
+  var g = c.getContext("2d");
+  g.drawImage(src, 0, 0);
+  g.globalCompositeOperation = "source-atop";
+  g.fillStyle = "rgba(10,10,40,0.45)";
+  g.fillRect(0, 0, c.width, c.height);
+  return c;
+}
+function loadSprites(done){
+  var defs = [
+    { key: "blue",  src: "blue.png",  rot: 0 },
+    { key: "green", src: "green.png", rot: -Math.PI / 4 },
+    { key: "red",   src: "red.png",   rot: -Math.PI / 4 }
+  ];
+  var left = defs.length, timedOut = false;
+  var finish = function(){
+    if (spritesReady) return;
+    spritesReady = true;
+    if (done) done();
+  };
+  setTimeout(function(){ if (!timedOut) { timedOut = true; finish(); } }, 2000);
+  defs.forEach(function(d){
+    var im = new Image();
+    im.onload = function(){
+      SPR[d.key] = makeSprite(im, d.rot);
+      SPRD[d.key] = makeDark(SPR[d.key]);
+      if (--left <= 0) finish();
+    };
+    im.onerror = function(){ if (--left <= 0) finish(); };
+    im.src = d.src;
+  });
+}
+
+/* ── projection: one affine map for the ground, same math for sprites ──
+   Camera looks along heading cam.head. forward = along view, right = lateral.
+   screenX = cx + right*scale
+   screenY = cy - (forward*cosTilt + z*sinTilt)*scale + yOff
+   MAP views use head = PI/2 (north-up); CHASE uses head = player heading. */
+function project(x, y, z){
+  var dx = x - camX, dy = y - camY;
+  var H = cam.head, s = cam.scale, ct = Math.cos(cam.tilt), st = Math.sin(cam.tilt);
+  var fwd = dx * Math.cos(H) + dy * Math.sin(H);
+  var rgt = dx * Math.sin(H) - dy * Math.cos(H);
+  return {
+    x: VW / 2 + rgt * s,
+    y: VH / 2 - (fwd * ct + z * st) * s + cam.yOff
+  };
+}
+function noseAngle(h){
+  // screen direction of a horizontal nose vector (cos h, sin h, 0)
+  var d = cam.head - h;
+  return Math.atan2(-Math.cos(d) * Math.cos(cam.tilt), Math.sin(d));
+}
+
+/* ── planes ────────────────────────────────────────────────────── */
+function spawnPlanes(){
+  planes = [];
+  var i, c;
+  for (i = 0; i < 4; i++) planes.push(mkPlane("green", PTS_GREEN, 40 + Math.random() * 10));
+  for (i = 0; i < 4; i++) planes.push(mkPlane("red", PTS_RED, 30 + Math.random() * 8));
+  // spread them out at start
+  for (i = 0; i < planes.length; i++) {
+    c = planes[i];
+    c.x = 200 + Math.random() * (WORLD_W - 400);
+    c.y = 200 + Math.random() * (WORLD_H - 400);
+    c.z = 50 + Math.random() * 100;
+    c.h = Math.random() * Math.PI * 2;
+  }
+}
+function mkPlane(color, pts, speed){
+  return { x: 0, y: 0, z: 90, h: 0, speed: speed, color: color, pts: pts, active: true, respawn: 0, wob: Math.random() * Math.PI * 2 };
+}
+function respawnPlane(p){
+  // respawn away from the player so you have to fly to it
+  var a = Math.random() * Math.PI * 2, d = 500 + Math.random() * 500;
+  p.x = (player.x + Math.cos(a) * d + WORLD_W) % WORLD_W;
+  p.y = (player.y + Math.sin(a) * d + WORLD_H) % WORLD_H;
+  p.z = 50 + Math.random() * 100;
+  p.h = Math.random() * Math.PI * 2;
+  p.active = true;
+}
+function wrap(v, m){ return ((v % m) + m) % m; }
+
+/* collect: touching a plane pays its ORIGINAL Qu33ph marker points */
+function tryCollect(p){
+  if (!p.active) return;
+  var dx = p.x - player.x, dy = p.y - player.y;
+  // world wraps, so use the shortest wrapped distance
+  if (dx > WORLD_W / 2) dx -= WORLD_W; else if (dx < -WORLD_W / 2) dx += WORLD_W;
+  if (dy > WORLD_H / 2) dy -= WORLD_H; else if (dy < -WORLD_H / 2) dy += WORLD_H;
+  var dz = p.z - player.z;
+  if (dx * dx + dy * dy < 30 * 30 && Math.abs(dz) < 24) {
+    p.active = false;
+    p.respawn = 0.9;
+    score += p.pts; // green +2, red +1 — never swapped, never inflated
+    addPopup(p.x, p.y, p.z, "+" + p.pts, p.color === "green" ? "#7bffa8" : "#ff8080");
+    burst(p.x, p.y, p.z, p.color);
+    blip(p.color === "green" ? 880 : 660);
+    updateHud();
+  }
+}
+function addPopup(x, y, z, txt, color){
+  popups.push({ x: x, y: y, z: z, txt: txt, color: color, t: 0 });
+  if (popups.length > 12) popups.shift();
+}
+function burst(x, y, z, color){
+  for (var i = 0; i < 10; i++) {
+    var a = Math.random() * Math.PI * 2, s = 12 + Math.random() * 26;
+    parts.push({ x: x, y: y, z: z, vx: Math.cos(a) * s, vy: Math.sin(a) * s, vz: (Math.random() - 0.3) * 20, color: color, t: 0 });
+  }
+}
+
+/* tiny collect blip (WebAudio, no assets) */
+var actx = null;
+function blip(freq){
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = "square"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.08, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.18);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + 0.2);
+  } catch (e) { /* sound is optional */ }
+}
+
+/* ── update ────────────────────────────────────────────────────── */
+function step(dt){
+  elapsed += dt;
+  if (state === "play") {
+    timeLeft -= dt;
+    if (timeLeft <= 0) { timeLeft = 0; endGame(); }
+  }
+  // steering: keys + drag + climb buttons
+  var turn = 0, climb = 0;
+  if (keys["ArrowLeft"] || keys["a"] || keys["A"]) turn -= 1;
+  if (keys["ArrowRight"] || keys["d"] || keys["D"]) turn += 1;
+  if (keys["ArrowUp"] || keys["w"] || keys["W"]) climb += 1;
+  if (keys["ArrowDown"] || keys["s"] || keys["S"]) climb -= 1;
+  if (drag) {
+    turn += clamp(drag.dx / 40, -1, 1);
+    climb += clamp(-drag.dy / 40, -1, 1);
+  }
+  climb += climbBtn;
+  player.h += turn * 1.7 * dt;
+  player.z = clamp(player.z + climb * 45 * dt, 30, 170);
+  player.x = wrap(player.x + Math.cos(player.h) * player.speed * dt, WORLD_W);
+  player.y = wrap(player.y + Math.sin(player.h) * player.speed * dt, WORLD_H);
+  // camera follows the player (smoothed)
+  camX = lerp(camX, player.x, Math.min(1, dt * 5));
+  camY = lerp(camY, player.y, Math.min(1, dt * 5));
+  stepCamera(dt);
+  // collectible planes wander gently
+  for (var i = 0; i < planes.length; i++) {
+    var p = planes[i];
+    if (!p.active) {
+      p.respawn -= dt;
+      if (p.respawn <= 0) respawnPlane(p);
+      continue;
+    }
+    p.wob += dt;
+    p.h += Math.sin(p.wob * 0.7) * 0.35 * dt;
+    p.x = wrap(p.x + Math.cos(p.h) * p.speed * dt, WORLD_W);
+    p.y = wrap(p.y + Math.sin(p.h) * p.speed * dt, WORLD_H);
+    if (state === "play") tryCollect(p);
+  }
+  // clouds drift
+  for (var c = 0; c < clouds.length; c++) {
+    clouds[c].x = wrap(clouds[c].x + clouds[c].drift * dt, WORLD_W);
+  }
+  // popups + particles age
+  for (var j = popups.length - 1; j >= 0; j--) {
+    popups[j].t += dt; popups[j].z += 14 * dt;
+    if (popups[j].t > 1.1) popups.splice(j, 1);
+  }
+  for (var k = parts.length - 1; k >= 0; k--) {
+    var pt = parts[k];
+    pt.t += dt;
+    pt.x = wrap(pt.x + pt.vx * dt, WORLD_W);
+    pt.y = wrap(pt.y + pt.vy * dt, WORLD_H);
+    pt.z += pt.vz * dt;
+    if (pt.t > 0.7) parts.splice(k, 1);
+  }
+  if (state === "play") updateHud();
+}
+
+/* ── render ────────────────────────────────────────────────────── */
+function drawPlane(g, spr, sprD, sx, sy, size, stack, angle){
+  if (!spr) return; // sprite not loaded yet — draw nothing, not a placeholder shape
+  var w = size, h = size * (SPR_H / SPR_W);
+  var n = Math.max(1, Math.round(stack));
+  var stepPx = Math.max(1, size * 0.022);
+  g.save();
+  g.translate(sx, sy);
+  g.rotate(angle);
+  // lower slices (dark) build the 3D wall; the top slice is the bright top
+  for (var i = n - 1; i >= 1; i--) {
+    g.drawImage(sprD, -w / 2, -h / 2 - i * stepPx, w, h);
+  }
+  g.drawImage(spr, -w / 2, -h / 2, w, h);
+  g.restore();
+}
+function drawShadow(g, sx, sy, size){
+  g.fillStyle = "rgba(0,20,50,0.30)";
+  g.beginPath();
+  g.ellipse(sx, sy, size * 0.42, size * 0.13, 0, 0, Math.PI * 2);
+  g.fill();
+}
+function render(){
+  var g = lctx;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.imageSmoothingEnabled = false;
+  g.fillStyle = "#0d5a8c";
+  g.fillRect(0, 0, VW, VH);
+  var H = cam.head, s = cam.scale, ct = Math.cos(cam.tilt), st = Math.sin(cam.tilt);
+  // ground (sea + islands) via one affine draw of the pre-rendered world map
+  var a = s * Math.sin(H), b = -s * ct * Math.cos(H);
+  var c = -s * Math.cos(H), d = -s * ct * Math.sin(H);
+  var e = VW / 2 - s * Math.sin(H) * camX + s * Math.cos(H) * camY;
+  var f = VH / 2 + s * ct * Math.cos(H) * camX + s * ct * Math.sin(H) * camY + cam.yOff;
+  g.setTransform(a, b, c, d, e, f);
+  g.drawImage(worldMap, 0, 0, WORLD_W, WORLD_H);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  // cloud shadows on the sea
+  for (var ci = 0; ci < clouds.length; ci++) {
+    var cl = clouds[ci];
+    var sh = project(cl.x, cl.y, 0);
+    var r = cl.s * s * 0.9;
+    if (sh.x > -60 && sh.x < VW + 60 && sh.y > -40 && sh.y < VH + 40) {
+      g.fillStyle = "rgba(0,20,50,0.18)";
+      g.beginPath(); g.ellipse(sh.x, sh.y, r, r * 0.32, 0, 0, Math.PI * 2); g.fill();
+    }
+  }
+  // drawables, painter-sorted by screen Y (near = lower on screen = drawn last)
+  var items = [];
+  for (var k = 0; k < clouds.length; k++) {
+    var cd = clouds[k];
+    var cp = project(cd.x, cd.y, cd.z);
+    items.push({ y: cp.y, kind: "cloud", p: cp, s: cd.s * s });
+  }
+  for (var pi = 0; pi < planes.length; pi++) {
+    var pl = planes[pi];
+    if (!pl.active) continue;
+    var pp = project(pl.x, pl.y, pl.z);
+    items.push({ y: pp.y, kind: "plane", p: pp, pl: pl });
+  }
+  var ppos = project(player.x, player.y, player.z);
+  items.push({ y: ppos.y, kind: "player", p: ppos });
+  items.sort(function(m, n){ return m.y - n.y; });
+  for (var it = 0; it < items.length; it++) {
+    var o = items[it];
+    if (o.kind === "cloud") {
+      var cs = Math.max(4, o.s);
+      g.fillStyle = "rgba(255,255,255,0.92)";
+      g.beginPath();
+      g.arc(o.p.x - cs * 0.5, o.p.y, cs * 0.42, 0, Math.PI * 2);
+      g.arc(o.p.x, o.p.y - cs * 0.22, cs * 0.55, 0, Math.PI * 2);
+      g.arc(o.p.x + cs * 0.5, o.p.y, cs * 0.42, 0, Math.PI * 2);
+      g.fill();
+    } else if (o.kind === "plane" || o.kind === "player") {
+      var isP = o.kind === "player";
+      var col = isP ? "blue" : o.pl.color;
+      var gp = project(isP ? player.x : o.pl.x, isP ? player.y : o.pl.y, 0);
+      drawShadow(g, gp.x, gp.y, cam.size * (isP ? 1 : 0.8));
+      drawPlane(g, SPR[col], SPRD[col], o.p.x, o.p.y, cam.size * (isP ? 1 : 0.8),
+        cam.stack, noseAngle(isP ? player.h : o.pl.h));
+    }
+  }
+  // particles
+  for (var q = 0; q < parts.length; q++) {
+    var pt = parts[q];
+    var qp = project(pt.x, pt.y, pt.z);
+    g.fillStyle = pt.color === "green" ? "#7bffa8" : "#ff8080";
+    g.globalAlpha = 1 - pt.t / 0.7;
+    g.fillRect(qp.x - 1, qp.y - 1, 2, 2);
+  }
+  g.globalAlpha = 1;
+  // score popups
+  g.textAlign = "center";
+  g.font = "bold 11px Helvetica,Arial,sans-serif";
+  for (var u = 0; u < popups.length; u++) {
+    var pu = popups[u];
+    var up = project(pu.x, pu.y, pu.z);
+    g.globalAlpha = 1 - pu.t / 1.1;
+    g.fillStyle = pu.color;
+    g.fillText(pu.txt, up.x, up.y);
+  }
+  g.globalAlpha = 1;
+  // upscale the 320x200 buffer crisp onto the real canvas
+  var cw = canvas.width, ch = canvas.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, cw, ch);
+  var sc = Math.min(cw / VW, ch / VH);
+  var dw = VW * sc, dh = VH * sc;
+  ctx.drawImage(low, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+}
+
+/* ── HUD / screens ─────────────────────────────────────────────── */
+function updateHud(){
+  $("scoreHud").textContent = score;
+  $("timeHud").textContent = Math.ceil(timeLeft);
+  $("bestHud").textContent = best;
+  var altPct = clamp((player.z - 30) / (170 - 30), 0, 1);
+  $("altFill").style.height = Math.round(altPct * 100) + "%";
+}
+function show(id, on){
+  $(id).classList.toggle("hidden", !on);
+}
+function startGame(){
+  score = 0; timeLeft = GAME_SECS; elapsed = 0;
+  player.x = WORLD_W / 2; player.y = WORLD_H / 2; player.z = 90; player.h = 0;
+  camX = player.x; camY = player.y;
+  viewIdx = 0;
+  cam.tilt = VIEWS[0].tilt; cam.scale = VIEWS[0].scale; cam.size = VIEWS[0].size;
+  cam.stack = VIEWS[0].stack; cam.yOff = VIEWS[0].yOff; cam.head = Math.PI / 2;
+  camT = 1; camFrom = null;
+  $("viewBtn").textContent = "VIEW: TOP";
+  spawnPlanes();
+  popups = []; parts = [];
+  state = "play";
+  show("startScreen", false); show("endScreen", false);
+  show("hud", true); show("altWrap", true); show("climbBtns", true);
+  show("viewBtn", true); show("hint", true);
+  updateHud();
+}
+function endGame(){
+  state = "end";
+  if (score > best) {
+    best = score;
+    try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
+  }
+  $("finalScore").textContent = score;
+  $("finalBest").textContent = "BEST " + best;
+  show("endScreen", true);
+  show("hud", false); show("altWrap", false); show("climbBtns", false);
+  show("viewBtn", false); show("hint", false);
+}
+
+/* ── input ─────────────────────────────────────────────────────── */
+window.addEventListener("keydown", function(e){
+  keys[e.key] = true;
+  if (e.key === " ") { e.preventDefault(); if (state === "play") cycleView(); }
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].indexOf(e.key) >= 0) e.preventDefault();
+});
+window.addEventListener("keyup", function(e){ keys[e.key] = false; });
+
+var canvasEl = canvas;
+function ptrPos(e){
+  var r = canvasEl.getBoundingClientRect();
+  var t = e.touches ? e.touches[0] : e;
+  return { x: t.clientX - r.left, y: t.clientY - r.top };
+}
+canvasEl.addEventListener("pointerdown", function(e){
+  if (state !== "play") return;
+  var p = ptrPos(e);
+  drag = { x0: p.x, y0: p.y, dx: 0, dy: 0 };
+  canvasEl.setPointerCapture(e.pointerId);
+});
+canvasEl.addEventListener("pointermove", function(e){
+  if (!drag) return;
+  var p = ptrPos(e);
+  drag.dx = p.x - drag.x0;
+  drag.dy = p.y - drag.y0;
+});
+function endDrag(){ drag = null; }
+canvasEl.addEventListener("pointerup", endDrag);
+canvasEl.addEventListener("pointercancel", endDrag);
+
+function holdBtn(el, val){
+  var on = function(e){ e.preventDefault(); climbBtn = val; };
+  var off = function(){ if (climbBtn === val) climbBtn = 0; };
+  el.addEventListener("pointerdown", on);
+  el.addEventListener("pointerup", off);
+  el.addEventListener("pointerleave", off);
+  el.addEventListener("pointercancel", off);
+}
+holdBtn($("upBtn"), 1);
+holdBtn($("downBtn"), -1);
+$("viewBtn").addEventListener("click", function(){ if (state === "play") cycleView(); });
+$("startBtn").addEventListener("click", startGame);
+$("againBtn").addEventListener("click", startGame);
+$("menuBtn").addEventListener("click", function(){ location.href = "season2.html"; });
+
+/* ── resize + main loop ────────────────────────────────────────── */
+function resize(){
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(window.innerWidth * dpr);
+  canvas.height = Math.round(window.innerHeight * dpr);
+}
+window.addEventListener("resize", resize);
+resize();
+
+function frame(ts){
+  var dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0.016;
+  lastTs = ts;
+  step(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+
+buildWorld();
+spawnPlanes();
+$("startBest").textContent = best > 0 ? "BEST " + best : "";
+$("bestHud").textContent = best;
+loadSprites(function(){ /* sprites swap in when ready; game already runs */ });
+requestAnimationFrame(frame);
+
+/* debug / verification handle (lets a browser test drive the real game:
+   move the player onto a plane, read the score, switch views) */
+window.__flight = {
+  state: function(){ return { state: state, score: score, timeLeft: timeLeft, best: best, view: VIEWS[viewIdx].name, camT: camT }; },
+  player: player,
+  get planes(){ return planes; }, // getter: spawnPlanes() reassigns the array
+  start: startGame, cycleView: cycleView,
+  collectAt: function(x, y, z){ player.x = x; player.y = y; player.z = z; },
+  pts: { green: PTS_GREEN, red: PTS_RED }
+};
+</script>
+</body>
+</html>
