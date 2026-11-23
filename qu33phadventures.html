@@ -12,6 +12,14 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-
 html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Helvetica,Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;}
 .hidden{display:none!important;}
 #pano{position:fixed;inset:0;background:#0a1420;}
+/* Mapillary viewer chrome must never show (the Viewer is also created
+   with zoom/sequence/direction/bearing disabled). The attribution
+   credit is divs/links, not buttons, so it stays visible as required. */
+#pano button,
+#pano .mapillary-zoom-container, #pano .mapillary-sequence-container,
+#pano .mapillary-direction-container, #pano .mapillary-bearing-container,
+#pano .mapillary-cover-container, #pano .mapillary-slider-container
+{display:none!important;}
 .marker-btn{position:fixed;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
   background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;
   border:2.5px solid #fff;border-radius:4px 9px 9px 4px;
@@ -48,7 +56,10 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 #driveCtrls{position:fixed;left:0;right:0;bottom:0;z-index:2100;display:flex;justify-content:space-between;align-items:flex-end;padding:0 12px 14px;pointer-events:none;}
 #driveCtrls .grp{display:flex;gap:10px;pointer-events:auto;}
 #driveCtrls .btn{margin-left:16px;min-width:64px;text-align:center;padding:12px 10px;font-size:13px;}
-#gasBtn{border-color:#4dff8a;color:#7bffa8;}
+#gasBtn{border-color:#4dff8a;color:#7bffa8;background:linear-gradient(180deg,#1d7a3a 0%,#0d5c26 46%,#063d17 100%);
+  min-width:96px;padding:16px 16px;font-size:16px;letter-spacing:2px;
+  box-shadow:0 3px 0 rgba(0,0,0,.55),0 0 16px rgba(77,255,138,.55),inset 0 1.5px 0 rgba(255,255,255,.4);}
+#gasBtn:active{transform:translateY(3px);}
 #toast{position:fixed;left:0;right:0;top:64px;z-index:2200;text-align:center;pointer-events:none;font-size:13px;font-weight:bold;letter-spacing:1px;color:#ffd24a;text-shadow:0 2px 4px #000;opacity:0;transition:opacity .3s;}
 #pop{position:fixed;left:50%;top:42%;z-index:2100;pointer-events:none;font-weight:bold;font-size:26px;letter-spacing:1px;
   text-shadow:0 2px 4px #000;opacity:0;transform:translate(-50%,-50%);}
@@ -98,19 +109,52 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 </div>
 
 <div id="carHood" class="hidden">
-  <svg id="hoodSvg" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
+  <!-- AUDI hood: wide, flat, angular; sharp LED daytime-running-light
+       strips; wide trapezoidal single-frame grille at the front edge. -->
+  <svg id="hoodAudi" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
     <defs>
-      <linearGradient id="hoodGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#c9ccd2" id="hoodTop"/>
-        <stop offset=".55" stop-color="#8a8f98" id="hoodMid"/>
-        <stop offset="1" stop-color="#3a3d43" id="hoodBot"/>
+      <linearGradient id="hoodGradAudi" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#c9ccd2" id="audiTop"/>
+        <stop offset=".55" stop-color="#8a8f98" id="audiMid"/>
+        <stop offset="1" stop-color="#3a3d43" id="audiBot"/>
       </linearGradient>
     </defs>
-    <path d="M0,32 L13,11 Q50,1 87,11 L100,32 Z" fill="url(#hoodGrad)"/>
-    <path d="M30,6.5 Q50,2.5 70,6.5 L65,10.5 Q50,7.5 35,10.5 Z" fill="#101418" opacity="0.9"/>
-    <ellipse cx="24" cy="15" rx="5.5" ry="2.2" fill="#fff8c0" opacity="0.95"/>
-    <ellipse cx="76" cy="15" rx="5.5" ry="2.2" fill="#fff8c0" opacity="0.95"/>
-    <path d="M50,4 L50,30" stroke="rgba(255,255,255,.35)" stroke-width="0.7"/>
+    <path d="M0,32 L7,15 L50,7 L93,15 L100,32 Z" fill="url(#hoodGradAudi)"/>
+    <path d="M7,15 L50,7" stroke="rgba(255,255,255,.45)" stroke-width="0.7"/>
+    <path d="M93,15 L50,7" stroke="rgba(255,255,255,.45)" stroke-width="0.7"/>
+    <path d="M10,17 L28,13 L31,17.5 L13,20 Z" fill="#14171c" opacity="0.9"/>
+    <path d="M90,17 L72,13 L69,17.5 L87,20 Z" fill="#14171c" opacity="0.9"/>
+    <path d="M12,16.5 L27,13.2 L28.5,14.8 L13.5,18 Z" fill="#e8f6ff" opacity="0.98"/>
+    <path d="M88,16.5 L73,13.2 L71.5,14.8 L86.5,18 Z" fill="#e8f6ff" opacity="0.98"/>
+    <path d="M35,23 L65,23 L69,31 L31,31 Z" fill="#101318" stroke="#c9ccd2" stroke-width="0.8"/>
+    <path d="M37,25.5 L63,25.5" stroke="#5a6068" stroke-width="0.7"/>
+    <path d="M36,28 L64,28" stroke="#5a6068" stroke-width="0.7"/>
+    <path d="M35,30 L65,30" stroke="#5a6068" stroke-width="0.5"/>
+    <path d="M50,7 L50,23" stroke="rgba(255,255,255,.3)" stroke-width="0.6"/>
+  </svg>
+  <!-- FIAT 500 hood: rounder, higher, bubbly retro dome; big round
+       headlights with chrome rings; small chrome grille at the front. -->
+  <svg id="hoodFiat" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true" style="display:none">
+    <defs>
+      <linearGradient id="hoodGradFiat" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7ee787" id="fiatTop"/>
+        <stop offset=".55" stop-color="#2da44e" id="fiatMid"/>
+        <stop offset="1" stop-color="#14532d" id="fiatBot"/>
+      </linearGradient>
+    </defs>
+    <path d="M0,32 Q4,12 50,2 Q96,12 100,32 Z" fill="url(#hoodGradFiat)"/>
+    <path d="M18,12 Q50,4 82,12" stroke="rgba(255,255,255,.35)" stroke-width="0.8" fill="none"/>
+    <ellipse cx="23" cy="17" rx="5.8" ry="2.3" fill="none" stroke="#dfe3e6" stroke-width="1"/>
+    <ellipse cx="23" cy="17" rx="4.5" ry="1.8" fill="#fff8c0" opacity="0.95"/>
+    <ellipse cx="23" cy="17" rx="1.9" ry="0.8" fill="#fff" opacity="0.9"/>
+    <ellipse cx="77" cy="17" rx="5.8" ry="2.3" fill="none" stroke="#dfe3e6" stroke-width="1"/>
+    <ellipse cx="77" cy="17" rx="4.5" ry="1.8" fill="#fff8c0" opacity="0.95"/>
+    <ellipse cx="77" cy="17" rx="1.9" ry="0.8" fill="#fff" opacity="0.9"/>
+    <path d="M43,24 Q50,22 57,24 L57,29 Q50,31 43,29 Z" fill="#c8ccd0" stroke="#7a7f85" stroke-width="0.6"/>
+    <path d="M45,25.5 L55,25.5" stroke="#7a7f85" stroke-width="0.5"/>
+    <path d="M45,27.5 L55,27.5" stroke="#7a7f85" stroke-width="0.5"/>
+    <ellipse cx="50" cy="20.5" rx="1.7" ry="0.7" fill="#dfe3e6" stroke="#7a7f85" stroke-width="0.4"/>
+    <path d="M50,3 Q50,12 50,22" stroke="rgba(255,255,255,.3)" stroke-width="0.6" fill="none"/>
   </svg>
   <div id="carBadge">AUDI</div>
 </div>
@@ -340,9 +384,12 @@ function selectCar(which){
   $("carAudi").classList.toggle("sel", which === "audi");
   $("carFiat").classList.toggle("sel", which === "fiat");
   var c = CARS[which];
-  $("hoodTop").setAttribute("stop-color", c.top);
-  $("hoodMid").setAttribute("stop-color", c.mid);
-  $("hoodBot").setAttribute("stop-color", c.bot);
+  var pfx = which === "audi" ? "audi" : "fiat";
+  $(pfx + "Top").setAttribute("stop-color", c.top);
+  $(pfx + "Mid").setAttribute("stop-color", c.mid);
+  $(pfx + "Bot").setAttribute("stop-color", c.bot);
+  $("hoodAudi").style.display = which === "audi" ? "block" : "none";
+  $("hoodFiat").style.display = which === "fiat" ? "block" : "none";
   $("carBadge").textContent = c.name;
   $("carBadge").style.color = c.badge;
   $("carHud").textContent = c.name;
@@ -476,7 +523,14 @@ function ensureViewer(){
     viewer = new mapillary.Viewer({
       accessToken: MAPILLARY_TOKEN,
       container: $("pano"),
-      component: { cover: false }
+      component: {
+        attribution: true,  // credit stays visible (Mapillary license)
+        bearing: false,     // no compass indicator
+        cover: false,
+        direction: false,   // no spatial direction arrows
+        sequence: false,    // no top sequence / play bar
+        zoom: false         // no + / - zoom buttons
+      }
     });
     viewer.on("image", onViewerImage);
     return true;
@@ -578,7 +632,60 @@ function checkCollections(){
     if (currentPos && haversineM(currentPos, { lat: m.lat, lng: m.lng }) < 12) collectMarker(m);
   }
 }
+/* ── marker projection: markers sit IN the 3D world ────────────── */
+/* The viewer's own project() maps a marker's ground position to canvas
+   pixels (ground plane), so the marker's base sits on the road. It
+   returns null for points behind the camera or >1000 m away — those
+   are hidden. project() is async, so results apply only if no newer
+   projection run started (generation guard) and the marker is still
+   active. Throttled to ~100 ms so the drive loop stays fast. If
+   project() is missing, the improved bearing/distance fallback below
+   is used instead. */
+var projectGen = 0, lastProjectMs = 0, lastProjectImg = null;
+function markerHeight(dist){
+  return Math.round(64 * clamp(120 / (dist + 20), 0.45, 2.2));
+}
+function markerOpacity(dist){
+  return clamp(1.15 - dist / 400, 0.35, 1);
+}
 function projectMarkers(){
+  if (!currentPos || !running) return;
+  if (viewer && typeof viewer.project === "function"){
+    var now = performance.now();
+    var imgChanged = !currentImage || currentImage.id !== lastProjectImg;
+    if (!imgChanged && now - lastProjectMs < 100) return;
+    lastProjectMs = now;
+    if (currentImage) lastProjectImg = currentImage.id;
+    projectGen++;
+    var gen = projectGen;
+    markers.forEach(function(m){
+      if (m.done){ m.img.style.display = "none"; return; }
+      var dist = haversineM(currentPos, { lat: m.lat, lng: m.lng });
+      if (dist > 400){ m.img.style.display = "none"; return; }
+      var brg = bearing(currentPos, { lat: m.lat, lng: m.lng });
+      var diff = angDiff(brg, heading);
+      if (Math.abs(diff) > HFOV / 2 + 15){ m.img.style.display = "none"; return; }
+      var hgt = markerHeight(dist), op = markerOpacity(dist);
+      viewer.project({ lat: m.lat, lng: m.lng }).then(function(pt){
+        if (gen !== projectGen || m.done) return;
+        if (!pt || !isFinite(pt[0]) || !isFinite(pt[1])){ m.img.style.display = "none"; return; }
+        m.img.style.display = "block";
+        m.img.style.left = pt[0].toFixed(1) + "px";
+        m.img.style.top = pt[1].toFixed(1) + "px";
+        m.img.style.height = hgt + "px";
+        m.img.style.width = "auto";
+        m.img.style.opacity = op.toFixed(2);
+      }).catch(function(){ /* leave hidden this frame */ });
+    });
+  } else {
+    projectMarkersFallback();
+  }
+}
+/* Fallback when viewer.project is unavailable: bearing/distance math,
+   improved so markers ground on the road — base near the bottom of
+   the frame when close, up toward the horizon when far, much bigger
+   up close, fading with distance, hidden behind the camera or >400 m. */
+function projectMarkersFallback(){
   if (!currentPos || !running) return;
   var i;
   for (i = 0; i < markers.length; i++){
@@ -590,13 +697,13 @@ function projectMarkers(){
     var diff = angDiff(brg, heading);
     if (Math.abs(diff) > HFOV / 2 + 6){ m.img.style.display = "none"; continue; }
     var xPct = 50 + (diff / (HFOV / 2)) * 50;
-    var yPct = 60 + 22 * (1 - clamp(dist / 200, 0, 1));
-    var h = Math.round(64 * clamp(90 / (dist + 15), 0.5, 1.8));
+    var yPct = 80 - 30 * clamp(dist / 250, 0, 1);
     m.img.style.display = "block";
     m.img.style.left = xPct.toFixed(1) + "%";
     m.img.style.top = yPct.toFixed(1) + "%";
-    m.img.style.height = h + "px";
+    m.img.style.height = markerHeight(dist) + "px";
     m.img.style.width = "auto";
+    m.img.style.opacity = markerOpacity(dist).toFixed(2);
   }
 }
 
