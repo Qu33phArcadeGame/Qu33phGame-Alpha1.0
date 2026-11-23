@@ -9,8 +9,8 @@ img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Helvetica,Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;}
 .hidden{display:none!important;}
-#wrap{position:fixed;inset:0;background:#000;}
-#game{display:block;width:100%;height:100%;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges;}
+#wrap{position:fixed;inset:0;width:100vw;height:100vh;background:#000;}
+#game{display:block;width:100vw;height:100vh;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges;}
 .marker-btn{position:fixed;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
   background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;
   border:2.5px solid #fff;border-radius:4px 9px 9px 4px;
@@ -27,8 +27,14 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 .btn.gold{border-color:#e8a83c;color:#ffd24a;}
 .btn.green{border-color:#4dff8a;color:#7bffa8;}
 /* HUD */
-#hud{position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;align-items:center;justify-content:center;gap:14px;
+#hud{position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;
   padding:10px 60px 0 70px;pointer-events:none;font-weight:bold;letter-spacing:1px;}
+/* portrait / narrow: HUD wraps instead of clipping, hint fits between the buttons */
+@media (max-width:600px){
+  #hud{gap:6px;padding:8px 10px 0 58px;}
+  #hud .pill{font-size:11px;padding:3px 7px;}
+  #hint{font-size:9px;padding:0 124px;bottom:14px;}
+}
 #hud .pill{background:rgba(0,0,0,.55);border:2px solid #fff;border-radius:8px;padding:4px 10px;font-size:13px;white-space:nowrap;}
 #hud .pill.gold{color:#ffd24a;border-color:#e8a83c;}
 #hud .pill.green{color:#7bffa8;border-color:#4dff8a;}
@@ -84,13 +90,8 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 
 <div class="overlay" id="startScreen">
   <h1>QU33PH <span class="b">FLIGHT</span></h1>
-  <p>Your plane is the <span class="b">blue Qu33ph marker</span>. No fighting here &mdash;
-  just fly into the other marker planes to collect them.<br>
-  Touch a <span class="g">GREEN</span> plane for <span class="g">+2</span> &bull;
-  touch a <span class="r">RED</span> plane for <span class="r">+1</span>.<br>
-  Points are the original Qu33ph marker points (red 1, green 2, blue 3).<br>
-  60 seconds. Steer with drag or arrow keys, climb / dive with W &amp; S or the buttons.<br>
-  Space switches the camera: top-down, isometric, chase.</p>
+  <p><span class="g">GREEN</span> plane <span class="g">+2</span><br>
+  <span class="r">RED</span> plane <span class="r">+1</span></p>
   <div class="row"><button class="btn gold" id="startBtn">TAKE OFF</button></div>
   <div class="best" id="startBest"></div>
 </div>
@@ -578,7 +579,7 @@ function render(){
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, cw, ch);
-  var sc = Math.min(cw / VW, ch / VH);
+  var sc = Math.max(cw / VW, ch / VH); // COVER: fill the whole viewport, crop the excess (no letterbox)
   var dw = VW * sc, dh = VH * sc;
   ctx.drawImage(low, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
 }
@@ -676,6 +677,7 @@ function resize(){
   canvas.height = Math.round(window.innerHeight * dpr);
 }
 window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", resize); // re-fill the screen immediately on rotate
 resize();
 
 function frame(ts){
