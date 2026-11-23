@@ -362,7 +362,7 @@ Array.prototype.forEach.call(document.querySelectorAll(".presetRow .btn"), funct
    compass_angle (camera facing, degrees), is_pano (360° photo). */
 function tokenOk(){
   return typeof MAPILLARY_TOKEN === "string" && MAPILLARY_TOKEN &&
-    MAPILLARY_TOKEN !== "MLY|29296214496698793|8723f4f9ca11ad2a607f64dd10e62ed4" && MAPILLARY_TOKEN.indexOf("MLY|") === 0;
+    MAPILLARY_TOKEN !== "MLY|PLACEHOLDER" && MAPILLARY_TOKEN.indexOf("MLY|") === 0;
 }
 function cacheImages(list){
   (list || []).forEach(function(im){
