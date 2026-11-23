@@ -27,9 +27,9 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 .btn.green{border-color:#4dff8a;color:#7bffa8;}
 .btn:disabled{opacity:.45;}
 /* HUD */
-#hud{position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;align-items:center;justify-content:center;gap:8px;
-  padding:10px 60px 0 70px;pointer-events:none;font-weight:bold;letter-spacing:1px;flex-wrap:wrap;}
-#hud .pill{background:rgba(0,0,0,.55);border:2px solid #fff;border-radius:8px;padding:4px 10px;font-size:13px;white-space:nowrap;}
+#hud{position:fixed;top:46px;left:0;right:0;z-index:2000;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:0 10px;pointer-events:none;font-weight:bold;letter-spacing:1px;flex-wrap:wrap;}
+#hud .pill{background:rgba(0,0,0,.55);border:2px solid #fff;border-radius:8px;padding:3px 8px;font-size:12px;white-space:nowrap;}
 #hud .pill.gold{color:#ffd24a;border-color:#e8a83c;}
 #hud .pill.green{color:#7bffa8;border-color:#4dff8a;}
 #hud .pill.red{color:#ff8080;border-color:#ff4d4d;}
@@ -40,7 +40,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 /* car hood overlay */
 #carHood{position:fixed;left:0;right:0;bottom:0;z-index:1600;pointer-events:none;height:31vh;min-height:120px;}
 #carHood svg{position:absolute;left:0;bottom:0;width:100%;height:100%;}
-#carBadge{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);background:rgba(0,0,0,.65);
+#carBadge{position:absolute;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(0,0,0,.65);
   border:2px solid #fff;border-radius:8px;padding:3px 12px;font-size:12px;font-weight:bold;letter-spacing:2px;white-space:nowrap;}
 /* drive controls */
 #driveCtrls{position:fixed;left:0;right:0;bottom:0;z-index:2100;display:flex;justify-content:space-between;align-items:flex-end;padding:0 12px 14px;pointer-events:none;}
@@ -157,7 +157,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
     <div class="carCard" id="carFiat" data-car="fiat">
       <div class="swatch fiat"></div>
       <div class="nm">FIAT</div>
-      <div class="sub">RED</div>
+      <div class="sub">GREEN</div>
     </div>
   </div>
 
@@ -173,6 +173,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
     <button class="btn" data-spot="ny">NEW YORK</button>
   </div>
 
+  <div id="keySection">
   <h2>GOOGLE MAPS API KEY</h2>
   <div class="keyBox">
     <label for="keyInput">GOOGLE MAPS API KEY</label>
@@ -185,6 +186,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
   <div id="keyMsg" class="hidden">STREET VIEW NEEDS A GOOGLE MAPS API KEY.<br>
     This game drives in real Google Maps Street View, and Google needs an API key to load it.<br>
     <span class="dim">Get one free: Google Cloud Console &rarr; enable the Maps JavaScript API &rarr; create an API key &rarr; paste it above and tap SAVE KEY. You can still pick a car and a place &mdash; the drive starts once a key is saved.</span></div>
+  </div>
 
   <div class="row"><button class="btn gold" id="startBtn">START DRIVING</button></div>
   <div class="best" id="startBest"></div>
@@ -284,6 +286,14 @@ function setKeyStatus(msg, cls){
 }
 function showKeyMsg(show){
   $("keyMsg").classList.toggle("hidden", !show);
+  /* The key section stays hidden when a built-in key is set (cleaner UI),
+     and reappears whenever the game needs to show the key message (e.g. the
+     key was rejected), so the player can always fix it. */
+  var ks = $("keySection");
+  if (ks){
+    if (show) ks.classList.remove("hidden");
+    else if (typeof BUILTIN_API_KEY === "string" && BUILTIN_API_KEY.trim()) ks.classList.add("hidden");
+  }
 }
 function loadMapsApi(key){
   if (mapsReady || mapsLoading) return;
@@ -741,6 +751,8 @@ var savedKey = (typeof BUILTIN_API_KEY === "string" && BUILTIN_API_KEY.trim()) ?
 if (savedKey){
   $("keyInput").value = savedKey;
   setKeyStatus("KEY SAVED \u2014 LOADING GOOGLE MAPS\u2026", "");
+  /* Built-in key present: hide the whole key section for a cleaner UI. */
+  var _ks = $("keySection"); if (_ks) _ks.classList.add("hidden");
   loadMapsApi(savedKey);
 } else {
   setKeyStatus("NO KEY SAVED", "");
