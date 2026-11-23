@@ -379,7 +379,7 @@ function cacheImages(list){
 }
 function fetchImages(bbox){
   var url = MAPILLARY_GRAPH + "/images?access_token=" + encodeURIComponent(MAPILLARY_TOKEN) +
-    "&fields=id,geometry,compass_angle,is_pano,thumb_1024_url&bbox=" + bbox.join(",") + "&limit=500";
+    "&fields=id,geometry,compass_angle,is_pano,thumb_1024_url&bbox=" + bbox.join(",") + "&limit=50";
   return fetch(url).then(function(r){ return r.json(); }).then(function(j){
     var list = (j && j.data) || [];
     cacheImages(list);
@@ -433,7 +433,7 @@ function ensureImagesNear(lat, lng, meters){
 /* Spawn: nearest photo to the pick point, expanding the search radius.
    Prefers a 360° photo. Returns the photo object or null. */
 function findSpawn(lat, lng){
-  var radii = [0.02, 0.05, 0.1, 0.25, 0.5]; // degrees
+  var radii = [0.005, 0.01, 0.02, 0.05, 0.1, 0.25, 0.5]; // degrees
   var i = 0;
   function tryNext(){
     if (i >= radii.length) return Promise.resolve(null);
