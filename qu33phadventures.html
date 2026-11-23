@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Qu33ph Adventures</title>
+<style>
+img,video{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;pointer-events:auto;}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Helvetica,Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;}
+.hidden{display:none!important;}
+#pano{position:fixed;inset:0;background:#0a1420;}
+#pano .gm-err-container{display:none!important;}
+.marker-btn{position:fixed;top:9px;left:22px;z-index:3000;display:inline-flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;
+  border:2.5px solid #fff;border-radius:4px 9px 9px 4px;
+  font-family:Helvetica,Arial,sans-serif;font-size:9.5px;font-weight:bold;letter-spacing:1px;
+  padding:5px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 3px 0 rgba(0,0,0,.55),0 6px 10px rgba(0,0,0,.4),inset 0 1.5px 0 rgba(255,255,255,.4),inset 0 -4px 7px rgba(0,0,0,.45);}
+.marker-btn::before{content:"";position:absolute;left:-15px;top:2px;bottom:2px;width:15px;
+  background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.35),inset 0 -3px 5px rgba(0,0,0,.45);}
+.marker-btn:active{transform:translateY(3px);}
+.btn{position:relative;margin-left:16px;border:2.5px solid #fff;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);color:#fff;font-size:11px;font-weight:bold;letter-spacing:1px;padding:8px 12px;border-radius:4px 9px 9px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 3px 0 rgba(0,0,0,.55),inset 0 1.5px 0 rgba(255,255,255,.4);}
+.btn::before{content:"";position:absolute;left:-16px;top:2px;bottom:2px;width:16px;background:linear-gradient(180deg,#3c3c3c 0%,#161616 46%,#000 100%);border:2.5px solid #fff;border-radius:8px 2px 2px 8px;}
+.btn:active{transform:translateY(3px);}
+.btn.gold{border-color:#e8a83c;color:#ffd24a;}
+.btn.green{border-color:#4dff8a;color:#7bffa8;}
+.btn:disabled{opacity:.45;}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 60px 0 70px;pointer-events:none;font-weight:bold;letter-spacing:1px;flex-wrap:wrap;}
+#hud .pill{background:rgba(0,0,0,.55);border:2px solid #fff;border-radius:8px;padding:4px 10px;font-size:13px;white-space:nowrap;}
+#hud .pill.gold{color:#ffd24a;border-color:#e8a83c;}
+#hud .pill.green{color:#7bffa8;border-color:#4dff8a;}
+#hud .pill.red{color:#ff8080;border-color:#ff4d4d;}
+#hud .pill.blue{color:#7fb4ff;border-color:#5b8fd8;}
+/* marker overlays in the Street View */
+#markers{position:fixed;inset:0;z-index:1500;pointer-events:none;overflow:hidden;}
+#markers img{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 3px 5px rgba(0,0,0,.6));will-change:left,top,width;}
+/* car hood overlay */
+#carHood{position:fixed;left:0;right:0;bottom:0;z-index:1600;pointer-events:none;height:31vh;min-height:120px;}
+#carHood svg{position:absolute;left:0;bottom:0;width:100%;height:100%;}
+#carBadge{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);background:rgba(0,0,0,.65);
+  border:2px solid #fff;border-radius:8px;padding:3px 12px;font-size:12px;font-weight:bold;letter-spacing:2px;white-space:nowrap;}
+/* drive controls */
+#driveCtrls{position:fixed;left:0;right:0;bottom:0;z-index:2100;display:flex;justify-content:space-between;align-items:flex-end;padding:0 12px 14px;pointer-events:none;}
+#driveCtrls .grp{display:flex;gap:10px;pointer-events:auto;}
+#driveCtrls .btn{margin-left:16px;min-width:64px;text-align:center;padding:12px 10px;font-size:13px;}
+#gasBtn{border-color:#4dff8a;color:#7bffa8;}
+#toast{position:fixed;left:0;right:0;top:64px;z-index:2200;text-align:center;pointer-events:none;font-size:13px;font-weight:bold;letter-spacing:1px;color:#ffd24a;text-shadow:0 2px 4px #000;opacity:0;transition:opacity .3s;}
+#pop{position:fixed;left:50%;top:42%;z-index:2100;pointer-events:none;font-weight:bold;font-size:26px;letter-spacing:1px;
+  text-shadow:0 2px 4px #000;opacity:0;transform:translate(-50%,-50%);}
+/* overlays */
+.overlay{position:fixed;inset:0;z-index:2500;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;
+  background:rgba(0,0,0,.82);text-align:center;padding:18px 16px 24px;overflow-y:auto;}
+.overlay h1{margin:0;font-size:clamp(24px,7vw,40px);letter-spacing:6px;color:#fff;text-shadow:0 0 18px rgba(80,160,255,.8);}
+.overlay h1 .b{color:#7fb4ff;}
+.overlay p{margin:0;font-size:12px;letter-spacing:1px;color:#ddd;line-height:1.7;max-width:460px;}
+.overlay p .g{color:#7bffa8;font-weight:bold;}
+.overlay p .r{color:#ff8080;font-weight:bold;}
+.overlay p .b{color:#7fb4ff;font-weight:bold;}
+.overlay .big{font-size:clamp(30px,9vw,52px);font-weight:bold;color:#ffd24a;letter-spacing:2px;}
+.overlay .best{font-size:12px;letter-spacing:2px;color:#aaa;}
+.overlay .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.overlay h2{margin:6px 0 0;font-size:12px;letter-spacing:3px;color:#ffd24a;}
+/* car select */
+.carRow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.carCard{width:150px;border:3px solid #555;border-radius:12px;background:#141414;padding:10px 8px;cursor:pointer;text-align:center;}
+.carCard.sel{border-color:#e8a83c;box-shadow:0 0 14px rgba(232,168,60,.6);}
+.carCard .swatch{height:34px;border-radius:8px;margin-bottom:8px;border:2px solid rgba(255,255,255,.35);}
+.carCard .swatch.audi{background:linear-gradient(180deg,#c9ccd2 0%,#8a8f98 45%,#4a4e55 100%);}
+.carCard .swatch.fiat{background:linear-gradient(180deg,#ff5a5a 0%,#d21f26 45%,#7a0d12 100%);}
+.carCard .nm{font-size:12px;font-weight:bold;letter-spacing:1px;}
+.carCard .sub{font-size:10px;letter-spacing:1px;color:#aaa;margin-top:3px;}
+/* globe picker */
+#globe{width:min(340px,92vw);height:170px;border:2px solid #fff;border-radius:12px;background:#0a1420;cursor:crosshair;touch-action:none;}
+#pickLabel{font-size:11px;letter-spacing:1px;color:#7fb4ff;min-height:15px;}
+.presetRow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.presetRow .btn{font-size:10px;padding:6px 9px;margin-left:14px;}
+/* api key */
+.keyBox{width:min(420px,92vw);background:#141414;border:2px solid #555;border-radius:12px;padding:10px 12px;text-align:left;}
+.keyBox label{font-size:10px;letter-spacing:2px;color:#aaa;}
+.keyBox .keyRow{display:flex;gap:8px;margin-top:6px;}
+.keyBox input{flex:1;min-width:0;background:#000;color:#fff;border:2px solid #888;border-radius:8px;padding:8px;font-size:13px;font-family:monospace;}
+.keyBox input::placeholder{color:#666;}
+.keyBox .btn{margin-left:14px;white-space:nowrap;}
+#keyStatus{font-size:11px;letter-spacing:1px;margin-top:7px;color:#aaa;}
+#keyStatus.ok{color:#7bffa8;}
+#keyStatus.bad{color:#ff8080;}
+#keyMsg{font-size:11px;line-height:1.6;color:#ffd24a;max-width:460px;}
+#keyMsg .dim{color:#aaa;}
+</style>
+</head>
+<body>
+<div id="pano"></div>
+<div id="markers"></div>
+
+<button class="marker-btn" id="backBtn" onclick="location.href='season2.html'">&larr; SEASON 2</button>
+
+<div id="hud" class="hidden">
+  <span class="pill gold">SCORE <span id="scoreHud">0</span></span>
+  <span class="pill">TIME <span id="timeHud">60</span></span>
+  <span class="pill">BEST <span id="bestHud">0</span></span>
+  <span class="pill" id="carHud">AUDI TTS</span>
+  <span class="pill red">RED +1</span>
+  <span class="pill green">GREEN +2</span>
+  <span class="pill blue">BLUE +3</span>
+</div>
+
+<div id="carHood" class="hidden">
+  <svg id="hoodSvg" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="hoodGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#c9ccd2" id="hoodTop"/>
+        <stop offset=".55" stop-color="#8a8f98" id="hoodMid"/>
+        <stop offset="1" stop-color="#3a3d43" id="hoodBot"/>
+      </linearGradient>
+    </defs>
+    <path d="M0,32 L13,11 Q50,1 87,11 L100,32 Z" fill="url(#hoodGrad)"/>
+    <path d="M30,6.5 Q50,2.5 70,6.5 L65,10.5 Q50,7.5 35,10.5 Z" fill="#101418" opacity="0.9"/>
+    <ellipse cx="24" cy="15" rx="5.5" ry="2.2" fill="#fff8c0" opacity="0.95"/>
+    <ellipse cx="76" cy="15" rx="5.5" ry="2.2" fill="#fff8c0" opacity="0.95"/>
+    <path d="M50,4 L50,30" stroke="rgba(255,255,255,.35)" stroke-width="0.7"/>
+  </svg>
+  <div id="carBadge">AUDI TTS</div>
+</div>
+
+<div id="driveCtrls" class="hidden">
+  <div class="grp">
+    <button class="btn" id="leftBtn">&#9664; LEFT</button>
+    <button class="btn" id="rightBtn">RIGHT &#9654;</button>
+  </div>
+  <div class="grp">
+    <button class="btn" id="brakeBtn">BRAKE</button>
+    <button class="btn" id="gasBtn">GAS &#9650;</button>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="pop"></div>
+
+<div class="overlay" id="startScreen">
+  <h1>QU33PH <span class="b">ADVENTURES</span></h1>
+  <p>Drive anywhere on Earth in real Google Maps Street View. Pick a car, pick a place on the globe,
+  then drive the road and collect Qu33ph markers.<br>
+  <span class="r">RED</span> marker <span class="r">+1</span> &bull;
+  <span class="g">GREEN</span> marker <span class="g">+2</span> &bull;
+  <span class="b">BLUE</span> marker <span class="b">+3</span>.<br>
+  Points are the original Qu33ph marker points (red 1, green 2, blue 3). 60 seconds.</p>
+
+  <h2>PICK YOUR CAR</h2>
+  <div class="carRow">
+    <div class="carCard sel" id="carAudi" data-car="audi">
+      <div class="swatch audi"></div>
+      <div class="nm">AUDI TTS</div>
+      <div class="sub">DARK SILVER</div>
+    </div>
+    <div class="carCard" id="carFiat" data-car="fiat">
+      <div class="swatch fiat"></div>
+      <div class="nm">FIAT SPIDER</div>
+      <div class="sub">RED</div>
+    </div>
+  </div>
+
+  <h2>PICK A PLACE ON THE GLOBE</h2>
+  <canvas id="globe" width="360" height="180"></canvas>
+  <div id="pickLabel">Tap the map to pick your spawn &mdash; default: New York</div>
+  <div class="presetRow">
+    <button class="btn" data-spot="tokyo">TOKYO</button>
+    <button class="btn" data-spot="la">LOS ANGELES</button>
+    <button class="btn" data-spot="london">LONDON</button>
+    <button class="btn" data-spot="paris">PARIS</button>
+    <button class="btn" data-spot="sydney">SYDNEY</button>
+    <button class="btn" data-spot="ny">NEW YORK</button>
+  </div>
+
+  <h2>GOOGLE MAPS API KEY</h2>
+  <div class="keyBox">
+    <label for="keyInput">GOOGLE MAPS API KEY</label>
+    <div class="keyRow">
+      <input id="keyInput" type="text" autocomplete="off" spellcheck="false" placeholder="Paste your Google Maps API key here">
+      <button class="btn gold" id="saveKeyBtn">SAVE KEY</button>
+    </div>
+    <div id="keyStatus">NO KEY SAVED</div>
+  </div>
+  <div id="keyMsg" class="hidden">STREET VIEW NEEDS A GOOGLE MAPS API KEY.<br>
+    This game drives in real Google Maps Street View, and Google needs an API key to load it.<br>
+    <span class="dim">Get one free: Google Cloud Console &rarr; enable the Maps JavaScript API &rarr; create an API key &rarr; paste it above and tap SAVE KEY. You can still pick a car and a place &mdash; the drive starts once a key is saved.</span></div>
+
+  <div class="row"><button class="btn gold" id="startBtn">START DRIVING</button></div>
+  <div class="best" id="startBest"></div>
+</div>
+
+<div class="overlay hidden" id="endScreen">
+  <h1>TIME UP</h1>
+  <div class="big" id="finalScore">0</div>
+  <div class="best" id="finalBest">BEST 0</div>
+  <p id="endCar"></p>
+  <div class="row">
+    <button class="btn green" id="againBtn">DRIVE AGAIN</button>
+    <button class="btn" id="menuBtn">MENU</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════
+   QU33PH ADVENTURES — a driving simulator on Google Maps Street View.
+   Plain JS + the Maps JavaScript API (StreetViewPanorama +
+   StreetViewService). NO 3D engine, no fake Street View.
+   Scoring is the ORIGINAL Qu33ph marker points, from the GBA source
+   (qu33ph-gba-src/source/flip.c line 178):
+       int pts = p->color + 1;  // red 1, green 2, blue 3
+   So: RED marker = +1, GREEN marker = +2, BLUE marker = +3.
+   The markers are the REAL Qu33ph marker art (repo-root blue.png,
+   green.png, red.png), shown as overlays along the road in Street
+   View. Drive into one to collect it.
+   There is NO API key bundled with this file. The key lives in
+   localStorage (qu33phAdventuresApiKey) and is entered on the start
+   screen. Without a key the game says so plainly and never shows a
+   blank screen or crashes.
+   ═══════════════════════════════════════════════════════════════════ */
+var PTS_RED = 1;     // original Qu33ph: red = 1
+var PTS_GREEN = 2;   // original Qu33ph: green = 2
+var PTS_BLUE = 3;    // original Qu33ph: blue = 3
+var GAME_SECS = 60;
+var BEST_KEY = "qu33phAdventuresBest";
+var API_KEY = "qu33phAdventuresApiKey";
+var HOP_MS = 950;    // one Street View pano hop per 950ms while GAS is held
+var HFOV = 80;       // horizontal field of view used to place marker overlays
+var MARKER_EVERY = 3; // a marker every 3rd pano along the road
+var MARKER_TARGET = 14;
+
+var CARS = {
+  audi: { name: "AUDI TTS", top: "#c9ccd2", mid: "#8a8f98", bot: "#3a3d43", badge: "#d7dae0" },
+  fiat: { name: "FIAT SPIDER", top: "#ff5a5a", mid: "#d21f26", bot: "#7a0d12", badge: "#ff8080" }
+};
+var SPOTS = {
+  tokyo:  { lat: 35.68,  lng: 139.69,  name: "Tokyo" },
+  la:     { lat: 34.05,  lng: -118.24, name: "Los Angeles" },
+  london: { lat: 51.50,  lng: -0.12,   name: "London" },
+  paris:  { lat: 48.85,  lng: 2.35,    name: "Paris" },
+  sydney: { lat: -33.87, lng: 151.21,  name: "Sydney" },
+  ny:     { lat: 40.71,  lng: -74.00,  name: "New York" }
+};
+
+var car = "audi";
+var pick = { lat: SPOTS.ny.lat, lng: SPOTS.ny.lng, name: "New York" };
+var score = 0, best = 0, timeLeft = GAME_SECS;
+var running = false, ended = false;
+var heading = 0;                 // current driving heading, degrees 0-360
+var gasHeld = false, brakeHeld = false, steerDir = 0; // -1 left, +1 right
+var lastHop = 0, lastTick = 0;
+var pano = null, svService = null, mapsReady = false, mapsLoading = false;
+var currentPano = null, currentPos = null; // pano id + {lat, lng}
+var panoCache = {};              // pano id -> {links:[{pano,heading}], latLng:{lat,lng}}
+var markers = [];                // {pano, lat, lng, color, pts, img, done}
+var visitedPanos = {};
+var pathHeading = 0, pathTailPano = null, extending = false;
+var timerId = null, rafId = null, loadTimer = null;
+var popTimer = null, toastTimer = null;
+
+function $(id){ return document.getElementById(id); }
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+function angDiff(a, b){ var d = (a - b) % 360; if (d > 180) d -= 360; if (d < -180) d += 360; return d; }
+function norm360(a){ a = a % 360; return a < 0 ? a + 360 : a; }
+function fmt(n){ return (Math.round(n * 100) / 100).toString(); }
+
+try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
+function loadSavedKey(){ try { return (localStorage.getItem(API_KEY) || "").trim(); } catch (e) { return ""; } }
+function saveKey(k){ try { localStorage.setItem(API_KEY, k); return true; } catch (e) { return false; } }
+
+/* ── API key slot ─────────────────────────────────────────────── */
+function setKeyStatus(msg, cls){
+  var el = $("keyStatus");
+  el.textContent = msg;
+  el.className = cls || "";
+}
+function showKeyMsg(show){
+  $("keyMsg").classList.toggle("hidden", !show);
+}
+function loadMapsApi(key){
+  if (mapsReady || mapsLoading) return;
+  if (!key) return;
+  mapsLoading = true;
+  setKeyStatus("LOADING GOOGLE MAPS\u2026", "");
+  var s = document.createElement("script");
+  s.src = "https://maps.googleapis.com/maps/api/js?key=" + encodeURIComponent(key) + "&v=weekly&callback=__qadvMapsReady&loading=async";
+  s.async = true;
+  s.onerror = function(){
+    mapsLoading = false;
+    setKeyStatus("KEY ERROR \u2014 COULD NOT LOAD GOOGLE MAPS. CHECK THE KEY.", "bad");
+    showKeyMsg(true);
+  };
+  document.head.appendChild(s);
+  loadTimer = setTimeout(function(){
+    if (!mapsReady){
+      mapsLoading = false;
+      setKeyStatus("KEY ERROR \u2014 GOOGLE MAPS DID NOT LOAD. CHECK THE KEY AND THAT THE MAPS JAVASCRIPT API IS ENABLED.", "bad");
+      showKeyMsg(true);
+    }
+  }, 15000);
+}
+window.__qadvMapsReady = function(){
+  mapsReady = true; mapsLoading = false;
+  if (loadTimer) { clearTimeout(loadTimer); loadTimer = null; }
+  try { svService = new google.maps.StreetViewService(); } catch (e) { svService = null; }
+  setKeyStatus("MAPS READY \u2014 KEY SAVED", "ok");
+  showKeyMsg(false);
+};
+
+/* ── globe picker ─────────────────────────────────────────────── */
+var LAND = [ // rough continent blobs: [lng, lat, rx deg, ry deg]
+  [-100, 45, 28, 16], [-150, 64, 12, 7], [-88, 15, 7, 5],
+  [-60, -15, 14, 18],
+  [15, 52, 16, 8], [-2, 54, 3, 5], [-42, 74, 10, 8],
+  [18, 5, 17, 20], [47, -19, 3, 6],
+  [90, 50, 42, 16], [78, 21, 8, 10], [105, 12, 9, 8], [138, 37, 4, 7], [172, -42, 3, 6],
+  [134, -25, 13, 8]
+];
+function drawGlobe(){
+  var c = $("globe"), g = c.getContext("2d"), W = c.width, H = c.height;
+  g.fillStyle = "#0d2438"; g.fillRect(0, 0, W, H);
+  g.strokeStyle = "rgba(255,255,255,.12)"; g.lineWidth = 1;
+  var i;
+  for (i = -150; i <= 150; i += 30){ var x = (i + 180) / 360 * W; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (i = -60; i <= 60; i += 30){ var y = (90 - i) / 180 * H; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  g.fillStyle = "#3f7a3a";
+  LAND.forEach(function(b){
+    g.beginPath();
+    g.ellipse((b[0] + 180) / 360 * W, (90 - b[1]) / 180 * H, b[2] / 360 * W, b[3] / 180 * H, 0, 0, Math.PI * 2);
+    g.fill();
+  });
+  var px = (pick.lng + 180) / 360 * W, py = (90 - pick.lat) / 180 * H;
+  g.fillStyle = "#ff2f2f";
+  g.beginPath(); g.arc(px, py, 5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "#fff"; g.lineWidth = 2;
+  g.beginPath(); g.arc(px, py, 8, 0, Math.PI * 2); g.stroke();
+}
+function setPick(lat, lng, name){
+  pick.lat = clamp(lat, -85, 85); pick.lng = norm360(lng + 180) - 180; pick.name = name || null;
+  $("pickLabel").textContent = "SPAWN: " + (pick.name || (fmt(pick.lat) + ", " + fmt(pick.lng))) + "  (" + fmt(pick.lat) + ", " + fmt(pick.lng) + ")";
+  drawGlobe();
+}
+function globeTap(ev){
+  var c = $("globe"), r = c.getBoundingClientRect();
+  if (!r.width || !r.height) return; // no layout yet — ignore the tap
+  var t = (ev.touches && ev.touches[0]) || ev;
+  var x = (t.clientX - r.left) / r.width, y = (t.clientY - r.top) / r.height;
+  setPick(90 - y * 180, x * 360 - 180, null);
+}
+$("globe").addEventListener("pointerdown", globeTap);
+
+/* ── car select ───────────────────────────────────────────────── */
+function selectCar(which){
+  car = which;
+  $("carAudi").classList.toggle("sel", which === "audi");
+  $("carFiat").classList.toggle("sel", which === "fiat");
+  var c = CARS[which];
+  $("hoodTop").setAttribute("stop-color", c.top);
+  $("hoodMid").setAttribute("stop-color", c.mid);
+  $("hoodBot").setAttribute("stop-color", c.bot);
+  $("carBadge").textContent = c.name;
+  $("carBadge").style.color = c.badge;
+  $("carHud").textContent = c.name;
+}
+$("carAudi").addEventListener("click", function(){ selectCar("audi"); });
+$("carFiat").addEventListener("click", function(){ selectCar("fiat"); });
+Array.prototype.forEach.call(document.querySelectorAll(".presetRow .btn"), function(b){
+  b.addEventListener("click", function(){
+    var s = SPOTS[b.getAttribute("data-spot")];
+    if (s) setPick(s.lat, s.lng, s.name);
+  });
+});
+
+/* ── key save ─────────────────────────────────────────────────── */
+$("saveKeyBtn").addEventListener("click", function(){
+  var k = $("keyInput").value.trim();
+  if (!k){ setKeyStatus("PASTE A KEY FIRST.", "bad"); return; }
+  if (!saveKey(k)){ setKeyStatus("COULD NOT SAVE THE KEY IN THIS BROWSER.", "bad"); return; }
+  mapsReady = false; mapsLoading = false;
+  setKeyStatus("KEY SAVED \u2014 LOADING GOOGLE MAPS\u2026", "");
+  loadMapsApi(k);
+});
+
+/* ── Street View helpers ──────────────────────────────────────── */
+function svGet(req){
+  return new Promise(function(res){
+    svService.getPanorama(req, function(data, status){ res({ data: data, status: status }); });
+  });
+}
+function getPanoData(panoId){
+  if (panoCache[panoId]) return Promise.resolve(panoCache[panoId]);
+  return svGet({ pano: panoId }).then(function(r){
+    if (r.status !== "OK" || !r.data) return null;
+    var d = {
+      links: (r.data.links || []).map(function(l){ return { pano: l.pano, heading: l.heading }; }),
+      latLng: { lat: r.data.location.latLng.lat(), lng: r.data.location.latLng.lng() }
+    };
+    panoCache[panoId] = d;
+    return d;
+  });
+}
+function bearing(a, b){
+  var la1 = a.lat * Math.PI / 180, la2 = b.lat * Math.PI / 180;
+  var dlo = (b.lng - a.lng) * Math.PI / 180;
+  var y = Math.sin(dlo) * Math.cos(la2);
+  var x = Math.cos(la1) * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(dlo);
+  return norm360(Math.atan2(y, x) * 180 / Math.PI);
+}
+function haversineM(a, b){
+  var R = 6371000, la1 = a.lat * Math.PI / 180, la2 = b.lat * Math.PI / 180;
+  var dLa = (b.lat - a.lat) * Math.PI / 180, dLo = (b.lng - a.lng) * Math.PI / 180;
+  var h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(la1) * Math.cos(la2) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function bestLink(links, hd){
+  var bestL = null, bestD = 1e9, i;
+  for (i = 0; i < links.length; i++){
+    var d = Math.abs(angDiff(links[i].heading, hd));
+    if (d < bestD){ bestD = d; bestL = links[i]; }
+  }
+  return { link: bestL, diff: bestD };
+}
+function showToast(msg, ms){
+  var t = $("toast");
+  t.textContent = msg; t.style.opacity = "1";
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.style.opacity = "0"; }, ms || 2200);
+}
+function showPop(txt, color){
+  var p = $("pop");
+  p.textContent = txt; p.style.color = color; p.style.opacity = "1";
+  if (popTimer) clearTimeout(popTimer);
+  popTimer = setTimeout(function(){ p.style.opacity = "0"; }, 900);
+}
+
+/* ── markers ──────────────────────────────────────────────────── */
+var MARKER_COLORS = [
+  { color: "green", pts: PTS_GREEN, img: "green.png", pop: "#7bffa8" },
+  { color: "red",   pts: PTS_RED,   img: "red.png",   pop: "#ff8080" },
+  { color: "blue",  pts: PTS_BLUE,  img: "blue.png",  pop: "#7fb4ff" }
+];
+function addMarker(panoId, latLng, idx){
+  var spec = MARKER_COLORS[idx % MARKER_COLORS.length];
+  var img = document.createElement("img");
+  img.src = spec.img;
+  img.alt = spec.color + " marker +" + spec.pts;
+  img.style.display = "none";
+  $("markers").appendChild(img);
+  markers.push({ pano: panoId, lat: latLng.lat, lng: latLng.lng, color: spec.color, pts: spec.pts, pop: spec.pop, img: img, done: false });
+}
+function placeMarkersAlong(path, startIdx){
+  var placed = 0, i;
+  for (i = startIdx; i < path.length; i += MARKER_EVERY){
+    addMarker(path[i].pano, path[i].latLng, markers.length + placed);
+    placed++;
+  }
+  return placed;
+}
+function walkPath(startPanoId, hd, maxSteps){
+  var path = [], seen = {}, cur = startPanoId, i;
+  var chain = Promise.resolve();
+  for (i = 0; i < maxSteps; i++){
+    chain = chain.then(function(){
+      if (!cur || seen[cur]) return;
+      seen[cur] = true;
+      return getPanoData(cur).then(function(d){
+        if (!d || !d.links.length) { cur = null; return; }
+        path.push({ pano: cur, latLng: d.latLng });
+        var b = bestLink(d.links, hd);
+        if (!b.link || b.diff > 75){ cur = null; return; }
+        cur = b.link.pano;
+      });
+    });
+  }
+  return chain.then(function(){ return path; });
+}
+function extendMarkers(){
+  if (extending || !pathTailPano) return;
+  var remaining = markers.filter(function(m){ return !m.done; }).length;
+  if (remaining >= 6) return;
+  extending = true;
+  walkPath(pathTailPano, pathHeading, 24).then(function(path){
+    if (path.length > 1){
+      placeMarkersAlong(path.slice(1), 0);
+      pathTailPano = path[path.length - 1].pano;
+    }
+    extending = false;
+  });
+}
+function collectMarker(m){
+  if (m.done) return;
+  m.done = true;
+  m.img.style.display = "none";
+  score += m.pts;
+  $("scoreHud").textContent = score;
+  showPop("+" + m.pts + " " + m.color.toUpperCase(), m.pop);
+  extendMarkers();
+}
+function checkCollections(){
+  var i;
+  for (i = 0; i < markers.length; i++){
+    var m = markers[i];
+    if (m.done) continue;
+    if (m.pano === currentPano || visitedPanos[m.pano]) collectMarker(m);
+  }
+}
+function projectMarkers(){
+  if (!currentPos || !running) return;
+  var i;
+  for (i = 0; i < markers.length; i++){
+    var m = markers[i];
+    if (m.done){ m.img.style.display = "none"; continue; }
+    var dist = haversineM(currentPos, { lat: m.lat, lng: m.lng });
+    if (dist > 400){ m.img.style.display = "none"; continue; }
+    var brg = bearing(currentPos, { lat: m.lat, lng: m.lng });
+    var diff = angDiff(brg, heading);
+    if (Math.abs(diff) > HFOV / 2 + 6){ m.img.style.display = "none"; continue; }
+    var xPct = 50 + (diff / (HFOV / 2)) * 50;
+    var yPct = 60 + 22 * (1 - clamp(dist / 200, 0, 1));
+    var h = Math.round(64 * clamp(90 / (dist + 15), 0.5, 1.8));
+    m.img.style.display = "block";
+    m.img.style.left = xPct.toFixed(1) + "%";
+    m.img.style.top = yPct.toFixed(1) + "%";
+    m.img.style.height = h + "px";
+    m.img.style.width = "auto";
+  }
+}
+
+/* ── driving ──────────────────────────────────────────────────── */
+function setPov(){
+  if (!pano) return;
+  try { pano.setPov({ heading: heading, pitch: 0 }); } catch (e) {}
+}
+function hopForward(){
+  if (!currentPano) return;
+  getPanoData(currentPano).then(function(d){
+    if (!d || !d.links.length){ showToast("END OF ROAD \u2014 STEER AROUND"); return; }
+    var b = bestLink(d.links, heading);
+    if (!b.link || b.diff > 75){ showToast("END OF ROAD \u2014 STEER AROUND"); return; }
+    pano.setPano(b.link.pano);
+  });
+}
+function onPanoChanged(){
+  if (!pano) return;
+  try {
+    var pos = pano.getPosition();
+    if (!pos) return;
+    currentPano = pano.getPano();
+    currentPos = { lat: pos.lat(), lng: pos.lng() };
+    visitedPanos[currentPano] = true;
+    setPov();
+    checkCollections();
+    projectMarkers();
+  } catch (e) {}
+}
+function onPovChanged(){
+  if (!pano) return;
+  try {
+    var pov = pano.getPov();
+    if (pov && typeof pov.heading === "number") heading = norm360(pov.heading);
+  } catch (e) {}
+  projectMarkers();
+}
+function driveLoop(now){
+  if (!running) return;
+  rafId = requestAnimationFrame(driveLoop);
+  var dt = Math.min(100, now - (lastTick || now)); lastTick = now;
+  if (steerDir !== 0){
+    heading = norm360(heading + steerDir * 55 * dt / 1000);
+    setPov();
+  }
+  if (gasHeld && !brakeHeld && now - lastHop >= HOP_MS){
+    lastHop = now;
+    hopForward();
+  }
+  projectMarkers();
+}
+
+/* ── round flow ───────────────────────────────────────────────── */
+function endRound(){
+  if (ended) return;
+  ended = true; running = false;
+  if (timerId){ clearInterval(timerId); timerId = null; }
+  if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  gasHeld = false; brakeHeld = false; steerDir = 0;
+  if (score > best){
+    best = score;
+    try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
+  }
+  $("finalScore").textContent = score;
+  $("finalBest").textContent = "BEST " + best;
+  $("endCar").textContent = "You drove the " + CARS[car].name + " from " + (pick.name || (fmt(pick.lat) + ", " + fmt(pick.lng))) + ".";
+  $("endScreen").classList.remove("hidden");
+  $("driveCtrls").classList.add("hidden");
+}
+function startTimer(){
+  timeLeft = GAME_SECS;
+  $("timeHud").textContent = timeLeft;
+  timerId = setInterval(function(){
+    timeLeft--;
+    $("timeHud").textContent = Math.max(0, timeLeft);
+    if (timeLeft <= 0) endRound();
+  }, 1000);
+}
+function resetRun(){
+  score = 0; ended = false; running = false;
+  markers.forEach(function(m){ if (m.img.parentNode) m.img.parentNode.removeChild(m.img); });
+  markers = []; visitedPanos = {}; panoCache = {};
+  currentPano = null; currentPos = null; pathTailPano = null;
+  $("scoreHud").textContent = "0";
+  $("timeHud").textContent = GAME_SECS;
+  $("bestHud").textContent = best;
+  $("endScreen").classList.add("hidden");
+  $("startScreen").classList.add("hidden");
+  $("hud").classList.remove("hidden");
+  $("carHood").classList.remove("hidden");
+  $("driveCtrls").classList.remove("hidden");
+}
+function startDriving(){
+  var key = loadSavedKey();
+  if (!mapsReady || !svService){
+    showKeyMsg(true);
+    setKeyStatus(key ? "KEY SAVED BUT GOOGLE MAPS HAS NOT LOADED YET \u2014 CHECK THE KEY AND THAT THE MAPS JAVASCRIPT API IS ENABLED." : "NO KEY SAVED \u2014 PASTE A GOOGLE MAPS API KEY ABOVE AND TAP SAVE KEY.", "bad");
+    if (key && !mapsLoading) loadMapsApi(key);
+    return;
+  }
+  showKeyMsg(false);
+  resetRun();
+  svGet({ location: { lat: pick.lat, lng: pick.lng }, radius: 50000 }).then(function(r){
+    if (r.status === "REQUEST_DENIED"){
+      $("startScreen").classList.remove("hidden");
+      $("hud").classList.add("hidden"); $("carHood").classList.add("hidden"); $("driveCtrls").classList.add("hidden");
+      showKeyMsg(true);
+      setKeyStatus("KEY REJECTED BY GOOGLE \u2014 CHECK THE KEY AND THAT THE MAPS JAVASCRIPT API IS ENABLED IN GOOGLE CLOUD CONSOLE.", "bad");
+      return;
+    }
+    if (r.status !== "OK" || !r.data){
+      $("startScreen").classList.remove("hidden");
+      $("hud").classList.add("hidden"); $("carHood").classList.add("hidden"); $("driveCtrls").classList.add("hidden");
+      showToast("NO STREET VIEW NEAR THAT SPOT \u2014 PICK ANOTHER PLACE", 3500);
+      return;
+    }
+    var spawn = r.data;
+    currentPano = spawn.location.pano;
+    currentPos = { lat: spawn.location.latLng.lat(), lng: spawn.location.latLng.lng() };
+    visitedPanos[currentPano] = true;
+    panoCache[currentPano] = {
+      links: (spawn.links || []).map(function(l){ return { pano: l.pano, heading: l.heading }; }),
+      latLng: currentPos
+    };
+    var first = bestLink(panoCache[currentPano].links, 0);
+    pathHeading = first.link ? first.link.heading : 0;
+    heading = pathHeading;
+    if (!pano){
+      pano = new google.maps.StreetViewPanorama($("pano"), {
+        pano: currentPano, visible: true,
+        pov: { heading: heading, pitch: 0 }, zoom: 1,
+        disableDefaultUI: true, motionTracking: false, addressControl: false,
+        linksControl: false, panControl: false, zoomControl: false,
+        fullscreenControl: false, clickToGo: false, scrollwheel: false, showRoadLabels: false
+      });
+      google.maps.event.addListener(pano, "pano_changed", onPanoChanged);
+      google.maps.event.addListener(pano, "pov_changed", onPovChanged);
+    } else {
+      pano.setPano(currentPano);
+      setPov();
+    }
+    walkPath(currentPano, pathHeading, 60).then(function(path){
+      if (path.length > 1){
+        placeMarkersAlong(path.slice(1), 0);
+        pathTailPano = path[path.length - 1].pano;
+      }
+      running = true;
+      lastHop = performance.now(); lastTick = 0;
+      startTimer();
+      rafId = requestAnimationFrame(driveLoop);
+      projectMarkers();
+    });
+  });
+}
+$("startBtn").addEventListener("click", startDriving);
+$("againBtn").addEventListener("click", function(){ startDriving(); });
+$("menuBtn").addEventListener("click", function(){ location.href = "season2.html"; });
+
+/* ── controls ─────────────────────────────────────────────────── */
+function holdBtn(el, on, off){
+  function dn(e){ e.preventDefault(); on(); }
+  function up(e){ e.preventDefault(); off(); }
+  el.addEventListener("pointerdown", dn);
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointerleave", up);
+  el.addEventListener("pointercancel", up);
+  el.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+}
+holdBtn($("gasBtn"), function(){ gasHeld = true; }, function(){ gasHeld = false; });
+holdBtn($("brakeBtn"), function(){ brakeHeld = true; }, function(){ brakeHeld = false; });
+holdBtn($("leftBtn"), function(){ steerDir = -1; }, function(){ if (steerDir === -1) steerDir = 0; });
+holdBtn($("rightBtn"), function(){ steerDir = 1; }, function(){ if (steerDir === 1) steerDir = 0; });
+document.addEventListener("keydown", function(e){
+  if (e.key === "ArrowUp" || e.key === "w" || e.key === "W"){ gasHeld = true; e.preventDefault(); }
+  else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S"){ brakeHeld = true; e.preventDefault(); }
+  else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ steerDir = -1; e.preventDefault(); }
+  else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D"){ steerDir = 1; e.preventDefault(); }
+});
+document.addEventListener("keyup", function(e){
+  if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") gasHeld = false;
+  else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") brakeHeld = false;
+  else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ if (steerDir === -1) steerDir = 0; }
+  else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D"){ if (steerDir === 1) steerDir = 0; }
+});
+
+/* ── init ─────────────────────────────────────────────────────── */
+selectCar("audi");
+setPick(SPOTS.ny.lat, SPOTS.ny.lng, "New York");
+$("bestHud").textContent = best;
+$("startBest").textContent = best > 0 ? "BEST " + best : "";
+var savedKey = loadSavedKey();
+if (savedKey){
+  $("keyInput").value = savedKey;
+  setKeyStatus("KEY SAVED \u2014 LOADING GOOGLE MAPS\u2026", "");
+  loadMapsApi(savedKey);
+} else {
+  setKeyStatus("NO KEY SAVED", "");
+  showKeyMsg(true);
+}
+</script>
+</body>
+</html>
