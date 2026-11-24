@@ -69,6 +69,35 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
   min-width:96px;padding:16px 16px;font-size:16px;letter-spacing:2px;
   box-shadow:0 3px 0 rgba(0,0,0,.55),0 0 16px rgba(77,255,138,.55),inset 0 1.5px 0 rgba(255,255,255,.4);}
 #gasBtn:active{transform:translateY(3px);}
+/* steering wheel (replaces the LEFT/RIGHT buttons): a ring of real
+   Qu33ph marker pens. The rim is 6 marker pens laid tangentially
+   (green/red alternate; the pens' long axis sits ~48 deg in their
+   images, so the -48 deg counter-rotation lays them flat along the
+   rim), 3 spokes, and the blue marker (with the Qu33ph logo) as the
+   hub. Drag around it to spin it; it springs back to centre when
+   released. */
+#steerWheel{position:relative;width:120px;height:120px;flex:0 0 auto;pointer-events:auto;touch-action:none;cursor:grab;
+  border:3px solid rgba(255,255,255,.28);border-radius:50%;background:rgba(0,0,0,.35);}
+#steerWheel:active{cursor:grabbing;}
+#steerWheel .sw-spoke{position:absolute;left:50%;top:50%;width:52px;height:7px;margin:-3.5px 0 0 0;
+  background:linear-gradient(90deg,#777,#ddd,#777);border-radius:4px;transform-origin:0 50%;transform:rotate(var(--a));}
+#steerWheel .sw-rim{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;
+  transform:rotate(var(--a)) translateY(-44px) rotate(-48deg);}
+#steerWheel .sw-hub{position:absolute;left:50%;top:50%;width:50px;height:auto;transform:translate(-50%,-50%);z-index:2;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+/* circular loading timer: shows in the centre of the photo area
+   while a photo is being found/loaded, so the player sees it working
+   instead of a black screen. Two modes: indeterminate (API wait — a
+   sweeping arc + elapsed seconds) and determinate (a real download
+   with a known size — the ring fills 0-100% from byte progress). */
+#loadRing{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:1900;width:132px;height:132px;pointer-events:none;text-align:center;}
+#loadRing svg{width:120px;height:120px;margin:6px;transform:rotate(-90deg);}
+#loadRing .ring-track{fill:none;stroke:rgba(255,255,255,.18);stroke-width:9;}
+#loadRing .ring-arc{fill:none;stroke:#7bffa8;stroke-width:9;stroke-linecap:round;stroke-dasharray:326.7;stroke-dashoffset:326.7;}
+#loadRing.indet .ring-arc{stroke-dasharray:90 236.7;animation:ringspin 1.1s linear infinite;transform-box:fill-box;transform-origin:center;}
+@keyframes ringspin{to{transform:rotate(360deg);}}
+#loadRingLabel{position:absolute;left:0;right:0;top:52px;font-size:22px;font-weight:bold;color:#fff;text-shadow:0 2px 4px #000;}
+#loadRingSub{position:absolute;left:-40px;right:-40px;top:132px;font-size:10px;letter-spacing:1px;color:#ffd24a;text-shadow:0 2px 4px #000;}
 #toast{position:fixed;left:0;right:0;top:64px;z-index:2200;text-align:center;pointer-events:none;font-size:13px;font-weight:bold;letter-spacing:1px;color:#ffd24a;text-shadow:0 2px 4px #000;opacity:0;transition:opacity .3s;}
 #pop{position:fixed;left:50%;top:42%;z-index:2100;pointer-events:none;font-weight:bold;font-size:26px;letter-spacing:1px;
   text-shadow:0 2px 4px #000;opacity:0;transform:translate(-50%,-50%);}
@@ -193,14 +222,34 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 </div>
 
 <div id="driveCtrls" class="hidden">
-  <div class="grp">
-    <button class="btn" id="leftBtn">&#9664; LEFT</button>
-    <button class="btn" id="rightBtn">RIGHT &#9654;</button>
+  <!-- Steering wheel made of real Qu33ph markers: 6 marker pens laid
+       tangentially as the rim (green/red alternate), 3 spokes, and the
+       blue marker (Qu33ph logo) as the hub. Drag around it to steer. -->
+  <div id="steerWheel" aria-label="Steering wheel — drag to steer">
+    <div class="sw-spoke" style="--a:90deg"></div>
+    <div class="sw-spoke" style="--a:210deg"></div>
+    <div class="sw-spoke" style="--a:330deg"></div>
+    <img class="sw-rim" src="green.png" alt="" style="--a:0deg">
+    <img class="sw-rim" src="red.png" alt="" style="--a:60deg">
+    <img class="sw-rim" src="green.png" alt="" style="--a:120deg">
+    <img class="sw-rim" src="red.png" alt="" style="--a:180deg">
+    <img class="sw-rim" src="green.png" alt="" style="--a:240deg">
+    <img class="sw-rim" src="red.png" alt="" style="--a:300deg">
+    <img class="sw-hub" src="blue.png" alt="">
   </div>
   <div class="grp">
     <button class="btn" id="brakeBtn">BRAKE</button>
     <button class="btn" id="gasBtn">GAS &#9650;</button>
   </div>
+</div>
+<!-- Circular loading timer: shows while a photo is being found/loaded -->
+<div id="loadRing" class="hidden">
+  <svg viewBox="0 0 120 120" width="120" height="120">
+    <circle class="ring-track" cx="60" cy="60" r="52"/>
+    <circle class="ring-arc" cx="60" cy="60" r="52"/>
+  </svg>
+  <div id="loadRingLabel">0s</div>
+  <div id="loadRingSub">FINDING STREET PHOTOS&hellip;</div>
 </div>
 <div id="toast"></div>
 <div id="pop"></div>
@@ -315,7 +364,12 @@ var pick = { lat: SPOTS.ny.lat, lng: SPOTS.ny.lng, name: "New York" };
 var score = 0, best = 0, timeLeft = GAME_SECS;
 var running = false, ended = false;
 var heading = 0;                 // current driving heading, degrees 0-360
-var gasHeld = false, brakeHeld = false, steerDir = 0; // -1 left, +1 right
+var gasHeld = false, brakeHeld = false;
+// Steering: the wheel angle in degrees (-150..150, 0 = centred).
+// steerVal = steerAngle / STEER_MAX (-1..1) drives the heading and
+// the 3D car tilt. The wheel springs back to centre on release.
+var steerAngle = 0, steerHeld = false, keySteer = 0;
+var STEER_MAX = 150, STEER_RATE = 55; // deg of wheel lock, deg/sec at full lock
 var lastHop = 0, lastTick = 0;
 var viewer = null;               // MapillaryJS Viewer (the 360° photo view)
 var currentImage = null;         // {id, lat, lng, compassAngle, isPano}
@@ -454,7 +508,8 @@ function cacheImages(list){
       id: im.id,
       lng: g[0], lat: g[1],
       compassAngle: (typeof im.compass_angle === "number") ? im.compass_angle : 0,
-      isPano: !!im.is_pano
+      isPano: !!im.is_pano,
+      thumb: im.thumb_1024_url || null // for prefetch + the loading ring
     };
   });
 }
@@ -596,6 +651,8 @@ function onViewerImage(ev){
   setPov();
   checkCollections();
   projectMarkers();
+  ringHide();      // the photo we were waiting for is here
+  prefetchAhead(); // warm up the road ahead while driving
 }
 /* Point the viewer along the driving heading. For a 360° photo the
    equirectangular centre (basic x 0.5) faces the photo's compass
@@ -741,6 +798,100 @@ function projectMarkersFallback(){
   }
 }
 
+/* ── loading ring + prefetch ──────────────────────────────────── */
+/* The first photo takes ~30 s (the Mapillary Graph API itself is
+   slow — 12–24 s per request — so the wait cannot be removed), but
+   the player should SEE it working instead of a black screen. The
+   ring in the centre of the photo area has two modes:
+   - indeterminate (API wait, no bytes flowing): a sweeping arc +
+     elapsed seconds, so it never looks frozen;
+   - determinate (an image download with a known size): the ring
+     fills 0–100% from real byte progress (fetch + ReadableStream).
+   Prefetch keeps the NEXT photos ready while driving: the metadata
+   (Graph API bbox) ahead of the player is fetched in the background
+   so hops find their next photo in the cache instead of waiting on
+   the API, and the next few photos' thumbnails are preloaded so the
+   browser cache is warm. Bounded: one metadata fetch ahead + at
+   most 4 thumb preloads per hop. */
+var ringEl = $("loadRing");
+var ringArc = ringEl.querySelector(".ring-arc");
+var ringLabel = $("loadRingLabel");
+var ringSub = $("loadRingSub");
+var ringTimer = null, ringStartMs = 0, ringMode = "";
+var RING_C = 326.7; // 2 * PI * 52
+var prefetchSet = {};
+function ringShow(sub){
+  ringEl.classList.remove("hidden");
+  ringStartMs = performance.now();
+  ringSetIndet(sub || "FINDING STREET PHOTOS\u2026");
+  if (ringTimer) clearInterval(ringTimer);
+  ringTimer = setInterval(function(){
+    if (ringMode === "indet"){
+      ringLabel.textContent = Math.floor((performance.now() - ringStartMs) / 1000) + "s";
+    }
+  }, 200);
+}
+function ringSetIndet(sub){
+  if (ringEl.classList.contains("hidden")) return;
+  ringMode = "indet";
+  ringEl.classList.add("indet");
+  ringArc.style.strokeDashoffset = "0";
+  ringLabel.textContent = "0s";
+  if (sub) ringSub.textContent = sub;
+}
+function ringSetProg(frac){
+  if (ringEl.classList.contains("hidden")) return;
+  ringMode = "prog";
+  ringEl.classList.remove("indet");
+  ringArc.style.strokeDashoffset = (RING_C * (1 - clamp(frac, 0, 1))).toFixed(1);
+  ringLabel.textContent = Math.round(clamp(frac, 0, 1) * 100) + "%";
+}
+function ringHide(){
+  ringEl.classList.add("hidden");
+  if (ringTimer){ clearInterval(ringTimer); ringTimer = null; }
+  ringMode = "";
+}
+/* Download a URL with byte progress (0..1) — drives the ring while
+   the photo data is actually flowing. Returns true when the whole
+   file arrived (the browser HTTP cache keeps it, so the viewer /
+   preloads can reuse it), null on any failure. */
+function fetchWithProgress(url, onProg){
+  return fetch(url).then(function(resp){
+    if (!resp.ok || !resp.body) return null;
+    var total = parseInt(resp.headers.get("Content-Length") || "0", 10) || 0;
+    var reader = resp.body.getReader();
+    var received = 0;
+    function pump(){
+      return reader.read().then(function(res){
+        if (res.done) return true;
+        received += res.value.length;
+        if (total > 0) onProg(received / total);
+        return pump();
+      });
+    }
+    return pump();
+  }).catch(function(){ return null; });
+}
+/* Prefetch the road ahead while driving: metadata for the photos
+   beyond the current one (so the next hops never wait on the slow
+   Graph API) + the next 4 photos' thumbnails (warms the browser
+   cache). Fire-and-forget, bounded, safe to call on every hop. */
+function prefetchAhead(){
+  if (!currentImage || !currentPos || !running) return;
+  var ahead = destPoint(currentPos, heading, 220);
+  ensureImagesNear(ahead.lat, ahead.lng, 300);
+  var path = walkPath(currentImage, heading, 6);
+  var n = 0, i;
+  for (i = 1; i < path.length && n < 4; i++){
+    var im = imageCache[path[i].id];
+    if (!im || !im.thumb || prefetchSet[im.id]) continue;
+    prefetchSet[im.id] = true;
+    var img = new Image();
+    img.src = im.thumb;
+    n++;
+  }
+}
+
 /* ── driving ──────────────────────────────────────────────────── */
 function doHop(im){
   hopBusy = true;
@@ -755,11 +906,14 @@ function hopForward(){
   if (!currentImage || hopBusy || !viewer) return;
   var nxt = findNextAhead(currentPos, heading, 120);
   if (nxt){ doHop(nxt); return; }
-  /* Nothing cached ahead — fetch a box ahead of us and try once more. */
+  /* Nothing cached ahead — fetch a box ahead of us and try once more.
+     The ring shows while we wait, so the player sees it working. */
   hopBusy = true;
+  ringShow("LOOKING FOR THE NEXT PHOTO\u2026");
   var ahead = destPoint(currentPos, heading, 80);
   fetchImages(bboxAround(ahead.lat, ahead.lng, 200)).then(function(){
     hopBusy = false;
+    ringHide();
     var n2 = findNextAhead(currentPos, heading, 120);
     if (n2) doHop(n2);
     else showToast("END OF ROAD \u2014 STEER AROUND");
@@ -769,10 +923,24 @@ function driveLoop(now){
   if (!running) return;
   rafId = requestAnimationFrame(driveLoop);
   var dt = Math.min(100, now - (lastTick || now)); lastTick = now;
-  if (steerDir !== 0){
-    heading = norm360(heading + steerDir * 55 * dt / 1000);
+  /* Steering: the wheel angle sets the turn rate smoothly (full lock
+     = 55 deg/sec, the old button rate), so the car drives toward the
+     markers it is aimed at. Keyboard drives the wheel to full lock;
+     the wheel springs back to centre on release. */
+  if (keySteer !== 0){
+    steerAngle = clamp(steerAngle + keySteer * 600 * dt / 1000, -STEER_MAX, STEER_MAX);
+  } else if (!steerHeld){
+    var back = 600 * dt / 1000;
+    if (steerAngle > 0) steerAngle = Math.max(0, steerAngle - back);
+    else if (steerAngle < 0) steerAngle = Math.min(0, steerAngle + back);
+  }
+  var steerVal = steerAngle / STEER_MAX;
+  if (steerVal !== 0){
+    heading = norm360(heading + steerVal * STEER_RATE * dt / 1000);
     setPov();
   }
+  setWheel(steerAngle);
+  if (window.Car3D && window.Car3D.setSteer) window.Car3D.setSteer(steerVal);
   if (gasHeld && !brakeHeld && now - lastHop >= HOP_MS){
     lastHop = now;
     hopForward();
@@ -786,7 +954,10 @@ function endRound(){
   ended = true; running = false;
   if (timerId){ clearInterval(timerId); timerId = null; }
   if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
-  gasHeld = false; brakeHeld = false; steerDir = 0;
+  gasHeld = false; brakeHeld = false;
+  steerAngle = 0; steerHeld = false; keySteer = 0; setWheel(0);
+  if (window.Car3D && window.Car3D.setSteer) window.Car3D.setSteer(0);
+  ringHide();
   if (score > best){
     best = score;
     try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
@@ -810,6 +981,8 @@ function resetRun(){
   score = 0; ended = false; running = false;
   markers.forEach(function(m){ if (m.img.parentNode) m.img.parentNode.removeChild(m.img); });
   markers = []; visitedImages = {}; imageCache = {};
+  prefetchSet = {};
+  steerAngle = 0; steerHeld = false; keySteer = 0; setWheel(0);
   currentImage = null; currentPos = null; pathTail = null; hopBusy = false;
   $("scoreHud").textContent = "0";
   $("timeHud").textContent = GAME_SECS;
@@ -828,9 +1001,11 @@ function startDriving(){
   }
   if (!ensureViewer()) return;
   resetRun();
+  ringShow("FINDING STREET PHOTOS\u2026");
   showToast("FINDING STREET PHOTOS NEAR " + (pick.name || "THAT SPOT") + "\u2026", 2500);
   findSpawn(pick.lat, pick.lng).then(function(spawn){
     if (!spawn){
+      ringHide();
       $("startScreen").classList.remove("hidden");
       $("hud").classList.add("hidden"); $("carHood").classList.add("hidden"); $("driveCtrls").classList.add("hidden");
       showToast("NO STREET PHOTOS NEAR THAT SPOT \u2014 PICK ANOTHER PLACE", 3500);
@@ -843,6 +1018,17 @@ function startDriving(){
        photo's own compass direction. */
     heading = spawn.compassAngle || 0;
     pathHeading = heading;
+    /* Download the first photo's thumbnail with real byte progress
+       (drives the ring) in parallel with the viewer's own load — the
+       ring hides when the photo actually appears. If the thumb
+       finishes first, the ring goes back to the elapsed-time sweep
+       until the photo shows. */
+    var thumb0 = (imageCache[spawn.id] && imageCache[spawn.id].thumb) || null;
+    if (thumb0){
+      fetchWithProgress(thumb0, function(frac){ ringSetProg(frac); }).then(function(ok){
+        if (ok && ringMode === "prog") ringSetIndet("LOADING PHOTO\u2026");
+      });
+    }
     viewer.moveTo(spawn.id).then(function(){
       /* Place markers along the road ahead, from the photos we already
          fetched around the spawn. */
@@ -857,8 +1043,10 @@ function startDriving(){
         startTimer();
         rafId = requestAnimationFrame(driveLoop);
         projectMarkers();
+        prefetchAhead();
       });
     }).catch(function(){
+      ringHide();
       $("startScreen").classList.remove("hidden");
       $("hud").classList.add("hidden"); $("carHood").classList.add("hidden"); $("driveCtrls").classList.add("hidden");
       showToast("COULD NOT LOAD THE FIRST PHOTO \u2014 TRY ANOTHER PLACE", 3500);
@@ -881,19 +1069,52 @@ function holdBtn(el, on, off){
 }
 holdBtn($("gasBtn"), function(){ gasHeld = true; }, function(){ gasHeld = false; });
 holdBtn($("brakeBtn"), function(){ brakeHeld = true; }, function(){ brakeHeld = false; });
-holdBtn($("leftBtn"), function(){ steerDir = -1; }, function(){ if (steerDir === -1) steerDir = 0; });
-holdBtn($("rightBtn"), function(){ steerDir = 1; }, function(){ if (steerDir === 1) steerDir = 0; });
+
+/* ── steering wheel ───────────────────────────────────────────── */
+/* The wheel is a ring of real Qu33ph marker pens (see the HTML).
+   Drag around it to spin it; the angle is the steering. It springs
+   back to centre when released (see driveLoop). */
+var wheelEl = $("steerWheel");
+var wheelGrab = null; // {id, startAng, startSteer}
+function setWheel(deg){
+  if (wheelEl) wheelEl.style.transform = "rotate(" + deg.toFixed(1) + "deg)";
+}
+function wheelAngleAt(e){
+  var r = wheelEl.getBoundingClientRect();
+  var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  return Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+}
+function wheelAngDiff(a, b){ var d = (a - b) % 360; if (d > 180) d -= 360; if (d < -180) d += 360; return d; }
+wheelEl.addEventListener("pointerdown", function(e){
+  e.preventDefault();
+  if (wheelGrab) return;
+  try { wheelEl.setPointerCapture(e.pointerId); } catch (err) {}
+  wheelGrab = { id: e.pointerId, startAng: wheelAngleAt(e), startSteer: steerAngle };
+  steerHeld = true;
+});
+wheelEl.addEventListener("pointermove", function(e){
+  if (!wheelGrab || e.pointerId !== wheelGrab.id) return;
+  e.preventDefault();
+  steerAngle = clamp(wheelGrab.startSteer + wheelAngDiff(wheelAngleAt(e), wheelGrab.startAng), -STEER_MAX, STEER_MAX);
+});
+function wheelEnd(e){
+  if (!wheelGrab || (e && e.pointerId !== wheelGrab.id)) return;
+  wheelGrab = null; steerHeld = false;
+}
+wheelEl.addEventListener("pointerup", wheelEnd);
+wheelEl.addEventListener("pointercancel", wheelEnd);
+wheelEl.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 document.addEventListener("keydown", function(e){
   if (e.key === "ArrowUp" || e.key === "w" || e.key === "W"){ gasHeld = true; e.preventDefault(); }
   else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S"){ brakeHeld = true; e.preventDefault(); }
-  else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ steerDir = -1; e.preventDefault(); }
-  else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D"){ steerDir = 1; e.preventDefault(); }
+  else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ keySteer = -1; e.preventDefault(); }
+  else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D"){ keySteer = 1; e.preventDefault(); }
 });
 document.addEventListener("keyup", function(e){
   if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") gasHeld = false;
   else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") brakeHeld = false;
-  else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ if (steerDir === -1) steerDir = 0; }
-  else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D"){ if (steerDir === 1) steerDir = 0; }
+  else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ if (keySteer === -1) keySteer = 0; }
+  else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D"){ if (keySteer === 1) keySteer = 0; }
 });
 
 /* ── init ─────────────────────────────────────────────────────── */
@@ -955,6 +1176,39 @@ var models = {};                 // which -> THREE.Group
 var ready = { audi: false, fiat: false };
 var failed = { audi: false, fiat: false };
 var current3d = null;            // which car is shown in 3D, or null
+
+// Steering tilt: the classic script feeds steerVal (-1..1) via
+// setSteer() (from the steering wheel). The car banks (roll) into
+// the turn and yaws slightly toward it, easing back to level when
+// the wheel centres. A tiny rAF loop applies the tilt and re-renders
+// only while it is changing — when the car is level and the wheel is
+// centred, no frames are drawn (the old on-demand behaviour).
+var steerVal = 0, tiltCur = 0, tiltLast = 0;
+function setSteer(v){ steerVal = Math.max(-1, Math.min(1, v || 0)); }
+function tiltTick(now){
+  requestAnimationFrame(tiltTick);
+  if (!current3d || !hoodVisible()) return;
+  var dt = Math.min(0.05, (now - (tiltLast || now)) / 1000); tiltLast = now;
+  var k = 1 - Math.pow(0.002, dt);
+  tiltCur += (steerVal - tiltCur) * k;
+  var wrap = models[current3d];
+  if (!wrap) return;
+  if (Math.abs(tiltCur) < 0.001 && Math.abs(steerVal) < 0.001){
+    if (wrap.rotation.z !== 0 || wrap.rotation.y !== 0){
+      wrap.rotation.z = 0; wrap.rotation.y = 0;
+      render();
+    }
+    return;
+  }
+  // Bank into the turn (roll around the forward axis) + a slight yaw
+  // toward it, so the car is visibly leaning at the markers it is
+  // aimed at. Signs: left turn (steerVal<0) tips the top to the
+  // car's left (+X, screen-left) and points the nose left.
+  wrap.rotation.z = tiltCur * 0.10;   // ~6 deg max roll
+  wrap.rotation.y = -tiltCur * 0.08;  // ~5 deg max yaw
+  render();
+}
+requestAnimationFrame(tiltTick);
 
 // which -> { file, paint material name, paint colour, Y-rotation }
 // The two models face OPPOSITE ways in their files (Audi front +Z,
@@ -1089,6 +1343,8 @@ function show3d(which){
   document.getElementById('hoodFiat').style.display = 'none';
   container.style.display = 'block';
   current3d = which;
+  tiltCur = 0; steerVal = 0;
+  g.rotation.z = 0; g.rotation.y = 0; // start level
   applyCam(which);
   render();
   return true;
@@ -1133,9 +1389,17 @@ function loadCar(which){
         });
       }
     });
-    car.visible = false;
-    scene.add(car);
-    models[which] = car;
+    // Wrap the car so steering tilt (roll/yaw) can be applied to the
+    // wrapper without disturbing the model's own rotation (the Fiat's
+    // 180 deg rotY) or the bounding-box math. The WRAPPER starts
+    // invisible (it is the visibility switch); the car inside stays
+    // visible — setting car.visible = false here would hide it
+    // forever, because show3d() only toggles the wrapper.
+    var wrap = new THREE.Group();
+    wrap.add(car);
+    wrap.visible = false;
+    scene.add(wrap);
+    models[which] = wrap;
     ready[which] = true;
     var cur = (typeof window.car === 'string') ? window.car : 'audi';
     if (cur === which) show3d(which);
@@ -1163,7 +1427,9 @@ try {
   sun2.position.set(2, 2, -2);
   scene.add(sun2);
 
-  window.Car3D = { select: select, render: render, ready: function(){ return ready.audi && ready.fiat; },
+  window.Car3D = { select: select, render: render, setSteer: setSteer,
+                   tilt: function(){ return +tiltCur.toFixed(3); },
+                   ready: function(){ return ready.audi && ready.fiat; },
                    readyCar: function(w){ return !!ready[w]; },
                    fov: function(){ return camera ? +camera.fov.toFixed(1) : null; },
                    // Test hook: override the current car's camera (used by
@@ -1198,7 +1464,8 @@ try {
   window.addEventListener('orientationchange', function(){ setTimeout(function(){ if (current3d) render(); }, 300); });
 } catch (e) {
   // No WebGL / Three.js failed to start: the drawn SVG hoods stay visible.
-  window.Car3D = { select: select, render: function(){}, ready: function(){ return false; },
+  window.Car3D = { select: select, render: function(){}, setSteer: function(){},
+                   tilt: function(){ return 0; }, ready: function(){ return false; },
                    readyCar: function(){ return false; } };
 }
 </script>
