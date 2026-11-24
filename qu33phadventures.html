@@ -53,7 +53,29 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 #hud .pill.blue{color:#7fb4ff;border-color:#5b8fd8;}
 /* marker overlays in the Street View */
 #markers{position:fixed;inset:0;z-index:1500;pointer-events:none;overflow:hidden;}
+/* Forward-morph layer: the viewer cuts instantly between unrelated
+   photos (its native morph only runs for images in the same SfM
+   merge), so the current photo's thumbnail is shown full-screen over
+   the viewer and faded out once the new photo arrives — the eye sees
+   A blend into B. Below the markers/car/HUD so only the photo blends;
+   object-fit cover matches the viewer's Fill render mode. */
+#morphLayer{position:fixed;inset:0;z-index:900;pointer-events:none;overflow:hidden;opacity:0;}
+#morphLayer img{width:100%;height:100%;object-fit:cover;display:block;}
+#morphLayer.fade{transition:opacity .55s ease;}
 #markers img{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 3px 5px rgba(0,0,0,.6));will-change:left,top,width;}
+/* The marker art is pens drawn LYING DOWN (blue ~horizontal, green/red
+   diagonal ~48 deg), so shown unrotated they read as dropped pens lying
+   flat on the photo — the "floating sticker" defect. Each colour is
+   counter-rotated so the pen stands UPRIGHT, and the translate anchors
+   the pen's TIP at the ground point instead of the image box's
+   bottom-centre (tip measured from the pixels: green back end at
+   47.8%/94.0% after +42 deg, red at 48.0%/93.2% after +43 deg, blue cap
+   at 54.3%/155.8% after -80 deg — the blue pen is longer than its box
+   is tall, so its tip sits below the box). Blue is sized by width (its
+   pen is ~as long as the image is wide); green/red by height. */
+#markers img.mk-green{transform:translate(-47.8%,-94%) rotate(42deg);}
+#markers img.mk-red{transform:translate(-48%,-93.2%) rotate(43deg);}
+#markers img.mk-blue{transform:translate(-54.3%,-155.8%) rotate(-80deg);}
 /* car hood overlay */
 #carHood{position:fixed;left:0;right:0;bottom:0;z-index:1600;pointer-events:none;height:31vh;min-height:120px;}
 #carHood svg{position:absolute;left:0;bottom:0;width:100%;height:100%;}
@@ -133,6 +155,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
 <body>
 <div id="pano"></div>
 <div id="markers"></div>
+<div id="morphLayer"><img id="morphImg" alt=""></div>
 
 <button class="marker-btn" id="backBtn" onclick="location.href='season2.html'">&larr; SEASON 2</button>
 
@@ -733,11 +756,20 @@ function onViewerImage(ev){
   currentImage = { id: img.id, lat: lat, lng: lng, compassAngle: compassAngle, isPano: isPano };
   currentPos = { lat: lat, lng: lng };
   visitedImages[img.id] = true;
+  /* Prime the morph thumbnail: the next hop blends FROM this photo, so
+     its thumb should already be loaded in the <img> by then (the
+     browser cache + prefetch normally cover it; this makes it certain,
+     so the fade never runs on an empty layer). */
+  if (!isPano && cached && cached.thumb){
+    var mi = $("morphImg");
+    if (mi.getAttribute("src") !== cached.thumb) mi.setAttribute("src", cached.thumb);
+  }
   setPov();
   checkCollections();
   projectMarkers();
   extendMarkers(); // top markers up from the road ahead, every hop
   ringHide();      // the photo we were waiting for is here
+  morphFade();     // the new photo is showing — blend the old one out
   prefetchAhead(); // warm up the road ahead while driving
 }
 /* Point the viewer along the driving heading. For a 360° photo the
@@ -763,6 +795,7 @@ function addMarker(imageId, latLng, idx){
   var img = document.createElement("img");
   img.src = spec.img;
   img.alt = spec.color + " marker +" + spec.pts;
+  img.className = "mk-" + spec.color; // upright-pen rotation + tip anchor (see CSS)
   img.style.display = "none";
   $("markers").appendChild(img);
   markers.push({ imageId: imageId, lat: latLng.lat, lng: latLng.lng, color: spec.color, pts: spec.pts, pop: spec.pop, img: img, done: false });
@@ -784,7 +817,16 @@ function placeMarkersAlong(path, startIdx){
     if (acc < MARKER_SPACING) continue;
     acc = 0;
     if (markerOnPhoto(path[i].id)) continue;
-    addMarker(path[i].id, path[i], markers.length + placed);
+    /* Spread consecutive markers across the road (slalom: left /
+       centre / right, 3.5 m either side) so several markers at similar
+       distances do not pile on one screen spot. The offset is
+       perpendicular to the road's local direction, stays on the road,
+       and collection still works (12 m radius); the 360 deg project()
+       path grounds the offset point on the real road. */
+    var ll = path[i], lane = (((markers.length + placed) % 3) - 1) * 3.5;
+    if (lane && haversineM(path[i - 1], path[i]) > 1)
+      ll = destPoint(ll, bearing(path[i - 1], path[i]) + (lane > 0 ? 90 : -90), Math.abs(lane));
+    addMarker(path[i].id, ll, markers.length + placed);
     placed++;
   }
   return placed;
@@ -883,6 +925,13 @@ function markerHeight(dist){
 function markerOpacity(dist){
   return clamp(1.15 - dist / 400, 0.35, 1);
 }
+/* Size a marker img so the PEN is markerHeight tall: green/red are
+   sized by height (square art, pen ~87% of the box); blue is sized by
+   width (wide art, pen ~as long as the image is wide). */
+function sizeMarkerImg(m, hgt){
+  if (m.color === "blue"){ m.img.style.width = hgt + "px"; m.img.style.height = "auto"; }
+  else { m.img.style.height = hgt + "px"; m.img.style.width = "auto"; }
+}
 function projectMarkers(){
   if (!currentPos || !running) return;
   /* 360° photos are aimed along the driving heading (setPov), so the
@@ -930,8 +979,7 @@ function projectMarkers(){
         m.img.style.display = "block";
         m.img.style.left = pt[0].toFixed(1) + "px";
         m.img.style.top = pt[1].toFixed(1) + "px";
-        m.img.style.height = hgt + "px";
-        m.img.style.width = "auto";
+        sizeMarkerImg(m, hgt);
         m.img.style.opacity = op.toFixed(2);
       }).catch(function(){ /* leave hidden this frame */ });
     });
@@ -961,8 +1009,7 @@ function projectMarkersFallback(){
     m.img.style.display = "block";
     m.img.style.left = xPct.toFixed(1) + "%";
     m.img.style.top = yPct.toFixed(1) + "%";
-    m.img.style.height = markerHeight(dist) + "px";
-    m.img.style.width = "auto";
+    sizeMarkerImg(m, markerHeight(dist));
     m.img.style.opacity = markerOpacity(dist).toFixed(2);
   }
 }
@@ -1062,13 +1109,51 @@ function prefetchAhead(){
 }
 
 /* ── driving ──────────────────────────────────────────────────── */
+/* Forward morph: the viewer's own transition is motionless between
+   unrelated photos (MapillaryJS only morphs images in the same SfM
+   merge, close together — the game's hops jump between different
+   sequences/days, so every hop cut instantly). Instead, the CURRENT
+   photo's thumbnail (already in the browser cache from the spawn
+   download / prefetch) is shown full-screen over the viewer the
+   moment a hop starts, and faded out over 550 ms once the new photo
+   arrives — the eye sees A blend into B. The fade fits inside the
+   950 ms hop rhythm. Flat photos only: a 360 photo's thumbnail is
+   the full equirect, which does not match the panned view — pano hops
+   keep the viewer's native morph when the photos are connected. */
+var morphActive = false;
+function morphStart(){
+  if (!currentImage || currentImage.isPano) return;
+  var cached = imageCache[currentImage.id];
+  var thumb = cached && cached.thumb;
+  if (!thumb) return;
+  var layer = $("morphLayer"), img = $("morphImg");
+  if (img.getAttribute("src") !== thumb) img.setAttribute("src", thumb);
+  layer.classList.remove("fade"); // appear instantly — viewer still shows A
+  layer.style.opacity = "1";
+  morphActive = true;
+}
+function morphFade(){
+  if (!morphActive) return;
+  morphActive = false;
+  var layer = $("morphLayer");
+  layer.classList.add("fade");
+  layer.style.opacity = "0";
+}
+function morphHide(){ // instant hide, no fade (load failed / round reset)
+  morphActive = false;
+  var layer = $("morphLayer");
+  layer.classList.remove("fade");
+  layer.style.opacity = "0";
+}
 function doHop(im){
   hopBusy = true;
   delete spawnFailed[im.id]; // a deliberate hop honours this photo
+  morphStart();
   viewer.moveTo(im.id).then(function(){
     hopBusy = false; // state updates via the viewer's "image" event
   }).catch(function(){
     hopBusy = false;
+    morphHide();
     showToast("COULD NOT LOAD THAT PHOTO \u2014 STEER AROUND");
   });
 }
@@ -1166,6 +1251,12 @@ function resetRun(){
   steerAngle = 0; steerHeld = false; keySteer = 0; setWheel(0);
   currentImage = null; currentPos = null; hopBusy = false;
   $("scoreHud").textContent = "0";
+  /* A popup from the last round (900 ms fade) could still be showing
+     when the next round starts at score 0 — hide it so a stale
+     "+1 RED" never reads as a score that did not change. */
+  if (popTimer){ clearTimeout(popTimer); popTimer = null; }
+  $("pop").style.opacity = "0";
+  morphHide(); // never leave a stale morph frame over the next round
   $("timeHud").textContent = GAME_SECS;
   $("bestHud").textContent = best;
   $("endScreen").classList.add("hidden");
