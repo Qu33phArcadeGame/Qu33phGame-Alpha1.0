@@ -405,6 +405,14 @@ var markers = [];                // {imageId, lat, lng, color, pts, img, done}
 var visitedImages = {};
 var warming = false, lastExtendMs = 0, hopBusy = false;
 var timerId = null, rafId = null;
+/* Round-timer gate (Nov 24, 2026 fix): a 60 s round must mean 60 s of
+   DRIVING, so the timer only starts once the first photo has actually
+   appeared (its "image" event fired) after the viewer moved to it.
+   timerStarted / firstPhotoSeen track the gate; timerFallbackId bounds
+   the wait so a missing event can never stall the round. hopWaiting /
+   hopWaitTimer drive the loading ring on a genuinely stuck hop. */
+var timerStarted = false, firstPhotoSeen = false, timerFallbackId = null;
+var hopWaiting = false, hopWaitTimer = null;
 var popTimer = null, toastTimer = null;
 
 function $(id){ return document.getElementById(id); }
@@ -753,6 +761,16 @@ function onViewerImage(ev){
     isPano = img.cameraType === "spherical";
     imageCache[img.id] = { id: img.id, lat: lat, lng: lng, compassAngle: compassAngle, isPano: isPano };
   }
+  /* The photo we were waiting for is here — hide the loading ring
+     FIRST, before any of the marker/projection work below: if any of
+     that throws, the ring must not be left stuck over the photo.
+     This event is also what starts the round timer (see
+     maybeStartTimer): the round only counts once a photo is shown. */
+  ringHide();
+  if (hopWaitTimer){ clearTimeout(hopWaitTimer); hopWaitTimer = null; }
+  hopWaiting = false;
+  firstPhotoSeen = true;
+  maybeStartTimer();
   currentImage = { id: img.id, lat: lat, lng: lng, compassAngle: compassAngle, isPano: isPano };
   currentPos = { lat: lat, lng: lng };
   visitedImages[img.id] = true;
@@ -768,7 +786,6 @@ function onViewerImage(ev){
   checkCollections();
   projectMarkers();
   extendMarkers(); // top markers up from the road ahead, every hop
-  ringHide();      // the photo we were waiting for is here
   morphFade();     // the new photo is showing — blend the old one out
   prefetchAhead(); // warm up the road ahead while driving
 }
@@ -1149,10 +1166,26 @@ function doHop(im){
   hopBusy = true;
   delete spawnFailed[im.id]; // a deliberate hop honours this photo
   morphStart();
+  /* If this hop is genuinely stuck (no new photo after 5 s — normal
+     hops take 2-4 s), show the loading ring so the player can see the
+     game is still working, instead of a frozen morph frame. It hides
+     the moment the hop's photo appears (onViewerImage). */
+  if (hopWaitTimer) clearTimeout(hopWaitTimer);
+  hopWaitTimer = setTimeout(function(){
+    hopWaitTimer = null;
+    if (hopBusy && running && !ended){
+      hopWaiting = true;
+      ringShow("LOOKING FOR THE NEXT PHOTO\u2026");
+    }
+  }, 5000);
   viewer.moveTo(im.id).then(function(){
     hopBusy = false; // state updates via the viewer's "image" event
+    if (hopWaitTimer){ clearTimeout(hopWaitTimer); hopWaitTimer = null; }
+    hopWaiting = false;
   }).catch(function(){
     hopBusy = false;
+    if (hopWaitTimer){ clearTimeout(hopWaitTimer); hopWaitTimer = null; }
+    hopWaiting = false;
     morphHide();
     showToast("COULD NOT LOAD THAT PHOTO \u2014 STEER AROUND");
   });
@@ -1188,6 +1221,11 @@ function hopForward(){
 function driveLoop(now){
   if (!running) return;
   rafId = requestAnimationFrame(driveLoop);
+  /* Safety net: the ring can never stay visible while driving on a
+     shown photo. (It hides in onViewerImage; this covers any path
+     where that hide was skipped.) Not while a hop is genuinely
+     waiting — then the ring is meant to show. */
+  if (!hopWaiting && !ringEl.classList.contains("hidden")) ringHide();
   var dt = Math.min(100, now - (lastTick || now)); lastTick = now;
   /* Steering: the wheel angle sets the turn rate smoothly (full lock
      = 55 deg/sec, the old button rate), so the car drives toward the
@@ -1220,6 +1258,9 @@ function endRound(){
   ended = true; running = false;
   if (timerId){ clearInterval(timerId); timerId = null; }
   if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  if (timerFallbackId){ clearTimeout(timerFallbackId); timerFallbackId = null; }
+  if (hopWaitTimer){ clearTimeout(hopWaitTimer); hopWaitTimer = null; }
+  hopWaiting = false;
   gasHeld = false; brakeHeld = false;
   steerAngle = 0; steerHeld = false; keySteer = 0; setWheel(0);
   if (window.Car3D && window.Car3D.setSteer) window.Car3D.setSteer(0);
@@ -1243,8 +1284,25 @@ function startTimer(){
     if (timeLeft <= 0) endRound();
   }, 1000);
 }
+/* Start the round timer only once the first photo has actually
+   appeared: moveTo resolving means the viewer has the photo, and the
+   first "image" event means it is shown. Either can fire first, so
+   both paths call this; the first call that finds both true starts
+   the timer. A fallback (set where moveTo resolves) starts it anyway
+   12 s later so a missing event can never stall the round. */
+function maybeStartTimer(){
+  if (timerStarted || ended || !running || !firstPhotoSeen) return;
+  timerStarted = true;
+  if (timerFallbackId){ clearTimeout(timerFallbackId); timerFallbackId = null; }
+  startTimer();
+}
 function resetRun(){
   score = 0; ended = false; running = false;
+  timerStarted = false; firstPhotoSeen = false;
+  if (timerId){ clearInterval(timerId); timerId = null; }
+  if (timerFallbackId){ clearTimeout(timerFallbackId); timerFallbackId = null; }
+  if (hopWaitTimer){ clearTimeout(hopWaitTimer); hopWaitTimer = null; }
+  hopWaiting = false;
   markers.forEach(function(m){ if (m.img.parentNode) m.img.parentNode.removeChild(m.img); });
   markers = []; visitedImages = {}; imageCache = {};
   prefetchSet = {};
@@ -1346,7 +1404,17 @@ function startDriving(){
         if (path.length > 1) placeMarkersAlong(path, 0);
         running = true;
         lastHop = performance.now(); lastTick = 0;
-        startTimer();
+        /* The timer starts only once the first photo has actually
+           appeared (see maybeStartTimer) — never while it is still
+           loading. Fallback: start it 12 s from now if the photo
+           event never arrives, so the round can never stall. */
+        maybeStartTimer();
+        if (!timerStarted){
+          timerFallbackId = setTimeout(function(){
+            timerFallbackId = null;
+            if (!timerStarted && !ended && running){ timerStarted = true; startTimer(); }
+          }, 12000);
+        }
         rafId = requestAnimationFrame(driveLoop);
         projectMarkers();
         prefetchAhead();
