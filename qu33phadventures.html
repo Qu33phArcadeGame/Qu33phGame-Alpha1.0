@@ -343,8 +343,11 @@ var MAPILLARY_TOKEN = "MLY|29296214496698793|8723f4f9ca11ad2a607f64dd10e62ed4";
 var MAPILLARY_GRAPH = "https://graph.mapillary.com";
 var HOP_MS = 950;    // one photo hop per 950ms while GAS is held
 var HFOV = 80;       // horizontal field of view used to place marker overlays
-var MARKER_EVERY = 3; // a marker every 3rd photo along the road
-var MARKER_TARGET = 14;
+var MARKER_SPACING = 50; // metres of road between markers (photo gaps
+                         // vary 3-120 m, so every-Nth-photo spacing left
+                         // long stretches with no markers at all)
+var TOPUP_AHEAD = 6;     // keep at least this many live markers ahead
+var WARM_MIN_WALK = 25;  // warm the road until the cached walk is this long
 
 var CARS = {
   audi: { name: "AUDI", top: "#55585e", mid: "#33353a", bot: "#1a1b1e", badge: "#d7dae0" },
@@ -377,7 +380,7 @@ var currentPos = null;           // {lat, lng} of currentImage
 var imageCache = {};             // image id -> {id, lat, lng, compassAngle, isPano}
 var markers = [];                // {imageId, lat, lng, color, pts, img, done}
 var visitedImages = {};
-var pathHeading = 0, pathTail = null, extending = false, hopBusy = false;
+var warming = false, lastExtendMs = 0, hopBusy = false;
 var timerId = null, rafId = null;
 var popTimer = null, toastTimer = null;
 
@@ -545,15 +548,57 @@ function findNextAhead(from, hd, maxDistM){
   }
   return best;
 }
+/* Best next photo in the cone ahead of a point, skipping photos
+   already in `seen` (a walk-local set). Same scoring as findNextAhead. */
+function nextConeStep(from, chain, seen){
+  var best = null, bestScore = 1e9, id;
+  for (id in imageCache){
+    var im = imageCache[id];
+    if (seen[im.id]) continue;
+    var d = haversineM(from, { lat: im.lat, lng: im.lng });
+    if (d < 3 || d > 120) continue;
+    var brg = bearing(from, { lat: im.lat, lng: im.lng });
+    var diff = Math.abs(angDiff(brg, chain));
+    if (diff > 60) continue;
+    var score = diff * 2 + d * 0.05 + (im.isPano ? 0 : 25);
+    if (score < bestScore){ bestScore = score; best = im; }
+  }
+  return best;
+}
+/* Nearest cached photo to a point (any direction), skipping `seen`.
+   Used for turns and U-turns when the cone ahead is empty. */
+function nearestPhoto(from, maxDistM, seen){
+  var best = null, bestD = 1e9, id;
+  for (id in imageCache){
+    var im = imageCache[id];
+    if (seen && seen[im.id]) continue;
+    var d = haversineM(from, { lat: im.lat, lng: im.lng });
+    if (d < 3 || d > maxDistM) continue;
+    if (d < bestD){ bestD = d; best = im; }
+  }
+  return best;
+}
 /* Walk the cached photos ahead of a point (no API calls) to build the
-   road path used for marker placement. Returns [{id, lat, lng}]. */
+   road path used for marker placement and prefetch. Returns
+   [{id, lat, lng}]. This is a ROAD-FOLLOWING walk, not a fixed-heading
+   one: the chain bearing updates to each step's bearing, so the walk
+   follows the street as it bends instead of dying when the road
+   turns. If no photo lies ahead in the cone, it takes the nearest
+   photo not yet in this walk in any direction (a turn onto a side
+   street) rather than stopping. The seen set is local to this walk,
+   so it can pass through photos driven before to reach fresh road. */
 function walkPath(startIm, hd, maxSteps){
-  var path = [], seen = {}, cur = startIm, i;
-  for (i = 0; i < maxSteps; i++){
-    if (!cur || seen[cur.id]) break;
+  var path = [{ id: startIm.id, lat: startIm.lat, lng: startIm.lng }];
+  var seen = {}; seen[startIm.id] = true;
+  var cur = startIm, chain = hd, nxt;
+  while (path.length < maxSteps){
+    nxt = nextConeStep({ lat: cur.lat, lng: cur.lng }, chain, seen);
+    if (!nxt) nxt = nearestPhoto({ lat: cur.lat, lng: cur.lng }, 120, seen);
+    if (!nxt) break;
+    chain = bearing(cur, nxt);
+    cur = nxt;
     seen[cur.id] = true;
     path.push({ id: cur.id, lat: cur.lat, lng: cur.lng });
-    cur = findNextAhead({ lat: cur.lat, lng: cur.lng }, hd, 120);
   }
   return path;
 }
@@ -566,31 +611,66 @@ function ensureImagesNear(lat, lng, meters){
   if (count >= 10) return Promise.resolve();
   return fetchImages(bboxAround(lat, lng, meters)).then(function(){});
 }
-/* Spawn: nearest photo to the pick point, expanding the search radius.
-   Prefers a 360° photo. Returns the photo object or null. */
-function findSpawn(lat, lng){
+/* Best drivable start from the photos currently cached: try the 12
+   photos nearest the pick point, each in 8 headings, and keep the
+   (photo, heading) with the longest road-following walk. Walk length
+   dominates the score — a long road beats a nearby or 360° photo —
+   because a spawn with no road ahead is a dead round. Returns
+   {spawn, heading, walkLen, score} or null when the cache is empty. */
+function bestRoadFrom(lat, lng, exclude){
+  var cands = [], id;
+  for (id in imageCache){
+    var im = imageCache[id];
+    if (exclude && exclude[id]) continue;
+    cands.push({ im: im, d: haversineM({ lat: lat, lng: lng }, { lat: im.lat, lng: im.lng }) });
+  }
+  if (!cands.length) return null;
+  cands.sort(function(a, b){ return a.d - b.d; });
+  cands = cands.slice(0, 12);
+  var best = null, i, h;
+  for (i = 0; i < cands.length; i++){
+    for (h = 0; h < 360; h += 45){
+      var p = walkPath(cands[i].im, h, 30);
+      /* Walk length dominates; a 360° photo is a small bonus, and
+         closeness to the pick breaks near-ties. */
+      var score = p.length * 1000 + (cands[i].im.isPano ? 100 : 0) - cands[i].d * 0.1;
+      if (!best || score > best.score){
+        best = { spawn: cands[i].im, heading: h, walkLen: p.length, score: score };
+      }
+    }
+  }
+  return best;
+}
+/* Spawn: the photo + heading with the longest drivable road near the
+   pick point, expanding the search radius when the cached photos hold
+   no road worth driving (walk under 8 steps). Returns the photo object
+   (with a roadHeading property) or null when no photos exist at all. */
+function findSpawn(lat, lng, exclude){
   var radii = [0.005, 0.01, 0.02, 0.05, 0.1, 0.25, 0.5]; // degrees
-  var i = 0;
+  var i = 0, bestOverall = null;
+  function toSpawnObj(b){
+    if (!b) return null;
+    var sp = b.spawn;
+    return { id: sp.id, lat: sp.lat, lng: sp.lng,
+      compassAngle: (typeof sp.compassAngle === "number") ? sp.compassAngle : 0,
+      isPano: !!sp.isPano, roadHeading: b.heading };
+  }
+  /* On a retry (exclude non-empty) the cache is already warm around
+     this pick from the just-finished search — if it still holds a road
+     worth driving, start there without another slow API fetch. */
+  if (exclude && Object.keys(exclude).length){
+    var b0 = bestRoadFrom(lat, lng, exclude);
+    if (b0 && b0.walkLen >= 8) return Promise.resolve(toSpawnObj(b0));
+  }
   function tryNext(){
-    if (i >= radii.length) return Promise.resolve(null);
+    if (i >= radii.length) return Promise.resolve(toSpawnObj(bestOverall));
     var r = radii[i++];
     return fetchImages([lng - r, lat - r, lng + r, lat + r]).then(function(list){
-      if (list.length){
-        var best = null, bestScore = 1e9;
-        list.forEach(function(im){
-          var g = im.geometry && im.geometry.coordinates;
-          if (!g || g.length < 2) return;
-          var d = haversineM({ lat: lat, lng: lng }, { lat: g[1], lng: g[0] });
-          var score = d + (im.is_pano ? 0 : 500);
-          if (score < bestScore){ bestScore = score; best = im; }
-        });
-        if (best){
-          var g = best.geometry.coordinates;
-          return { id: best.id, lat: g[1], lng: g[0],
-            compassAngle: (typeof best.compass_angle === "number") ? best.compass_angle : 0,
-            isPano: !!best.is_pano };
-        }
-      }
+      var b = bestRoadFrom(lat, lng, exclude);
+      if (b && (!bestOverall || b.walkLen > bestOverall.walkLen)) bestOverall = b;
+      /* A road of 8+ steps is enough to start driving with markers
+         visible; longer roads come from background warming. */
+      if (bestOverall && bestOverall.walkLen >= 8) return toSpawnObj(bestOverall);
       return tryNext();
     });
   }
@@ -633,6 +713,11 @@ function ensureViewer(){
 function onViewerImage(ev){
   var img = ev && ev.image;
   if (!img || !img.id) return;
+  /* A spawn photo that already failed its moveTo can still arrive
+     late — ignore it so it never hijacks a round that has since
+     started from a different spawn. (A deliberate hop onto that
+     photo clears it in doHop first.) */
+  if (spawnFailed[img.id]) return;
   var cached = imageCache[img.id];
   var lat, lng, compassAngle, isPano;
   if (cached){
@@ -651,6 +736,7 @@ function onViewerImage(ev){
   setPov();
   checkCollections();
   projectMarkers();
+  extendMarkers(); // top markers up from the road ahead, every hop
   ringHide();      // the photo we were waiting for is here
   prefetchAhead(); // warm up the road ahead while driving
 }
@@ -681,27 +767,80 @@ function addMarker(imageId, latLng, idx){
   $("markers").appendChild(img);
   markers.push({ imageId: imageId, lat: latLng.lat, lng: latLng.lng, color: spec.color, pts: spec.pts, pop: spec.pop, img: img, done: false });
 }
+function markerOnPhoto(imageId){
+  var i;
+  for (i = 0; i < markers.length; i++) if (markers[i].imageId === imageId) return true;
+  return false;
+}
+/* Place markers along a road path, one every MARKER_SPACING metres of
+   road (not every Nth photo — photo gaps vary from 3 m to 120 m, so
+   index spacing left long stretches with no markers at all). Photos
+   that already have a marker are skipped, so a U-turn never stacks
+   two markers on one photo or re-scores a collected one. */
 function placeMarkersAlong(path, startIdx){
-  var placed = 0, i;
-  for (i = startIdx; i < path.length; i += MARKER_EVERY){
+  var placed = 0, i, acc = 0;
+  for (i = Math.max(1, startIdx); i < path.length; i++){
+    acc += haversineM(path[i - 1], path[i]);
+    if (acc < MARKER_SPACING) continue;
+    acc = 0;
+    if (markerOnPhoto(path[i].id)) continue;
     addMarker(path[i].id, path[i], markers.length + placed);
     placed++;
   }
   return placed;
 }
+/* Keep markers topped up from the cached road ahead. Runs after every
+   hop and every collection — not only on collection, so a round that
+   starts short of markers recovers instead of staying empty. Walks
+   the road from the current photo along the current heading (cache
+   only, no fetch); if the cached road is short, it warms the road in
+   the background and tops up again when the fetch lands. Throttled so
+   the walk runs at most once every 1.5 s. */
 function extendMarkers(){
-  if (extending || !pathTail) return;
-  var remaining = markers.filter(function(m){ return !m.done; }).length;
-  if (remaining >= 6) return;
-  extending = true;
-  ensureImagesNear(pathTail.lat, pathTail.lng, 300).then(function(){
-    var path = walkPath(pathTail, pathHeading, 24);
-    if (path.length > 1){
-      placeMarkersAlong(path.slice(1), 0);
-      pathTail = path[path.length - 1];
+  if (!running || !currentImage || !currentPos) return;
+  var now = performance.now();
+  if (now - lastExtendMs < 1500) return;
+  lastExtendMs = now;
+  topUpMarkers();
+}
+function topUpMarkers(){
+  if (!running || !currentImage || !currentPos) return;
+  var i, active = 0;
+  for (i = 0; i < markers.length; i++){
+    var m = markers[i];
+    if (!m.done && haversineM(currentPos, { lat: m.lat, lng: m.lng }) <= 400) active++;
+  }
+  if (active >= TOPUP_AHEAD) return;
+  var path = walkPath(currentImage, heading, 40);
+  if (path.length > 1) placeMarkersAlong(path, 0);
+  /* Road ahead is short in the cache — warm it in the background so
+     the next top-up finds road. Fire-and-forget; the game never waits. */
+  if (path.length < WARM_MIN_WALK) warmRoadAhead();
+  projectMarkers();
+}
+/* Warm the road ahead in the background: while the cached road from
+   the current photo is short, fetch a small bbox at its tail and
+   re-walk. Bounded (3 fetches), guarded so only one warming runs at
+   a time, and never awaited by the game — hops and markers never
+   block on it. */
+function warmRoadAhead(){
+  if (warming || !currentImage || !currentPos) return Promise.resolve();
+  warming = true;
+  var fetches = 0;
+  function step(){
+    var path = walkPath(currentImage, heading, 60);
+    if (path.length >= WARM_MIN_WALK || fetches >= 3){
+      warming = false;
+      lastExtendMs = 0;
+      topUpMarkers();
+      prefetchAhead();
+      return Promise.resolve();
     }
-    extending = false;
-  });
+    var tail = path[path.length - 1];
+    fetches++;
+    return fetchImages(bboxAround(tail.lat, tail.lng, 200)).then(step);
+  }
+  return step().catch(function(){ warming = false; });
 }
 function collectMarker(m){
   if (m.done) return;
@@ -727,11 +866,16 @@ function checkCollections(){
 /* The viewer's own project() maps a marker's ground position to canvas
    pixels (ground plane), so the marker's base sits on the road. It
    returns null for points behind the camera or >1000 m away — those
-   are hidden. project() is async, so results apply only if no newer
-   projection run started (generation guard) and the marker is still
-   active. Throttled to ~100 ms so the drive loop stays fast. If
-   project() is missing, the improved bearing/distance fallback below
-   is used instead. */
+   are hidden. project() is async, so results apply only if the photo
+   hasn't changed since the call (generation guard) and the marker is
+   still active. The guard is keyed to the PHOTO, not to every run:
+   project() can take longer than the 100 ms re-projection interval,
+   and invalidating a slow-but-valid result on every re-run starved
+   markers entirely — they only appeared once the car sat still. A
+   newer photo still invalidates stale results; a re-run for the same
+   photo does not. Throttled to ~100 ms so the drive loop stays fast.
+   If project() is missing, the improved bearing/distance fallback
+   below is used instead. */
 var projectGen = 0, lastProjectMs = 0, lastProjectImg = null;
 function markerHeight(dist){
   return Math.round(64 * clamp(120 / (dist + 20), 0.45, 2.2));
@@ -741,14 +885,30 @@ function markerOpacity(dist){
 }
 function projectMarkers(){
   if (!currentPos || !running) return;
+  /* 360° photos are aimed along the driving heading (setPov), so the
+     viewer's projection grounds markers on the real photo. Flat photos
+     cannot be aimed — the viewer shows them as taken, looking along
+     the photo's own compass direction, which is often far from the
+     road heading — so projecting through the viewer puts the markers
+     far off-screen (measured Nov 24: projected left up to ±10000 px
+     on a 390 px viewport, while the markers were counted "visible").
+     For flat photos, draw markers by road geometry instead (the
+     bearing/distance fallback): always on screen, low on the road
+     ahead, rising toward the horizon with distance. */
+  if (!currentImage || !currentImage.isPano || !viewer || typeof viewer.project !== "function"){
+    projectMarkersFallback();
+    return;
+  }
   if (viewer && typeof viewer.project === "function"){
     var now = performance.now();
     var imgChanged = !currentImage || currentImage.id !== lastProjectImg;
     if (!imgChanged && now - lastProjectMs < 100) return;
     lastProjectMs = now;
     if (currentImage) lastProjectImg = currentImage.id;
-    projectGen++;
+    /* Only a new photo invalidates pending projections — see above. */
+    if (imgChanged) projectGen++;
     var gen = projectGen;
+    var mw = $("markers").offsetWidth, mh = $("markers").offsetHeight;
     markers.forEach(function(m){
       if (m.done){ m.img.style.display = "none"; return; }
       var dist = haversineM(currentPos, { lat: m.lat, lng: m.lng });
@@ -760,6 +920,13 @@ function projectMarkers(){
       viewer.project({ lat: m.lat, lng: m.lng }).then(function(pt){
         if (gen !== projectGen || m.done) return;
         if (!pt || !isFinite(pt[0]) || !isFinite(pt[1])){ m.img.style.display = "none"; return; }
+        /* The projection is in container CSS pixels, but a point
+           outside the view frustum projects far off-screen — hide it
+           instead of parking a "visible" marker no player can see.
+           The marker's tip sits at the projected point
+           (translate(-50%,-100%)), so it is on screen only while the
+           tip is inside the frame. */
+        if (pt[0] < -40 || pt[0] > mw + 40 || pt[1] < 0 || pt[1] > mh + hgt){ m.img.style.display = "none"; return; }
         m.img.style.display = "block";
         m.img.style.left = pt[0].toFixed(1) + "px";
         m.img.style.top = pt[1].toFixed(1) + "px";
@@ -786,8 +953,10 @@ function projectMarkersFallback(){
     if (dist > 400){ m.img.style.display = "none"; continue; }
     var brg = bearing(currentPos, { lat: m.lat, lng: m.lng });
     var diff = angDiff(brg, heading);
-    if (Math.abs(diff) > HFOV / 2 + 6){ m.img.style.display = "none"; continue; }
-    var xPct = 50 + (diff / (HFOV / 2)) * 50;
+    /* Hide past the screen edge: x reaches 0/100% at exactly ±HFOV/2,
+       so anything further is off-screen even though it is "ahead". */
+    if (Math.abs(diff) > HFOV / 2){ m.img.style.display = "none"; continue; }
+    var xPct = clamp(50 + (diff / (HFOV / 2)) * 50, 0, 100);
     var yPct = 80 - 30 * clamp(dist / 250, 0, 1);
     m.img.style.display = "block";
     m.img.style.left = xPct.toFixed(1) + "%";
@@ -812,7 +981,7 @@ function projectMarkersFallback(){
    so hops find their next photo in the cache instead of waiting on
    the API, and the next few photos' thumbnails are preloaded so the
    browser cache is warm. Bounded: one metadata fetch ahead + at
-   most 4 thumb preloads per hop. */
+   most 6 thumb preloads per hop. */
 var ringEl = $("loadRing");
 var ringArc = ringEl.querySelector(".ring-arc");
 var ringLabel = $("loadRingLabel");
@@ -880,9 +1049,9 @@ function prefetchAhead(){
   if (!currentImage || !currentPos || !running) return;
   var ahead = destPoint(currentPos, heading, 220);
   ensureImagesNear(ahead.lat, ahead.lng, 300);
-  var path = walkPath(currentImage, heading, 6);
+  var path = walkPath(currentImage, heading, 10);
   var n = 0, i;
-  for (i = 1; i < path.length && n < 4; i++){
+  for (i = 1; i < path.length && n < 6; i++){
     var im = imageCache[path[i].id];
     if (!im || !im.thumb || prefetchSet[im.id]) continue;
     prefetchSet[im.id] = true;
@@ -895,6 +1064,7 @@ function prefetchAhead(){
 /* ── driving ──────────────────────────────────────────────────── */
 function doHop(im){
   hopBusy = true;
+  delete spawnFailed[im.id]; // a deliberate hop honours this photo
   viewer.moveTo(im.id).then(function(){
     hopBusy = false; // state updates via the viewer's "image" event
   }).catch(function(){
@@ -904,20 +1074,31 @@ function doHop(im){
 }
 function hopForward(){
   if (!currentImage || hopBusy || !viewer) return;
+  var from = currentPos;
+  /* The road ahead is a photo chain, not a fixed heading: take the
+     best photo in the cone; if the road bends or ends, turn onto the
+     nearest photo not yet driven in any direction; if even that is
+     gone, U-turn onto the nearest photo at all (even one already
+     driven). The heading then follows the road actually driven, so
+     the car keeps morphing through photos instead of stopping. */
   var nxt = findNextAhead(currentPos, heading, 120);
-  if (nxt){ doHop(nxt); return; }
-  /* Nothing cached ahead — fetch a box ahead of us and try once more.
-     The ring shows while we wait, so the player sees it working. */
-  hopBusy = true;
-  ringShow("LOOKING FOR THE NEXT PHOTO\u2026");
-  var ahead = destPoint(currentPos, heading, 80);
-  fetchImages(bboxAround(ahead.lat, ahead.lng, 200)).then(function(){
-    hopBusy = false;
-    ringHide();
-    var n2 = findNextAhead(currentPos, heading, 120);
-    if (n2) doHop(n2);
-    else showToast("END OF ROAD \u2014 STEER AROUND");
-  });
+  if (!nxt){
+    var seen = {}, id;
+    for (id in visitedImages) seen[id] = true;
+    nxt = nearestPhoto(currentPos, 120, seen);
+  }
+  if (!nxt) nxt = nearestPhoto(currentPos, 120, null);
+  if (nxt){
+    heading = norm360(bearing(from, { lat: nxt.lat, lng: nxt.lng }));
+    doHop(nxt);
+    return;
+  }
+  /* Nothing cached at all in any direction — warm the road in the
+     background and try again on the next hop tick. The game NEVER
+     blocks on the slow API: GAS keeps working and the photo keeps
+     showing while the fetch runs. */
+  warmRoadAhead();
+  showToast("FINDING THE ROAD\u2026");
 }
 function driveLoop(now){
   if (!running) return;
@@ -983,7 +1164,7 @@ function resetRun(){
   markers = []; visitedImages = {}; imageCache = {};
   prefetchSet = {};
   steerAngle = 0; steerHeld = false; keySteer = 0; setWheel(0);
-  currentImage = null; currentPos = null; pathTail = null; hopBusy = false;
+  currentImage = null; currentPos = null; hopBusy = false;
   $("scoreHud").textContent = "0";
   $("timeHud").textContent = GAME_SECS;
   $("bestHud").textContent = best;
@@ -994,64 +1175,95 @@ function resetRun(){
   $("driveCtrls").classList.remove("hidden");
   if (window.Car3D) window.Car3D.render();
 }
+/* First-photo load guard: the viewer's moveTo has no timeout of its
+   own, so a spawn photo whose image will not download (CDN timeout --
+   seen live Nov 24, 2026: the viewer logged "Request timeout" and the
+   game sat on FINDING STREET PHOTOS forever) used to hang the round
+   with no error and no way out. spawnAttempt guards a late moveTo
+   resolution from starting a round that has since moved on;
+   spawnFailed keeps a late-arriving failed spawn photo from hijacking
+   a round via the viewer's image event (see onViewerImage). */
+var spawnAttempt = 0, spawnFailed = {};
 function startDriving(){
   if (!tokenOk()){
-    showToast("MAPILLARY TOKEN NOT SET YET \u2014 PASTE ONE IN MAPILLARY_TOKEN", 4000);
+    showToast("MAPILLARY TOKEN NOT SET YET — PASTE ONE IN MAPILLARY_TOKEN", 4000);
     return;
   }
   if (!ensureViewer()) return;
   resetRun();
-  ringShow("FINDING STREET PHOTOS\u2026");
-  showToast("FINDING STREET PHOTOS NEAR " + (pick.name || "THAT SPOT") + "\u2026", 2500);
-  findSpawn(pick.lat, pick.lng).then(function(spawn){
-    if (!spawn){
-      ringHide();
-      $("startScreen").classList.remove("hidden");
-      $("hud").classList.add("hidden"); $("carHood").classList.add("hidden"); $("driveCtrls").classList.add("hidden");
-      showToast("NO STREET PHOTOS NEAR THAT SPOT \u2014 PICK ANOTHER PLACE", 3500);
-      return;
-    }
-    currentImage = spawn;
-    currentPos = { lat: spawn.lat, lng: spawn.lng };
-    visitedImages[spawn.id] = true;
-    /* Photos are taken facing the road, so start driving along the
-       photo's own compass direction. */
-    heading = spawn.compassAngle || 0;
-    pathHeading = heading;
-    /* Download the first photo's thumbnail with real byte progress
-       (drives the ring) in parallel with the viewer's own load — the
-       ring hides when the photo actually appears. If the thumb
-       finishes first, the ring goes back to the elapsed-time sweep
-       until the photo shows. */
-    var thumb0 = (imageCache[spawn.id] && imageCache[spawn.id].thumb) || null;
-    if (thumb0){
-      fetchWithProgress(thumb0, function(frac){ ringSetProg(frac); }).then(function(ok){
-        if (ok && ringMode === "prog") ringSetIndet("LOADING PHOTO\u2026");
-      });
-    }
-    viewer.moveTo(spawn.id).then(function(){
-      /* Place markers along the road ahead, from the photos we already
-         fetched around the spawn. */
-      ensureImagesNear(spawn.lat, spawn.lng, 500).then(function(){
-        var path = walkPath(spawn, pathHeading, 60);
-        if (path.length > 1){
-          placeMarkersAlong(path.slice(1), 0);
-          pathTail = path[path.length - 1];
+  ringShow("FINDING STREET PHOTOS…");
+  showToast("FINDING STREET PHOTOS NEAR " + (pick.name || "THAT SPOT") + "…", 2500);
+  var exclude = {}, triesLeft = 2; // first spawn + 2 retries
+  function backToStart(toast){
+    ringHide();
+    $("startScreen").classList.remove("hidden");
+    $("hud").classList.add("hidden"); $("carHood").classList.add("hidden"); $("driveCtrls").classList.add("hidden");
+    showToast(toast, 3500);
+  }
+  function trySpawn(){
+    findSpawn(pick.lat, pick.lng, exclude).then(function(spawn){
+      if (!spawn){
+        backToStart("NO STREET PHOTOS NEAR THAT SPOT — PICK ANOTHER PLACE");
+        return;
+      }
+      currentImage = spawn;
+      currentPos = { lat: spawn.lat, lng: spawn.lng };
+      visitedImages[spawn.id] = true;
+      /* Drive along the road the spawn was picked for -- the heading
+         findSpawn chose by walking the cached photos, not the photo's
+         own compass direction (which often points at a dead end). */
+      heading = (typeof spawn.roadHeading === "number") ? spawn.roadHeading : (spawn.compassAngle || 0);
+      /* Download the first photo's thumbnail with real byte progress
+         (drives the ring) in parallel with the viewer's own load -- the
+         ring hides when the photo actually appears. If the thumb
+         finishes first, the ring goes back to the elapsed-time sweep
+         until the photo shows. */
+      var thumb0 = (imageCache[spawn.id] && imageCache[spawn.id].thumb) || null;
+      if (thumb0){
+        fetchWithProgress(thumb0, function(frac){ ringSetProg(frac); }).then(function(ok){
+          if (ok && ringMode === "prog") ringSetIndet("LOADING PHOTO…");
+        });
+      }
+      /* Race the first photo's load against a 30 s timer: if it will
+         not load, try the next-best spawn already cached instead of
+         hanging forever. The retry reuses the warm cache, so it costs
+         no slow API fetch. */
+      var myAttempt = ++spawnAttempt, done = false;
+      var timer = setTimeout(function(){ fail(); }, 30000);
+      function fail(){
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        spawnFailed[spawn.id] = true;
+        exclude[spawn.id] = true;
+        if (triesLeft > 0){
+          triesLeft--;
+          showToast("THAT PHOTO WOULD NOT LOAD — TRYING ANOTHER SPOT…", 2500);
+          trySpawn();
+        } else {
+          backToStart("COULD NOT LOAD THE FIRST PHOTO — TRY ANOTHER PLACE");
         }
+      }
+      viewer.moveTo(spawn.id).then(function(){
+        if (done || myAttempt !== spawnAttempt) return;
+        done = true;
+        clearTimeout(timer);
+        /* Markers go down immediately, from the road already cached
+           around the spawn -- placing them never waits on another slow
+           API fetch. The road keeps warming in the background. */
+        var path = walkPath(spawn, heading, 60);
+        if (path.length > 1) placeMarkersAlong(path, 0);
         running = true;
         lastHop = performance.now(); lastTick = 0;
         startTimer();
         rafId = requestAnimationFrame(driveLoop);
         projectMarkers();
         prefetchAhead();
-      });
-    }).catch(function(){
-      ringHide();
-      $("startScreen").classList.remove("hidden");
-      $("hud").classList.add("hidden"); $("carHood").classList.add("hidden"); $("driveCtrls").classList.add("hidden");
-      showToast("COULD NOT LOAD THE FIRST PHOTO \u2014 TRY ANOTHER PLACE", 3500);
+        warmRoadAhead();
+      }).catch(function(){ fail(); });
     });
-  });
+  }
+  trySpawn();
 }
 $("startBtn").addEventListener("click", startDriving);
 $("againBtn").addEventListener("click", function(){ startDriving(); });
